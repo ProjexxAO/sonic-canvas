@@ -14,7 +14,102 @@ export type Database = {
   }
   public: {
     Tables: {
-      [_ in never]: never
+      profiles: {
+        Row: {
+          avatar_url: string | null
+          created_at: string
+          display_name: string | null
+          id: string
+          operator_handle: string | null
+          updated_at: string
+          user_id: string
+        }
+        Insert: {
+          avatar_url?: string | null
+          created_at?: string
+          display_name?: string | null
+          id?: string
+          operator_handle?: string | null
+          updated_at?: string
+          user_id: string
+        }
+        Update: {
+          avatar_url?: string | null
+          created_at?: string
+          display_name?: string | null
+          id?: string
+          operator_handle?: string | null
+          updated_at?: string
+          user_id?: string
+        }
+        Relationships: []
+      }
+      sonic_agents: {
+        Row: {
+          class: Database["public"]["Enums"]["agent_class"]
+          code_artifact: string | null
+          color: string
+          created_at: string
+          cycles: number
+          density: number
+          designation: string
+          efficiency: number
+          frequency: number
+          id: string
+          last_active: string
+          linked_agents: string[] | null
+          modulation: number
+          name: string
+          sector: Database["public"]["Enums"]["agent_sector"]
+          stability: number
+          status: Database["public"]["Enums"]["agent_status"]
+          user_id: string
+          waveform: Database["public"]["Enums"]["waveform_type"]
+        }
+        Insert: {
+          class?: Database["public"]["Enums"]["agent_class"]
+          code_artifact?: string | null
+          color?: string
+          created_at?: string
+          cycles?: number
+          density?: number
+          designation: string
+          efficiency?: number
+          frequency?: number
+          id?: string
+          last_active?: string
+          linked_agents?: string[] | null
+          modulation?: number
+          name: string
+          sector?: Database["public"]["Enums"]["agent_sector"]
+          stability?: number
+          status?: Database["public"]["Enums"]["agent_status"]
+          user_id: string
+          waveform?: Database["public"]["Enums"]["waveform_type"]
+        }
+        Update: {
+          class?: Database["public"]["Enums"]["agent_class"]
+          code_artifact?: string | null
+          color?: string
+          created_at?: string
+          cycles?: number
+          density?: number
+          designation?: string
+          efficiency?: number
+          frequency?: number
+          id?: string
+          last_active?: string
+          linked_agents?: string[] | null
+          modulation?: number
+          name?: string
+          sector?: Database["public"]["Enums"]["agent_sector"]
+          stability?: number
+          status?: Database["public"]["Enums"]["agent_status"]
+          user_id?: string
+          waveform?: Database["public"]["Enums"]["waveform_type"]
+        }
+        Relationships: []
+      }
     }
     Views: {
       [_ in never]: never
@@ -23,7 +118,16 @@ export type Database = {
       [_ in never]: never
     }
     Enums: {
-      [_ in never]: never
+      agent_class: "BASIC" | "ADVANCED" | "ELITE" | "SINGULARITY"
+      agent_sector:
+        | "FINANCE"
+        | "BIOTECH"
+        | "SECURITY"
+        | "DATA"
+        | "CREATIVE"
+        | "UTILITY"
+      agent_status: "IDLE" | "ACTIVE" | "PROCESSING" | "ERROR" | "DORMANT"
+      waveform_type: "sine" | "square" | "sawtooth" | "triangle"
     }
     CompositeTypes: {
       [_ in never]: never
@@ -150,6 +254,18 @@ export type CompositeTypes<
 
 export const Constants = {
   public: {
-    Enums: {},
+    Enums: {
+      agent_class: ["BASIC", "ADVANCED", "ELITE", "SINGULARITY"],
+      agent_sector: [
+        "FINANCE",
+        "BIOTECH",
+        "SECURITY",
+        "DATA",
+        "CREATIVE",
+        "UTILITY",
+      ],
+      agent_status: ["IDLE", "ACTIVE", "PROCESSING", "ERROR", "DORMANT"],
+      waveform_type: ["sine", "square", "sawtooth", "triangle"],
+    },
   },
 } as const

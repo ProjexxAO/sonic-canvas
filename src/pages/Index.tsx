@@ -1,8 +1,11 @@
 // Atlas Sonic OS - Main Application Page
 
 import { useState, useEffect, useCallback } from 'react';
-import { SonicAgent, AgentSector, SimulationOutput, createAgent } from '@/lib/agentTypes';
+import { useNavigate } from 'react-router-dom';
+import { SonicAgent, AgentSector, SimulationOutput } from '@/lib/agentTypes';
 import { audioEngine } from '@/lib/audioEngine';
+import { useAuth } from '@/hooks/useAuth';
+import { useAgents } from '@/hooks/useAgents';
 import Header from '@/components/Header';
 import StatusBar from '@/components/StatusBar';
 import SonicVisualizer from '@/components/SonicVisualizer';
@@ -13,12 +16,16 @@ import CodeArtifact from '@/components/CodeArtifact';
 import WaveformDisplay from '@/components/WaveformDisplay';
 import BootScreen from '@/components/BootScreen';
 import { toast } from 'sonner';
+import { Loader2 } from 'lucide-react';
 
 export default function Index() {
+  const navigate = useNavigate();
+  const { user, loading: authLoading, signOut } = useAuth();
+  const { agents, loading: agentsLoading, createAgent, updateAgent, deleteAgent } = useAgents();
+  
   const [isBooting, setIsBooting] = useState(true);
   const [audioEnabled, setAudioEnabled] = useState(false);
   const [audioData, setAudioData] = useState<Uint8Array>(new Uint8Array(128));
-  const [agents, setAgents] = useState<SonicAgent[]>([]);
   const [selectedAgent, setSelectedAgent] = useState<SonicAgent | null>(null);
   const [simulationOutput, setSimulationOutput] = useState<SimulationOutput[]>([]);
   const [isProcessing, setIsProcessing] = useState(false);
@@ -55,12 +62,17 @@ export default function Index() {
 
   // Synthesize new agent
   const handleSynthesize = async (prompt: string, sector: AgentSector) => {
+    if (!user) {
+      toast.error('Please sign in to synthesize agents');
+      navigate('/auth');
+      return;
+    }
+
     setIsProcessing(true);
     
     log('INFO', `Initiating synthesis: "${prompt}"`);
     log('INFO', `Sector lock: ${sector}`);
     
-    // Simulate processing delay
     await new Promise(r => setTimeout(r, 500));
     log('INFO', 'Analyzing prompt structure...');
     
@@ -70,47 +82,56 @@ export default function Index() {
     await new Promise(r => setTimeout(r, 600));
     log('INFO', 'Compiling code artifact...');
     
-    // Extract name from prompt or generate one
+    // Extract name from prompt
     const nameMatch = prompt.match(/(?:create|build|make|generate)\s+(?:a\s+)?(.+?)(?:\s+for|\s+that|\s+to|$)/i);
     const name = nameMatch ? nameMatch[1].slice(0, 30) : `${sector}-Agent`;
     
-    const newAgent = createAgent(name, sector);
-    
     await new Promise(r => setTimeout(r, 400));
-    log('SUCCESS', `Agent synthesized: ${newAgent.designation}`);
-    log('INFO', `Frequency: ${newAgent.sonicDNA.frequency.toFixed(2)} Hz`);
-    log('INFO', `Waveform: ${newAgent.sonicDNA.waveform.toUpperCase()}`);
     
-    setAgents(prev => [...prev, newAgent]);
-    setSelectedAgent(newAgent);
+    // Create in database
+    const newAgent = await createAgent(name, sector);
     
-    if (audioEnabled) {
-      audioEngine.playSuccess();
+    if (newAgent) {
+      log('SUCCESS', `Agent synthesized: ${newAgent.designation}`);
+      log('INFO', `Frequency: ${newAgent.sonicDNA.frequency.toFixed(2)} Hz`);
+      log('INFO', `Waveform: ${newAgent.sonicDNA.waveform.toUpperCase()}`);
+      log('INFO', `Synced to Global Grid`);
+      
+      setSelectedAgent(newAgent);
+      
+      if (audioEnabled) {
+        audioEngine.playSuccess();
+      }
+      
+      toast.success(`Agent ${newAgent.designation} synthesized`, {
+        description: `Sector: ${sector} | Class: ${newAgent.class}`
+      });
+    } else {
+      log('ERROR', 'Synthesis failed - check connection');
     }
-    
-    toast.success(`Agent ${newAgent.designation} synthesized`, {
-      description: `Sector: ${sector} | Class: ${newAgent.class}`
-    });
     
     setIsProcessing(false);
   };
 
   // Delete agent
-  const handleDeleteAgent = (id: string) => {
+  const handleDeleteAgent = async (id: string) => {
     const agent = agents.find(a => a.id === id);
     if (!agent) return;
     
-    setAgents(prev => prev.filter(a => a.id !== id));
-    if (selectedAgent?.id === id) {
-      setSelectedAgent(null);
-    }
+    const success = await deleteAgent(id);
     
-    if (audioEnabled) {
-      audioEngine.playError();
+    if (success) {
+      if (selectedAgent?.id === id) {
+        setSelectedAgent(null);
+      }
+      
+      if (audioEnabled) {
+        audioEngine.playError();
+      }
+      
+      log('WARNING', `Agent ${agent.designation} terminated`);
+      toast.info(`Agent ${agent.designation} deleted`);
     }
-    
-    log('WARNING', `Agent ${agent.designation} terminated`);
-    toast.info(`Agent ${agent.designation} deleted`);
   };
 
   // Run agent simulation
@@ -133,7 +154,6 @@ export default function Index() {
     await new Promise(r => setTimeout(r, 400));
     log('INFO', 'Executing main function...');
     
-    // Simulate various outputs
     const outputs = [
       'Processing input data...',
       'Analyzing patterns...',
@@ -148,20 +168,14 @@ export default function Index() {
     
     await new Promise(r => setTimeout(r, 500));
     
-    // Update agent metrics
-    setAgents(prev => prev.map(a => 
-      a.id === agent.id 
-        ? { 
-            ...a, 
-            status: 'ACTIVE',
-            lastActive: new Date(),
-            metrics: { 
-              ...a.metrics, 
-              cycles: a.metrics.cycles + 1 
-            }
-          }
-        : a
-    ));
+    // Update agent in database
+    await updateAgent(agent.id, {
+      status: 'ACTIVE',
+      metrics: { 
+        ...agent.metrics, 
+        cycles: agent.metrics.cycles + 1 
+      }
+    });
     
     log('SUCCESS', `Execution complete. Cycles: ${agent.metrics.cycles + 1}`);
     
@@ -173,17 +187,34 @@ export default function Index() {
   };
 
   // Update agent
-  const handleUpdateAgent = (updates: Partial<SonicAgent>) => {
+  const handleUpdateAgent = async (updates: Partial<SonicAgent>) => {
     if (!selectedAgent) return;
     
-    setAgents(prev => prev.map(a => 
-      a.id === selectedAgent.id ? { ...a, ...updates } : a
-    ));
-    setSelectedAgent(prev => prev ? { ...prev, ...updates } : null);
+    const success = await updateAgent(selectedAgent.id, updates);
+    if (success) {
+      // Update local selection
+      setSelectedAgent(prev => prev ? { ...prev, ...updates } : null);
+    }
   };
 
+  // Handle sign out
+  const handleSignOut = async () => {
+    await signOut();
+    toast.info('Signed out');
+  };
+
+  // Show boot screen
   if (isBooting) {
     return <BootScreen onComplete={handleBootComplete} />;
+  }
+
+  // Show loading while checking auth
+  if (authLoading) {
+    return (
+      <div className="h-screen bg-background flex items-center justify-center">
+        <Loader2 className="w-8 h-8 text-primary animate-spin" />
+      </div>
+    );
   }
 
   return (
@@ -191,7 +222,9 @@ export default function Index() {
       {/* Header */}
       <Header 
         audioEnabled={audioEnabled} 
-        onToggleAudio={setAudioEnabled} 
+        onToggleAudio={setAudioEnabled}
+        user={user}
+        onSignOut={handleSignOut}
       />
       
       {/* Main content */}
@@ -271,7 +304,7 @@ export default function Index() {
       {/* Status Bar */}
       <StatusBar 
         agentCount={agents.length} 
-        isConnected={true} 
+        isConnected={!!user} 
       />
     </div>
   );

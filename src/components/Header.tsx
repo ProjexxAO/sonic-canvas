@@ -1,22 +1,31 @@
 // Atlas Sonic OS - Header Component
 
 import { useState } from 'react';
+import { useNavigate } from 'react-router-dom';
 import { audioEngine } from '@/lib/audioEngine';
+import { User } from '@supabase/supabase-js';
 import { 
   Volume2, 
   VolumeX, 
   Settings, 
   HelpCircle,
   Radio,
-  Hexagon
+  Hexagon,
+  LogIn,
+  LogOut,
+  User as UserIcon
 } from 'lucide-react';
 
 interface HeaderProps {
   onToggleAudio: (enabled: boolean) => void;
   audioEnabled: boolean;
+  user?: User | null;
+  onSignOut?: () => void;
 }
 
-export default function Header({ onToggleAudio, audioEnabled }: HeaderProps) {
+export default function Header({ onToggleAudio, audioEnabled, user, onSignOut }: HeaderProps) {
+  const navigate = useNavigate();
+  
   const handleAudioToggle = () => {
     if (!audioEnabled) {
       audioEngine.initialize();
@@ -45,10 +54,19 @@ export default function Header({ onToggleAudio, audioEnabled }: HeaderProps) {
 
       {/* Center - Status */}
       <div className="hidden md:flex items-center gap-6">
-        <div className="flex items-center gap-2">
-          <span className="w-2 h-2 bg-success rounded-full animate-pulse" />
-          <span className="text-xs text-muted-foreground">SYSTEM NOMINAL</span>
-        </div>
+        {user ? (
+          <div className="flex items-center gap-2">
+            <span className="w-2 h-2 bg-success rounded-full animate-pulse" />
+            <span className="text-xs text-muted-foreground">
+              OPERATOR: <span className="text-primary">{user.email?.split('@')[0].toUpperCase()}</span>
+            </span>
+          </div>
+        ) : (
+          <div className="flex items-center gap-2">
+            <span className="w-2 h-2 bg-secondary rounded-full" />
+            <span className="text-xs text-muted-foreground">GUEST MODE</span>
+          </div>
+        )}
         <div className="h-4 w-px bg-border" />
         <div className="text-xs text-muted-foreground">
           BUILD <span className="text-primary">2024.12.16</span>
@@ -82,6 +100,27 @@ export default function Header({ onToggleAudio, audioEnabled }: HeaderProps) {
         >
           <HelpCircle size={18} />
         </button>
+
+        <div className="h-6 w-px bg-border mx-1" />
+
+        {user ? (
+          <button
+            onClick={onSignOut}
+            className="flex items-center gap-2 px-3 py-1.5 text-xs text-muted-foreground hover:text-destructive transition-colors"
+            title="Sign out"
+          >
+            <LogOut size={16} />
+            <span className="hidden sm:inline">LOGOUT</span>
+          </button>
+        ) : (
+          <button
+            onClick={() => navigate('/auth')}
+            className="flex items-center gap-2 px-3 py-1.5 bg-primary/20 text-primary rounded hover:bg-primary/30 transition-colors text-xs"
+          >
+            <LogIn size={16} />
+            <span>LOGIN</span>
+          </button>
+        )}
       </div>
     </header>
   );
