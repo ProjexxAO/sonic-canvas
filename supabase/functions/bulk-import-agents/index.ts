@@ -138,16 +138,33 @@ Deno.serve(async (req) => {
 
     // Mode C: Fetch CSV from Google Sheets URL server-side
     if (googleSheetsUrl) {
-      console.log(`Fetching CSV from Google Sheets URL: ${googleSheetsUrl}`)
+      // Convert edit URLs to published CSV URLs
+      let fetchUrl = googleSheetsUrl.trim()
+      
+      // Extract spreadsheet ID and gid from various URL formats
+      const editMatch = fetchUrl.match(/\/spreadsheets\/d\/([a-zA-Z0-9_-]+)/)
+      const gidMatch = fetchUrl.match(/gid=(\d+)/)
+      
+      if (editMatch && !fetchUrl.includes('/pub?')) {
+        const spreadsheetId = editMatch[1]
+        const gid = gidMatch ? gidMatch[1] : '0'
+        fetchUrl = `https://docs.google.com/spreadsheets/d/${spreadsheetId}/pub?output=csv&gid=${gid}`
+        console.log(`Converted URL to: ${fetchUrl}`)
+      }
+      
+      console.log(`Fetching CSV from: ${fetchUrl}`)
       
       try {
-        const response = await fetch(googleSheetsUrl, {
+        const response = await fetch(fetchUrl, {
           headers: { 'Accept': 'text/csv' }
         })
         
         if (!response.ok) {
+          const hint = response.status === 401 || response.status === 403
+            ? '. Make sure your Google Sheet is published to the web: File → Share → Publish to web → Select CSV'
+            : ''
           return new Response(JSON.stringify({ 
-            error: `Failed to fetch Google Sheets: ${response.status} ${response.statusText}` 
+            error: `Failed to fetch Google Sheets: ${response.status} ${response.statusText}${hint}` 
           }), {
             status: 400,
             headers: { ...corsHeaders, 'Content-Type': 'application/json' }
