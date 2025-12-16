@@ -1,1 +1,7 @@
 project_id = "dsbfufuqpielvayqlxtw"
+
+[functions.export-agents]
+verify_jwt = false
+
+[functions.bulk-import-agents]
+verify_jwt = false

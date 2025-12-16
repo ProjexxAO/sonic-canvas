@@ -101,30 +101,64 @@ export default function ImportAgents() {
     setShowResults(false);
     audioEngine.playClick();
 
-    let agents: ImportAgent[] = [];
-    
-    try {
-      // Try parsing as JSON array
-      const parsed = JSON.parse(jsonData);
-      agents = Array.isArray(parsed) ? parsed : [parsed];
-    } catch {
-      // Try parsing as CSV
+    // Check if data looks like CSV (has header row with commas)
+    const firstLine = jsonData.trim().split('\n')[0];
+    const isCSV = firstLine.includes(',') && !firstLine.startsWith('[') && !firstLine.startsWith('{');
+    const lineCount = jsonData.trim().split('\n').length;
+
+    // Use bulk import for large datasets (> 100 rows) or CSV data
+    if (isCSV || lineCount > 100) {
+      toast.info(`Processing ${lineCount - 1} agents via bulk import...`);
+      
       try {
-        const lines = jsonData.trim().split('\n');
-        const headers = lines[0].split(',').map(h => h.trim().toLowerCase().replace(/['"]/g, ''));
-        agents = lines.slice(1).map(line => {
-          const values = line.split(',').map(v => v.trim().replace(/['"]/g, ''));
-          const obj: ImportAgent = {};
-          headers.forEach((h, i) => {
-            obj[h] = values[i];
-          });
-          return obj;
+        const { data: sessionData } = await supabase.auth.getSession();
+        const token = sessionData?.session?.access_token;
+        
+        const response = await supabase.functions.invoke('bulk-import-agents', {
+          body: { csvData: jsonData },
+          headers: token ? { Authorization: `Bearer ${token}` } : undefined
         });
-      } catch {
-        toast.error('Could not parse data. Please use JSON array or CSV format.');
+
+        if (response.error) {
+          throw new Error(response.error.message || 'Bulk import failed');
+        }
+
+        const result = response.data;
+        setResults({
+          success: result.totalInserted || 0,
+          failed: result.totalErrors || 0,
+          errors: result.errors || []
+        });
+        setShowResults(true);
+        setImporting(false);
+
+        if (result.totalInserted > 0) {
+          audioEngine.playSuccess();
+          toast.success(`Imported ${result.totalInserted} agents`);
+        }
+        if (result.totalErrors > 0) {
+          audioEngine.playAlert();
+          toast.error(`${result.totalErrors} agents failed to import`);
+        }
+        return;
+      } catch (err) {
+        console.error('Bulk import error:', err);
+        toast.error(`Bulk import failed: ${err instanceof Error ? err.message : 'Unknown error'}`);
         setImporting(false);
         return;
       }
+    }
+
+    // Fallback to individual inserts for small JSON datasets
+    let agents: ImportAgent[] = [];
+    
+    try {
+      const parsed = JSON.parse(jsonData);
+      agents = Array.isArray(parsed) ? parsed : [parsed];
+    } catch {
+      toast.error('Could not parse JSON data');
+      setImporting(false);
+      return;
     }
 
     const results = { success: 0, failed: 0, errors: [] as string[] };
