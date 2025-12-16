@@ -13,7 +13,8 @@ import {
   Hexagon,
   LogIn,
   LogOut,
-  User as UserIcon
+  User as UserIcon,
+  Download
 } from 'lucide-react';
 
 interface HeaderProps {
@@ -85,6 +86,14 @@ export default function Header({ onToggleAudio, audioEnabled, user, onSignOut }:
           title={audioEnabled ? 'Mute audio' : 'Enable audio'}
         >
           {audioEnabled ? <Volume2 size={18} /> : <VolumeX size={18} />}
+        </button>
+        
+        <button
+          onClick={() => navigate('/import')}
+          className="p-2 text-muted-foreground hover:text-foreground transition-colors"
+          title="Import Agents"
+        >
+          <Download size={18} />
         </button>
         
         <button
