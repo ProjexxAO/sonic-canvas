@@ -1,6 +1,7 @@
-// Atlas Sonic OS - Agent Grid Component
+// Atlas Sonic OS - Agent Grid Component (Virtualized for large datasets)
 
-import { useState } from 'react';
+import { useState, useRef } from 'react';
+import { useVirtualizer } from '@tanstack/react-virtual';
 import { SonicAgent, AgentSector } from '@/lib/agentTypes';
 import { audioEngine } from '@/lib/audioEngine';
 import { 
@@ -187,16 +188,28 @@ export default function AgentGrid({
   onDeleteAgent,
   onRunAgent 
 }: AgentGridProps) {
+  const parentRef = useRef<HTMLDivElement>(null);
+  
+  // Calculate rows (2 cards per row)
+  const rowCount = Math.ceil(agents.length / 2);
+  
+  const virtualizer = useVirtualizer({
+    count: rowCount,
+    getScrollElement: () => parentRef.current,
+    estimateSize: () => 180, // Estimated row height
+    overscan: 5,
+  });
+
   return (
     <div className="h-full flex flex-col">
       {/* Header */}
       <div className="flex items-center justify-between mb-4 px-1">
         <h3 className="font-orbitron text-sm text-primary text-glow-cyan">AGENT NETWORK</h3>
-        <span className="text-xs text-muted-foreground">{agents.length} NODES</span>
+        <span className="text-xs text-muted-foreground">{agents.length.toLocaleString()} NODES</span>
       </div>
 
-      {/* Grid */}
-      <div className="flex-1 overflow-auto">
+      {/* Virtualized Grid */}
+      <div ref={parentRef} className="flex-1 overflow-auto">
         {agents.length === 0 ? (
           <div className="h-full flex items-center justify-center">
             <div className="text-center text-muted-foreground">
@@ -206,17 +219,52 @@ export default function AgentGrid({
             </div>
           </div>
         ) : (
-          <div className="grid grid-cols-2 gap-3">
-            {agents.map((agent) => (
-              <AgentCard
-                key={agent.id}
-                agent={agent}
-                isSelected={selectedAgent?.id === agent.id}
-                onClick={() => onSelectAgent(agent)}
-                onDelete={() => onDeleteAgent(agent.id)}
-                onRun={() => onRunAgent(agent)}
-              />
-            ))}
+          <div
+            style={{
+              height: `${virtualizer.getTotalSize()}px`,
+              width: '100%',
+              position: 'relative',
+            }}
+          >
+            {virtualizer.getVirtualItems().map((virtualRow) => {
+              const rowIndex = virtualRow.index;
+              const agent1 = agents[rowIndex * 2];
+              const agent2 = agents[rowIndex * 2 + 1];
+              
+              return (
+                <div
+                  key={virtualRow.key}
+                  style={{
+                    position: 'absolute',
+                    top: 0,
+                    left: 0,
+                    width: '100%',
+                    height: `${virtualRow.size}px`,
+                    transform: `translateY(${virtualRow.start}px)`,
+                  }}
+                  className="grid grid-cols-2 gap-3 pb-3"
+                >
+                  {agent1 && (
+                    <AgentCard
+                      agent={agent1}
+                      isSelected={selectedAgent?.id === agent1.id}
+                      onClick={() => onSelectAgent(agent1)}
+                      onDelete={() => onDeleteAgent(agent1.id)}
+                      onRun={() => onRunAgent(agent1)}
+                    />
+                  )}
+                  {agent2 && (
+                    <AgentCard
+                      agent={agent2}
+                      isSelected={selectedAgent?.id === agent2.id}
+                      onClick={() => onSelectAgent(agent2)}
+                      onDelete={() => onDeleteAgent(agent2.id)}
+                      onRun={() => onRunAgent(agent2)}
+                    />
+                  )}
+                </div>
+              );
+            })}
           </div>
         )}
       </div>
