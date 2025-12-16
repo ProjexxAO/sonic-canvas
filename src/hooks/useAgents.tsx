@@ -38,7 +38,7 @@ export function useAgents() {
   const [agents, setAgents] = useState<SonicAgent[]>([]);
   const [loading, setLoading] = useState(true);
 
-  // Fetch agents from database
+  // Fetch agents from database with pagination for large datasets
   const fetchAgents = useCallback(async () => {
     if (!user) {
       setAgents([]);
@@ -47,15 +47,37 @@ export function useAgents() {
     }
 
     try {
-      const { data, error } = await supabase
+      // First get total count
+      const { count } = await supabase
         .from('sonic_agents')
-        .select('*')
-        .eq('user_id', user.id)
-        .order('created_at', { ascending: false });
+        .select('*', { count: 'exact', head: true })
+        .eq('user_id', user.id);
 
-      if (error) throw error;
+      const totalCount = count || 0;
+      const batchSize = 1000;
+      const allAgents: SonicAgent[] = [];
+
+      // Fetch in batches of 1000
+      for (let offset = 0; offset < totalCount; offset += batchSize) {
+        const { data, error } = await supabase
+          .from('sonic_agents')
+          .select('*')
+          .eq('user_id', user.id)
+          .order('created_at', { ascending: false })
+          .range(offset, offset + batchSize - 1);
+
+        if (error) throw error;
+        if (data) {
+          allAgents.push(...data.map(mapDbToAgent));
+        }
+        
+        // Update progress for large datasets
+        if (totalCount > 1000) {
+          setAgents([...allAgents]); // Show progress
+        }
+      }
       
-      setAgents(data?.map(mapDbToAgent) || []);
+      setAgents(allAgents);
     } catch (error) {
       console.error('Error fetching agents:', error);
       toast.error('Failed to load agents');
