@@ -1,11 +1,11 @@
 // Atlas Sonic OS - Import Agents Page
 
-import { useState } from 'react';
+import { useState, useRef } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { useAuth } from '@/hooks/useAuth';
 import { supabase } from '@/integrations/supabase/client';
 import { audioEngine } from '@/lib/audioEngine';
-import { Hexagon, Radio, Upload, ArrowLeft, Loader2, CheckCircle, AlertCircle } from 'lucide-react';
+import { Hexagon, Radio, Upload, ArrowLeft, Loader2, CheckCircle, AlertCircle, FileUp } from 'lucide-react';
 import { toast } from 'sonner';
 
 interface ImportAgent {
@@ -30,6 +30,24 @@ export default function ImportAgents() {
   const [importing, setImporting] = useState(false);
   const [results, setResults] = useState<{ success: number; failed: number; errors: string[] }>({ success: 0, failed: 0, errors: [] });
   const [showResults, setShowResults] = useState(false);
+  const fileInputRef = useRef<HTMLInputElement>(null);
+
+  const handleFileUpload = (event: React.ChangeEvent<HTMLInputElement>) => {
+    const file = event.target.files?.[0];
+    if (!file) return;
+
+    const reader = new FileReader();
+    reader.onload = (e) => {
+      const content = e.target?.result as string;
+      setJsonData(content);
+      toast.success(`Loaded ${file.name}`);
+      audioEngine.playClick();
+    };
+    reader.onerror = () => {
+      toast.error('Failed to read file');
+    };
+    reader.readAsText(file);
+  };
 
   const mapSectorToEnum = (sector: string | undefined): string => {
     if (!sector) return 'DATA';
@@ -233,6 +251,39 @@ export default function ImportAgents() {
         {/* Data input */}
         <div className="hud-panel p-6 mb-6">
           <h2 className="font-orbitron text-sm text-secondary mb-4">AGENT DATA</h2>
+          
+          {/* File upload */}
+          <div className="mb-4">
+            <input
+              type="file"
+              ref={fileInputRef}
+              onChange={handleFileUpload}
+              accept=".json,.csv,.txt"
+              className="hidden"
+            />
+            <button
+              onClick={() => fileInputRef.current?.click()}
+              className="w-full border-2 border-dashed border-border hover:border-primary/50 rounded-lg p-6 transition-colors group"
+            >
+              <div className="flex flex-col items-center gap-2">
+                <FileUp size={32} className="text-muted-foreground group-hover:text-primary transition-colors" />
+                <span className="text-sm text-muted-foreground group-hover:text-foreground transition-colors">
+                  Click to upload JSON or CSV file
+                </span>
+                <span className="text-xs text-muted-foreground/60">
+                  Supports .json, .csv, .txt
+                </span>
+              </div>
+            </button>
+          </div>
+
+          <div className="relative mb-4">
+            <div className="absolute inset-x-0 top-1/2 -translate-y-1/2 h-px bg-border" />
+            <span className="relative bg-card px-3 text-xs text-muted-foreground left-1/2 -translate-x-1/2 inline-block">
+              OR PASTE DATA
+            </span>
+          </div>
+
           <textarea
             value={jsonData}
             onChange={(e) => setJsonData(e.target.value)}
