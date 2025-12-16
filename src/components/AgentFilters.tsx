@@ -1,7 +1,8 @@
 // Atlas Sonic OS - Agent Filters Component
 
+import { useState } from 'react';
 import { AgentSector, AgentStatus, AgentClass, SonicAgent } from '@/lib/agentTypes';
-import { Filter, X, Download } from 'lucide-react';
+import { Filter, X, Download, Database } from 'lucide-react';
 import {
   Select,
   SelectContent,
@@ -11,6 +12,7 @@ import {
 } from '@/components/ui/select';
 import { Button } from '@/components/ui/button';
 import { toast } from 'sonner';
+import { supabase } from '@/integrations/supabase/client';
 
 const SECTORS: AgentSector[] = ['FINANCE', 'BIOTECH', 'SECURITY', 'DATA', 'CREATIVE', 'UTILITY'];
 const STATUSES: AgentStatus[] = ['IDLE', 'ACTIVE', 'PROCESSING', 'ERROR', 'DORMANT'];
@@ -46,59 +48,49 @@ export default function AgentFilters({
   filteredCount,
   agents,
 }: AgentFiltersProps) {
+  const [exporting, setExporting] = useState(false);
   const hasFilters = filters.sector !== 'ALL' || filters.status !== 'ALL' || filters.class !== 'ALL';
 
   const clearFilters = () => {
     onFiltersChange({ sector: 'ALL', status: 'ALL', class: 'ALL' });
   };
 
-  const exportToCSV = () => {
-    if (agents.length === 0) {
-      toast.error('No agents to export');
-      return;
+  const exportFullDatabase = async () => {
+    setExporting(true);
+    toast.info('Exporting all agents from database... This may take a moment.');
+
+    try {
+      const { data: { session } } = await supabase.auth.getSession();
+      if (!session) {
+        toast.error('Please login to export');
+        return;
+      }
+
+      const response = await supabase.functions.invoke('export-agents', {});
+      
+      if (response.error) {
+        throw new Error(response.error.message);
+      }
+
+      // The response data is the CSV content
+      const csvContent = response.data;
+      const blob = new Blob([csvContent], { type: 'text/csv;charset=utf-8;' });
+      const url = URL.createObjectURL(blob);
+      const link = document.createElement('a');
+      link.href = url;
+      link.download = `sonic_agents_full_export_${new Date().toISOString().split('T')[0]}.csv`;
+      document.body.appendChild(link);
+      link.click();
+      document.body.removeChild(link);
+      URL.revokeObjectURL(url);
+
+      toast.success('Full database export complete!');
+    } catch (error) {
+      console.error('Export error:', error);
+      toast.error(`Export failed: ${error instanceof Error ? error.message : 'Unknown error'}`);
+    } finally {
+      setExporting(false);
     }
-
-    const headers = [
-      'id', 'name', 'designation', 'sector', 'status', 'class', 'waveform',
-      'frequency', 'modulation', 'density', 'color', 'cycles', 'efficiency',
-      'stability', 'created_at', 'last_active', 'code_artifact'
-    ];
-
-    const csvRows = [
-      headers.join(','),
-      ...agents.map(agent => [
-        agent.id,
-        `"${agent.name.replace(/"/g, '""')}"`,
-        `"${agent.designation.replace(/"/g, '""')}"`,
-        agent.sector,
-        agent.status,
-        agent.class,
-        agent.sonicDNA.waveform,
-        agent.sonicDNA.frequency,
-        agent.sonicDNA.modulation,
-        agent.sonicDNA.density,
-        agent.sonicDNA.color,
-        agent.metrics.cycles,
-        agent.metrics.efficiency,
-        agent.metrics.stability,
-        agent.createdAt,
-        agent.lastActive,
-        agent.codeArtifact ? `"${agent.codeArtifact.replace(/"/g, '""').replace(/\n/g, '\\n')}"` : ''
-      ].join(','))
-    ];
-
-    const csvContent = csvRows.join('\n');
-    const blob = new Blob([csvContent], { type: 'text/csv;charset=utf-8;' });
-    const url = URL.createObjectURL(blob);
-    const link = document.createElement('a');
-    link.href = url;
-    link.download = `sonic_agents_${new Date().toISOString().split('T')[0]}.csv`;
-    document.body.appendChild(link);
-    link.click();
-    document.body.removeChild(link);
-    URL.revokeObjectURL(url);
-    
-    toast.success(`Exported ${agents.length.toLocaleString()} agents to CSV`);
   };
 
   return (
@@ -123,10 +115,11 @@ export default function AgentFilters({
           variant="ghost"
           size="sm"
           className="h-5 px-1.5 text-[10px] text-primary hover:text-primary/80"
-          onClick={exportToCSV}
-          title="Export to CSV"
+          onClick={exportFullDatabase}
+          disabled={exporting}
+          title="Export all agents from database"
         >
-          <Download size={10} className="mr-0.5" /> Export
+          <Database size={10} className="mr-0.5" /> {exporting ? 'Exporting...' : 'Export All'}
         </Button>
       </div>
 
