@@ -28,6 +28,7 @@ export default function ImportAgents() {
   const { user, loading: authLoading } = useAuth();
   const [jsonData, setJsonData] = useState('');
   const [googleSheetsUrl, setGoogleSheetsUrl] = useState('');
+  const [selectedFile, setSelectedFile] = useState<File | null>(null);
   const [importing, setImporting] = useState(false);
   const [previewing, setPreviewing] = useState(false);
   const [previewData, setPreviewData] = useState<{ headers: string[]; rows: string[][]; totalRows: number } | null>(null);
@@ -39,17 +40,31 @@ export default function ImportAgents() {
     const file = event.target.files?.[0];
     if (!file) return;
 
-    const reader = new FileReader();
-    reader.onload = (e) => {
-      const content = e.target?.result as string;
-      setJsonData(content);
-      toast.success(`Loaded ${file.name}`);
-      audioEngine.playClick();
-    };
-    reader.onerror = () => {
-      toast.error('Failed to read file');
-    };
-    reader.readAsText(file);
+    setSelectedFile(file);
+    setPreviewData(null);
+    setShowResults(false);
+
+    // For large files, don't load everything into memory/textarea.
+    // Keep file reference and stream it during preview/import.
+    const SMALL_FILE_THRESHOLD_BYTES = 2 * 1024 * 1024;
+    if (file.size <= SMALL_FILE_THRESHOLD_BYTES) {
+      const reader = new FileReader();
+      reader.onload = (e) => {
+        const content = e.target?.result as string;
+        setJsonData(content);
+        toast.success(`Loaded ${file.name}`);
+        audioEngine.playClick();
+      };
+      reader.onerror = () => {
+        toast.error('Failed to read file');
+      };
+      reader.readAsText(file);
+      return;
+    }
+
+    setJsonData('');
+    toast.success(`Selected ${file.name} (${Math.round(file.size / (1024 * 1024))}MB)`);
+    audioEngine.playClick();
   };
 
   const mapSectorToEnum = (sector: string | undefined): string => {
@@ -111,8 +126,9 @@ export default function ImportAgents() {
   const handlePreview = async () => {
     const hasUrl = googleSheetsUrl.trim();
     const hasData = jsonData.trim();
+    const hasFile = !!selectedFile;
 
-    if (!hasUrl && !hasData) {
+    if (!hasUrl && !hasData && !hasFile) {
       toast.error('Please provide data to preview');
       return;
     }
@@ -124,13 +140,12 @@ export default function ImportAgents() {
     try {
       let csvText = '';
 
-      // Fetch from Google Sheets URL
+      // Fetch from Google Sheets URL (only works for public/link-shared sheets)
       if (hasUrl) {
         toast.info('Fetching preview from Google Sheets...');
         const { data: sessionData } = await supabase.auth.getSession();
         const token = sessionData?.session?.access_token;
 
-        // Use edge function to fetch (avoids CORS)
         const response = await supabase.functions.invoke('bulk-import-agents', {
           body: { googleSheetsUrl: googleSheetsUrl.trim(), previewOnly: true },
           headers: token ? { Authorization: `Bearer ${token}` } : undefined
@@ -142,12 +157,30 @@ export default function ImportAgents() {
 
         if (response.data?.preview) {
           setPreviewData(response.data.preview);
-          setPreviewing(false);
+          toast.success('Preview loaded');
           return;
         }
       }
 
-      // Parse local data
+      // Preview from uploaded file (stream a small slice)
+      if (hasFile && selectedFile) {
+        const head = await selectedFile.slice(0, 256 * 1024).text();
+        const lines = head.split('\n');
+        if (lines.length < 2) throw new Error('File has no data rows');
+
+        const headers = parseCSVLine(lines[0]).map(h => h.trim());
+        const rows: string[][] = [];
+
+        for (let i = 1; i < Math.min(lines.length, 11); i++) {
+          if (lines[i].trim()) rows.push(parseCSVLine(lines[i]));
+        }
+
+        setPreviewData({ headers, rows, totalRows: -1 });
+        toast.success('Preview loaded (first rows)');
+        return;
+      }
+
+      // Parse pasted local data
       csvText = hasData;
       const firstLine = csvText.trim().split('\n')[0];
       const isCSV = firstLine.includes(',') && !firstLine.startsWith('[') && !firstLine.startsWith('{');
@@ -169,7 +202,6 @@ export default function ImportAgents() {
           totalRows: lines.length - 1
         });
       } else {
-        // JSON data
         const parsed = JSON.parse(csvText);
         const agents: ImportAgent[] = Array.isArray(parsed) ? parsed : [parsed];
         const previewAgents = agents.slice(0, 10);
@@ -182,11 +214,7 @@ export default function ImportAgents() {
           agent.class || 'BASIC'
         ]);
 
-        setPreviewData({
-          headers,
-          rows,
-          totalRows: agents.length
-        });
+        setPreviewData({ headers, rows, totalRows: agents.length });
       }
 
       toast.success('Preview loaded');
@@ -207,15 +235,164 @@ export default function ImportAgents() {
 
     const hasUrl = googleSheetsUrl.trim();
     const hasData = jsonData.trim();
+    const hasFile = !!selectedFile;
 
-    if (!hasUrl && !hasData) {
-      toast.error('Please provide a Google Sheets URL or paste your agent data');
+    if (!hasUrl && !hasData && !hasFile) {
+      toast.error('Please provide a Google Sheets URL, upload a file, or paste your agent data');
       return;
     }
 
     setImporting(true);
     setShowResults(false);
     audioEngine.playClick();
+
+    // Large CSV file import (stream file  send batches)
+    if (hasFile && selectedFile && selectedFile.name.toLowerCase().endsWith('.csv')) {
+      toast.info(`Streaming ${selectedFile.name} in batches...`);
+
+      try {
+        const { data: sessionData } = await supabase.auth.getSession();
+        const token = sessionData?.session?.access_token;
+
+        const BATCH_SIZE = 500;
+        let totalInserted = 0;
+        let totalErrors = 0;
+        const errors: string[] = [];
+        let batchIndex = 0;
+
+        let headers: string[] | null = null;
+        let batch: any[] = [];
+
+        const flushBatch = async () => {
+          if (batch.length === 0) return;
+          batchIndex += 1;
+
+          const response = await supabase.functions.invoke('bulk-import-agents', {
+            body: { agents: batch },
+            headers: token ? { Authorization: `Bearer ${token}` } : undefined,
+          });
+
+          if (response.error) {
+            throw new Error(response.error.message || 'Batch import failed');
+          }
+
+          const result = response.data;
+          totalInserted += result.totalInserted || 0;
+          totalErrors += result.totalErrors || 0;
+          if (Array.isArray(result.errors)) errors.push(...result.errors);
+
+          batch = [];
+          toast.message(`Imported batch ${batchIndex} (${totalInserted} inserted)`);
+        };
+
+        const reader = selectedFile.stream().getReader();
+        const decoder = new TextDecoder();
+        let buffer = '';
+
+        while (true) {
+          // eslint-disable-next-line no-await-in-loop
+          const { value, done } = await reader.read();
+          if (done) break;
+
+          buffer += decoder.decode(value, { stream: true });
+          const lines = buffer.split('\n');
+          buffer = lines.pop() || '';
+
+          for (const rawLine of lines) {
+            const line = rawLine.replace(/\r$/, '');
+            if (!line.trim()) continue;
+
+            if (!headers) {
+              headers = parseCSVLine(line).map(h => h.trim().toLowerCase().replace(/['"]/g, ''));
+              continue;
+            }
+
+            const values = parseCSVLine(line);
+            const row: Record<string, string> = {};
+            headers.forEach((header, index) => {
+              row[header] = values[index] || '';
+            });
+
+            batch.push({
+              id: row.id || undefined,
+              name: row.name || 'Imported Agent',
+              designation: row.designation || `IMP-${Math.floor(Math.random() * 10000).toString().padStart(4, '0')}`,
+              sector: row.sector || 'DATA',
+              status: row.status || 'IDLE',
+              class: row.class || 'BASIC',
+              waveform: row.waveform || 'sine',
+              frequency: parseFloat(row.frequency) || 440,
+              modulation: parseFloat(row.modulation) || 5,
+              density: parseFloat(row.density) || 50,
+              color: row.color || '#00ffd5',
+              cycles: parseInt(row.cycles) || 0,
+              efficiency: parseFloat(row.efficiency) || 75,
+              stability: parseFloat(row.stability) || 85,
+              code_artifact: row.code_artifact || undefined,
+            });
+
+            if (batch.length >= BATCH_SIZE) {
+              // eslint-disable-next-line no-await-in-loop
+              await flushBatch();
+            }
+          }
+        }
+
+        // Handle any remaining buffer line
+        if (!headers && buffer.trim()) {
+          headers = parseCSVLine(buffer).map(h => h.trim().toLowerCase().replace(/['"]/g, ''));
+        } else if (headers && buffer.trim()) {
+          const values = parseCSVLine(buffer.replace(/\r$/, ''));
+          const row: Record<string, string> = {};
+          headers.forEach((header, index) => {
+            row[header] = values[index] || '';
+          });
+          batch.push({
+            id: row.id || undefined,
+            name: row.name || 'Imported Agent',
+            designation: row.designation || `IMP-${Math.floor(Math.random() * 10000).toString().padStart(4, '0')}`,
+            sector: row.sector || 'DATA',
+            status: row.status || 'IDLE',
+            class: row.class || 'BASIC',
+            waveform: row.waveform || 'sine',
+            frequency: parseFloat(row.frequency) || 440,
+            modulation: parseFloat(row.modulation) || 5,
+            density: parseFloat(row.density) || 50,
+            color: row.color || '#00ffd5',
+            cycles: parseInt(row.cycles) || 0,
+            efficiency: parseFloat(row.efficiency) || 75,
+            stability: parseFloat(row.stability) || 85,
+            code_artifact: row.code_artifact || undefined,
+          });
+        }
+
+        await flushBatch();
+
+        setResults({
+          success: totalInserted,
+          failed: totalErrors,
+          errors: errors.slice(0, 10),
+        });
+        setShowResults(true);
+        setImporting(false);
+
+        if (totalInserted > 0) {
+          audioEngine.playSuccess();
+          toast.success(`Imported ${totalInserted} agents`);
+        }
+        if (totalErrors > 0) {
+          audioEngine.playAlert();
+          toast.error(`${totalErrors} agents failed to import`);
+        }
+
+        return;
+      } catch (err) {
+        console.error('File import error:', err);
+        toast.error(`File import failed: ${err instanceof Error ? err.message : 'Unknown error'}`);
+        setImporting(false);
+        return;
+      }
+    }
 
     // Google Sheets URL import (server-side fetch)
     if (hasUrl) {
@@ -680,7 +857,7 @@ Security Scanner,SECURITY,ACTIVE'
         <div className="flex gap-4">
           <button
             onClick={handlePreview}
-            disabled={previewing || importing || (!jsonData.trim() && !googleSheetsUrl.trim())}
+            disabled={previewing || importing || (!jsonData.trim() && !googleSheetsUrl.trim() && !selectedFile)}
             className="px-6 py-3 border border-border text-muted-foreground hover:text-foreground hover:border-secondary transition-colors rounded flex items-center justify-center gap-2 disabled:opacity-50"
           >
             {previewing ? (
@@ -694,7 +871,7 @@ Security Scanner,SECURITY,ACTIVE'
           </button>
           <button
             onClick={handleImport}
-            disabled={importing || previewing || (!jsonData.trim() && !googleSheetsUrl.trim())}
+            disabled={importing || previewing || (!jsonData.trim() && !googleSheetsUrl.trim() && !selectedFile)}
             className="flex-1 cyber-btn flex items-center justify-center gap-2 py-3 disabled:opacity-50"
           >
             {importing ? (
