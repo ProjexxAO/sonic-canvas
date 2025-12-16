@@ -34,6 +34,26 @@ const statusColors: Record<string, string> = {
   DORMANT: 'bg-muted',
 };
 
+// Distinctive colors for each sector
+const sectorColors: Record<AgentSector, string> = {
+  FINANCE: '#00ff88',      // Bright green
+  BIOTECH: '#ff6b9d',      // Pink
+  SECURITY: '#ff4444',     // Red
+  DATA: '#00d4ff',         // Cyan
+  CREATIVE: '#a855f7',     // Purple
+  UTILITY: '#ffa500',      // Orange
+};
+
+// Card shape styles per sector
+const sectorStyles: Record<AgentSector, string> = {
+  FINANCE: 'rounded-none border-l-4',           // Sharp, angular
+  BIOTECH: 'rounded-2xl',                       // Organic, rounded
+  SECURITY: 'rounded clip-corner',              // Military style
+  DATA: 'rounded-lg border-t-4',                // Database style
+  CREATIVE: 'rounded-xl skew-effect',           // Creative flair
+  UTILITY: 'rounded border-dashed border-2',    // Utility/tool style
+};
+
 interface AgentCardProps {
   agent: SonicAgent;
   isSelected: boolean;
@@ -45,6 +65,8 @@ interface AgentCardProps {
 function AgentCard({ agent, isSelected, onClick, onDelete, onRun }: AgentCardProps) {
   const [showMenu, setShowMenu] = useState(false);
   const Icon = sectorIcons[agent.sector];
+  const sectorColor = sectorColors[agent.sector] || agent.sonicDNA.color;
+  const sectorStyle = sectorStyles[agent.sector] || 'rounded';
 
   const handleClick = () => {
     audioEngine.playClick();
@@ -59,8 +81,13 @@ function AgentCard({ agent, isSelected, onClick, onDelete, onRun }: AgentCardPro
     <div
       className={`
         relative p-4 hud-panel cursor-pointer transition-all duration-300
-        ${isSelected ? 'border-primary neon-border' : 'border-border hover:border-primary/50'}
+        ${sectorStyle}
+        ${isSelected ? 'neon-border' : 'hover:border-primary/50'}
       `}
+      style={{
+        borderColor: isSelected ? sectorColor : `${sectorColor}30`,
+        boxShadow: isSelected ? `0 0 15px ${sectorColor}40` : undefined,
+      }}
       onClick={handleClick}
       onMouseEnter={handleMouseEnter}
     >
@@ -93,15 +120,15 @@ function AgentCard({ agent, isSelected, onClick, onDelete, onRun }: AgentCardPro
         </div>
       )}
 
-      {/* Agent icon */}
+      {/* Agent icon with sector color */}
       <div 
         className="w-10 h-10 rounded flex items-center justify-center mb-3"
         style={{ 
-          backgroundColor: `${agent.sonicDNA.color}20`,
-          boxShadow: `0 0 10px ${agent.sonicDNA.color}40`
+          backgroundColor: `${sectorColor}20`,
+          boxShadow: `0 0 10px ${sectorColor}40`
         }}
       >
-        <Icon size={20} style={{ color: agent.sonicDNA.color }} />
+        <Icon size={20} style={{ color: sectorColor }} />
       </div>
 
       {/* Agent info */}
@@ -119,25 +146,25 @@ function AgentCard({ agent, isSelected, onClick, onDelete, onRun }: AgentCardPro
             className="h-full transition-all"
             style={{ 
               width: `${agent.metrics.efficiency}%`,
-              backgroundColor: agent.sonicDNA.color
+              backgroundColor: sectorColor
             }}
           />
         </div>
       </div>
 
-      {/* Class badge */}
+      {/* Class badge with sector color */}
       <div className="mt-3 flex items-center justify-between">
-        <span className="text-[10px] px-2 py-0.5 bg-muted rounded" style={{ color: agent.sonicDNA.color }}>
+        <span className="text-[10px] px-2 py-0.5 bg-muted rounded" style={{ color: sectorColor }}>
           {agent.class}
         </span>
-        <span className="text-[10px] text-muted-foreground">
+        <span className="text-[10px]" style={{ color: sectorColor }}>
           {agent.sector}
         </span>
       </div>
 
       {/* Linked indicator */}
       {agent.linkedAgents.length > 0 && (
-        <div className="absolute bottom-2 right-2 text-primary">
+        <div className="absolute bottom-2 right-2" style={{ color: sectorColor }}>
           <Link size={12} />
         </div>
       )}
