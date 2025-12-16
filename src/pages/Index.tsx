@@ -284,6 +284,7 @@ export default function Index() {
                 onFiltersChange={setFilters}
                 totalCount={agents.length}
                 filteredCount={filteredAgents.length}
+                agents={filteredAgents}
               />
               <div className="flex-1 overflow-auto">
                 <AgentGrid
