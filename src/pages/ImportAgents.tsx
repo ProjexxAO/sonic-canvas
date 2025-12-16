@@ -220,7 +220,7 @@ export default function ImportAgents() {
           <h2 className="font-orbitron text-sm text-primary mb-4">INSTRUCTIONS</h2>
           <ol className="space-y-2 text-sm text-muted-foreground">
             <li>1. Go to your external Supabase project's SQL Editor</li>
-            <li>2. Run: <code className="text-primary bg-muted px-2 py-0.5 rounded">SELECT * FROM your_agents_table</code></li>
+            <li>2. Run: <code className="text-primary bg-muted px-2 py-0.5 rounded">SELECT * FROM sonic_nodes</code></li>
             <li>3. Export as JSON or copy the results</li>
             <li>4. Paste the data below</li>
           </ol>
