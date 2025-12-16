@@ -5,7 +5,7 @@ import { useNavigate } from 'react-router-dom';
 import { useAuth } from '@/hooks/useAuth';
 import { supabase } from '@/integrations/supabase/client';
 import { audioEngine } from '@/lib/audioEngine';
-import { Hexagon, Radio, Upload, ArrowLeft, Loader2, CheckCircle, AlertCircle, FileUp } from 'lucide-react';
+import { Hexagon, Radio, Upload, ArrowLeft, Loader2, CheckCircle, AlertCircle, FileUp, Eye } from 'lucide-react';
 import { toast } from 'sonner';
 
 interface ImportAgent {
@@ -29,6 +29,8 @@ export default function ImportAgents() {
   const [jsonData, setJsonData] = useState('');
   const [googleSheetsUrl, setGoogleSheetsUrl] = useState('');
   const [importing, setImporting] = useState(false);
+  const [previewing, setPreviewing] = useState(false);
+  const [previewData, setPreviewData] = useState<{ headers: string[]; rows: string[][]; totalRows: number } | null>(null);
   const [results, setResults] = useState<{ success: number; failed: number; errors: string[] }>({ success: 0, failed: 0, errors: [] });
   const [showResults, setShowResults] = useState(false);
   const fileInputRef = useRef<HTMLInputElement>(null);
@@ -104,6 +106,96 @@ export default function ImportAgents() {
     values.push(current.trim());
 
     return values.map(v => v.replace(/^"|"$/g, ''));
+  };
+
+  const handlePreview = async () => {
+    const hasUrl = googleSheetsUrl.trim();
+    const hasData = jsonData.trim();
+
+    if (!hasUrl && !hasData) {
+      toast.error('Please provide data to preview');
+      return;
+    }
+
+    setPreviewing(true);
+    setPreviewData(null);
+    audioEngine.playClick();
+
+    try {
+      let csvText = '';
+
+      // Fetch from Google Sheets URL
+      if (hasUrl) {
+        toast.info('Fetching preview from Google Sheets...');
+        const { data: sessionData } = await supabase.auth.getSession();
+        const token = sessionData?.session?.access_token;
+
+        // Use edge function to fetch (avoids CORS)
+        const response = await supabase.functions.invoke('bulk-import-agents', {
+          body: { googleSheetsUrl: googleSheetsUrl.trim(), previewOnly: true },
+          headers: token ? { Authorization: `Bearer ${token}` } : undefined
+        });
+
+        if (response.error) {
+          throw new Error(response.error.message || 'Failed to fetch preview');
+        }
+
+        if (response.data?.preview) {
+          setPreviewData(response.data.preview);
+          setPreviewing(false);
+          return;
+        }
+      }
+
+      // Parse local data
+      csvText = hasData;
+      const firstLine = csvText.trim().split('\n')[0];
+      const isCSV = firstLine.includes(',') && !firstLine.startsWith('[') && !firstLine.startsWith('{');
+
+      if (isCSV) {
+        const lines = csvText.trim().split('\n');
+        const headers = parseCSVLine(lines[0]).map(h => h.trim());
+        const rows: string[][] = [];
+
+        for (let i = 1; i < Math.min(lines.length, 11); i++) {
+          if (lines[i].trim()) {
+            rows.push(parseCSVLine(lines[i]));
+          }
+        }
+
+        setPreviewData({
+          headers,
+          rows,
+          totalRows: lines.length - 1
+        });
+      } else {
+        // JSON data
+        const parsed = JSON.parse(csvText);
+        const agents: ImportAgent[] = Array.isArray(parsed) ? parsed : [parsed];
+        const previewAgents = agents.slice(0, 10);
+
+        const headers = ['name', 'sector', 'status', 'class'];
+        const rows = previewAgents.map(agent => [
+          agent.name || agent.agent_name || agent.title || '-',
+          agent.sector || agent.category || agent.type || '-',
+          agent.status || '-',
+          agent.class || 'BASIC'
+        ]);
+
+        setPreviewData({
+          headers,
+          rows,
+          totalRows: agents.length
+        });
+      }
+
+      toast.success('Preview loaded');
+    } catch (err) {
+      console.error('Preview error:', err);
+      toast.error(`Preview failed: ${err instanceof Error ? err.message : 'Unknown error'}`);
+    } finally {
+      setPreviewing(false);
+    }
   };
 
   const handleImport = async () => {
@@ -517,6 +609,44 @@ Security Scanner,SECURITY,ACTIVE'
           />
         </div>
 
+        {/* Preview */}
+        {previewData && (
+          <div className="hud-panel p-6 mb-6">
+            <h2 className="font-orbitron text-sm text-accent mb-4">
+              DATA PREVIEW <span className="text-muted-foreground font-normal">({previewData.rows.length} of {previewData.totalRows} rows)</span>
+            </h2>
+            <div className="overflow-x-auto">
+              <table className="w-full text-xs">
+                <thead>
+                  <tr className="border-b border-border">
+                    {previewData.headers.map((header, i) => (
+                      <th key={i} className="text-left p-2 text-primary font-orbitron whitespace-nowrap">
+                        {header}
+                      </th>
+                    ))}
+                  </tr>
+                </thead>
+                <tbody>
+                  {previewData.rows.map((row, rowIndex) => (
+                    <tr key={rowIndex} className="border-b border-border/50 hover:bg-muted/30">
+                      {row.map((cell, cellIndex) => (
+                        <td key={cellIndex} className="p-2 text-foreground max-w-[200px] truncate" title={cell}>
+                          {cell || '-'}
+                        </td>
+                      ))}
+                    </tr>
+                  ))}
+                </tbody>
+              </table>
+            </div>
+            {previewData.totalRows > 10 && (
+              <p className="text-xs text-muted-foreground mt-3">
+                Showing first 10 rows of {previewData.totalRows} total
+              </p>
+            )}
+          </div>
+        )}
+
         {/* Results */}
         {showResults && (
           <div className="hud-panel p-6 mb-6">
@@ -549,8 +679,22 @@ Security Scanner,SECURITY,ACTIVE'
         {/* Actions */}
         <div className="flex gap-4">
           <button
+            onClick={handlePreview}
+            disabled={previewing || importing || (!jsonData.trim() && !googleSheetsUrl.trim())}
+            className="px-6 py-3 border border-border text-muted-foreground hover:text-foreground hover:border-secondary transition-colors rounded flex items-center justify-center gap-2 disabled:opacity-50"
+          >
+            {previewing ? (
+              <Loader2 size={18} className="animate-spin" />
+            ) : (
+              <>
+                <Eye size={18} />
+                PREVIEW
+              </>
+            )}
+          </button>
+          <button
             onClick={handleImport}
-            disabled={importing || !jsonData.trim()}
+            disabled={importing || previewing || (!jsonData.trim() && !googleSheetsUrl.trim())}
             className="flex-1 cyber-btn flex items-center justify-center gap-2 py-3 disabled:opacity-50"
           >
             {importing ? (

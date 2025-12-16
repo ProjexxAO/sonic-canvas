@@ -134,6 +134,7 @@ Deno.serve(async (req) => {
     let csvData: string | undefined = body?.csvData
     const agentsFromClient: AgentRow[] | undefined = body?.agents
     const googleSheetsUrl: string | undefined = body?.googleSheetsUrl
+    const previewOnly: boolean = body?.previewOnly === true
 
     // Mode C: Fetch CSV from Google Sheets URL server-side
     if (googleSheetsUrl) {
@@ -164,6 +165,52 @@ Deno.serve(async (req) => {
           headers: { ...corsHeaders, 'Content-Type': 'application/json' }
         })
       }
+    }
+
+    // Preview mode: return first 10 rows without importing
+    if (previewOnly && csvData) {
+      const lines = csvData.trim().split('\n')
+      if (lines.length < 2) {
+        return new Response(JSON.stringify({ error: 'No data rows found' }), {
+          status: 400,
+          headers: { ...corsHeaders, 'Content-Type': 'application/json' }
+        })
+      }
+
+      const headers = lines[0].split(',').map(h => h.trim().replace(/['"]/g, ''))
+      const rows: string[][] = []
+
+      for (let i = 1; i < Math.min(lines.length, 11); i++) {
+        const line = lines[i]
+        if (!line.trim()) continue
+
+        const values: string[] = []
+        let current = ''
+        let inQuotes = false
+
+        for (const char of line) {
+          if (char === '"') {
+            inQuotes = !inQuotes
+          } else if (char === ',' && !inQuotes) {
+            values.push(current.trim())
+            current = ''
+          } else {
+            current += char
+          }
+        }
+        values.push(current.trim())
+        rows.push(values)
+      }
+
+      return new Response(JSON.stringify({
+        preview: {
+          headers,
+          rows,
+          totalRows: lines.length - 1
+        }
+      }), {
+        headers: { ...corsHeaders, 'Content-Type': 'application/json' }
+      })
     }
 
     // Mode A: client sends already-parsed agents (used to avoid huge payloads)
