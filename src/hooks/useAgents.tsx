@@ -47,36 +47,37 @@ export function useAgents() {
     }
 
     try {
-      // First get total count
-      const { count } = await supabase
-        .from('sonic_agents')
-        .select('*', { count: 'exact', head: true })
-        .eq('user_id', user.id);
-
-      const totalCount = count || 0;
       const batchSize = 1000;
       const allAgents: SonicAgent[] = [];
+      let hasMore = true;
+      let offset = 0;
 
-      // Fetch in batches of 1000
-      for (let offset = 0; offset < totalCount; offset += batchSize) {
+      // Fetch in batches until we get less than batchSize (end of data)
+      while (hasMore) {
         const { data, error } = await supabase
           .from('sonic_agents')
           .select('*')
           .eq('user_id', user.id)
           .order('created_at', { ascending: false })
+          .limit(batchSize)
           .range(offset, offset + batchSize - 1);
 
-        if (error) throw error;
-        if (data) {
-          allAgents.push(...data.map(mapDbToAgent));
+        if (error) {
+          console.error('Batch fetch error at offset', offset, error);
+          throw error;
         }
-        
-        // Update progress for large datasets
-        if (totalCount > 1000) {
+
+        if (data && data.length > 0) {
+          allAgents.push(...data.map(mapDbToAgent));
           setAgents([...allAgents]); // Show progress
+          offset += data.length;
+          hasMore = data.length === batchSize;
+        } else {
+          hasMore = false;
         }
       }
       
+      console.log(`Loaded ${allAgents.length} total agents`);
       setAgents(allAgents);
     } catch (error) {
       console.error('Error fetching agents:', error);
