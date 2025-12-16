@@ -1,6 +1,6 @@
 // Atlas Sonic OS - Main Application Page
 
-import { useState, useEffect, useCallback } from 'react';
+import { useState, useEffect, useCallback, useMemo } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { SonicAgent, AgentSector, SimulationOutput } from '@/lib/agentTypes';
 import { audioEngine } from '@/lib/audioEngine';
@@ -15,6 +15,7 @@ import HarmonicForge from '@/components/HarmonicForge';
 import CodeArtifact from '@/components/CodeArtifact';
 import WaveformDisplay from '@/components/WaveformDisplay';
 import BootScreen from '@/components/BootScreen';
+import AgentFilters, { AgentFiltersState } from '@/components/AgentFilters';
 import { toast } from 'sonner';
 import { Loader2 } from 'lucide-react';
 
@@ -29,6 +30,21 @@ export default function Index() {
   const [selectedAgent, setSelectedAgent] = useState<SonicAgent | null>(null);
   const [simulationOutput, setSimulationOutput] = useState<SimulationOutput[]>([]);
   const [isProcessing, setIsProcessing] = useState(false);
+  const [filters, setFilters] = useState<AgentFiltersState>({
+    sector: 'ALL',
+    status: 'ALL',
+    class: 'ALL',
+  });
+
+  // Filter agents based on selected filters
+  const filteredAgents = useMemo(() => {
+    return agents.filter((agent) => {
+      if (filters.sector !== 'ALL' && agent.sector !== filters.sector) return false;
+      if (filters.status !== 'ALL' && agent.status !== filters.status) return false;
+      if (filters.class !== 'ALL' && agent.class !== filters.class) return false;
+      return true;
+    });
+  }, [agents, filters]);
 
   // Handle boot complete
   const handleBootComplete = () => {
@@ -262,14 +278,22 @@ export default function Index() {
           {/* Top row - Agent Grid & Harmonic Forge */}
           <div className="flex-1 flex border-b border-border overflow-hidden">
             {/* Agent Grid */}
-            <div className="flex-1 p-4 border-r border-border overflow-auto">
-              <AgentGrid
-                agents={agents}
-                selectedAgent={selectedAgent}
-                onSelectAgent={setSelectedAgent}
-                onDeleteAgent={handleDeleteAgent}
-                onRunAgent={handleRunAgent}
+            <div className="flex-1 p-4 border-r border-border overflow-hidden flex flex-col">
+              <AgentFilters
+                filters={filters}
+                onFiltersChange={setFilters}
+                totalCount={agents.length}
+                filteredCount={filteredAgents.length}
               />
+              <div className="flex-1 overflow-auto">
+                <AgentGrid
+                  agents={filteredAgents}
+                  selectedAgent={selectedAgent}
+                  onSelectAgent={setSelectedAgent}
+                  onDeleteAgent={handleDeleteAgent}
+                  onRunAgent={handleRunAgent}
+                />
+              </div>
             </div>
             
             {/* Harmonic Forge */}
