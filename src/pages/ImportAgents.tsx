@@ -27,6 +27,7 @@ export default function ImportAgents() {
   const navigate = useNavigate();
   const { user, loading: authLoading } = useAuth();
   const [jsonData, setJsonData] = useState('');
+  const [googleSheetsUrl, setGoogleSheetsUrl] = useState('');
   const [importing, setImporting] = useState(false);
   const [results, setResults] = useState<{ success: number; failed: number; errors: string[] }>({ success: 0, failed: 0, errors: [] });
   const [showResults, setShowResults] = useState(false);
@@ -112,14 +113,60 @@ export default function ImportAgents() {
       return;
     }
 
-    if (!jsonData.trim()) {
-      toast.error('Please paste your agent data');
+    const hasUrl = googleSheetsUrl.trim();
+    const hasData = jsonData.trim();
+
+    if (!hasUrl && !hasData) {
+      toast.error('Please provide a Google Sheets URL or paste your agent data');
       return;
     }
 
     setImporting(true);
     setShowResults(false);
     audioEngine.playClick();
+
+    // Google Sheets URL import (server-side fetch)
+    if (hasUrl) {
+      toast.info('Fetching data from Google Sheets...');
+      
+      try {
+        const { data: sessionData } = await supabase.auth.getSession();
+        const token = sessionData?.session?.access_token;
+
+        const response = await supabase.functions.invoke('bulk-import-agents', {
+          body: { googleSheetsUrl: googleSheetsUrl.trim() },
+          headers: token ? { Authorization: `Bearer ${token}` } : undefined
+        });
+
+        if (response.error) {
+          throw new Error(response.error.message || 'Google Sheets import failed');
+        }
+
+        const result = response.data;
+        setResults({
+          success: result.totalInserted || 0,
+          failed: result.totalErrors || 0,
+          errors: result.errors || []
+        });
+        setShowResults(true);
+        setImporting(false);
+
+        if (result.totalInserted > 0) {
+          audioEngine.playSuccess();
+          toast.success(`Imported ${result.totalInserted} agents from Google Sheets`);
+        }
+        if (result.totalErrors > 0) {
+          audioEngine.playAlert();
+          toast.error(`${result.totalErrors} agents failed to import`);
+        }
+        return;
+      } catch (err) {
+        console.error('Google Sheets import error:', err);
+        toast.error(`Import failed: ${err instanceof Error ? err.message : 'Unknown error'}`);
+        setImporting(false);
+        return;
+      }
+    }
 
     // Check if data looks like CSV (has header row with commas)
     const firstLine = jsonData.trim().split('\n')[0];
@@ -395,9 +442,29 @@ export default function ImportAgents() {
           </div>
         </div>
 
+        {/* Google Sheets URL */}
+        <div className="hud-panel p-6 mb-6">
+          <h2 className="font-orbitron text-sm text-secondary mb-4">GOOGLE SHEETS URL</h2>
+          <p className="text-xs text-muted-foreground mb-3">
+            Publish your Google Sheet as CSV: File → Share → Publish to web → Select CSV format
+          </p>
+          <input
+            type="url"
+            value={googleSheetsUrl}
+            onChange={(e) => setGoogleSheetsUrl(e.target.value)}
+            placeholder="https://docs.google.com/spreadsheets/d/.../pub?output=csv"
+            className="w-full bg-input border border-border rounded p-3 text-sm font-mono text-foreground placeholder:text-muted-foreground/50 focus:outline-none focus:border-primary"
+          />
+        </div>
+
         {/* Data input */}
         <div className="hud-panel p-6 mb-6">
-          <h2 className="font-orbitron text-sm text-secondary mb-4">AGENT DATA</h2>
+          <div className="relative mb-4">
+            <div className="absolute inset-x-0 top-1/2 -translate-y-1/2 h-px bg-border" />
+            <span className="relative bg-card px-3 text-xs text-muted-foreground left-1/2 -translate-x-1/2 inline-block">
+              OR UPLOAD / PASTE DATA
+            </span>
+          </div>
           
           {/* File upload */}
           <div className="mb-4">

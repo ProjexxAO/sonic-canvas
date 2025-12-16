@@ -131,8 +131,40 @@ Deno.serve(async (req) => {
     }
 
     const body = await req.json()
-    const csvData: string | undefined = body?.csvData
+    let csvData: string | undefined = body?.csvData
     const agentsFromClient: AgentRow[] | undefined = body?.agents
+    const googleSheetsUrl: string | undefined = body?.googleSheetsUrl
+
+    // Mode C: Fetch CSV from Google Sheets URL server-side
+    if (googleSheetsUrl) {
+      console.log(`Fetching CSV from Google Sheets URL: ${googleSheetsUrl}`)
+      
+      try {
+        const response = await fetch(googleSheetsUrl, {
+          headers: { 'Accept': 'text/csv' }
+        })
+        
+        if (!response.ok) {
+          return new Response(JSON.stringify({ 
+            error: `Failed to fetch Google Sheets: ${response.status} ${response.statusText}` 
+          }), {
+            status: 400,
+            headers: { ...corsHeaders, 'Content-Type': 'application/json' }
+          })
+        }
+        
+        csvData = await response.text()
+        console.log(`Fetched ${csvData.length} bytes from Google Sheets`)
+      } catch (fetchError) {
+        console.error('Google Sheets fetch error:', fetchError)
+        return new Response(JSON.stringify({ 
+          error: `Failed to fetch Google Sheets: ${fetchError instanceof Error ? fetchError.message : 'Unknown error'}` 
+        }), {
+          status: 400,
+          headers: { ...corsHeaders, 'Content-Type': 'application/json' }
+        })
+      }
+    }
 
     // Mode A: client sends already-parsed agents (used to avoid huge payloads)
     if (Array.isArray(agentsFromClient)) {
