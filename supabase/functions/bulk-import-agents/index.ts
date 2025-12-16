@@ -79,19 +79,19 @@ function parseCSV(csvText: string): AgentRow[] {
 }
 
 function mapSector(sector: string): string {
-  const valid = ['DATA', 'SECURITY', 'NETWORK', 'COMPUTE', 'STORAGE']
+  const valid = ['FINANCE', 'BIOTECH', 'SECURITY', 'DATA', 'CREATIVE', 'UTILITY']
   const upper = (sector || '').toUpperCase()
   return valid.includes(upper) ? upper : 'DATA'
 }
 
 function mapStatus(status: string): string {
-  const valid = ['IDLE', 'ACTIVE', 'PROCESSING', 'ERROR', 'OFFLINE']
+  const valid = ['IDLE', 'ACTIVE', 'PROCESSING', 'ERROR', 'DORMANT']
   const upper = (status || '').toUpperCase()
   return valid.includes(upper) ? upper : 'IDLE'
 }
 
 function mapClass(cls: string): string {
-  const valid = ['BASIC', 'ADVANCED', 'ELITE', 'QUANTUM']
+  const valid = ['BASIC', 'ADVANCED', 'ELITE', 'SINGULARITY']
   const upper = (cls || '').toUpperCase()
   return valid.includes(upper) ? upper : 'BASIC'
 }
@@ -130,7 +130,70 @@ Deno.serve(async (req) => {
       })
     }
 
-    const { csvData } = await req.json()
+    const body = await req.json()
+    const csvData: string | undefined = body?.csvData
+    const agentsFromClient: AgentRow[] | undefined = body?.agents
+
+    // Mode A: client sends already-parsed agents (used to avoid huge payloads)
+    if (Array.isArray(agentsFromClient)) {
+      if (agentsFromClient.length === 0) {
+        return new Response(JSON.stringify({ error: 'No agents provided' }), {
+          status: 400,
+          headers: { ...corsHeaders, 'Content-Type': 'application/json' }
+        })
+      }
+
+      const insertData = agentsFromClient.map(agent => ({
+        user_id: user.id,
+        name: agent.name,
+        designation: agent.designation,
+        sector: mapSector(agent.sector),
+        status: mapStatus(agent.status),
+        class: mapClass(agent.class),
+        waveform: mapWaveform(agent.waveform),
+        frequency: agent.frequency,
+        modulation: agent.modulation,
+        density: agent.density,
+        color: agent.color,
+        cycles: agent.cycles,
+        efficiency: agent.efficiency,
+        stability: agent.stability,
+        code_artifact: agent.code_artifact,
+      }))
+
+      console.log(`Batch import (pre-parsed) for user ${user.id}: ${insertData.length} agents`)
+
+      const { data, error } = await supabase
+        .from('sonic_agents')
+        .insert(insertData)
+        .select('id')
+
+      if (error) {
+        console.error('Batch import (pre-parsed) error:', error.message)
+        return new Response(JSON.stringify({
+          success: false,
+          totalParsed: agentsFromClient.length,
+          totalInserted: 0,
+          totalErrors: agentsFromClient.length,
+          errors: [error.message],
+        }), {
+          status: 400,
+          headers: { ...corsHeaders, 'Content-Type': 'application/json' }
+        })
+      }
+
+      return new Response(JSON.stringify({
+        success: true,
+        totalParsed: agentsFromClient.length,
+        totalInserted: data?.length || 0,
+        totalErrors: 0,
+        errors: [],
+      }), {
+        headers: { ...corsHeaders, 'Content-Type': 'application/json' }
+      })
+    }
+
+    // Mode B: client sends raw CSV
     if (!csvData) {
       return new Response(JSON.stringify({ error: 'No CSV data provided' }), {
         status: 400,

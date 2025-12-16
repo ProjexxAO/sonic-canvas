@@ -85,6 +85,26 @@ export default function ImportAgents() {
     UTILITY: '#4488ff',
   };
 
+  const parseCSVLine = (line: string): string[] => {
+    const values: string[] = [];
+    let current = '';
+    let inQuotes = false;
+
+    for (const char of line) {
+      if (char === '"') {
+        inQuotes = !inQuotes;
+      } else if (char === ',' && !inQuotes) {
+        values.push(current.trim());
+        current = '';
+      } else {
+        current += char;
+      }
+    }
+    values.push(current.trim());
+
+    return values.map(v => v.replace(/^"|"$/g, ''));
+  };
+
   const handleImport = async () => {
     if (!user) {
       toast.error('Please sign in to import agents');
@@ -104,16 +124,109 @@ export default function ImportAgents() {
     // Check if data looks like CSV (has header row with commas)
     const firstLine = jsonData.trim().split('\n')[0];
     const isCSV = firstLine.includes(',') && !firstLine.startsWith('[') && !firstLine.startsWith('{');
-    const lineCount = jsonData.trim().split('\n').length;
+    const lines = jsonData.trim().split('\n');
+    const lineCount = lines.length;
 
-    // Use bulk import for large datasets (> 100 rows) or CSV data
+    // Bulk import path (CSV or large datasets)
     if (isCSV || lineCount > 100) {
-      toast.info(`Processing ${lineCount - 1} agents via bulk import...`);
-      
+      const totalRows = Math.max(0, lineCount - 1);
+      toast.info(`Processing ${totalRows} agents in batches...`);
+
       try {
         const { data: sessionData } = await supabase.auth.getSession();
         const token = sessionData?.session?.access_token;
-        
+
+        // For CSV, avoid sending the whole file (payload too large). Parse + send batches.
+        if (isCSV) {
+          const headers = parseCSVLine(lines[0]).map(h => h.trim().toLowerCase().replace(/['"]/g, ''));
+
+          const BATCH_SIZE = 500;
+          let totalInserted = 0;
+          let totalErrors = 0;
+          const errors: string[] = [];
+
+          let batch: any[] = [];
+          let batchIndex = 0;
+
+          const flushBatch = async () => {
+            if (batch.length === 0) return;
+            batchIndex += 1;
+
+            const response = await supabase.functions.invoke('bulk-import-agents', {
+              body: { agents: batch },
+              headers: token ? { Authorization: `Bearer ${token}` } : undefined,
+            });
+
+            if (response.error) {
+              throw new Error(response.error.message || 'Batch import failed');
+            }
+
+            const result = response.data;
+            totalInserted += result.totalInserted || 0;
+            totalErrors += result.totalErrors || 0;
+            if (Array.isArray(result.errors)) errors.push(...result.errors);
+
+            batch = [];
+            toast.message(`Imported batch ${batchIndex} (${totalInserted}/${totalRows})`);
+          };
+
+          for (let i = 1; i < lines.length; i++) {
+            const line = lines[i];
+            if (!line.trim()) continue;
+
+            const values = parseCSVLine(line);
+            const row: Record<string, string> = {};
+            headers.forEach((header, index) => {
+              row[header] = values[index] || '';
+            });
+
+            // Match the backend function's AgentRow shape
+            batch.push({
+              id: row.id || undefined,
+              name: row.name || 'Imported Agent',
+              designation: row.designation || `IMP-${Math.floor(Math.random() * 10000).toString().padStart(4, '0')}`,
+              sector: row.sector || 'DATA',
+              status: row.status || 'IDLE',
+              class: row.class || 'BASIC',
+              waveform: row.waveform || 'sine',
+              frequency: parseFloat(row.frequency) || 440,
+              modulation: parseFloat(row.modulation) || 5,
+              density: parseFloat(row.density) || 50,
+              color: row.color || '#00ffd5',
+              cycles: parseInt(row.cycles) || 0,
+              efficiency: parseFloat(row.efficiency) || 75,
+              stability: parseFloat(row.stability) || 85,
+              code_artifact: row.code_artifact || undefined,
+            });
+
+            if (batch.length >= BATCH_SIZE) {
+              // eslint-disable-next-line no-await-in-loop
+              await flushBatch();
+            }
+          }
+
+          await flushBatch();
+
+          setResults({
+            success: totalInserted,
+            failed: totalErrors,
+            errors: errors.slice(0, 10),
+          });
+          setShowResults(true);
+          setImporting(false);
+
+          if (totalInserted > 0) {
+            audioEngine.playSuccess();
+            toast.success(`Imported ${totalInserted} agents`);
+          }
+          if (totalErrors > 0) {
+            audioEngine.playAlert();
+            toast.error(`${totalErrors} agents failed to import`);
+          }
+          return;
+        }
+
+        // Non-CSV large dataset fallback: keep existing server-side CSV import
         const response = await supabase.functions.invoke('bulk-import-agents', {
           body: { csvData: jsonData },
           headers: token ? { Authorization: `Bearer ${token}` } : undefined
