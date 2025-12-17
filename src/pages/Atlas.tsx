@@ -280,15 +280,19 @@ export default function Atlas() {
   const startConversation = useCallback(async () => {
     setIsConnecting(true);
     try {
+      console.log("[Atlas] Requesting microphone permission...");
       await navigator.mediaDevices.getUserMedia({ audio: true });
+      console.log("[Atlas] Microphone permission granted, starting session...");
       
       await conversation.startSession({
         agentId: ATLAS_AGENT_ID,
         connectionType: "webrtc",
       });
+      console.log("[Atlas] Session started successfully");
     } catch (error) {
       console.error("[Atlas] Failed to start:", error);
-      toast.error('Failed to start Atlas');
+      const errMsg = error instanceof Error ? error.message : 'Unknown error';
+      toast.error(`Failed to start Atlas: ${errMsg}`);
     } finally {
       setIsConnecting(false);
     }
