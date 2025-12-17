@@ -343,15 +343,30 @@ export default function Atlas() {
   });
 
   // Toggle wake word mode
-  const toggleWakeWord = useCallback(async () => {
-    if (isWakeWordListening) {
-      stopWakeWordListening();
-      setWakeWordEnabled(false);
-    } else {
-      setWakeWordEnabled(true);
-      await startWakeWordListening();
+  const toggleWakeWord = useCallback(() => {
+    setWakeWordEnabled(prev => !prev);
+  }, []);
+
+  // Keep wake word listening state in sync with the toggle + connection state
+  useEffect(() => {
+    // When wake word mode is ON and we're not connected, ensure listening is active
+    if (wakeWordEnabled && !isConnected && isWakeWordSupported && !isWakeWordListening) {
+      startWakeWordListening();
+      return;
     }
-  }, [isWakeWordListening, startWakeWordListening, stopWakeWordListening]);
+
+    // When wake word mode is OFF (or we're connected), ensure listening is stopped
+    if ((!wakeWordEnabled || isConnected) && isWakeWordListening) {
+      stopWakeWordListening();
+    }
+  }, [
+    wakeWordEnabled,
+    isConnected,
+    isWakeWordSupported,
+    isWakeWordListening,
+    startWakeWordListening,
+    stopWakeWordListening,
+  ]);
 
   // Real-time state streaming to Atlas
   const sendContextualUpdate = useCallback((text: string) => {
