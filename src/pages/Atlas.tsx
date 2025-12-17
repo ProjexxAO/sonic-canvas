@@ -91,36 +91,36 @@ export default function Atlas() {
       { 
         size: 50, 
         opacity: 0.75, 
-        duration: 40 + Math.random() * 15, // Fast - close balloon
+        duration: 90 + Math.random() * 20, // Gentle pace - close balloon
         startY: 20 + Math.random() * 20,
-        delay: Math.random() * -40,
+        delay: Math.random() * -90,
         direction: 'rtl',
         color: colors[Math.floor(Math.random() * colors.length)]
       },
       { 
         size: 38, 
         opacity: 0.55, 
-        duration: 70 + Math.random() * 20, // Medium speed
+        duration: 130 + Math.random() * 30, // Slower
         startY: 30 + Math.random() * 20,
-        delay: Math.random() * -70,
+        delay: Math.random() * -130,
         direction: 'ltr',
         color: colors[Math.floor(Math.random() * colors.length)]
       },
       { 
         size: 24, 
         opacity: 0.35, 
-        duration: 110 + Math.random() * 30, // Slower - distant
+        duration: 180 + Math.random() * 40, // Much slower - distant
         startY: 40 + Math.random() * 20,
-        delay: Math.random() * -110,
+        delay: Math.random() * -180,
         direction: 'rtl',
         color: colors[Math.floor(Math.random() * colors.length)]
       },
       { 
         size: 16, 
         opacity: 0.22, 
-        duration: 160 + Math.random() * 40, // Very slow - far away
+        duration: 240 + Math.random() * 60, // Very slow drift - far away
         startY: 50 + Math.random() * 15,
-        delay: Math.random() * -160,
+        delay: Math.random() * -240,
         direction: 'ltr',
         color: colors[Math.floor(Math.random() * colors.length)]
       },
