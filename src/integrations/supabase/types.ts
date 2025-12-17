@@ -119,11 +119,71 @@ export type Database = {
         }
         Relationships: []
       }
+      user_agents: {
+        Row: {
+          agent_id: string
+          assigned_at: string
+          assigned_by: string | null
+          id: string
+          user_id: string
+        }
+        Insert: {
+          agent_id: string
+          assigned_at?: string
+          assigned_by?: string | null
+          id?: string
+          user_id: string
+        }
+        Update: {
+          agent_id?: string
+          assigned_at?: string
+          assigned_by?: string | null
+          id?: string
+          user_id?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "user_agents_agent_id_fkey"
+            columns: ["agent_id"]
+            isOneToOne: false
+            referencedRelation: "sonic_agents"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      user_roles: {
+        Row: {
+          created_at: string
+          id: string
+          role: Database["public"]["Enums"]["app_role"]
+          user_id: string
+        }
+        Insert: {
+          created_at?: string
+          id?: string
+          role: Database["public"]["Enums"]["app_role"]
+          user_id: string
+        }
+        Update: {
+          created_at?: string
+          id?: string
+          role?: Database["public"]["Enums"]["app_role"]
+          user_id?: string
+        }
+        Relationships: []
+      }
     }
     Views: {
       [_ in never]: never
     }
     Functions: {
+      has_role: {
+        Args: {
+          _role: Database["public"]["Enums"]["app_role"]
+          _user_id: string
+        }
+        Returns: boolean
+      }
       search_agents_by_embedding: {
         Args: {
           match_count?: number
@@ -151,6 +211,7 @@ export type Database = {
         | "CREATIVE"
         | "UTILITY"
       agent_status: "IDLE" | "ACTIVE" | "PROCESSING" | "ERROR" | "DORMANT"
+      app_role: "superadmin" | "admin" | "user"
       waveform_type: "sine" | "square" | "sawtooth" | "triangle"
     }
     CompositeTypes: {
@@ -289,6 +350,7 @@ export const Constants = {
         "UTILITY",
       ],
       agent_status: ["IDLE", "ACTIVE", "PROCESSING", "ERROR", "DORMANT"],
+      app_role: ["superadmin", "admin", "user"],
       waveform_type: ["sine", "square", "sawtooth", "triangle"],
     },
   },
