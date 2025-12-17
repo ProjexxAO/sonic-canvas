@@ -21,8 +21,11 @@ import {
   Sparkles,
   Database,
   Users,
-  Eye
+  Eye,
+  Wifi,
+  WifiOff
 } from 'lucide-react';
+import { useAuth } from '@/hooks/useAuth';
 import { useDashboardAgents } from '@/hooks/useDashboardAgents';
 import { useAtlasContext } from '@/hooks/useAtlasContext';
 import { Button } from '@/components/ui/button';
@@ -50,6 +53,7 @@ interface SearchResult {
 
 export default function Atlas() {
   const navigate = useNavigate();
+  const { user } = useAuth();
   const { agents, loading: agentsLoading } = useDashboardAgents({ limit: 200 });
   const [isConnecting, setIsConnecting] = useState(false);
   const [isMuted, setIsMuted] = useState(false);
@@ -451,11 +455,13 @@ export default function Atlas() {
           )}
           
           <div className="flex items-center gap-2">
-            <div className={`w-2 h-2 rounded-full ${
-              isConnected ? "bg-success animate-pulse" : "bg-destructive"
-            }`} />
+            {isConnected ? (
+              <Wifi size={14} className="text-success" />
+            ) : (
+              <WifiOff size={14} className="text-muted-foreground" />
+            )}
             <span className="text-xs font-mono text-muted-foreground">
-              {conversation.status.toUpperCase()}
+              {user?.user_metadata?.display_name || user?.email?.split('@')[0] || 'Operator'}
             </span>
           </div>
         </div>
