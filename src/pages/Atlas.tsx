@@ -633,52 +633,181 @@ export default function Atlas() {
             }}
           />
           
-          {/* Star Trek-style Spacecraft */}
+          {/* Star Trek Enterprise Attack Sequence - Ship 1 */}
           <div 
-            className="absolute opacity-60"
+            className="enterprise-attack-1"
             style={{ 
-              top: '40%',
-              animation: 'spacecraft-cruise 45s linear infinite',
+              position: 'absolute',
+              width: '100%',
+              height: '100%',
+              pointerEvents: 'none',
             }}
           >
-            <svg width="45" height="22" viewBox="0 0 90 44" className="drop-shadow-lg">
-              {/* Enterprise-inspired silhouette */}
+            <div className="enterprise-ship-1" style={{ position: 'absolute' }}>
+              <svg width="80" height="40" viewBox="0 0 160 80" className="drop-shadow-2xl" style={{ filter: 'drop-shadow(0 0 8px hsl(200 80% 50% / 0.5))' }}>
+                <defs>
+                  {/* Hull gradient */}
+                  <linearGradient id="hullGradient1" x1="0%" y1="0%" x2="0%" y2="100%">
+                    <stop offset="0%" stopColor="hsl(220 20% 55%)" />
+                    <stop offset="50%" stopColor="hsl(220 15% 40%)" />
+                    <stop offset="100%" stopColor="hsl(220 20% 30%)" />
+                  </linearGradient>
+                  {/* Saucer gradient */}
+                  <radialGradient id="saucerGradient1" cx="40%" cy="30%" r="60%">
+                    <stop offset="0%" stopColor="hsl(220 15% 60%)" />
+                    <stop offset="70%" stopColor="hsl(220 20% 42%)" />
+                    <stop offset="100%" stopColor="hsl(220 25% 32%)" />
+                  </radialGradient>
+                  {/* Nacelle glow */}
+                  <linearGradient id="warpGlow1" x1="0%" y1="0%" x2="100%" y2="0%">
+                    <stop offset="0%" stopColor="hsl(200 100% 70%)" />
+                    <stop offset="50%" stopColor="hsl(200 100% 85%)" />
+                    <stop offset="100%" stopColor="hsl(200 100% 70%)" />
+                  </linearGradient>
+                  {/* Bussard collector glow */}
+                  <radialGradient id="bussardGlow1" cx="30%" cy="30%" r="70%">
+                    <stop offset="0%" stopColor="hsl(15 100% 70%)" />
+                    <stop offset="50%" stopColor="hsl(0 100% 55%)" />
+                    <stop offset="100%" stopColor="hsl(0 80% 40%)" />
+                  </radialGradient>
+                </defs>
+                
+                {/* Main Saucer Section */}
+                <ellipse cx="50" cy="40" rx="45" ry="16" fill="url(#saucerGradient1)" />
+                {/* Saucer rim highlight */}
+                <ellipse cx="50" cy="40" rx="45" ry="16" fill="none" stroke="hsl(220 30% 60%)" strokeWidth="0.5" />
+                {/* Inner saucer detail rings */}
+                <ellipse cx="50" cy="40" rx="38" ry="13" fill="none" stroke="hsl(220 20% 50%)" strokeWidth="0.3" />
+                <ellipse cx="50" cy="40" rx="30" ry="10" fill="hsl(220 18% 45%)" />
+                <ellipse cx="50" cy="40" rx="22" ry="7" fill="hsl(220 20% 48%)" />
+                {/* Bridge module */}
+                <ellipse cx="50" cy="40" rx="12" ry="4" fill="hsl(220 25% 52%)" />
+                <ellipse cx="50" cy="39" rx="8" ry="3" fill="hsl(200 35% 55%)" />
+                {/* Bridge dome */}
+                <ellipse cx="50" cy="38" rx="5" ry="2" fill="hsl(200 50% 65%)" opacity="0.9" />
+                {/* Bridge windows */}
+                <ellipse cx="50" cy="38" rx="3" ry="1" fill="hsl(45 80% 70%)" opacity="0.7" />
+                
+                {/* Neck/Dorsal connector */}
+                <path d="M 85 38 L 95 38 Q 100 40 95 42 L 85 42 Z" fill="url(#hullGradient1)" />
+                
+                {/* Engineering Hull (Secondary Hull) */}
+                <ellipse cx="115" cy="40" rx="22" ry="10" fill="url(#hullGradient1)" />
+                <ellipse cx="115" cy="40" rx="18" ry="8" fill="hsl(220 18% 43%)" />
+                {/* Deflector dish */}
+                <ellipse cx="95" cy="40" rx="4" ry="6" fill="hsl(200 60% 45%)" />
+                <ellipse cx="94" cy="40" rx="2" ry="4" fill="hsl(200 80% 60%)" opacity="0.8" />
+                {/* Shuttlebay */}
+                <rect x="125" y="37" width="8" height="6" rx="1" fill="hsl(220 25% 35%)" />
+                <rect x="126" y="38" width="6" height="4" fill="hsl(45 60% 50%)" opacity="0.4" />
+                
+                {/* Nacelle Pylons */}
+                <path d="M 105 35 L 105 18 L 108 15 L 108 35 Z" fill="url(#hullGradient1)" />
+                <path d="M 105 45 L 105 62 L 108 65 L 108 45 Z" fill="url(#hullGradient1)" />
+                
+                {/* Upper Nacelle */}
+                <rect x="100" y="8" width="55" height="10" rx="3" fill="url(#hullGradient1)" />
+                <rect x="102" y="10" width="51" height="6" rx="2" fill="hsl(220 20% 45%)" />
+                {/* Bussard collector */}
+                <ellipse cx="103" cy="13" rx="4" ry="4" fill="url(#bussardGlow1)" />
+                <ellipse cx="102" cy="12" rx="2" ry="2" fill="hsl(15 100% 75%)" opacity="0.9" />
+                {/* Warp grille */}
+                <rect x="115" y="11" width="38" height="4" rx="1" fill="url(#warpGlow1)" opacity="0.8" />
+                <rect x="115" y="12" width="38" height="2" fill="hsl(200 100% 90%)" opacity="0.6" />
+                
+                {/* Lower Nacelle */}
+                <rect x="100" y="62" width="55" height="10" rx="3" fill="url(#hullGradient1)" />
+                <rect x="102" y="64" width="51" height="6" rx="2" fill="hsl(220 20% 45%)" />
+                {/* Bussard collector */}
+                <ellipse cx="103" cy="67" rx="4" ry="4" fill="url(#bussardGlow1)" />
+                <ellipse cx="102" cy="66" rx="2" ry="2" fill="hsl(15 100% 75%)" opacity="0.9" />
+                {/* Warp grille */}
+                <rect x="115" y="65" width="38" height="4" rx="1" fill="url(#warpGlow1)" opacity="0.8" />
+                <rect x="115" y="66" width="38" height="2" fill="hsl(200 100% 90%)" opacity="0.6" />
+                
+                {/* Running lights */}
+                <circle cx="5" cy="40" r="1.5" fill="hsl(0 100% 60%)" opacity="0.9" />
+                <circle cx="95" cy="40" r="1" fill="hsl(120 100% 60%)" opacity="0.9" />
+              </svg>
               
-              {/* Saucer section */}
-              <ellipse cx="25" cy="22" rx="22" ry="8" fill="hsl(220 15% 35%)" />
-              <ellipse cx="25" cy="22" rx="18" ry="6" fill="hsl(220 20% 40%)" />
-              <ellipse cx="25" cy="22" rx="8" ry="3" fill="hsl(220 25% 50%)" />
-              {/* Bridge dome */}
-              <ellipse cx="25" cy="22" rx="4" ry="2" fill="hsl(200 30% 55%)" opacity="0.8" />
-              
-              {/* Neck connecting saucer to engineering hull */}
-              <rect x="38" y="19" width="12" height="6" fill="hsl(220 15% 32%)" />
-              
-              {/* Engineering hull (secondary hull) */}
-              <ellipse cx="62" cy="22" rx="14" ry="6" fill="hsl(220 15% 35%)" />
-              <ellipse cx="62" cy="22" rx="10" ry="4" fill="hsl(220 20% 40%)" />
-              
-              {/* Nacelle pylons */}
-              <line x1="55" y1="22" x2="55" y2="8" stroke="hsl(220 15% 35%)" strokeWidth="2" />
-              <line x1="55" y1="22" x2="55" y2="36" stroke="hsl(220 15% 35%)" strokeWidth="2" />
-              
-              {/* Upper nacelle */}
-              <rect x="55" y="4" width="30" height="5" rx="2" fill="hsl(220 15% 32%)" />
-              <rect x="58" y="5" width="24" height="3" rx="1" fill="hsl(220 20% 38%)" />
-              {/* Nacelle glow - Bussard collector */}
-              <ellipse cx="58" cy="6.5" rx="2" ry="1.5" fill="hsl(0 70% 50%)" opacity="0.8" />
-              {/* Warp glow */}
-              <rect x="70" y="5.5" width="12" height="2" rx="1" fill="hsl(200 80% 60%)" opacity="0.6" />
-              
-              {/* Lower nacelle */}
-              <rect x="55" y="35" width="30" height="5" rx="2" fill="hsl(220 15% 32%)" />
-              <rect x="58" y="36" width="24" height="3" rx="1" fill="hsl(220 20% 38%)" />
-              {/* Nacelle glow - Bussard collector */}
-              <ellipse cx="58" cy="37.5" rx="2" ry="1.5" fill="hsl(0 70% 50%)" opacity="0.8" />
-              {/* Warp glow */}
-              <rect x="70" y="36.5" width="12" height="2" rx="1" fill="hsl(200 80% 60%)" opacity="0.6" />
-            </svg>
+              {/* Phaser beam - fires during attack phase */}
+              <div className="phaser-beam-1" style={{
+                position: 'absolute',
+                top: '50%',
+                left: '25px',
+                width: '0',
+                height: '3px',
+                background: 'linear-gradient(90deg, hsl(45 100% 70%), hsl(30 100% 60%), hsl(15 100% 55%))',
+                boxShadow: '0 0 10px hsl(45 100% 60%), 0 0 20px hsl(30 100% 50%)',
+                transformOrigin: 'left center',
+                borderRadius: '2px',
+              }} />
+            </div>
           </div>
+          
+          {/* Enterprise Attack Sequence - Ship 2 (different timing) */}
+          <div 
+            className="enterprise-attack-2"
+            style={{ 
+              position: 'absolute',
+              width: '100%',
+              height: '100%',
+              pointerEvents: 'none',
+            }}
+          >
+            <div className="enterprise-ship-2" style={{ position: 'absolute' }}>
+              <svg width="60" height="30" viewBox="0 0 160 80" className="drop-shadow-xl" style={{ filter: 'drop-shadow(0 0 6px hsl(200 80% 50% / 0.4))' }}>
+                <use href="#hullGradient1" />
+                {/* Simplified but still detailed ship for variety */}
+                <ellipse cx="50" cy="40" rx="42" ry="14" fill="hsl(220 18% 42%)" />
+                <ellipse cx="50" cy="40" rx="35" ry="11" fill="hsl(220 20% 46%)" />
+                <ellipse cx="50" cy="40" rx="20" ry="6" fill="hsl(220 22% 50%)" />
+                <ellipse cx="50" cy="39" rx="10" ry="3" fill="hsl(200 40% 58%)" />
+                <ellipse cx="50" cy="38" rx="4" ry="1.5" fill="hsl(45 70% 65%)" opacity="0.7" />
+                
+                <path d="M 82 38 L 92 38 Q 96 40 92 42 L 82 42 Z" fill="hsl(220 18% 38%)" />
+                <ellipse cx="112" cy="40" rx="20" ry="9" fill="hsl(220 18% 40%)" />
+                <ellipse cx="92" cy="40" rx="3" ry="5" fill="hsl(200 70% 55%)" />
+                
+                <path d="M 102 36 L 102 20 L 105 18 L 105 36 Z" fill="hsl(220 18% 38%)" />
+                <path d="M 102 44 L 102 60 L 105 62 L 105 44 Z" fill="hsl(220 18% 38%)" />
+                
+                <rect x="98" y="12" width="50" height="8" rx="2" fill="hsl(220 18% 38%)" />
+                <ellipse cx="100" cy="16" rx="3" ry="3" fill="hsl(0 80% 55%)" />
+                <rect x="110" y="14" width="35" height="4" rx="1" fill="hsl(200 100% 75%)" opacity="0.7" />
+                
+                <rect x="98" y="60" width="50" height="8" rx="2" fill="hsl(220 18% 38%)" />
+                <ellipse cx="100" cy="64" rx="3" ry="3" fill="hsl(0 80% 55%)" />
+                <rect x="110" y="62" width="35" height="4" rx="1" fill="hsl(200 100% 75%)" opacity="0.7" />
+              </svg>
+              
+              <div className="phaser-beam-2" style={{
+                position: 'absolute',
+                top: '50%',
+                left: '20px',
+                width: '0',
+                height: '2px',
+                background: 'linear-gradient(90deg, hsl(45 100% 70%), hsl(30 100% 60%))',
+                boxShadow: '0 0 8px hsl(45 100% 60%)',
+                transformOrigin: 'left center',
+                borderRadius: '2px',
+              }} />
+            </div>
+          </div>
+          
+          {/* Orb Defense Beam */}
+          <div className="orb-defense-beam" style={{
+            position: 'absolute',
+            top: '50%',
+            left: '50%',
+            width: '0',
+            height: '4px',
+            background: 'linear-gradient(90deg, hsl(168 100% 60%), hsl(180 100% 70%), hsl(200 100% 65%))',
+            boxShadow: '0 0 15px hsl(168 100% 50%), 0 0 30px hsl(180 100% 40%)',
+            transformOrigin: 'left center',
+            borderRadius: '2px',
+            pointerEvents: 'none',
+          }} />
         </div>
       )}
 
