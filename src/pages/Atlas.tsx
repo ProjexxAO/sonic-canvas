@@ -1,8 +1,10 @@
-// Atlas Voice Agent Dashboard
+// Atlas Voice Agent Dashboard - Full Ecosystem Control
 
 import { useState, useCallback } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { useConversation } from "@elevenlabs/react";
+import { supabase } from '@/integrations/supabase/client';
+import { toast } from 'sonner';
 import { 
   Mic, 
   MicOff, 
@@ -13,29 +15,218 @@ import {
   Hexagon,
   Waves,
   Activity,
-  Zap
+  Zap,
+  Search,
+  Bot,
+  Sparkles,
+  Database,
+  Terminal
 } from 'lucide-react';
 import { Button } from '@/components/ui/button';
+import { ScrollArea } from '@/components/ui/scroll-area';
 
 const ATLAS_AGENT_ID = "agent_7501kbh21cg1eht9xtjw6kvkpm4m";
+
+interface ActionLog {
+  id: string;
+  timestamp: Date;
+  action: string;
+  params: Record<string, unknown>;
+  result: string;
+  status: 'success' | 'error' | 'pending';
+}
+
+interface SearchResult {
+  id: string;
+  name: string;
+  sector: string;
+  description?: string;
+  similarity?: number;
+}
 
 export default function Atlas() {
   const navigate = useNavigate();
   const [isConnecting, setIsConnecting] = useState(false);
   const [isMuted, setIsMuted] = useState(false);
+  const [actionLogs, setActionLogs] = useState<ActionLog[]>([]);
+  const [searchResults, setSearchResults] = useState<SearchResult[]>([]);
+  const [synthesizedAgent, setSynthesizedAgent] = useState<any>(null);
+
+  const addLog = (action: string, params: Record<string, unknown>, result: string, status: 'success' | 'error' | 'pending') => {
+    const log: ActionLog = {
+      id: crypto.randomUUID(),
+      timestamp: new Date(),
+      action,
+      params,
+      result,
+      status
+    };
+    setActionLogs(prev => [log, ...prev].slice(0, 50));
+    return log.id;
+  };
 
   const conversation = useConversation({
+    clientTools: {
+      // Search agents by query
+      searchAgents: async (params: { query: string }) => {
+        const logId = addLog('searchAgents', params, 'Searching...', 'pending');
+        try {
+          const response = await supabase.functions.invoke('atlas-orchestrator', {
+            body: { action: 'search', query: params.query }
+          });
+          
+          if (response.error) throw response.error;
+          
+          const agents = response.data?.agents || [];
+          setSearchResults(agents);
+          
+          setActionLogs(prev => prev.map(l => 
+            l.id === logId ? { ...l, result: `Found ${agents.length} agents`, status: 'success' } : l
+          ));
+          
+          toast.success(`Found ${agents.length} agents matching "${params.query}"`);
+          return `Found ${agents.length} agents: ${agents.map((a: any) => a.name).join(', ')}`;
+        } catch (error) {
+          const msg = error instanceof Error ? error.message : 'Search failed';
+          setActionLogs(prev => prev.map(l => 
+            l.id === logId ? { ...l, result: msg, status: 'error' } : l
+          ));
+          toast.error('Search failed');
+          return `Error: ${msg}`;
+        }
+      },
+
+      // Synthesize a new agent from existing ones
+      synthesizeAgent: async (params: { agentIds: string[]; requirements: string }) => {
+        const logId = addLog('synthesizeAgent', params, 'Synthesizing...', 'pending');
+        try {
+          const response = await supabase.functions.invoke('atlas-orchestrator', {
+            body: { 
+              action: 'synthesize', 
+              agentIds: params.agentIds,
+              requirements: params.requirements
+            }
+          });
+          
+          if (response.error) throw response.error;
+          
+          const newAgent = response.data?.synthesizedAgent;
+          setSynthesizedAgent(newAgent);
+          
+          setActionLogs(prev => prev.map(l => 
+            l.id === logId ? { ...l, result: `Synthesized: ${newAgent?.name || 'New Agent'}`, status: 'success' } : l
+          ));
+          
+          toast.success(`Synthesized new agent: ${newAgent?.name}`);
+          return `Successfully synthesized agent: ${newAgent?.name}. Description: ${newAgent?.description}`;
+        } catch (error) {
+          const msg = error instanceof Error ? error.message : 'Synthesis failed';
+          setActionLogs(prev => prev.map(l => 
+            l.id === logId ? { ...l, result: msg, status: 'error' } : l
+          ));
+          toast.error('Synthesis failed');
+          return `Error: ${msg}`;
+        }
+      },
+
+      // Navigate to different pages
+      navigateTo: (params: { page: string }) => {
+        const logId = addLog('navigateTo', params, `Navigating to ${params.page}`, 'success');
+        
+        const routes: Record<string, string> = {
+          'home': '/',
+          'main': '/',
+          'dashboard': '/',
+          'agents': '/',
+          'import': '/import',
+          'auth': '/auth',
+          'login': '/auth'
+        };
+        
+        const route = routes[params.page.toLowerCase()] || '/';
+        toast.info(`Navigating to ${params.page}`);
+        
+        setTimeout(() => navigate(route), 500);
+        return `Navigating to ${params.page}`;
+      },
+
+      // Show notification/toast
+      showNotification: (params: { title: string; message: string; type?: string }) => {
+        const logId = addLog('showNotification', params, 'Notification shown', 'success');
+        
+        const toastType = params.type || 'info';
+        if (toastType === 'success') toast.success(params.message);
+        else if (toastType === 'error') toast.error(params.message);
+        else if (toastType === 'warning') toast.warning(params.message);
+        else toast.info(params.message);
+        
+        return `Displayed ${toastType} notification: ${params.title}`;
+      },
+
+      // Get system status
+      getSystemStatus: () => {
+        const logId = addLog('getSystemStatus', {}, 'Status retrieved', 'success');
+        
+        const status = {
+          connected: true,
+          searchResults: searchResults.length,
+          lastSynthesis: synthesizedAgent?.name || 'None',
+          actionLogsCount: actionLogs.length
+        };
+        
+        return `System online. ${searchResults.length} agents in memory. Last synthesis: ${synthesizedAgent?.name || 'None'}. ${actionLogs.length} actions logged.`;
+      },
+
+      // Clear search results
+      clearResults: () => {
+        const logId = addLog('clearResults', {}, 'Results cleared', 'success');
+        setSearchResults([]);
+        setSynthesizedAgent(null);
+        toast.info('Results cleared');
+        return 'Search results and synthesis data cleared';
+      },
+
+      // List available sectors
+      listSectors: () => {
+        const logId = addLog('listSectors', {}, 'Sectors listed', 'success');
+        const sectors = ['FINANCE', 'BIOTECH', 'SECURITY', 'DATA', 'CREATIVE', 'UTILITY'];
+        return `Available sectors: ${sectors.join(', ')}`;
+      },
+
+      // Get agent details
+      getAgentDetails: (params: { agentId: string }) => {
+        const logId = addLog('getAgentDetails', params, 'Fetching details...', 'pending');
+        
+        const agent = searchResults.find(a => a.id === params.agentId);
+        if (agent) {
+          setActionLogs(prev => prev.map(l => 
+            l.id === logId ? { ...l, result: `Found: ${agent.name}`, status: 'success' } : l
+          ));
+          return `Agent: ${agent.name}, Sector: ${agent.sector}, Description: ${agent.description || 'No description'}`;
+        }
+        
+        setActionLogs(prev => prev.map(l => 
+          l.id === logId ? { ...l, result: 'Agent not found', status: 'error' } : l
+        ));
+        return 'Agent not found in current search results. Please search first.';
+      }
+    },
     onConnect: () => {
       console.log("[Atlas] Connected to voice agent");
+      addLog('system', {}, 'Connected to Atlas', 'success');
+      toast.success('Atlas online');
     },
     onDisconnect: () => {
       console.log("[Atlas] Disconnected from voice agent");
+      addLog('system', {}, 'Disconnected from Atlas', 'success');
     },
     onMessage: (message) => {
       console.log("[Atlas] Message:", message);
     },
     onError: (error) => {
       console.error("[Atlas] Error:", error);
+      addLog('system', { error }, 'Connection error', 'error');
+      toast.error('Atlas connection error');
     },
   });
 
@@ -50,6 +241,7 @@ export default function Atlas() {
       });
     } catch (error) {
       console.error("[Atlas] Failed to start:", error);
+      toast.error('Failed to start Atlas');
     } finally {
       setIsConnecting(false);
     }
@@ -90,9 +282,9 @@ export default function Atlas() {
               <h1 className="font-orbitron text-lg tracking-wider text-foreground">
                 <span className="text-primary text-glow-cyan">ATLAS</span>
                 <span className="text-muted-foreground mx-1">:</span>
-                <span className="text-secondary text-glow-amber">VOICE AGENT</span>
+                <span className="text-secondary text-glow-amber">COMMAND CENTER</span>
               </h1>
-              <p className="text-[10px] text-muted-foreground tracking-widest">SONIC INTERFACE v1.0</p>
+              <p className="text-[10px] text-muted-foreground tracking-widest">FULL ECOSYSTEM CONTROL</p>
             </div>
           </div>
         </div>
@@ -109,11 +301,11 @@ export default function Atlas() {
       </header>
 
       {/* Main Content */}
-      <main className="flex-1 flex items-center justify-center p-8">
-        <div className="w-full max-w-2xl space-y-8">
-          
+      <main className="flex-1 flex gap-4 p-4 overflow-hidden">
+        {/* Left Panel - Visualizer & Controls */}
+        <div className="flex-1 flex flex-col items-center justify-center">
           {/* Central Visualizer */}
-          <div className="relative aspect-square max-w-md mx-auto">
+          <div className="relative w-64 h-64 mb-6">
             {/* Outer ring */}
             <div className={`absolute inset-0 rounded-full border-2 ${
               isConnected ? 'border-primary animate-pulse' : 'border-border'
@@ -128,12 +320,11 @@ export default function Atlas() {
             
             {/* Inner circle with visualizer */}
             <div className="absolute inset-8 rounded-full bg-card/50 backdrop-blur-sm border border-border flex items-center justify-center overflow-hidden">
-              {/* Audio bars */}
-              <div className="flex items-center justify-center gap-1 h-32">
-                {Array.from({ length: 24 }).map((_, i) => (
+              <div className="flex items-center justify-center gap-0.5 h-24">
+                {Array.from({ length: 20 }).map((_, i) => (
                   <div
                     key={i}
-                    className={`w-1.5 rounded-full transition-all duration-100 ${
+                    className={`w-1 rounded-full transition-all duration-100 ${
                       isConnected 
                         ? conversation.isSpeaking 
                           ? 'bg-secondary' 
@@ -145,107 +336,181 @@ export default function Atlas() {
                         ? `${Math.sin(Date.now() / 200 + i * 0.5) * 30 + 40}%`
                         : '15%',
                       opacity: isConnected ? 0.8 : 0.3,
-                      animationDelay: `${i * 50}ms`,
                     }}
                   />
                 ))}
               </div>
             </div>
 
-            {/* Status text overlay */}
-            <div className="absolute inset-0 flex items-center justify-center pointer-events-none">
-              <div className="absolute bottom-12 text-center">
-                <p className="text-sm font-mono text-muted-foreground">
-                  {isConnected 
-                    ? conversation.isSpeaking 
-                      ? "ATLAS IS SPEAKING" 
-                      : "LISTENING..."
-                    : "OFFLINE"
-                  }
-                </p>
-              </div>
-            </div>
-          </div>
-
-          {/* Status Cards */}
-          <div className="grid grid-cols-3 gap-4">
-            <div className="bg-card/50 border border-border rounded-lg p-4 text-center">
-              <Waves size={24} className="mx-auto mb-2 text-primary" />
-              <p className="text-xs text-muted-foreground font-mono">AUDIO</p>
-              <p className="text-sm font-mono text-foreground">
-                {isConnected ? 'ACTIVE' : 'INACTIVE'}
-              </p>
-            </div>
-            <div className="bg-card/50 border border-border rounded-lg p-4 text-center">
-              <Activity size={24} className="mx-auto mb-2 text-secondary" />
-              <p className="text-xs text-muted-foreground font-mono">MODE</p>
-              <p className="text-sm font-mono text-foreground">
+            {/* Status text */}
+            <div className="absolute -bottom-8 left-0 right-0 text-center">
+              <p className="text-sm font-mono text-muted-foreground">
                 {isConnected 
-                  ? conversation.isSpeaking ? 'OUTPUT' : 'INPUT'
-                  : 'STANDBY'
+                  ? conversation.isSpeaking 
+                    ? "ATLAS IS SPEAKING" 
+                    : "LISTENING..."
+                  : "OFFLINE"
                 }
-              </p>
-            </div>
-            <div className="bg-card/50 border border-border rounded-lg p-4 text-center">
-              <Zap size={24} className="mx-auto mb-2 text-accent" />
-              <p className="text-xs text-muted-foreground font-mono">LATENCY</p>
-              <p className="text-sm font-mono text-foreground">
-                {isConnected ? '~200ms' : '---'}
               </p>
             </div>
           </div>
 
           {/* Controls */}
-          <div className="flex justify-center gap-4">
+          <div className="flex justify-center gap-3 mt-8">
             {!isConnected ? (
               <Button
                 onClick={startConversation}
                 disabled={isConnecting}
                 size="lg"
-                className="gap-3 font-mono px-8 py-6 text-lg"
+                className="gap-2 font-mono"
               >
-                <Mic className="w-6 h-6" />
-                {isConnecting ? "CONNECTING..." : "START ATLAS"}
+                <Mic className="w-5 h-5" />
+                {isConnecting ? "CONNECTING..." : "ACTIVATE ATLAS"}
               </Button>
             ) : (
               <>
                 <Button
                   onClick={toggleMute}
                   variant="outline"
-                  size="lg"
                   className="gap-2 font-mono"
                 >
-                  {isMuted ? (
-                    <VolumeX className="w-5 h-5" />
-                  ) : (
-                    <Volume2 className="w-5 h-5" />
-                  )}
+                  {isMuted ? <VolumeX className="w-4 h-4" /> : <Volume2 className="w-4 h-4" />}
                   {isMuted ? "UNMUTE" : "MUTE"}
                 </Button>
                 <Button
                   onClick={stopConversation}
                   variant="destructive"
-                  size="lg"
                   className="gap-2 font-mono"
                 >
-                  <MicOff className="w-5 h-5" />
-                  END SESSION
+                  <MicOff className="w-4 h-4" />
+                  DEACTIVATE
                 </Button>
               </>
             )}
           </div>
 
-          {/* Instructions */}
-          <div className="text-center space-y-2">
-            <p className="text-sm text-muted-foreground font-mono">
-              {isConnected 
-                ? "Speak naturally. Atlas is listening and will respond."
-                : "Click START ATLAS to begin voice interaction."
-              }
-            </p>
-            <p className="text-xs text-muted-foreground/60">
-              Powered by ElevenLabs Conversational AI
-            </p>
+          {/* Capabilities */}
+          <div className="mt-8 grid grid-cols-2 gap-2 text-xs font-mono">
+            <div className="flex items-center gap-2 text-muted-foreground">
+              <Search size={14} className="text-primary" />
+              <span>Search Agents</span>
+            </div>
+            <div className="flex items-center gap-2 text-muted-foreground">
+              <Sparkles size={14} className="text-secondary" />
+              <span>Synthesize Agents</span>
+            </div>
+            <div className="flex items-center gap-2 text-muted-foreground">
+              <Bot size={14} className="text-accent" />
+              <span>Agent Details</span>
+            </div>
+            <div className="flex items-center gap-2 text-muted-foreground">
+              <Database size={14} className="text-primary" />
+              <span>System Status</span>
+            </div>
+          </div>
+        </div>
+
+        {/* Right Panel - Results & Logs */}
+        <div className="w-96 flex flex-col gap-4">
+          {/* Search Results */}
+          {searchResults.length > 0 && (
+            <div className="bg-card/50 border border-border rounded-lg p-3">
+              <div className="flex items-center gap-2 mb-2">
+                <Search size={14} className="text-primary" />
+                <span className="text-xs font-mono text-muted-foreground">
+                  SEARCH RESULTS ({searchResults.length})
+                </span>
+              </div>
+              <ScrollArea className="h-32">
+                <div className="space-y-2">
+                  {searchResults.map((agent) => (
+                    <div key={agent.id} className="p-2 bg-background/50 rounded border border-border/50">
+                      <div className="flex items-center justify-between">
+                        <span className="text-sm font-mono text-foreground">{agent.name}</span>
+                        <span className="text-[10px] text-primary">{agent.sector}</span>
+                      </div>
+                      {agent.similarity && (
+                        <div className="text-[10px] text-muted-foreground">
+                          Match: {(agent.similarity * 100).toFixed(1)}%
+                        </div>
+                      )}
+                    </div>
+                  ))}
+                </div>
+              </ScrollArea>
+            </div>
+          )}
+
+          {/* Synthesized Agent */}
+          {synthesizedAgent && (
+            <div className="bg-card/50 border border-secondary/50 rounded-lg p-3">
+              <div className="flex items-center gap-2 mb-2">
+                <Sparkles size={14} className="text-secondary" />
+                <span className="text-xs font-mono text-muted-foreground">SYNTHESIZED AGENT</span>
+              </div>
+              <div className="p-2 bg-background/50 rounded border border-border/50">
+                <div className="text-sm font-mono text-secondary">{synthesizedAgent.name}</div>
+                <div className="text-[10px] text-muted-foreground mt-1">{synthesizedAgent.sector}</div>
+                <div className="text-xs text-foreground/80 mt-2">{synthesizedAgent.description}</div>
+              </div>
+            </div>
+          )}
+
+          {/* Action Logs */}
+          <div className="flex-1 bg-card/50 border border-border rounded-lg p-3">
+            <div className="flex items-center gap-2 mb-2">
+              <Terminal size={14} className="text-primary" />
+              <span className="text-xs font-mono text-muted-foreground">ACTION LOG</span>
+            </div>
+            <ScrollArea className="h-64">
+              <div className="space-y-1 font-mono text-[10px]">
+                {actionLogs.length === 0 ? (
+                  <div className="text-muted-foreground/50 text-center py-4">
+                    No actions yet. Activate Atlas to begin.
+                  </div>
+                ) : (
+                  actionLogs.map((log) => (
+                    <div 
+                      key={log.id} 
+                      className={`p-1.5 rounded ${
+                        log.status === 'success' ? 'bg-success/10 text-success' :
+                        log.status === 'error' ? 'bg-destructive/10 text-destructive' :
+                        'bg-secondary/10 text-secondary'
+                      }`}
+                    >
+                      <div className="flex items-center justify-between">
+                        <span className="text-foreground">{log.action}</span>
+                        <span className="text-muted-foreground">
+                          {log.timestamp.toLocaleTimeString()}
+                        </span>
+                      </div>
+                      <div className="text-current/70 truncate">{log.result}</div>
+                    </div>
+                  ))
+                )}
+              </div>
+            </ScrollArea>
+          </div>
+
+          {/* Status Cards */}
+          <div className="grid grid-cols-3 gap-2">
+            <div className="bg-card/50 border border-border rounded p-2 text-center">
+              <Waves size={16} className="mx-auto mb-1 text-primary" />
+              <p className="text-[10px] text-muted-foreground">AUDIO</p>
+              <p className="text-xs font-mono">{isConnected ? 'ON' : 'OFF'}</p>
+            </div>
+            <div className="bg-card/50 border border-border rounded p-2 text-center">
+              <Activity size={16} className="mx-auto mb-1 text-secondary" />
+              <p className="text-[10px] text-muted-foreground">MODE</p>
+              <p className="text-xs font-mono">
+                {isConnected ? (conversation.isSpeaking ? 'OUT' : 'IN') : '---'}
+              </p>
+            </div>
+            <div className="bg-card/50 border border-border rounded p-2 text-center">
+              <Zap size={16} className="mx-auto mb-1 text-accent" />
+              <p className="text-[10px] text-muted-foreground">TOOLS</p>
+              <p className="text-xs font-mono">8</p>
+            </div>
           </div>
         </div>
       </main>
