@@ -48,12 +48,12 @@ export function useAgents() {
 
     try {
       const batchSize = 1000;
+      const maxAgents = 5000; // safety cap to avoid timeouts on very large datasets
       const allAgents: SonicAgent[] = [];
       let hasMore = true;
       let offset = 0;
 
-      // Fetch in batches until we get less than batchSize (end of data)
-      while (hasMore) {
+      while (hasMore && offset < maxAgents) {
         const { data, error } = await supabase
           .from('sonic_agents')
           .select('*')
@@ -64,19 +64,24 @@ export function useAgents() {
 
         if (error) {
           console.error('Batch fetch error at offset', offset, error);
-          throw error;
+          // Stop fetching more pages; keep what we already have
+          toast.error('Agent list is too large to load all at once');
+          break;
         }
 
         if (data && data.length > 0) {
           allAgents.push(...data.map(mapDbToAgent));
-          setAgents([...allAgents]); // Show progress
           offset += data.length;
           hasMore = data.length === batchSize;
         } else {
           hasMore = false;
         }
       }
-      
+
+      if (offset >= maxAgents && hasMore) {
+        toast.warning(`Loaded first ${maxAgents.toLocaleString()} agents (limit reached)`);
+      }
+
       console.log(`Loaded ${allAgents.length} total agents`);
       setAgents(allAgents);
     } catch (error) {
