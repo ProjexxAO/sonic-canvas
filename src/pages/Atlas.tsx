@@ -57,6 +57,9 @@ export default function Atlas() {
   const [audioLevels, setAudioLevels] = useState<number[]>(new Array(20).fill(0));
   const [transcript, setTranscript] = useState<string>('');
   const [isTranscribing, setIsTranscribing] = useState(false);
+  const [inputVolume, setInputVolume] = useState(0);
+  const [outputVolume, setOutputVolume] = useState(0);
+  const [frequencyBands, setFrequencyBands] = useState({ bass: 0, mid: 0, treble: 0 });
   const animationRef = useRef<number>();
 
   const addToolActivity = (tool: string, status: 'active' | 'success' | 'error') => {
@@ -306,21 +309,42 @@ export default function Atlas() {
 
   const isConnected = conversation.status === "connected";
 
-  // Sync audio visualization to actual voice output
+  // Sync audio visualization to actual voice output using ElevenLabs APIs
   useEffect(() => {
     if (!isConnected) {
       setAudioLevels(new Array(20).fill(0));
+      setInputVolume(0);
+      setOutputVolume(0);
+      setFrequencyBands({ bass: 0, mid: 0, treble: 0 });
       return;
     }
 
     const updateAudioLevels = () => {
-      const frequencyData = conversation.getOutputByteFrequencyData();
+      // Get real-time volume levels from ElevenLabs
+      const inVol = conversation.getInputVolume();
+      const outVol = conversation.getOutputVolume();
+      setInputVolume(inVol);
+      setOutputVolume(outVol);
+      
+      // Get frequency data for advanced visualization
+      const outputFreq = conversation.getOutputByteFrequencyData();
+      const inputFreq = conversation.getInputByteFrequencyData();
+      
+      // Use output frequency when speaking, input when listening
+      const frequencyData = conversation.isSpeaking ? outputFreq : inputFreq;
       
       if (frequencyData && frequencyData.length > 0) {
+        // Calculate frequency bands (bass, mid, treble)
+        const third = Math.floor(frequencyData.length / 3);
+        const bassSum = frequencyData.slice(0, third).reduce((a, b) => a + b, 0) / third / 255;
+        const midSum = frequencyData.slice(third, third * 2).reduce((a, b) => a + b, 0) / third / 255;
+        const trebleSum = frequencyData.slice(third * 2).reduce((a, b) => a + b, 0) / third / 255;
+        setFrequencyBands({ bass: bassSum, mid: midSum, treble: trebleSum });
+        
         // Sample 20 points from the frequency data
         const newLevels = Array.from({ length: 20 }, (_, i) => {
           const index = Math.floor((i / 20) * frequencyData.length);
-          return frequencyData[index] / 255; // Normalize to 0-1
+          return frequencyData[index] / 255;
         });
         setAudioLevels(newLevels);
       } else {
@@ -328,6 +352,7 @@ export default function Atlas() {
         setAudioLevels(prev => prev.map((_, i) => 
           0.1 + Math.sin(Date.now() / 500 + i * 0.3) * 0.05
         ));
+        setFrequencyBands({ bass: 0.1, mid: 0.1, treble: 0.1 });
       }
       
       animationRef.current = requestAnimationFrame(updateAudioLevels);
@@ -389,19 +414,48 @@ export default function Atlas() {
           
           {/* Central Visualizer */}
           <div className="relative w-64 h-64 mb-6">
-            {/* Pulsing concentric rings - only when speaking */}
+            {/* Bass-reactive outer ring */}
+            {isConnected && (
+              <div
+                className="absolute -inset-4 rounded-full border-2 transition-all duration-100"
+                style={{
+                  borderColor: conversation.isSpeaking 
+                    ? `hsl(var(--secondary) / ${0.3 + frequencyBands.bass * 0.7})` 
+                    : `hsl(var(--primary) / ${0.2 + inputVolume * 0.5})`,
+                  transform: `scale(${1 + frequencyBands.bass * 0.1})`,
+                  boxShadow: frequencyBands.bass > 0.3 
+                    ? `0 0 ${20 + frequencyBands.bass * 30}px hsl(var(--secondary) / ${frequencyBands.bass * 0.5})`
+                    : 'none'
+                }}
+              />
+            )}
+            
+            {/* Mid-frequency reactive rings */}
             {isConnected && conversation.isSpeaking && (
               <>
                 {[0, 1, 2].map((i) => (
                   <div
                     key={`ring-${i}`}
-                    className="absolute inset-0 rounded-full border border-secondary/50 animate-ring-pulse"
+                    className="absolute inset-0 rounded-full border animate-ring-pulse"
                     style={{
                       animationDelay: `${i * 0.4}s`,
+                      borderColor: `hsl(var(--secondary) / ${0.3 + frequencyBands.mid * 0.5})`,
+                      transform: `scale(${1 + frequencyBands.mid * 0.05 * i})`,
                     }}
                   />
                 ))}
               </>
+            )}
+            
+            {/* User speaking indicator - input volume reactive */}
+            {isConnected && !conversation.isSpeaking && inputVolume > 0.1 && (
+              <div
+                className="absolute -inset-2 rounded-full border-2 border-primary/50 animate-pulse"
+                style={{
+                  transform: `scale(${1 + inputVolume * 0.15})`,
+                  boxShadow: `0 0 ${15 + inputVolume * 25}px hsl(var(--primary) / ${inputVolume * 0.6})`
+                }}
+              />
             )}
             
             {/* Outer ring */}
@@ -420,21 +474,24 @@ export default function Atlas() {
             <div className="absolute inset-8 rounded-full bg-card/50 backdrop-blur-sm border border-border flex items-center justify-center overflow-hidden">
               {/* Radial audio visualizer */}
               <div className="relative w-full h-full">
-                {/* Floating particles - only when speaking */}
-                {isConnected && conversation.isSpeaking && (
+                {/* Treble-reactive floating particles */}
+                {isConnected && (conversation.isSpeaking || outputVolume > 0.1) && (
                   <>
                     {Array.from({ length: 12 }).map((_, i) => {
-                      const angle = (i / 12) * 360 + Math.random() * 30;
+                      const angle = (i / 12) * 360;
                       const delay = i * 0.15;
-                      const duration = 1.5 + Math.random() * 0.5;
+                      const duration = 1.5 - frequencyBands.treble * 0.5;
                       return (
                         <div
                           key={`particle-${i}`}
-                          className="absolute left-1/2 top-1/2 w-1.5 h-1.5 rounded-full bg-secondary animate-particle"
+                          className="absolute left-1/2 top-1/2 rounded-full bg-secondary animate-particle"
                           style={{
                             '--particle-angle': `${angle}deg`,
                             animationDelay: `${delay}s`,
-                            animationDuration: `${duration}s`,
+                            animationDuration: `${Math.max(0.8, duration)}s`,
+                            width: `${2 + frequencyBands.treble * 4}px`,
+                            height: `${2 + frequencyBands.treble * 4}px`,
+                            opacity: 0.5 + frequencyBands.treble * 0.5,
                           } as React.CSSProperties}
                         />
                       );
@@ -442,27 +499,48 @@ export default function Atlas() {
                   </>
                 )}
                 
-                {/* Center icon */}
-                <div className={`absolute inset-0 m-auto w-16 h-16 rounded-full flex items-center justify-center transition-all duration-300 ${
-                  isConnected 
-                    ? conversation.isSpeaking 
-                      ? 'bg-secondary/20 shadow-[0_0_40px_hsl(var(--secondary)/0.5)]' 
-                      : 'bg-primary/20 shadow-[0_0_25px_hsl(var(--primary)/0.3)] animate-breathe'
-                    : 'bg-muted/20'
-                }`}>
-                  <Zap className={`w-8 h-8 transition-all duration-300 ${
+                {/* Center icon - volume reactive glow */}
+                <div 
+                  className={`absolute inset-0 m-auto w-16 h-16 rounded-full flex items-center justify-center transition-all duration-100 ${
+                    isConnected 
+                      ? conversation.isSpeaking 
+                        ? 'bg-secondary/20' 
+                        : 'bg-primary/20'
+                      : 'bg-muted/20'
+                  }`}
+                  style={{
+                    boxShadow: isConnected
+                      ? conversation.isSpeaking
+                        ? `0 0 ${30 + outputVolume * 40}px hsl(var(--secondary) / ${0.3 + outputVolume * 0.5})`
+                        : `0 0 ${20 + inputVolume * 30}px hsl(var(--primary) / ${0.2 + inputVolume * 0.4})`
+                      : 'none',
+                    transform: `scale(${1 + (conversation.isSpeaking ? outputVolume : inputVolume) * 0.1})`
+                  }}
+                >
+                  <Zap className={`w-8 h-8 transition-all duration-150 ${
                     isConnected
                       ? conversation.isSpeaking
-                        ? 'text-secondary animate-pulse'
+                        ? 'text-secondary'
                         : 'text-primary'
                       : 'text-muted-foreground'
-                  }`} />
+                  }`} 
+                  style={{
+                    filter: isConnected && outputVolume > 0.3 
+                      ? `drop-shadow(0 0 ${outputVolume * 15}px hsl(var(--secondary)))` 
+                      : 'none'
+                  }}
+                  />
                 </div>
                 
-                {/* Radial bars */}
+                {/* Radial bars - frequency reactive */}
                 {audioLevels.map((level, i) => {
                   const angle = (i / audioLevels.length) * 360;
-                  const barHeight = isConnected ? 20 + level * 35 : 12;
+                  const barHeight = isConnected ? 20 + level * 40 + outputVolume * 10 : 12;
+                  // Color varies by position: bass (left) -> mid (top) -> treble (right)
+                  const normalizedPos = i / audioLevels.length;
+                  const isBass = normalizedPos < 0.33;
+                  const isTreble = normalizedPos > 0.66;
+                  
                   return (
                     <div
                       key={i}
@@ -474,19 +552,26 @@ export default function Atlas() {
                       }}
                     >
                       <div 
-                        className={`w-full rounded-full transition-all duration-75 ${
-                          isConnected 
-                            ? conversation.isSpeaking 
-                              ? 'bg-gradient-to-t from-secondary to-secondary/30' 
-                              : 'bg-gradient-to-t from-primary to-primary/30'
-                            : 'bg-muted/30'
-                        }`}
+                        className="w-full rounded-full transition-all duration-75"
                         style={{
                           height: '100%',
+                          background: isConnected 
+                            ? conversation.isSpeaking 
+                              ? isBass 
+                                ? `linear-gradient(to top, hsl(var(--secondary)), hsl(var(--secondary) / 0.3))`
+                                : isTreble
+                                  ? `linear-gradient(to top, hsl(168 100% 50%), hsl(168 100% 50% / 0.3))`
+                                  : `linear-gradient(to top, hsl(270 100% 60%), hsl(270 100% 60% / 0.3))`
+                              : `linear-gradient(to top, hsl(var(--primary)), hsl(var(--primary) / 0.3))`
+                            : 'hsl(var(--muted) / 0.3)',
                           opacity: isConnected ? 0.5 + level * 0.5 : 0.2,
                           boxShadow: isConnected && level > 0.3 
                             ? conversation.isSpeaking
-                              ? '0 0 8px hsl(var(--secondary))'
+                              ? isBass 
+                                ? `0 0 ${8 + frequencyBands.bass * 12}px hsl(var(--secondary))`
+                                : isTreble
+                                  ? `0 0 ${8 + frequencyBands.treble * 12}px hsl(168 100% 50%)`
+                                  : `0 0 ${8 + frequencyBands.mid * 12}px hsl(270 100% 60%)`
                               : '0 0 6px hsl(var(--primary))'
                             : 'none'
                         }}
@@ -494,41 +579,40 @@ export default function Atlas() {
                     </div>
                   );
                 })}
-                
-                {/* Center icon */}
-                <div className="absolute inset-0 flex items-center justify-center">
-                  <div className={`w-14 h-14 rounded-full flex items-center justify-center transition-all duration-300 ${
-                    isConnected 
-                      ? conversation.isSpeaking 
-                        ? 'bg-secondary text-secondary-foreground scale-110 animate-speaking-pulse' 
-                        : 'bg-primary/80 text-primary-foreground'
-                      : 'bg-muted text-muted-foreground'
-                  }`}>
-                    <Hexagon 
-                      size={28} 
-                      className={`transition-transform duration-200 ${
-                        isConnected 
-                          ? conversation.isSpeaking 
-                            ? 'animate-speaking-icon' 
-                            : 'animate-slow-spin'
-                          : ''
-                      }`} 
-                    />
-                  </div>
-                </div>
               </div>
             </div>
 
-            {/* Status text */}
+            {/* Status text with volume indicator */}
             <div className="absolute -bottom-8 left-0 right-0 text-center">
               <p className="text-sm font-mono text-muted-foreground">
                 {isConnected 
                   ? conversation.isSpeaking 
                     ? "ATLAS IS SPEAKING" 
-                    : "LISTENING..."
+                    : inputVolume > 0.1 
+                      ? "LISTENING..." 
+                      : "AWAITING INPUT"
                   : "OFFLINE"
                 }
               </p>
+              {/* Volume level bar */}
+              {isConnected && (
+                <div className="mt-2 flex justify-center gap-1">
+                  {Array.from({ length: 10 }).map((_, i) => (
+                    <div
+                      key={i}
+                      className="w-1 h-3 rounded-full transition-all duration-75"
+                      style={{
+                        backgroundColor: i < (conversation.isSpeaking ? outputVolume : inputVolume) * 10
+                          ? conversation.isSpeaking 
+                            ? 'hsl(var(--secondary))'
+                            : 'hsl(var(--primary))'
+                          : 'hsl(var(--muted))',
+                        opacity: i < (conversation.isSpeaking ? outputVolume : inputVolume) * 10 ? 1 : 0.3
+                      }}
+                    />
+                  ))}
+                </div>
+              )}
             </div>
           </div>
 
