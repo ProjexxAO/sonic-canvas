@@ -613,28 +613,6 @@ export default function Atlas() {
             </div>
           </div>
 
-          {/* Live Transcript Display */}
-          {isConnected && (
-            <div className="w-full max-w-md px-4 mb-6">
-              <div className="relative bg-card/60 backdrop-blur-sm border border-border rounded-lg p-4 min-h-[60px]">
-                <div className="flex items-center gap-2 mb-2">
-                  <div className={`w-2 h-2 rounded-full ${isTranscribing ? 'bg-secondary animate-pulse' : 'bg-muted'}`} />
-                  <span className="text-[10px] font-mono text-muted-foreground tracking-wider">
-                    {isTranscribing ? 'ATLAS SPEAKING' : 'TRANSCRIPT'}
-                  </span>
-                </div>
-                <p className={`text-sm font-mono leading-relaxed transition-opacity duration-200 ${
-                  transcript ? 'text-foreground' : 'text-muted-foreground/50'
-                }`}>
-                  {transcript || 'Waiting for Atlas to speak...'}
-                </p>
-                {isTranscribing && (
-                  <span className="inline-block w-1 h-4 bg-secondary animate-pulse ml-0.5 align-middle" />
-                )}
-              </div>
-            </div>
-          )}
-
           {/* Controls */}
           <div className="flex justify-center gap-3 mt-8">
             {!isConnected ? (
@@ -785,6 +763,28 @@ export default function Atlas() {
           </div>
         </div>
       </main>
+
+      {/* Live Transcript Display - Bottom Bar */}
+      {isConnected && (
+        <div className="border-t border-border bg-card/80 backdrop-blur-sm px-6 py-3">
+          <div className="flex items-center gap-3">
+            <div className={`w-2 h-2 rounded-full flex-shrink-0 ${isTranscribing ? 'bg-secondary animate-pulse' : 'bg-muted'}`} />
+            <span className="text-[10px] font-mono text-muted-foreground tracking-wider flex-shrink-0">
+              {isTranscribing ? 'ATLAS SPEAKING' : 'TRANSCRIPT'}
+            </span>
+            <div className="flex-1 min-w-0">
+              <p className={`text-sm font-mono leading-relaxed truncate ${
+                transcript ? 'text-foreground' : 'text-muted-foreground/50'
+              }`}>
+                {transcript || 'Waiting for Atlas to speak...'}
+                {isTranscribing && (
+                  <span className="inline-block w-1 h-4 bg-secondary animate-pulse ml-0.5 align-middle" />
+                )}
+              </p>
+            </div>
+          </div>
+        </div>
+      )}
     </div>
   );
 }
