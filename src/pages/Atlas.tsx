@@ -633,6 +633,117 @@ export default function Atlas() {
             }}
           />
           
+          {/* Earth Orbiting the Orb */}
+          <div 
+            className="earth-orbit"
+            style={{
+              position: 'absolute',
+              top: '50%',
+              left: '50%',
+              width: '300px',
+              height: '300px',
+              marginTop: '-150px',
+              marginLeft: '-150px',
+              animation: 'orbit-rotation 60s linear infinite',
+              pointerEvents: 'none',
+            }}
+          >
+            {/* Earth positioned at edge of orbit */}
+            <div 
+              style={{
+                position: 'absolute',
+                top: '0',
+                left: '50%',
+                marginLeft: '-12px',
+                marginTop: '-12px',
+              }}
+            >
+              <svg width="24" height="24" viewBox="0 0 48 48" style={{ filter: 'drop-shadow(0 0 8px hsl(200 80% 50% / 0.6))' }}>
+                <defs>
+                  {/* Earth gradient - ocean */}
+                  <radialGradient id="earthOcean" cx="35%" cy="35%" r="60%">
+                    <stop offset="0%" stopColor="hsl(200 70% 55%)" />
+                    <stop offset="100%" stopColor="hsl(210 80% 35%)" />
+                  </radialGradient>
+                  {/* Atmosphere glow */}
+                  <radialGradient id="earthAtmosphere" cx="50%" cy="50%" r="50%">
+                    <stop offset="85%" stopColor="transparent" />
+                    <stop offset="100%" stopColor="hsl(200 80% 70% / 0.4)" />
+                  </radialGradient>
+                </defs>
+                
+                {/* Atmosphere glow */}
+                <circle cx="24" cy="24" r="23" fill="url(#earthAtmosphere)" />
+                
+                {/* Ocean base */}
+                <circle cx="24" cy="24" r="20" fill="url(#earthOcean)" />
+                
+                {/* Continents */}
+                {/* North America */}
+                <ellipse cx="14" cy="14" rx="6" ry="5" fill="hsl(120 35% 40%)" opacity="0.9" />
+                {/* South America */}
+                <ellipse cx="16" cy="28" rx="3" ry="6" fill="hsl(120 35% 38%)" opacity="0.9" />
+                {/* Europe/Africa */}
+                <ellipse cx="26" cy="18" rx="4" ry="3" fill="hsl(120 30% 42%)" opacity="0.9" />
+                <ellipse cx="27" cy="28" rx="4" ry="6" fill="hsl(45 50% 45%)" opacity="0.85" />
+                {/* Asia */}
+                <ellipse cx="34" cy="14" rx="7" ry="5" fill="hsl(120 32% 40%)" opacity="0.9" />
+                {/* Australia */}
+                <ellipse cx="38" cy="32" rx="3" ry="2" fill="hsl(30 45% 45%)" opacity="0.85" />
+                
+                {/* Cloud wisps */}
+                <ellipse cx="18" cy="12" rx="5" ry="2" fill="white" opacity="0.4" />
+                <ellipse cx="30" cy="24" rx="6" ry="2" fill="white" opacity="0.35" />
+                <ellipse cx="12" cy="30" rx="4" ry="1.5" fill="white" opacity="0.3" />
+                
+                {/* Highlight/shine */}
+                <ellipse cx="16" cy="16" rx="6" ry="5" fill="white" opacity="0.15" />
+              </svg>
+            </div>
+          </div>
+          
+          {/* Moon orbiting Earth (smaller, faster orbit) */}
+          <div 
+            className="moon-orbit"
+            style={{
+              position: 'absolute',
+              top: '50%',
+              left: '50%',
+              width: '300px',
+              height: '300px',
+              marginTop: '-150px',
+              marginLeft: '-150px',
+              animation: 'orbit-rotation 60s linear infinite',
+              pointerEvents: 'none',
+            }}
+          >
+            <div 
+              style={{
+                position: 'absolute',
+                top: '0',
+                left: '50%',
+                marginLeft: '-12px',
+                marginTop: '-12px',
+                width: '40px',
+                height: '40px',
+                animation: 'moon-around-earth 8s linear infinite',
+              }}
+            >
+              <svg width="8" height="8" viewBox="0 0 16 16" style={{ filter: 'drop-shadow(0 0 4px hsl(0 0% 80% / 0.5))' }}>
+                <defs>
+                  <radialGradient id="moonSurface" cx="35%" cy="35%" r="60%">
+                    <stop offset="0%" stopColor="hsl(40 5% 85%)" />
+                    <stop offset="100%" stopColor="hsl(40 5% 60%)" />
+                  </radialGradient>
+                </defs>
+                <circle cx="8" cy="8" r="7" fill="url(#moonSurface)" />
+                {/* Craters */}
+                <circle cx="5" cy="6" r="1.5" fill="hsl(40 5% 50%)" opacity="0.4" />
+                <circle cx="10" cy="9" r="2" fill="hsl(40 5% 52%)" opacity="0.35" />
+                <circle cx="7" cy="11" r="1" fill="hsl(40 5% 48%)" opacity="0.3" />
+              </svg>
+            </div>
+          </div>
         </div>
       )}
 
