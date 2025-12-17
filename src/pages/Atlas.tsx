@@ -1,6 +1,6 @@
 // Atlas Voice Agent Dashboard - Full Ecosystem Control
 
-import { useState, useCallback, useEffect, useRef } from 'react';
+import { useState, useCallback, useEffect, useRef, useMemo } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { useConversation } from "@elevenlabs/react";
 import { supabase } from '@/integrations/supabase/client';
@@ -77,6 +77,55 @@ export default function Atlas() {
   // Get active agents (those with ACTIVE or PROCESSING status)
   const activeAgents = agents.filter(a => a.status === 'ACTIVE' || a.status === 'PROCESSING').slice(0, 6);
 
+  // Randomized balloon configurations for light mode
+  const balloonConfigs = useMemo(() => {
+    const colors = [
+      { main: 'hsl(350 70% 60%)', stripe1: 'hsl(45 80% 65%)', stripe2: 'hsl(200 60% 55%)' },
+      { main: 'hsl(200 65% 55%)', stripe1: 'hsl(45 75% 70%)', stripe2: 'hsl(350 60% 55%)' },
+      { main: 'hsl(280 55% 60%)', stripe1: 'hsl(45 80% 65%)', stripe2: 'hsl(150 50% 55%)' },
+      { main: 'hsl(150 50% 55%)', stripe1: 'hsl(200 60% 60%)', stripe2: 'hsl(45 75% 60%)' },
+      { main: 'hsl(35 75% 55%)', stripe1: 'hsl(15 70% 50%)', stripe2: 'hsl(45 85% 65%)' },
+    ];
+    
+    return [
+      { 
+        size: 50, 
+        opacity: 0.75, 
+        duration: 50 + Math.random() * 30,
+        startY: 20 + Math.random() * 25,
+        delay: Math.random() * -60,
+        direction: 'rtl',
+        color: colors[Math.floor(Math.random() * colors.length)]
+      },
+      { 
+        size: 38, 
+        opacity: 0.55, 
+        duration: 60 + Math.random() * 40,
+        startY: 35 + Math.random() * 25,
+        delay: Math.random() * -80,
+        direction: 'ltr',
+        color: colors[Math.floor(Math.random() * colors.length)]
+      },
+      { 
+        size: 24, 
+        opacity: 0.35, 
+        duration: 70 + Math.random() * 50,
+        startY: 45 + Math.random() * 20,
+        delay: Math.random() * -100,
+        direction: 'rtl',
+        color: colors[Math.floor(Math.random() * colors.length)]
+      },
+      { 
+        size: 18, 
+        opacity: 0.25, 
+        duration: 90 + Math.random() * 60,
+        startY: 55 + Math.random() * 15,
+        delay: Math.random() * -120,
+        direction: 'ltr',
+        color: colors[Math.floor(Math.random() * colors.length)]
+      },
+    ];
+  }, []);
 
   const addLog = (action: string, params: Record<string, unknown>, result: string, status: 'success' | 'error' | 'pending') => {
     const log: ActionLog = {
@@ -655,60 +704,41 @@ export default function Atlas() {
             <div className="absolute inset-0 rounded-full bg-white/70 blur-lg" />
           </div>
           
-          {/* Hot Air Balloon 1 - Large, floats right to left */}
-          <div 
-            className="absolute bottom-[25%] opacity-75"
-            style={{ animation: 'balloon-float-1 60s linear infinite' }}
-          >
-            <svg width="50" height="70" viewBox="0 0 50 70" className="drop-shadow-lg">
-              <ellipse cx="25" cy="22" rx="22" ry="24" fill="hsl(350 70% 60%)" />
-              <path d="M 8 18 Q 25 45 42 18" stroke="hsl(45 80% 65%)" strokeWidth="4" fill="none" />
-              <path d="M 12 12 Q 25 38 38 12" stroke="hsl(200 60% 55%)" strokeWidth="3" fill="none" />
-              <line x1="12" y1="42" x2="18" y2="58" stroke="hsl(30 30% 35%)" strokeWidth="1" />
-              <line x1="38" y1="42" x2="32" y2="58" stroke="hsl(30 30% 35%)" strokeWidth="1" />
-              <line x1="25" y1="46" x2="25" y2="58" stroke="hsl(30 30% 35%)" strokeWidth="1" />
-              <rect x="16" y="58" width="18" height="10" rx="2" fill="hsl(30 40% 45%)" />
-              <rect x="16" y="58" width="18" height="3" rx="1" fill="hsl(30 35% 55%)" />
-            </svg>
-          </div>
-          
-          {/* Hot Air Balloon 2 - Medium, floats left to right higher */}
-          <div 
-            className="absolute bottom-[45%] opacity-55"
-            style={{ animation: 'balloon-float-2 75s linear infinite' }}
-          >
-            <svg width="38" height="54" viewBox="0 0 50 70" className="drop-shadow-md">
-              <ellipse cx="25" cy="22" rx="22" ry="24" fill="hsl(200 65% 55%)" />
-              <path d="M 6 20 L 25 46 L 44 20" stroke="hsl(45 75% 70%)" strokeWidth="3" fill="none" />
-              <line x1="12" y1="42" x2="18" y2="58" stroke="hsl(30 30% 35%)" strokeWidth="1" />
-              <line x1="38" y1="42" x2="32" y2="58" stroke="hsl(30 30% 35%)" strokeWidth="1" />
-              <rect x="16" y="58" width="18" height="10" rx="2" fill="hsl(30 40% 45%)" />
-            </svg>
-          </div>
-          
-          {/* Hot Air Balloon 3 - Small, floats right to left, distant */}
-          <div 
-            className="absolute bottom-[55%] opacity-35"
-            style={{ animation: 'balloon-float-3 90s linear infinite' }}
-          >
-            <svg width="24" height="34" viewBox="0 0 50 70" className="drop-shadow-sm">
-              <ellipse cx="25" cy="22" rx="22" ry="24" fill="hsl(280 55% 60%)" />
-              <line x1="15" y1="42" x2="20" y2="58" stroke="hsl(30 30% 35%)" strokeWidth="1.5" />
-              <line x1="35" y1="42" x2="30" y2="58" stroke="hsl(30 30% 35%)" strokeWidth="1.5" />
-              <rect x="18" y="58" width="14" height="8" rx="2" fill="hsl(30 40% 45%)" />
-            </svg>
-          </div>
-          
-          {/* Hot Air Balloon 4 - Tiny, very distant, slow float */}
-          <div 
-            className="absolute bottom-[65%] opacity-25"
-            style={{ animation: 'balloon-float-4 120s linear infinite' }}
-          >
-            <svg width="18" height="26" viewBox="0 0 50 70">
-              <ellipse cx="25" cy="22" rx="22" ry="24" fill="hsl(150 50% 55%)" />
-              <rect x="18" y="58" width="14" height="8" rx="2" fill="hsl(30 35% 50%)" />
-            </svg>
-          </div>
+          {/* Randomized Hot Air Balloons */}
+          {balloonConfigs.map((balloon, index) => (
+            <div 
+              key={index}
+              className="absolute"
+              style={{ 
+                bottom: `${balloon.startY}%`,
+                opacity: balloon.opacity,
+                animation: `balloon-float-${balloon.direction} ${balloon.duration}s linear infinite`,
+                animationDelay: `${balloon.delay}s`
+              }}
+            >
+              <svg 
+                width={balloon.size} 
+                height={balloon.size * 1.4} 
+                viewBox="0 0 50 70" 
+                className={balloon.size > 30 ? 'drop-shadow-lg' : balloon.size > 20 ? 'drop-shadow-md' : 'drop-shadow-sm'}
+              >
+                <ellipse cx="25" cy="22" rx="22" ry="24" fill={balloon.color.main} />
+                {balloon.size > 20 && (
+                  <>
+                    <path d="M 8 18 Q 25 45 42 18" stroke={balloon.color.stripe1} strokeWidth="4" fill="none" />
+                    <path d="M 12 12 Q 25 38 38 12" stroke={balloon.color.stripe2} strokeWidth="3" fill="none" />
+                  </>
+                )}
+                <line x1="12" y1="42" x2="18" y2="58" stroke="hsl(30 30% 35%)" strokeWidth="1" />
+                <line x1="38" y1="42" x2="32" y2="58" stroke="hsl(30 30% 35%)" strokeWidth="1" />
+                <line x1="25" y1="46" x2="25" y2="58" stroke="hsl(30 30% 35%)" strokeWidth="1" />
+                <rect x="16" y="58" width="18" height="10" rx="2" fill="hsl(30 40% 45%)" />
+                {balloon.size > 30 && (
+                  <rect x="16" y="58" width="18" height="3" rx="1" fill="hsl(30 35% 55%)" />
+                )}
+              </svg>
+            </div>
+          ))}
           
           
           {/* Soft horizon hint */}
