@@ -23,7 +23,7 @@ import {
   Users,
   Eye
 } from 'lucide-react';
-import { useAgents } from '@/hooks/useAgents';
+import { useDashboardAgents } from '@/hooks/useDashboardAgents';
 import { useAtlasContext } from '@/hooks/useAtlasContext';
 import { Button } from '@/components/ui/button';
 import { ScrollArea } from '@/components/ui/scroll-area';
@@ -51,7 +51,7 @@ interface SearchResult {
 
 export default function Atlas() {
   const navigate = useNavigate();
-  const { agents, loading: agentsLoading } = useAgents();
+  const { agents, loading: agentsLoading } = useDashboardAgents({ limit: 200 });
   const [isConnecting, setIsConnecting] = useState(false);
   const [isMuted, setIsMuted] = useState(false);
   const [actionLogs, setActionLogs] = useState<ActionLog[]>([]);
