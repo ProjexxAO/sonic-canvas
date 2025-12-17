@@ -263,32 +263,46 @@ export default function Atlas() {
     },
     onMessage: (message: any) => {
       console.log("[Atlas] Message:", message);
-      
-      // Handle user transcript - what the user says
-      if (message.type === 'user_transcript') {
+
+      // The ElevenLabs React SDK can emit different message shapes depending on
+      // enabled events + connection type. Support both:
+      // 1) "event" style: message.type === 'user_transcript' | 'agent_response' ...
+      // 2) "chat" style: { source, role, message }
+
+      // --- Chat-style fallback (what you currently receive)
+      if (typeof message?.message === "string") {
+        const who = message.role === "agent" ? "Atlas" : "You";
+        setTranscript(`${who}: ${message.message}`);
+        setIsTranscribing(message.role === "agent");
+        return;
+      }
+
+      // --- Event-style (requires enabling transcript/response events in ElevenLabs)
+      if (message?.type === "user_transcript") {
         const userText = message.user_transcription_event?.user_transcript;
         if (userText) {
           setTranscript(`You: ${userText}`);
-          setIsTranscribing(true);
+          setIsTranscribing(false);
         }
+        return;
       }
-      // Handle agent response - what Atlas says
-      else if (message.type === 'agent_response') {
+
+      if (message?.type === "agent_response") {
         const agentText = message.agent_response_event?.agent_response;
         if (agentText) {
           setTranscript(`Atlas: ${agentText}`);
           setIsTranscribing(true);
         }
+        return;
       }
-      // Handle corrected response after interruption
-      else if (message.type === 'agent_response_correction') {
+
+      if (message?.type === "agent_response_correction") {
         const correctedText = message.agent_response_correction_event?.corrected_agent_response;
-        if (correctedText) {
-          setTranscript(`Atlas: ${correctedText}`);
-        }
+        if (correctedText) setTranscript(`Atlas: ${correctedText}`);
+        return;
       }
-      // Audio done - stop transcribing indicator
-      else if (message.type === 'response.done') {
+
+      if (message?.type === "response.done") {
         setIsTranscribing(false);
       }
     },
