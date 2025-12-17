@@ -683,30 +683,75 @@
   50% { transform: translateX(-15px); }
 }
 
-@keyframes balloon-drift {
-  0%, 100% { 
-    transform: translate(0, 0); 
+/* Balloon floating animations - continuous movement across screen */
+@keyframes balloon-float-1 {
+  0% { 
+    left: 110%;
+    transform: translateY(0);
   }
-  25% { 
-    transform: translate(15px, -8px); 
+  25% {
+    transform: translateY(-20px);
   }
   50% { 
-    transform: translate(5px, 5px); 
+    transform: translateY(10px);
   }
-  75% { 
-    transform: translate(-10px, -3px); 
+  75% {
+    transform: translateY(-15px);
+  }
+  100% { 
+    left: -10%;
+    transform: translateY(0);
   }
 }
 
-@keyframes balloon-drift-slow {
-  0%, 100% { 
-    transform: translate(0, 0); 
+@keyframes balloon-float-2 {
+  0% { 
+    left: -10%;
+    transform: translateY(0);
   }
-  33% { 
-    transform: translate(-12px, 6px); 
+  25% {
+    transform: translateY(15px);
+  }
+  50% { 
+    transform: translateY(-10px);
+  }
+  75% {
+    transform: translateY(20px);
+  }
+  100% { 
+    left: 110%;
+    transform: translateY(0);
+  }
+}
+
+@keyframes balloon-float-3 {
+  0% { 
+    left: 105%;
+    transform: translateY(0);
+  }
+  33% {
+    transform: translateY(-12px);
   }
   66% { 
-    transform: translate(8px, -4px); 
+    transform: translateY(8px);
+  }
+  100% { 
+    left: -8%;
+    transform: translateY(0);
+  }
+}
+
+@keyframes balloon-float-4 {
+  0% { 
+    left: -5%;
+    transform: translateY(0);
+  }
+  50% { 
+    transform: translateY(-8px);
+  }
+  100% { 
+    left: 105%;
+    transform: translateY(0);
   }
 }
 
