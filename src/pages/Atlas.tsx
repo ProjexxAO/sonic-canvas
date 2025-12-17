@@ -481,7 +481,7 @@ export default function Atlas() {
                         : 'bg-primary/80 text-primary-foreground'
                       : 'bg-muted text-muted-foreground'
                   }`}>
-                    <Hexagon size={16} />
+                    <Hexagon size={16} className={isConnected && !conversation.isSpeaking ? 'animate-slow-spin' : ''} />
                   </div>
                 </div>
               </div>
