@@ -55,6 +55,8 @@ export default function Atlas() {
   const [synthesizedAgent, setSynthesizedAgent] = useState<any>(null);
   const [toolActivities, setToolActivities] = useState<{ tool: string; status: 'active' | 'success' | 'error'; timestamp: Date }[]>([]);
   const [audioLevels, setAudioLevels] = useState<number[]>(new Array(20).fill(0));
+  const [transcript, setTranscript] = useState<string>('');
+  const [isTranscribing, setIsTranscribing] = useState(false);
   const animationRef = useRef<number>();
 
   const addToolActivity = (tool: string, status: 'active' | 'success' | 'error') => {
@@ -249,8 +251,21 @@ export default function Atlas() {
       console.log("[Atlas] Disconnected from voice agent");
       addLog('system', {}, 'Disconnected from Atlas', 'success');
     },
-    onMessage: (message) => {
+    onMessage: (message: any) => {
       console.log("[Atlas] Message:", message);
+      
+      // Handle agent transcript events
+      if (message.type === 'agent_response') {
+        setTranscript(message.agent_response_event?.agent_response || '');
+        setIsTranscribing(true);
+      } else if (message.type === 'agent_response_correction') {
+        setTranscript(message.agent_response_correction_event?.corrected_agent_response || '');
+      } else if (message.type === 'response.audio_transcript.delta') {
+        setTranscript(prev => prev + (message.delta || ''));
+        setIsTranscribing(true);
+      } else if (message.type === 'response.audio.done' || message.type === 'agent_response_done') {
+        setIsTranscribing(false);
+      }
     },
     onError: (error) => {
       console.error("[Atlas] Error:", error);
@@ -597,6 +612,28 @@ export default function Atlas() {
               </p>
             </div>
           </div>
+
+          {/* Live Transcript Display */}
+          {isConnected && (
+            <div className="w-full max-w-md px-4 mb-6">
+              <div className="relative bg-card/60 backdrop-blur-sm border border-border rounded-lg p-4 min-h-[60px]">
+                <div className="flex items-center gap-2 mb-2">
+                  <div className={`w-2 h-2 rounded-full ${isTranscribing ? 'bg-secondary animate-pulse' : 'bg-muted'}`} />
+                  <span className="text-[10px] font-mono text-muted-foreground tracking-wider">
+                    {isTranscribing ? 'ATLAS SPEAKING' : 'TRANSCRIPT'}
+                  </span>
+                </div>
+                <p className={`text-sm font-mono leading-relaxed transition-opacity duration-200 ${
+                  transcript ? 'text-foreground' : 'text-muted-foreground/50'
+                }`}>
+                  {transcript || 'Waiting for Atlas to speak...'}
+                </p>
+                {isTranscribing && (
+                  <span className="inline-block w-1 h-4 bg-secondary animate-pulse ml-0.5 align-middle" />
+                )}
+              </div>
+            </div>
+          )}
 
           {/* Controls */}
           <div className="flex justify-center gap-3 mt-8">
