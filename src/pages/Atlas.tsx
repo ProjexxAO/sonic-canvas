@@ -429,9 +429,18 @@ export default function Atlas() {
             <ArrowLeft size={20} />
           </button>
           <div className="flex items-center gap-3">
-            <div className="relative">
-              <Hexagon size={32} className="text-primary" />
-              <Radio size={14} className="absolute inset-0 m-auto text-primary-foreground" />
+            <div className="relative w-10 h-10 flex items-center justify-center">
+              {/* Outer pulsing ring */}
+              <div className="absolute inset-0 rounded-full border border-primary/30 animate-ping" style={{ animationDuration: '2s' }} />
+              {/* Middle rotating ring */}
+              <div className="absolute inset-1 rounded-full border border-primary/50 animate-spin" style={{ animationDuration: '8s' }} />
+              {/* Core hexagon */}
+              <div className="relative z-10">
+                <Hexagon size={28} className="text-primary drop-shadow-[0_0_8px_hsl(var(--primary))]" />
+                <Radio size={12} className="absolute inset-0 m-auto text-primary-foreground" />
+              </div>
+              {/* Glow effect */}
+              <div className="absolute inset-0 rounded-full bg-primary/20 blur-md" />
             </div>
             <div>
               <h1 className="font-orbitron text-lg tracking-wider text-foreground">
