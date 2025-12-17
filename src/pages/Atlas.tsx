@@ -686,13 +686,6 @@ export default function Atlas() {
                 </>
               )}
             </div>
-            
-            {/* Activation hint */}
-            {!isConnected && !isConnecting && (
-              <p className="text-[10px] font-mono text-muted-foreground/60">
-                Tap the orb to activate
-              </p>
-            )}
           </div>
 
         </div>
