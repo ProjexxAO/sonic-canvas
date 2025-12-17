@@ -655,82 +655,96 @@ export default function Atlas() {
             <div className="absolute inset-0 rounded-full bg-white/70 blur-lg" />
           </div>
           
-          {/* Kite in top left corner */}
+          {/* Hot Air Balloon 1 - Large, foreground left */}
           <div 
-            className="absolute top-[8%] left-[8%]"
-            style={{ 
-              animation: 'kite-sway 4s ease-in-out infinite',
-              transformOrigin: 'bottom right'
-            }}
+            className="absolute top-[15%] left-[10%] opacity-80"
+            style={{ animation: 'balloon-drift 35s ease-in-out infinite' }}
           >
-            {/* Kite shape - diamond */}
-            <svg width="45" height="55" viewBox="0 0 45 55" className="drop-shadow-md">
-              <polygon 
-                points="22,0 44,22 22,55 0,22" 
-                fill="hsl(350 70% 55%)"
-                stroke="hsl(350 60% 40%)"
-                strokeWidth="1"
-              />
-              <line x1="22" y1="0" x2="22" y2="55" stroke="hsl(350 60% 40%)" strokeWidth="1" />
-              <line x1="0" y1="22" x2="44" y2="22" stroke="hsl(350 60% 40%)" strokeWidth="1" />
-              {/* Shorter kite tail */}
-              <path 
-                d="M 22 55 Q 28 68 20 80" 
-                stroke="hsl(350 70% 55%)" 
-                strokeWidth="2" 
-                fill="none"
-              />
-              {/* Tail bows - fewer */}
-              <ellipse cx="26" cy="65" rx="4" ry="2" fill="hsl(200 70% 55%)" />
-              <ellipse cx="21" cy="78" rx="4" ry="2" fill="hsl(45 80% 55%)" />
+            <svg width="50" height="70" viewBox="0 0 50 70" className="drop-shadow-lg">
+              {/* Balloon envelope */}
+              <ellipse cx="25" cy="22" rx="22" ry="24" fill="hsl(350 70% 60%)" />
+              <ellipse cx="25" cy="22" rx="22" ry="24" fill="url(#balloon1-gradient)" />
+              {/* Balloon stripes */}
+              <path d="M 8 18 Q 25 45 42 18" stroke="hsl(45 80% 65%)" strokeWidth="4" fill="none" />
+              <path d="M 12 12 Q 25 38 38 12" stroke="hsl(200 60% 55%)" strokeWidth="3" fill="none" />
+              {/* Basket ropes */}
+              <line x1="12" y1="42" x2="18" y2="58" stroke="hsl(30 30% 35%)" strokeWidth="1" />
+              <line x1="38" y1="42" x2="32" y2="58" stroke="hsl(30 30% 35%)" strokeWidth="1" />
+              <line x1="25" y1="46" x2="25" y2="58" stroke="hsl(30 30% 35%)" strokeWidth="1" />
+              {/* Basket */}
+              <rect x="16" y="58" width="18" height="10" rx="2" fill="hsl(30 40% 45%)" />
+              <rect x="16" y="58" width="18" height="3" rx="1" fill="hsl(30 35% 55%)" />
+              <defs>
+                <linearGradient id="balloon1-gradient" x1="0%" y1="0%" x2="100%" y2="0%">
+                  <stop offset="0%" stopColor="hsl(350 70% 50%)" stopOpacity="0.3" />
+                  <stop offset="50%" stopColor="transparent" />
+                  <stop offset="100%" stopColor="hsl(350 70% 40%)" stopOpacity="0.4" />
+                </linearGradient>
+              </defs>
             </svg>
           </div>
           
-          {/* Kite string connecting kite to girl */}
+          {/* Hot Air Balloon 2 - Medium, mid-right */}
           <div 
-            className="absolute top-[8%] left-[8%] pointer-events-none"
-            style={{ width: '150px', height: '500px' }}
+            className="absolute top-[25%] right-[15%] opacity-60"
+            style={{ animation: 'balloon-drift-slow 45s ease-in-out infinite', animationDelay: '-10s' }}
           >
-            <svg width="150" height="500" viewBox="0 0 150 500" className="opacity-50">
-              <path 
-                d="M 22 55 Q 40 120 55 220 Q 70 350 80 420" 
-                stroke="hsl(30 25% 35%)" 
-                strokeWidth="1.5" 
-                fill="none"
-              />
+            <svg width="35" height="50" viewBox="0 0 50 70" className="drop-shadow-md">
+              {/* Balloon envelope */}
+              <ellipse cx="25" cy="22" rx="22" ry="24" fill="hsl(200 65% 55%)" />
+              <ellipse cx="25" cy="22" rx="22" ry="24" fill="url(#balloon2-gradient)" />
+              {/* Balloon pattern */}
+              <path d="M 6 20 L 25 46 L 44 20" stroke="hsl(45 75% 70%)" strokeWidth="3" fill="none" />
+              {/* Basket ropes */}
+              <line x1="12" y1="42" x2="18" y2="58" stroke="hsl(30 30% 35%)" strokeWidth="1" />
+              <line x1="38" y1="42" x2="32" y2="58" stroke="hsl(30 30% 35%)" strokeWidth="1" />
+              {/* Basket */}
+              <rect x="16" y="58" width="18" height="10" rx="2" fill="hsl(30 40% 45%)" />
+              <defs>
+                <linearGradient id="balloon2-gradient" x1="0%" y1="0%" x2="100%" y2="0%">
+                  <stop offset="0%" stopColor="hsl(200 65% 45%)" stopOpacity="0.3" />
+                  <stop offset="50%" stopColor="transparent" />
+                  <stop offset="100%" stopColor="hsl(200 65% 35%)" stopOpacity="0.4" />
+                </linearGradient>
+              </defs>
             </svg>
           </div>
           
-          {/* Girl silhouette - facing left towards kite */}
-          <div className="absolute bottom-[5%] left-[10%]">
-            <svg width="40" height="65" viewBox="0 0 40 65" className="opacity-70" style={{ transform: 'scaleX(-1)' }}>
-              {/* Head */}
-              <circle cx="20" cy="8" r="7" fill="hsl(30 20% 25%)" />
-              {/* Hair/ponytail flowing right (appears left when flipped) */}
-              <ellipse cx="14" cy="6" rx="5" ry="3" fill="hsl(30 20% 25%)" />
-              <path d="M 14 8 Q 6 12 8 20" stroke="hsl(30 20% 25%)" strokeWidth="3" fill="none" />
-              {/* Body - dress */}
-              <path d="M 12 15 L 20 15 L 28 15 L 32 48 L 20 52 L 8 48 Z" fill="hsl(30 20% 25%)" />
-              {/* Arm reaching up holding string */}
-              <path d="M 24 18 Q 32 8 38 2" stroke="hsl(30 20% 25%)" strokeWidth="3" fill="none" strokeLinecap="round" />
-              {/* Hand/fist holding string */}
-              <circle cx="38" cy="2" r="3" fill="hsl(30 20% 25%)" />
-              {/* Other arm relaxed at side */}
-              <path d="M 16 20 Q 10 30 12 38" stroke="hsl(30 20% 25%)" strokeWidth="3" fill="none" strokeLinecap="round" />
-              {/* Legs */}
-              <line x1="16" y1="48" x2="14" y2="63" stroke="hsl(30 20% 25%)" strokeWidth="3" strokeLinecap="round" />
-              <line x1="24" y1="48" x2="26" y2="63" stroke="hsl(30 20% 25%)" strokeWidth="3" strokeLinecap="round" />
-            </svg>
-          </div>
-          
-          {/* Grass hint at bottom */}
+          {/* Hot Air Balloon 3 - Small, distant background */}
           <div 
-            className="absolute bottom-0 left-0 right-0 h-[8%] opacity-40"
+            className="absolute top-[35%] left-[45%] opacity-40"
+            style={{ animation: 'balloon-drift 55s ease-in-out infinite', animationDelay: '-20s' }}
+          >
+            <svg width="22" height="32" viewBox="0 0 50 70" className="drop-shadow-sm">
+              {/* Balloon envelope */}
+              <ellipse cx="25" cy="22" rx="22" ry="24" fill="hsl(280 55% 60%)" />
+              {/* Basket ropes */}
+              <line x1="15" y1="42" x2="20" y2="58" stroke="hsl(30 30% 35%)" strokeWidth="1.5" />
+              <line x1="35" y1="42" x2="30" y2="58" stroke="hsl(30 30% 35%)" strokeWidth="1.5" />
+              {/* Basket */}
+              <rect x="18" y="58" width="14" height="8" rx="2" fill="hsl(30 40% 45%)" />
+            </svg>
+          </div>
+          
+          {/* Hot Air Balloon 4 - Tiny, very distant */}
+          <div 
+            className="absolute top-[20%] left-[70%] opacity-30"
+            style={{ animation: 'balloon-drift-slow 60s ease-in-out infinite', animationDelay: '-30s' }}
+          >
+            <svg width="16" height="24" viewBox="0 0 50 70">
+              <ellipse cx="25" cy="22" rx="22" ry="24" fill="hsl(150 50% 55%)" />
+              <rect x="18" y="58" width="14" height="8" rx="2" fill="hsl(30 35% 50%)" />
+            </svg>
+          </div>
+          
+          {/* Soft horizon hint */}
+          <div 
+            className="absolute bottom-0 left-0 right-0 h-[15%] opacity-30"
             style={{
               background: `linear-gradient(180deg, 
                 transparent 0%,
-                hsl(100 35% 45% / 0.3) 50%,
-                hsl(100 40% 35% / 0.5) 100%)`
+                hsl(200 40% 80% / 0.3) 60%,
+                hsl(200 45% 75% / 0.5) 100%)`
             }}
           />
         </div>

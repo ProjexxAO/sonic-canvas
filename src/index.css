@@ -683,27 +683,30 @@
   50% { transform: translateX(-15px); }
 }
 
-@keyframes kite-sway {
+@keyframes balloon-drift {
   0%, 100% { 
-    transform: translate(0, 0) rotate(-5deg); 
+    transform: translate(0, 0); 
   }
   25% { 
-    transform: translate(8px, -5px) rotate(2deg); 
+    transform: translate(15px, -8px); 
   }
   50% { 
-    transform: translate(3px, 3px) rotate(-3deg); 
+    transform: translate(5px, 5px); 
   }
   75% { 
-    transform: translate(-5px, -2px) rotate(5deg); 
+    transform: translate(-10px, -3px); 
   }
 }
 
-@keyframes kite-string-wave {
+@keyframes balloon-drift-slow {
   0%, 100% { 
-    d: path('M 0 0 Q 10 30 5 60 Q 0 90 8 120'); 
+    transform: translate(0, 0); 
   }
-  50% { 
-    d: path('M 0 0 Q -5 30 3 60 Q 10 90 5 120'); 
+  33% { 
+    transform: translate(-12px, 6px); 
+  }
+  66% { 
+    transform: translate(8px, -4px); 
   }
 }
 
