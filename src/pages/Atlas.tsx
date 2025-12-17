@@ -632,16 +632,6 @@ export default function Atlas() {
               animationDelay: '7s'
             }}
           />
-          <div 
-            className="absolute w-1 h-1 bg-white rounded-full"
-            style={{ 
-              top: '50%',
-              left: '10%',
-              boxShadow: '0 0 6px 2px rgba(255,255,255,0.6)',
-              animation: 'shooting-star-1 10s ease-in-out infinite',
-              animationDelay: '12s'
-            }}
-          />
         </div>
       )}
 
