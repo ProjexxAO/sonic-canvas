@@ -1,6 +1,6 @@
 // Atlas Voice Agent Dashboard - Full Ecosystem Control
 
-import { useState, useCallback } from 'react';
+import { useState, useCallback, useEffect, useRef } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { useConversation } from "@elevenlabs/react";
 import { supabase } from '@/integrations/supabase/client';
@@ -54,6 +54,8 @@ export default function Atlas() {
   const [searchResults, setSearchResults] = useState<SearchResult[]>([]);
   const [synthesizedAgent, setSynthesizedAgent] = useState<any>(null);
   const [toolActivities, setToolActivities] = useState<{ tool: string; status: 'active' | 'success' | 'error'; timestamp: Date }[]>([]);
+  const [audioLevels, setAudioLevels] = useState<number[]>(new Array(20).fill(0));
+  const animationRef = useRef<number>();
 
   const addToolActivity = (tool: string, status: 'active' | 'success' | 'error') => {
     setToolActivities(prev => [{ tool, status, timestamp: new Date() }, ...prev].slice(0, 5));
@@ -289,6 +291,42 @@ export default function Atlas() {
 
   const isConnected = conversation.status === "connected";
 
+  // Sync audio visualization to actual voice output
+  useEffect(() => {
+    if (!isConnected) {
+      setAudioLevels(new Array(20).fill(0));
+      return;
+    }
+
+    const updateAudioLevels = () => {
+      const frequencyData = conversation.getOutputByteFrequencyData();
+      
+      if (frequencyData && frequencyData.length > 0) {
+        // Sample 20 points from the frequency data
+        const newLevels = Array.from({ length: 20 }, (_, i) => {
+          const index = Math.floor((i / 20) * frequencyData.length);
+          return frequencyData[index] / 255; // Normalize to 0-1
+        });
+        setAudioLevels(newLevels);
+      } else {
+        // Subtle idle animation when not speaking
+        setAudioLevels(prev => prev.map((_, i) => 
+          0.1 + Math.sin(Date.now() / 500 + i * 0.3) * 0.05
+        ));
+      }
+      
+      animationRef.current = requestAnimationFrame(updateAudioLevels);
+    };
+
+    animationRef.current = requestAnimationFrame(updateAudioLevels);
+
+    return () => {
+      if (animationRef.current) {
+        cancelAnimationFrame(animationRef.current);
+      }
+    };
+  }, [isConnected, conversation]);
+
   return (
     <div className="min-h-screen bg-background text-foreground flex flex-col">
       {/* Header */}
@@ -351,10 +389,10 @@ export default function Atlas() {
             {/* Inner circle with visualizer */}
             <div className="absolute inset-8 rounded-full bg-card/50 backdrop-blur-sm border border-border flex items-center justify-center overflow-hidden">
               <div className="flex items-center justify-center gap-0.5 h-24">
-                {Array.from({ length: 20 }).map((_, i) => (
+                {audioLevels.map((level, i) => (
                   <div
                     key={i}
-                    className={`w-1 rounded-full transition-all duration-100 ${
+                    className={`w-1 rounded-full transition-all duration-75 ${
                       isConnected 
                         ? conversation.isSpeaking 
                           ? 'bg-secondary' 
@@ -363,9 +401,9 @@ export default function Atlas() {
                     }`}
                     style={{
                       height: isConnected 
-                        ? `${Math.sin(Date.now() / 200 + i * 0.5) * 30 + 40}%`
+                        ? `${Math.max(15, level * 85)}%`
                         : '15%',
-                      opacity: isConnected ? 0.8 : 0.3,
+                      opacity: isConnected ? 0.6 + level * 0.4 : 0.3,
                     }}
                   />
                 ))}
