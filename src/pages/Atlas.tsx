@@ -435,7 +435,7 @@ export default function Atlas() {
               {/* Middle rotating ring */}
               <div className="absolute inset-1 rounded-full border border-primary/50 animate-spin" style={{ animationDuration: '8s' }} />
               {/* Core hexagon */}
-              <div className="relative z-10">
+              <div className="relative z-10 animate-spin" style={{ animationDuration: '12s' }}>
                 <Hexagon size={28} className="text-primary drop-shadow-[0_0_8px_hsl(var(--primary))]" />
                 <Radio size={12} className="absolute inset-0 m-auto text-primary-foreground" />
               </div>
