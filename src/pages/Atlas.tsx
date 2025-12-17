@@ -66,7 +66,7 @@ export default function Atlas() {
   const [inputVolume, setInputVolume] = useState(0);
   const [outputVolume, setOutputVolume] = useState(0);
   const [frequencyBands, setFrequencyBands] = useState({ bass: 0, mid: 0, treble: 0 });
-  const [wakeWordEnabled, setWakeWordEnabled] = useState(false);
+  const [wakeWordEnabled, setWakeWordEnabled] = useState(true);
   const animationRef = useRef<number>();
   const conversationRef = useRef<any>(null);
 
