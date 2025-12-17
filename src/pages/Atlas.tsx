@@ -264,16 +264,31 @@ export default function Atlas() {
     onMessage: (message: any) => {
       console.log("[Atlas] Message:", message);
       
-      // Handle agent transcript events
-      if (message.type === 'agent_response') {
-        setTranscript(message.agent_response_event?.agent_response || '');
-        setIsTranscribing(true);
-      } else if (message.type === 'agent_response_correction') {
-        setTranscript(message.agent_response_correction_event?.corrected_agent_response || '');
-      } else if (message.type === 'response.audio_transcript.delta') {
-        setTranscript(prev => prev + (message.delta || ''));
-        setIsTranscribing(true);
-      } else if (message.type === 'response.audio.done' || message.type === 'agent_response_done') {
+      // Handle user transcript - what the user says
+      if (message.type === 'user_transcript') {
+        const userText = message.user_transcription_event?.user_transcript;
+        if (userText) {
+          setTranscript(`You: ${userText}`);
+          setIsTranscribing(true);
+        }
+      }
+      // Handle agent response - what Atlas says
+      else if (message.type === 'agent_response') {
+        const agentText = message.agent_response_event?.agent_response;
+        if (agentText) {
+          setTranscript(`Atlas: ${agentText}`);
+          setIsTranscribing(true);
+        }
+      }
+      // Handle corrected response after interruption
+      else if (message.type === 'agent_response_correction') {
+        const correctedText = message.agent_response_correction_event?.corrected_agent_response;
+        if (correctedText) {
+          setTranscript(`Atlas: ${correctedText}`);
+        }
+      }
+      // Audio done - stop transcribing indicator
+      else if (message.type === 'response.done') {
         setIsTranscribing(false);
       }
     },
