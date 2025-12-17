@@ -799,3 +799,24 @@
     transform: translate(-320px, 230px) scale(0);
   }
 }
+
+/* Spacecraft cruise animation */
+@keyframes spacecraft-cruise {
+  0% {
+    left: -50px;
+    transform: translateY(0) rotate(0deg);
+  }
+  25% {
+    transform: translateY(-15px) rotate(-2deg);
+  }
+  50% {
+    transform: translateY(10px) rotate(1deg);
+  }
+  75% {
+    transform: translateY(-8px) rotate(-1deg);
+  }
+  100% {
+    left: calc(100% + 50px);
+    transform: translateY(0) rotate(0deg);
+  }
+}
