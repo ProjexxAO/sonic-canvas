@@ -562,9 +562,9 @@ export default function Atlas() {
             
             {/* Inner circle - Cosmic Orb */}
             <div 
-              className={`absolute inset-8 rounded-full bg-background-elevated/80 border border-border flex items-center justify-center overflow-hidden ${
+              className={`absolute inset-8 rounded-full border border-border flex items-center justify-center overflow-hidden ${
                 !isConnected && !isConnecting ? 'cursor-pointer hover:border-primary/50 transition-colors' : ''
-              }`}
+              } ${theme === 'dark' ? 'bg-[hsl(240_10%_6%/0.9)]' : 'bg-[hsl(220_25%_96%/0.95)] shadow-lg'}`}
               onClick={() => {
                 if (!isConnected && !isConnecting) {
                   startConversation();
@@ -582,33 +582,48 @@ export default function Atlas() {
                     transition: 'transform 0.1s ease-out'
                   }}
                 >
-                  {/* Base nebula layer */}
+                  {/* Base nebula layer - theme aware */}
                   <div 
                     className="absolute inset-0 rounded-full"
                     style={{
-                      background: `radial-gradient(ellipse at ${30 + frequencyBands.bass * 20}% ${40 + frequencyBands.mid * 20}%, 
-                        hsl(270 100% ${isConnected ? 45 + outputVolume * 35 : 35}% / ${0.8 + outputVolume * 0.2}) 0%,
-                        hsl(220 100% ${isConnected ? 35 + outputVolume * 25 : 28}% / ${0.7 + outputVolume * 0.3}) 30%,
-                        hsl(280 100% ${isConnected ? 28 + outputVolume * 20 : 22}% / ${0.6 + outputVolume * 0.3}) 60%,
-                        transparent 100%)`,
+                      background: theme === 'dark' 
+                        ? `radial-gradient(ellipse at ${30 + frequencyBands.bass * 20}% ${40 + frequencyBands.mid * 20}%, 
+                            hsl(270 100% ${isConnected ? 45 + outputVolume * 35 : 35}% / ${0.8 + outputVolume * 0.2}) 0%,
+                            hsl(220 100% ${isConnected ? 35 + outputVolume * 25 : 28}% / ${0.7 + outputVolume * 0.3}) 30%,
+                            hsl(280 100% ${isConnected ? 28 + outputVolume * 20 : 22}% / ${0.6 + outputVolume * 0.3}) 60%,
+                            transparent 100%)`
+                        : `radial-gradient(ellipse at ${30 + frequencyBands.bass * 20}% ${40 + frequencyBands.mid * 20}%, 
+                            hsl(270 60% ${isConnected ? 60 + outputVolume * 20 : 55}% / ${0.85 + outputVolume * 0.15}) 0%,
+                            hsl(220 65% ${isConnected ? 55 + outputVolume * 15 : 50}% / ${0.75 + outputVolume * 0.2}) 30%,
+                            hsl(280 55% ${isConnected ? 50 + outputVolume * 15 : 45}% / ${0.65 + outputVolume * 0.25}) 60%,
+                            hsl(210 30% 92% / 0.3) 100%)`,
                       animation: isConnected && conversation.isSpeaking 
                         ? 'orb-pulse 0.5s ease-in-out infinite' 
                         : 'orb-idle 4s ease-in-out infinite',
                     }}
                   />
                   
-                  {/* Swirling nebula clouds layer 1 */}
+                  {/* Swirling nebula clouds layer 1 - theme aware */}
                   <div 
-                    className="absolute inset-0 rounded-full mix-blend-screen"
+                    className={`absolute inset-0 rounded-full ${theme === 'dark' ? 'mix-blend-screen' : 'mix-blend-multiply'}`}
                     style={{
-                      background: `conic-gradient(from ${Date.now() / 50 % 360}deg at 50% 50%,
-                        transparent 0deg,
-                        hsl(280 100% ${60 + frequencyBands.bass * 30}% / ${0.5 + outputVolume * 0.4}) 60deg,
-                        transparent 120deg,
-                        hsl(200 100% ${70 + frequencyBands.mid * 25}% / ${0.45 + outputVolume * 0.4}) 180deg,
-                        transparent 240deg,
-                        hsl(320 100% ${65 + frequencyBands.treble * 30}% / ${0.4 + outputVolume * 0.4}) 300deg,
-                        transparent 360deg)`,
+                      background: theme === 'dark'
+                        ? `conic-gradient(from ${Date.now() / 50 % 360}deg at 50% 50%,
+                            transparent 0deg,
+                            hsl(280 100% ${60 + frequencyBands.bass * 30}% / ${0.5 + outputVolume * 0.4}) 60deg,
+                            transparent 120deg,
+                            hsl(200 100% ${70 + frequencyBands.mid * 25}% / ${0.45 + outputVolume * 0.4}) 180deg,
+                            transparent 240deg,
+                            hsl(320 100% ${65 + frequencyBands.treble * 30}% / ${0.4 + outputVolume * 0.4}) 300deg,
+                            transparent 360deg)`
+                        : `conic-gradient(from ${Date.now() / 50 % 360}deg at 50% 50%,
+                            transparent 0deg,
+                            hsl(280 55% ${55 + frequencyBands.bass * 20}% / ${0.35 + outputVolume * 0.3}) 60deg,
+                            transparent 120deg,
+                            hsl(200 60% ${60 + frequencyBands.mid * 18}% / ${0.3 + outputVolume * 0.35}) 180deg,
+                            transparent 240deg,
+                            hsl(320 50% ${58 + frequencyBands.treble * 20}% / ${0.3 + outputVolume * 0.3}) 300deg,
+                            transparent 360deg)`,
                       animation: isConnected && conversation.isSpeaking 
                         ? `orb-swirl ${2 - outputVolume}s linear infinite` 
                         : 'orb-swirl 8s linear infinite',
@@ -616,16 +631,23 @@ export default function Atlas() {
                     }}
                   />
                   
-                  {/* Secondary swirl - counter rotation */}
+                  {/* Secondary swirl - counter rotation - theme aware */}
                   <div 
-                    className="absolute inset-2 rounded-full mix-blend-screen"
+                    className={`absolute inset-2 rounded-full ${theme === 'dark' ? 'mix-blend-screen' : 'mix-blend-multiply'}`}
                     style={{
-                      background: `conic-gradient(from ${180 + Date.now() / 80 % 360}deg at 55% 45%,
-                        transparent 0deg,
-                        hsl(180 100% ${75 + frequencyBands.treble * 20}% / ${0.4 + outputVolume * 0.4}) 90deg,
-                        transparent 180deg,
-                        hsl(260 100% ${70 + frequencyBands.bass * 25}% / ${0.45 + outputVolume * 0.4}) 270deg,
-                        transparent 360deg)`,
+                      background: theme === 'dark'
+                        ? `conic-gradient(from ${180 + Date.now() / 80 % 360}deg at 55% 45%,
+                            transparent 0deg,
+                            hsl(180 100% ${75 + frequencyBands.treble * 20}% / ${0.4 + outputVolume * 0.4}) 90deg,
+                            transparent 180deg,
+                            hsl(260 100% ${70 + frequencyBands.bass * 25}% / ${0.45 + outputVolume * 0.4}) 270deg,
+                            transparent 360deg)`
+                        : `conic-gradient(from ${180 + Date.now() / 80 % 360}deg at 55% 45%,
+                            transparent 0deg,
+                            hsl(180 55% ${60 + frequencyBands.treble * 15}% / ${0.3 + outputVolume * 0.35}) 90deg,
+                            transparent 180deg,
+                            hsl(260 55% ${58 + frequencyBands.bass * 18}% / ${0.35 + outputVolume * 0.35}) 270deg,
+                            transparent 360deg)`,
                       animation: isConnected && conversation.isSpeaking 
                         ? `orb-swirl-reverse ${2.5 - outputVolume * 0.5}s linear infinite` 
                         : 'orb-swirl-reverse 10s linear infinite',
@@ -633,43 +655,60 @@ export default function Atlas() {
                     }}
                   />
                   
-                  {/* Stars/sparkles layer */}
+                  {/* Stars/sparkles layer - theme aware */}
                   <div 
                     className="absolute inset-0 rounded-full"
                     style={{
-                      backgroundImage: `radial-gradient(1.5px 1.5px at 20% 30%, white ${0.6 + outputVolume * 0.4}, transparent),
-                        radial-gradient(1.5px 1.5px at 40% 70%, white ${0.55 + outputVolume * 0.4}, transparent),
-                        radial-gradient(1.5px 1.5px at 60% 20%, white ${0.58 + outputVolume * 0.4}, transparent),
-                        radial-gradient(2px 2px at 80% 50%, hsl(180 100% 80% / ${0.6 + outputVolume * 0.4}) 0%, transparent 100%),
-                        radial-gradient(2px 2px at 30% 80%, hsl(280 100% 80% / ${0.55 + outputVolume * 0.4}) 0%, transparent 100%),
-                        radial-gradient(1.5px 1.5px at 70% 60%, white ${0.55 + outputVolume * 0.4}, transparent),
-                        radial-gradient(1.5px 1.5px at 15% 55%, white ${0.5 + outputVolume * 0.4}, transparent),
-                        radial-gradient(2px 2px at 85% 25%, hsl(200 100% 85% / ${0.55 + outputVolume * 0.4}) 0%, transparent 100%)`,
+                      backgroundImage: theme === 'dark'
+                        ? `radial-gradient(1.5px 1.5px at 20% 30%, white ${0.6 + outputVolume * 0.4}, transparent),
+                            radial-gradient(1.5px 1.5px at 40% 70%, white ${0.55 + outputVolume * 0.4}, transparent),
+                            radial-gradient(1.5px 1.5px at 60% 20%, white ${0.58 + outputVolume * 0.4}, transparent),
+                            radial-gradient(2px 2px at 80% 50%, hsl(180 100% 80% / ${0.6 + outputVolume * 0.4}) 0%, transparent 100%),
+                            radial-gradient(2px 2px at 30% 80%, hsl(280 100% 80% / ${0.55 + outputVolume * 0.4}) 0%, transparent 100%),
+                            radial-gradient(1.5px 1.5px at 70% 60%, white ${0.55 + outputVolume * 0.4}, transparent),
+                            radial-gradient(1.5px 1.5px at 15% 55%, white ${0.5 + outputVolume * 0.4}, transparent),
+                            radial-gradient(2px 2px at 85% 25%, hsl(200 100% 85% / ${0.55 + outputVolume * 0.4}) 0%, transparent 100%)`
+                        : `radial-gradient(1.5px 1.5px at 20% 30%, hsl(270 60% 45% / ${0.5 + outputVolume * 0.35}), transparent),
+                            radial-gradient(1.5px 1.5px at 40% 70%, hsl(200 55% 50% / ${0.45 + outputVolume * 0.35}), transparent),
+                            radial-gradient(1.5px 1.5px at 60% 20%, hsl(280 50% 48% / ${0.48 + outputVolume * 0.35}), transparent),
+                            radial-gradient(2px 2px at 80% 50%, hsl(180 60% 55% / ${0.5 + outputVolume * 0.35}) 0%, transparent 100%),
+                            radial-gradient(2px 2px at 30% 80%, hsl(280 55% 52% / ${0.45 + outputVolume * 0.35}) 0%, transparent 100%),
+                            radial-gradient(1.5px 1.5px at 70% 60%, hsl(220 50% 50% / ${0.45 + outputVolume * 0.35}), transparent),
+                            radial-gradient(1.5px 1.5px at 15% 55%, hsl(260 55% 48% / ${0.4 + outputVolume * 0.35}), transparent),
+                            radial-gradient(2px 2px at 85% 25%, hsl(200 60% 55% / ${0.45 + outputVolume * 0.35}) 0%, transparent 100%)`,
                       animation: 'orb-stars 3s ease-in-out infinite',
                     }}
                   />
                   
-                  {/* Energy core - bass reactive */}
+                  {/* Energy core - bass reactive - theme aware */}
                   <div 
                     className="absolute inset-0 m-auto rounded-full"
                     style={{
                       width: `${30 + frequencyBands.bass * 40}%`,
                       height: `${30 + frequencyBands.bass * 40}%`,
-                      background: `radial-gradient(circle,
-                        hsl(${isConnected && conversation.isSpeaking ? '45 100%' : '190 100%'} ${80 + outputVolume * 20}% / ${0.7 + outputVolume * 0.3}) 0%,
-                        hsl(${isConnected && conversation.isSpeaking ? '320 100%' : '210 100%'} 70% / ${0.5 + outputVolume * 0.4}) 40%,
-                        transparent 70%)`,
+                      background: theme === 'dark'
+                        ? `radial-gradient(circle,
+                            hsl(${isConnected && conversation.isSpeaking ? '45 100%' : '190 100%'} ${80 + outputVolume * 20}% / ${0.7 + outputVolume * 0.3}) 0%,
+                            hsl(${isConnected && conversation.isSpeaking ? '320 100%' : '210 100%'} 70% / ${0.5 + outputVolume * 0.4}) 40%,
+                            transparent 70%)`
+                        : `radial-gradient(circle,
+                            hsl(${isConnected && conversation.isSpeaking ? '45 80%' : '190 60%'} ${70 + outputVolume * 15}% / ${0.6 + outputVolume * 0.25}) 0%,
+                            hsl(${isConnected && conversation.isSpeaking ? '320 60%' : '210 50%'} 60% / ${0.4 + outputVolume * 0.35}) 40%,
+                            transparent 70%)`,
                       filter: `blur(${3 - outputVolume * 1.5}px)`,
                       transition: 'width 0.1s, height 0.1s',
                     }}
                   />
                   
-                  {/* Outer glow ring */}
+                  {/* Outer glow ring - theme aware */}
                   <div 
                     className="absolute inset-0 rounded-full"
                     style={{
-                      boxShadow: `inset 0 0 ${35 + outputVolume * 45}px hsl(${isConnected && conversation.isSpeaking ? '280' : '200'} 100% 60% / ${0.5 + outputVolume * 0.4}),
-                        inset 0 0 ${70 + outputVolume * 60}px hsl(200 100% 40% / ${0.4 + outputVolume * 0.3})`,
+                      boxShadow: theme === 'dark'
+                        ? `inset 0 0 ${35 + outputVolume * 45}px hsl(${isConnected && conversation.isSpeaking ? '280' : '200'} 100% 60% / ${0.5 + outputVolume * 0.4}),
+                            inset 0 0 ${70 + outputVolume * 60}px hsl(200 100% 40% / ${0.4 + outputVolume * 0.3})`
+                        : `inset 0 0 ${25 + outputVolume * 30}px hsl(${isConnected && conversation.isSpeaking ? '280' : '200'} 55% 55% / ${0.35 + outputVolume * 0.3}),
+                            inset 0 0 ${50 + outputVolume * 40}px hsl(200 50% 50% / ${0.25 + outputVolume * 0.25})`,
                     }}
                   />
                 </div>
