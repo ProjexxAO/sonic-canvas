@@ -24,23 +24,16 @@ import {
   Eye,
   Wifi,
   WifiOff,
-  Navigation,
-  Bell,
-  Trash2,
-  Info,
-  ChevronDown
+  Sun,
+  Moon
 } from 'lucide-react';
+import { useTheme } from 'next-themes';
 import { useAuth } from '@/hooks/useAuth';
 import { useDashboardAgents } from '@/hooks/useDashboardAgents';
 import { useAtlasContext } from '@/hooks/useAtlasContext';
 import { Button } from '@/components/ui/button';
 import { ScrollArea } from '@/components/ui/scroll-area';
 import { ActionLogItem } from '@/components/atlas/ActionLogItem';
-import {
-  Popover,
-  PopoverContent,
-  PopoverTrigger,
-} from "@/components/ui/popover";
 
 const ATLAS_AGENT_ID = "agent_7501kbh21cg1eht9xtjw6kvkpm4m";
 
@@ -64,6 +57,7 @@ interface SearchResult {
 export default function Atlas() {
   const navigate = useNavigate();
   const { user } = useAuth();
+  const { theme, setTheme } = useTheme();
   const { agents, loading: agentsLoading } = useDashboardAgents({ limit: 200 });
   const [isConnecting, setIsConnecting] = useState(false);
   const [isMuted, setIsMuted] = useState(false);
@@ -465,53 +459,17 @@ export default function Atlas() {
 
         {/* Connection Status */}
         <div className="flex items-center gap-4">
-          {/* Tools Dropdown */}
-          <Popover>
-            <PopoverTrigger asChild>
-              <button className="flex items-center gap-1.5 px-2 py-1 rounded bg-accent/10 border border-accent/30 hover:bg-accent/20 transition-colors">
-                <Zap size={12} className="text-accent" />
-                <span className="text-[10px] font-mono text-accent">8</span>
-                <ChevronDown size={10} className="text-accent" />
-              </button>
-            </PopoverTrigger>
-            <PopoverContent className="w-56 p-2 bg-card border-border" align="end">
-              <div className="text-[10px] font-mono text-muted-foreground mb-2 px-2">AVAILABLE TOOLS</div>
-              <div className="space-y-1">
-                <div className="flex items-center gap-2 px-2 py-1.5 rounded hover:bg-muted/50 text-xs">
-                  <Search size={12} className="text-primary" />
-                  <span>searchAgents</span>
-                </div>
-                <div className="flex items-center gap-2 px-2 py-1.5 rounded hover:bg-muted/50 text-xs">
-                  <Sparkles size={12} className="text-secondary" />
-                  <span>synthesizeAgent</span>
-                </div>
-                <div className="flex items-center gap-2 px-2 py-1.5 rounded hover:bg-muted/50 text-xs">
-                  <Navigation size={12} className="text-primary" />
-                  <span>navigateTo</span>
-                </div>
-                <div className="flex items-center gap-2 px-2 py-1.5 rounded hover:bg-muted/50 text-xs">
-                  <Bell size={12} className="text-secondary" />
-                  <span>showNotification</span>
-                </div>
-                <div className="flex items-center gap-2 px-2 py-1.5 rounded hover:bg-muted/50 text-xs">
-                  <Activity size={12} className="text-primary" />
-                  <span>getSystemStatus</span>
-                </div>
-                <div className="flex items-center gap-2 px-2 py-1.5 rounded hover:bg-muted/50 text-xs">
-                  <Trash2 size={12} className="text-destructive" />
-                  <span>clearResults</span>
-                </div>
-                <div className="flex items-center gap-2 px-2 py-1.5 rounded hover:bg-muted/50 text-xs">
-                  <Database size={12} className="text-primary" />
-                  <span>listSectors</span>
-                </div>
-                <div className="flex items-center gap-2 px-2 py-1.5 rounded hover:bg-muted/50 text-xs">
-                  <Info size={12} className="text-muted-foreground" />
-                  <span>getAgentDetails</span>
-                </div>
-              </div>
-            </PopoverContent>
-          </Popover>
+          {/* Theme Toggle */}
+          <button 
+            onClick={() => setTheme(theme === 'dark' ? 'light' : 'dark')}
+            className="flex items-center gap-1.5 px-2 py-1 rounded bg-muted/50 border border-border hover:bg-muted transition-colors"
+          >
+            {theme === 'dark' ? (
+              <Sun size={14} className="text-secondary" />
+            ) : (
+              <Moon size={14} className="text-primary" />
+            )}
+          </button>
 
           {/* State Streaming Indicator */}
           {isConnected && (
