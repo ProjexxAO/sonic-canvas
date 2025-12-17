@@ -427,52 +427,93 @@ export default function Atlas() {
                   </>
                 )}
                 
-                {/* Cosmic universe layer */}
-                <div className={`absolute inset-0 m-auto w-28 h-28 rounded-full overflow-hidden transition-all duration-500 ${
-                  isConnected && conversation.isSpeaking ? 'opacity-100 scale-100' : 'opacity-40 scale-90'
+                {/* Cosmic plasma sphere */}
+                <div className={`absolute inset-0 m-auto w-32 h-32 rounded-full overflow-hidden transition-all duration-500 ${
+                  isConnected && conversation.isSpeaking ? 'opacity-100 scale-100' : 'opacity-50 scale-90'
                 }`}>
-                  {/* Nebula background */}
+                  {/* Base plasma layer - swirling gradient */}
                   <div className={`absolute inset-0 rounded-full ${
-                    isConnected && conversation.isSpeaking 
-                      ? 'bg-gradient-radial from-secondary/40 via-primary/20 to-transparent animate-nebula-pulse' 
-                      : 'bg-gradient-radial from-primary/20 via-primary/10 to-transparent'
-                  }`} />
+                    isConnected && conversation.isSpeaking ? 'animate-plasma-swirl' : 'animate-plasma-idle'
+                  }`}
+                  style={{
+                    background: isConnected && conversation.isSpeaking
+                      ? 'conic-gradient(from 0deg, hsl(168 100% 50% / 0.8), hsl(270 100% 60% / 0.8), hsl(340 100% 60% / 0.6), hsl(40 100% 50% / 0.8), hsl(168 100% 50% / 0.8))'
+                      : 'conic-gradient(from 0deg, hsl(168 100% 50% / 0.4), hsl(270 100% 60% / 0.3), hsl(168 100% 50% / 0.4))',
+                    filter: 'blur(8px)',
+                  }} />
                   
-                  {/* Stars */}
-                  {Array.from({ length: 20 }).map((_, i) => {
-                    const angle = (i / 20) * 360 + Math.random() * 18;
-                    const distance = 15 + Math.random() * 35;
-                    const size = 1 + Math.random() * 2;
-                    const delay = Math.random() * 2;
+                  {/* Secondary plasma layer - counter rotation */}
+                  <div className={`absolute inset-2 rounded-full ${
+                    isConnected && conversation.isSpeaking ? 'animate-plasma-counter' : ''
+                  }`}
+                  style={{
+                    background: isConnected && conversation.isSpeaking
+                      ? 'conic-gradient(from 180deg, hsl(40 100% 60% / 0.7), hsl(168 100% 60% / 0.6), hsl(270 100% 70% / 0.5), hsl(40 100% 60% / 0.7))'
+                      : 'conic-gradient(from 180deg, hsl(168 100% 50% / 0.2), hsl(270 100% 60% / 0.15), hsl(168 100% 50% / 0.2))',
+                    filter: 'blur(6px)',
+                  }} />
+                  
+                  {/* Inner energy core */}
+                  <div className={`absolute inset-4 rounded-full ${
+                    isConnected && conversation.isSpeaking ? 'animate-energy-pulse' : ''
+                  }`}
+                  style={{
+                    background: isConnected && conversation.isSpeaking
+                      ? 'radial-gradient(circle, hsl(40 100% 70% / 0.9) 0%, hsl(340 100% 60% / 0.6) 30%, hsl(270 100% 50% / 0.4) 60%, transparent 100%)'
+                      : 'radial-gradient(circle, hsl(168 100% 50% / 0.3) 0%, hsl(168 100% 50% / 0.1) 50%, transparent 100%)',
+                    filter: 'blur(4px)',
+                  }} />
+                  
+                  {/* Plasma tendrils */}
+                  {isConnected && conversation.isSpeaking && (
+                    <>
+                      {Array.from({ length: 6 }).map((_, i) => (
+                        <div
+                          key={`tendril-${i}`}
+                          className="absolute inset-0 m-auto w-full h-full animate-tendril"
+                          style={{
+                            background: `linear-gradient(${i * 60}deg, transparent 40%, hsl(${168 + i * 30} 100% 60% / 0.6) 50%, transparent 60%)`,
+                            animationDelay: `${i * 0.15}s`,
+                            filter: 'blur(2px)',
+                          }}
+                        />
+                      ))}
+                    </>
+                  )}
+                  
+                  {/* Sparkle particles */}
+                  {Array.from({ length: 15 }).map((_, i) => {
+                    const angle = (i / 15) * 360;
+                    const distance = 20 + (i % 3) * 15;
+                    const size = 1 + (i % 2);
                     return (
                       <div
-                        key={`star-${i}`}
+                        key={`sparkle-${i}`}
                         className={`absolute rounded-full ${
                           isConnected && conversation.isSpeaking 
-                            ? 'bg-secondary animate-star-twinkle' 
-                            : 'bg-primary/60'
+                            ? 'animate-sparkle bg-white' 
+                            : 'bg-primary/40'
                         }`}
                         style={{
                           width: `${size}px`,
                           height: `${size}px`,
                           left: `${50 + distance * Math.cos(angle * Math.PI / 180)}%`,
                           top: `${50 + distance * Math.sin(angle * Math.PI / 180)}%`,
-                          animationDelay: `${delay}s`,
+                          animationDelay: `${i * 0.1}s`,
                           boxShadow: isConnected && conversation.isSpeaking 
-                            ? `0 0 ${size * 3}px hsl(var(--secondary))` 
-                            : `0 0 ${size * 2}px hsl(var(--primary))`
+                            ? `0 0 ${size * 4}px hsl(${[168, 270, 40, 340][i % 4]} 100% 70%)` 
+                            : 'none'
                         }}
                       />
                     );
                   })}
                   
-                  {/* Orbital rings when speaking */}
-                  {isConnected && conversation.isSpeaking && (
-                    <>
-                      <div className="absolute inset-0 m-auto w-20 h-20 rounded-full border border-secondary/30 animate-orbit-expand" />
-                      <div className="absolute inset-0 m-auto w-16 h-16 rounded-full border border-secondary/20 animate-orbit-expand" style={{ animationDelay: '0.3s' }} />
-                    </>
-                  )}
+                  {/* Glass overlay for depth */}
+                  <div className="absolute inset-0 rounded-full"
+                    style={{
+                      background: 'radial-gradient(circle at 30% 30%, hsl(0 0% 100% / 0.15) 0%, transparent 50%)',
+                    }}
+                  />
                 </div>
                 
                 {/* Center glow */}
