@@ -491,9 +491,9 @@ export default function Atlas() {
                     className="absolute inset-0 rounded-full"
                     style={{
                       background: `radial-gradient(ellipse at ${30 + frequencyBands.bass * 20}% ${40 + frequencyBands.mid * 20}%, 
-                        hsl(270 80% ${isConnected ? 35 + outputVolume * 35 : 25}% / ${0.7 + outputVolume * 0.3}) 0%,
-                        hsl(220 70% ${isConnected ? 25 + outputVolume * 25 : 18}% / ${0.6 + outputVolume * 0.3}) 30%,
-                        hsl(280 60% ${isConnected ? 18 + outputVolume * 20 : 12}% / ${0.5 + outputVolume * 0.3}) 60%,
+                        hsl(270 100% ${isConnected ? 45 + outputVolume * 35 : 35}% / ${0.8 + outputVolume * 0.2}) 0%,
+                        hsl(220 100% ${isConnected ? 35 + outputVolume * 25 : 28}% / ${0.7 + outputVolume * 0.3}) 30%,
+                        hsl(280 100% ${isConnected ? 28 + outputVolume * 20 : 22}% / ${0.6 + outputVolume * 0.3}) 60%,
                         transparent 100%)`,
                       animation: isConnected && conversation.isSpeaking ? 'orb-pulse 0.5s ease-in-out infinite' : 'orb-idle 4s ease-in-out infinite',
                     }}
@@ -505,16 +505,16 @@ export default function Atlas() {
                     style={{
                       background: `conic-gradient(from ${Date.now() / 50 % 360}deg at 50% 50%,
                         transparent 0deg,
-                        hsl(280 100% ${50 + frequencyBands.bass * 40}% / ${0.4 + outputVolume * 0.4}) 60deg,
+                        hsl(280 100% ${60 + frequencyBands.bass * 30}% / ${0.5 + outputVolume * 0.4}) 60deg,
                         transparent 120deg,
-                        hsl(200 100% ${60 + frequencyBands.mid * 40}% / ${0.35 + outputVolume * 0.4}) 180deg,
+                        hsl(200 100% ${70 + frequencyBands.mid * 25}% / ${0.45 + outputVolume * 0.4}) 180deg,
                         transparent 240deg,
-                        hsl(320 100% ${55 + frequencyBands.treble * 40}% / ${0.3 + outputVolume * 0.4}) 300deg,
+                        hsl(320 100% ${65 + frequencyBands.treble * 30}% / ${0.4 + outputVolume * 0.4}) 300deg,
                         transparent 360deg)`,
                       animation: isConnected && conversation.isSpeaking 
                         ? `orb-swirl ${2 - outputVolume}s linear infinite` 
                         : 'orb-swirl 8s linear infinite',
-                      filter: `blur(${8 - outputVolume * 4}px)`,
+                      filter: `blur(${6 - outputVolume * 3}px)`,
                     }}
                   />
                   
@@ -524,14 +524,14 @@ export default function Atlas() {
                     style={{
                       background: `conic-gradient(from ${180 + Date.now() / 80 % 360}deg at 55% 45%,
                         transparent 0deg,
-                        hsl(180 100% ${70 + frequencyBands.treble * 30}% / ${0.3 + outputVolume * 0.4}) 90deg,
+                        hsl(180 100% ${75 + frequencyBands.treble * 20}% / ${0.4 + outputVolume * 0.4}) 90deg,
                         transparent 180deg,
-                        hsl(260 100% ${60 + frequencyBands.bass * 30}% / ${0.35 + outputVolume * 0.4}) 270deg,
+                        hsl(260 100% ${70 + frequencyBands.bass * 25}% / ${0.45 + outputVolume * 0.4}) 270deg,
                         transparent 360deg)`,
                       animation: isConnected && conversation.isSpeaking 
                         ? `orb-swirl-reverse ${2.5 - outputVolume * 0.5}s linear infinite` 
                         : 'orb-swirl-reverse 10s linear infinite',
-                      filter: `blur(${6 - outputVolume * 3}px)`,
+                      filter: `blur(${5 - outputVolume * 2}px)`,
                     }}
                   />
                   
@@ -539,14 +539,14 @@ export default function Atlas() {
                   <div 
                     className="absolute inset-0 rounded-full"
                     style={{
-                      backgroundImage: `radial-gradient(1px 1px at 20% 30%, white ${0.5 + outputVolume * 0.5}, transparent),
-                        radial-gradient(1px 1px at 40% 70%, white ${0.45 + outputVolume * 0.5}, transparent),
-                        radial-gradient(1px 1px at 60% 20%, white ${0.48 + outputVolume * 0.5}, transparent),
-                        radial-gradient(1.5px 1.5px at 80% 50%, hsl(180 100% 70% / ${0.5 + outputVolume * 0.4}) 0%, transparent 100%),
-                        radial-gradient(1.5px 1.5px at 30% 80%, hsl(280 100% 70% / ${0.45 + outputVolume * 0.4}) 0%, transparent 100%),
-                        radial-gradient(1px 1px at 70% 60%, white ${0.45 + outputVolume * 0.5}, transparent),
-                        radial-gradient(1px 1px at 15% 55%, white ${0.4 + outputVolume * 0.5}, transparent),
-                        radial-gradient(1.5px 1.5px at 85% 25%, hsl(200 100% 80% / ${0.45 + outputVolume * 0.4}) 0%, transparent 100%)`,
+                      backgroundImage: `radial-gradient(1.5px 1.5px at 20% 30%, white ${0.6 + outputVolume * 0.4}, transparent),
+                        radial-gradient(1.5px 1.5px at 40% 70%, white ${0.55 + outputVolume * 0.4}, transparent),
+                        radial-gradient(1.5px 1.5px at 60% 20%, white ${0.58 + outputVolume * 0.4}, transparent),
+                        radial-gradient(2px 2px at 80% 50%, hsl(180 100% 80% / ${0.6 + outputVolume * 0.4}) 0%, transparent 100%),
+                        radial-gradient(2px 2px at 30% 80%, hsl(280 100% 80% / ${0.55 + outputVolume * 0.4}) 0%, transparent 100%),
+                        radial-gradient(1.5px 1.5px at 70% 60%, white ${0.55 + outputVolume * 0.4}, transparent),
+                        radial-gradient(1.5px 1.5px at 15% 55%, white ${0.5 + outputVolume * 0.4}, transparent),
+                        radial-gradient(2px 2px at 85% 25%, hsl(200 100% 85% / ${0.55 + outputVolume * 0.4}) 0%, transparent 100%)`,
                       animation: 'orb-stars 3s ease-in-out infinite',
                     }}
                   />
@@ -558,10 +558,10 @@ export default function Atlas() {
                       width: `${30 + frequencyBands.bass * 40}%`,
                       height: `${30 + frequencyBands.bass * 40}%`,
                       background: `radial-gradient(circle,
-                        hsl(${isConnected && conversation.isSpeaking ? '40 100%' : '180 100%'} ${75 + outputVolume * 25}% / ${0.6 + outputVolume * 0.4}) 0%,
-                        hsl(${isConnected && conversation.isSpeaking ? '320 100%' : '200 100%'} 60% / ${0.4 + outputVolume * 0.4}) 40%,
+                        hsl(${isConnected && conversation.isSpeaking ? '45 100%' : '190 100%'} ${80 + outputVolume * 20}% / ${0.7 + outputVolume * 0.3}) 0%,
+                        hsl(${isConnected && conversation.isSpeaking ? '320 100%' : '210 100%'} 70% / ${0.5 + outputVolume * 0.4}) 40%,
                         transparent 70%)`,
-                      filter: `blur(${4 - outputVolume * 2}px)`,
+                      filter: `blur(${3 - outputVolume * 1.5}px)`,
                       transition: 'width 0.1s, height 0.1s',
                     }}
                   />
@@ -570,8 +570,8 @@ export default function Atlas() {
                   <div 
                     className="absolute inset-0 rounded-full"
                     style={{
-                      boxShadow: `inset 0 0 ${30 + outputVolume * 40}px hsl(${isConnected && conversation.isSpeaking ? '280' : '200'} 100% 50% / ${0.4 + outputVolume * 0.4}),
-                        inset 0 0 ${60 + outputVolume * 60}px hsl(200 100% 30% / ${0.3 + outputVolume * 0.3})`,
+                      boxShadow: `inset 0 0 ${35 + outputVolume * 45}px hsl(${isConnected && conversation.isSpeaking ? '280' : '200'} 100% 60% / ${0.5 + outputVolume * 0.4}),
+                        inset 0 0 ${70 + outputVolume * 60}px hsl(200 100% 40% / ${0.4 + outputVolume * 0.3})`,
                     }}
                   />
                 </div>
