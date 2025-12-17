@@ -755,26 +755,6 @@
   }
 }
 
-@keyframes balloon-takeoff {
-  0%, 100% { 
-    transform: translateY(0);
-  }
-  50% { 
-    transform: translateY(-8px);
-  }
-}
-
-@keyframes balloon-shadow {
-  0%, 100% { 
-    transform: translateX(-50%) scale(1);
-    opacity: 0.1;
-  }
-  50% { 
-    transform: translateX(-50%) scale(0.85);
-    opacity: 0.06;
-  }
-}
-
 @keyframes sun-pulse {
   0%, 100% { opacity: 0.6; transform: scale(1); }
   50% { opacity: 0.8; transform: scale(1.05); }

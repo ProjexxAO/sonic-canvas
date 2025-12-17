@@ -710,36 +710,6 @@ export default function Atlas() {
             </svg>
           </div>
           
-          {/* Hot Air Balloon 5 - Grounded, about to take off */}
-          <div 
-            className="absolute bottom-[8%] left-[5%] opacity-85"
-            style={{ animation: 'balloon-takeoff 3s ease-in-out infinite' }}
-          >
-            <svg width="55" height="78" viewBox="0 0 50 70" className="drop-shadow-lg">
-              {/* Balloon envelope - orange/yellow */}
-              <ellipse cx="25" cy="22" rx="22" ry="24" fill="hsl(35 85% 55%)" />
-              {/* Stripes */}
-              <path d="M 5 22 Q 25 50 45 22" stroke="hsl(15 75% 50%)" strokeWidth="4" fill="none" />
-              <path d="M 10 15 Q 25 42 40 15" stroke="hsl(45 90% 60%)" strokeWidth="3" fill="none" />
-              {/* Highlight */}
-              <ellipse cx="18" cy="15" rx="6" ry="8" fill="hsl(45 90% 75% / 0.4)" />
-              {/* Basket ropes */}
-              <line x1="10" y1="44" x2="16" y2="58" stroke="hsl(30 30% 30%)" strokeWidth="1.5" />
-              <line x1="40" y1="44" x2="34" y2="58" stroke="hsl(30 30% 30%)" strokeWidth="1.5" />
-              <line x1="25" y1="46" x2="25" y2="58" stroke="hsl(30 30% 30%)" strokeWidth="1.5" />
-              {/* Basket */}
-              <rect x="14" y="58" width="22" height="11" rx="2" fill="hsl(25 45% 40%)" />
-              <rect x="14" y="58" width="22" height="4" rx="1" fill="hsl(25 40% 50%)" />
-              {/* Basket weave detail */}
-              <line x1="20" y1="58" x2="20" y2="69" stroke="hsl(25 35% 35%)" strokeWidth="1" />
-              <line x1="30" y1="58" x2="30" y2="69" stroke="hsl(25 35% 35%)" strokeWidth="1" />
-            </svg>
-            {/* Ground shadow */}
-            <div 
-              className="absolute -bottom-2 left-1/2 -translate-x-1/2 w-12 h-2 rounded-full bg-black/10 blur-sm"
-              style={{ animation: 'balloon-shadow 3s ease-in-out infinite' }}
-            />
-          </div>
           
           {/* Soft horizon hint */}
           <div 
