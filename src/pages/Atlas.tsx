@@ -388,25 +388,65 @@ export default function Atlas() {
             
             {/* Inner circle with visualizer */}
             <div className="absolute inset-8 rounded-full bg-card/50 backdrop-blur-sm border border-border flex items-center justify-center overflow-hidden">
-              <div className="flex items-center justify-center gap-0.5 h-24">
-                {audioLevels.map((level, i) => (
-                  <div
-                    key={i}
-                    className={`w-1 rounded-full transition-all duration-75 ${
-                      isConnected 
-                        ? conversation.isSpeaking 
-                          ? 'bg-secondary' 
-                          : 'bg-primary'
-                        : 'bg-muted'
-                    }`}
-                    style={{
-                      height: isConnected 
-                        ? `${Math.max(15, level * 85)}%`
-                        : '15%',
-                      opacity: isConnected ? 0.6 + level * 0.4 : 0.3,
-                    }}
-                  />
-                ))}
+              {/* Radial audio visualizer */}
+              <div className="relative w-full h-full">
+                {/* Center glow */}
+                <div className={`absolute inset-0 m-auto w-12 h-12 rounded-full transition-all duration-300 ${
+                  isConnected 
+                    ? conversation.isSpeaking 
+                      ? 'bg-secondary/30 shadow-[0_0_30px_hsl(var(--secondary))]' 
+                      : 'bg-primary/20 shadow-[0_0_20px_hsl(var(--primary))]'
+                    : 'bg-muted/10'
+                }`} />
+                
+                {/* Radial bars */}
+                {audioLevels.map((level, i) => {
+                  const angle = (i / audioLevels.length) * 360;
+                  const barHeight = isConnected ? 20 + level * 35 : 12;
+                  return (
+                    <div
+                      key={i}
+                      className="absolute left-1/2 top-1/2 origin-bottom"
+                      style={{
+                        transform: `translate(-50%, -100%) rotate(${angle}deg)`,
+                        height: `${barHeight}px`,
+                        width: '3px',
+                      }}
+                    >
+                      <div 
+                        className={`w-full rounded-full transition-all duration-75 ${
+                          isConnected 
+                            ? conversation.isSpeaking 
+                              ? 'bg-gradient-to-t from-secondary to-secondary/30' 
+                              : 'bg-gradient-to-t from-primary to-primary/30'
+                            : 'bg-muted/30'
+                        }`}
+                        style={{
+                          height: '100%',
+                          opacity: isConnected ? 0.5 + level * 0.5 : 0.2,
+                          boxShadow: isConnected && level > 0.3 
+                            ? conversation.isSpeaking
+                              ? '0 0 8px hsl(var(--secondary))'
+                              : '0 0 6px hsl(var(--primary))'
+                            : 'none'
+                        }}
+                      />
+                    </div>
+                  );
+                })}
+                
+                {/* Center icon */}
+                <div className="absolute inset-0 flex items-center justify-center">
+                  <div className={`w-8 h-8 rounded-full flex items-center justify-center transition-all duration-300 ${
+                    isConnected 
+                      ? conversation.isSpeaking 
+                        ? 'bg-secondary text-secondary-foreground scale-110' 
+                        : 'bg-primary/80 text-primary-foreground'
+                      : 'bg-muted text-muted-foreground'
+                  }`}>
+                    <Hexagon size={16} />
+                  </div>
+                </div>
               </div>
             </div>
 
