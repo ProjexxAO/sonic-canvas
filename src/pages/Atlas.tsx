@@ -531,23 +531,23 @@ export default function Atlas() {
               animation: 'twinkle 2.5s ease-in-out infinite'
             }}
           />
-          {/* Star clusters along milky way */}
+          {/* Star clusters - scattered naturally */}
           <div 
             className="absolute inset-0 opacity-60"
             style={{
               backgroundImage: `
-                radial-gradient(0.8px 0.8px at 25% 30%, white 100%, transparent),
-                radial-gradient(0.8px 0.8px at 28% 33%, hsl(0 0% 90%) 100%, transparent),
-                radial-gradient(0.8px 0.8px at 32% 36%, white 100%, transparent),
-                radial-gradient(0.8px 0.8px at 35% 38%, hsl(0 0% 95%) 100%, transparent),
-                radial-gradient(0.8px 0.8px at 38% 41%, white 100%, transparent),
-                radial-gradient(0.8px 0.8px at 42% 44%, hsl(0 0% 90%) 100%, transparent),
-                radial-gradient(0.8px 0.8px at 45% 47%, white 100%, transparent),
-                radial-gradient(0.8px 0.8px at 48% 50%, hsl(0 0% 95%) 100%, transparent),
-                radial-gradient(0.8px 0.8px at 52% 53%, white 100%, transparent),
-                radial-gradient(0.8px 0.8px at 55% 55%, hsl(0 0% 90%) 100%, transparent),
-                radial-gradient(0.8px 0.8px at 58% 58%, white 100%, transparent),
-                radial-gradient(0.8px 0.8px at 62% 61%, hsl(0 0% 95%) 100%, transparent)
+                radial-gradient(0.8px 0.8px at 23% 28%, white 100%, transparent),
+                radial-gradient(0.8px 0.8px at 31% 42%, hsl(0 0% 90%) 100%, transparent),
+                radial-gradient(0.8px 0.8px at 27% 51%, white 100%, transparent),
+                radial-gradient(0.8px 0.8px at 41% 35%, hsl(0 0% 95%) 100%, transparent),
+                radial-gradient(0.8px 0.8px at 36% 58%, white 100%, transparent),
+                radial-gradient(0.8px 0.8px at 49% 39%, hsl(0 0% 90%) 100%, transparent),
+                radial-gradient(0.8px 0.8px at 44% 62%, white 100%, transparent),
+                radial-gradient(0.8px 0.8px at 53% 47%, hsl(0 0% 95%) 100%, transparent),
+                radial-gradient(0.8px 0.8px at 59% 33%, white 100%, transparent),
+                radial-gradient(0.8px 0.8px at 47% 71%, hsl(0 0% 90%) 100%, transparent),
+                radial-gradient(0.8px 0.8px at 64% 44%, white 100%, transparent),
+                radial-gradient(0.8px 0.8px at 56% 56%, hsl(0 0% 95%) 100%, transparent)
               `
             }}
           />
