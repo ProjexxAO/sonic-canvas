@@ -436,8 +436,8 @@ export default function Atlas() {
               <div className="absolute inset-1 rounded-full border border-primary/50 animate-spin" style={{ animationDuration: '8s' }} />
               {/* Core hexagon */}
               <div className="relative z-10 animate-spin" style={{ animationDuration: '12s' }}>
-                <Hexagon size={28} className="text-primary drop-shadow-[0_0_8px_hsl(var(--primary))]" />
-                <Radio size={12} className="absolute inset-0 m-auto text-primary-foreground" />
+                <Hexagon size={28} className="text-primary drop-shadow-[0_0_8px_hsl(var(--primary))]" fill="hsl(var(--primary))" />
+                <Radio size={12} className="absolute inset-0 m-auto text-background" />
               </div>
               {/* Glow effect */}
               <div className="absolute inset-0 rounded-full bg-primary/20 blur-md" />
