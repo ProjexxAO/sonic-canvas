@@ -741,25 +741,6 @@ export default function Atlas() {
             )}
           </div>
 
-          {/* Capabilities */}
-          <div className="mt-8 grid grid-cols-2 gap-2 text-xs font-mono">
-            <div className="flex items-center gap-2 text-muted-foreground">
-              <Search size={14} className="text-primary" />
-              <span>Search Agents</span>
-            </div>
-            <div className="flex items-center gap-2 text-muted-foreground">
-              <Sparkles size={14} className="text-secondary" />
-              <span>Synthesize Agents</span>
-            </div>
-            <div className="flex items-center gap-2 text-muted-foreground">
-              <Bot size={14} className="text-accent" />
-              <span>Agent Details</span>
-            </div>
-            <div className="flex items-center gap-2 text-muted-foreground">
-              <Database size={14} className="text-primary" />
-              <span>System Status</span>
-            </div>
-          </div>
         </div>
 
         {/* Right Panel - Results & Logs */}
