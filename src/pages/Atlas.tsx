@@ -655,72 +655,71 @@ export default function Atlas() {
             <div className="absolute inset-0 rounded-full bg-white/70 blur-lg" />
           </div>
           
-          {/* Girl with kite silhouette */}
-          <div className="absolute bottom-[5%] left-[8%]">
-            {/* Kite */}
-            <div 
-              className="absolute -top-[180px] left-[60px]"
-              style={{ 
-                animation: 'kite-sway 4s ease-in-out infinite',
-                transformOrigin: 'bottom center'
-              }}
-            >
-              {/* Kite shape - diamond */}
-              <svg width="40" height="50" viewBox="0 0 40 50" className="drop-shadow-md">
-                <polygon 
-                  points="20,0 40,20 20,50 0,20" 
-                  fill="hsl(350 70% 55%)"
-                  stroke="hsl(350 60% 40%)"
-                  strokeWidth="1"
-                />
-                <line x1="20" y1="0" x2="20" y2="50" stroke="hsl(350 60% 40%)" strokeWidth="1" />
-                <line x1="0" y1="20" x2="40" y2="20" stroke="hsl(350 60% 40%)" strokeWidth="1" />
-                {/* Kite tail */}
-                <path 
-                  d="M 20 50 Q 25 65 18 80 Q 22 95 15 110" 
-                  stroke="hsl(350 70% 55%)" 
-                  strokeWidth="2" 
-                  fill="none"
-                />
-                {/* Tail bows */}
-                <ellipse cx="22" cy="65" rx="4" ry="2" fill="hsl(200 70% 55%)" />
-                <ellipse cx="17" cy="85" rx="4" ry="2" fill="hsl(45 80% 55%)" />
-                <ellipse cx="20" cy="105" rx="4" ry="2" fill="hsl(280 60% 55%)" />
-              </svg>
-              
-              {/* Kite string - curved line to girl */}
-              <svg 
-                className="absolute top-[45px] left-[18px]" 
-                width="60" 
-                height="140" 
-                viewBox="0 0 60 140"
-                style={{ overflow: 'visible' }}
-              >
-                <path 
-                  d="M 2 0 Q 15 40 8 80 Q 0 120 20 135" 
-                  stroke="hsl(30 20% 30% / 0.6)" 
-                  strokeWidth="1" 
-                  fill="none"
-                />
-              </svg>
-            </div>
-            
-            {/* Girl silhouette */}
-            <svg width="35" height="60" viewBox="0 0 35 60" className="opacity-70">
+          {/* Kite in top left corner */}
+          <div 
+            className="absolute top-[8%] left-[8%]"
+            style={{ 
+              animation: 'kite-sway 4s ease-in-out infinite',
+              transformOrigin: 'bottom right'
+            }}
+          >
+            {/* Kite shape - diamond */}
+            <svg width="45" height="55" viewBox="0 0 45 55" className="drop-shadow-md">
+              <polygon 
+                points="22,0 44,22 22,55 0,22" 
+                fill="hsl(350 70% 55%)"
+                stroke="hsl(350 60% 40%)"
+                strokeWidth="1"
+              />
+              <line x1="22" y1="0" x2="22" y2="55" stroke="hsl(350 60% 40%)" strokeWidth="1" />
+              <line x1="0" y1="22" x2="44" y2="22" stroke="hsl(350 60% 40%)" strokeWidth="1" />
+              {/* Shorter kite tail */}
+              <path 
+                d="M 22 55 Q 28 68 20 80" 
+                stroke="hsl(350 70% 55%)" 
+                strokeWidth="2" 
+                fill="none"
+              />
+              {/* Tail bows - fewer */}
+              <ellipse cx="26" cy="65" rx="4" ry="2" fill="hsl(200 70% 55%)" />
+              <ellipse cx="21" cy="78" rx="4" ry="2" fill="hsl(45 80% 55%)" />
+            </svg>
+          </div>
+          
+          {/* Kite string connecting kite to girl */}
+          <div 
+            className="absolute top-[8%] left-[8%] pointer-events-none"
+            style={{ width: '150px', height: '500px' }}
+          >
+            <svg width="150" height="500" viewBox="0 0 150 500" className="opacity-50">
+              <path 
+                d="M 22 55 Q 40 120 55 220 Q 70 350 80 420" 
+                stroke="hsl(30 25% 35%)" 
+                strokeWidth="1.5" 
+                fill="none"
+              />
+            </svg>
+          </div>
+          
+          {/* Girl silhouette - facing left towards kite */}
+          <div className="absolute bottom-[5%] left-[10%]">
+            <svg width="40" height="65" viewBox="0 0 40 65" className="opacity-70" style={{ transform: 'scaleX(-1)' }}>
               {/* Head */}
-              <circle cx="17" cy="8" r="7" fill="hsl(30 20% 25%)" />
-              {/* Hair/ponytail */}
-              <ellipse cx="22" cy="6" rx="4" ry="3" fill="hsl(30 20% 25%)" />
-              <path d="M 22 8 Q 28 10 26 18" stroke="hsl(30 20% 25%)" strokeWidth="3" fill="none" />
+              <circle cx="20" cy="8" r="7" fill="hsl(30 20% 25%)" />
+              {/* Hair/ponytail flowing right (appears left when flipped) */}
+              <ellipse cx="14" cy="6" rx="5" ry="3" fill="hsl(30 20% 25%)" />
+              <path d="M 14 8 Q 6 12 8 20" stroke="hsl(30 20% 25%)" strokeWidth="3" fill="none" />
               {/* Body - dress */}
-              <path d="M 10 15 L 17 15 L 24 15 L 28 45 L 17 48 L 6 45 Z" fill="hsl(30 20% 25%)" />
-              {/* Arm reaching up for kite */}
-              <path d="M 20 18 Q 28 10 32 5" stroke="hsl(30 20% 25%)" strokeWidth="3" fill="none" strokeLinecap="round" />
-              {/* Other arm */}
-              <path d="M 14 20 Q 8 28 10 32" stroke="hsl(30 20% 25%)" strokeWidth="3" fill="none" strokeLinecap="round" />
+              <path d="M 12 15 L 20 15 L 28 15 L 32 48 L 20 52 L 8 48 Z" fill="hsl(30 20% 25%)" />
+              {/* Arm reaching up holding string */}
+              <path d="M 24 18 Q 32 8 38 2" stroke="hsl(30 20% 25%)" strokeWidth="3" fill="none" strokeLinecap="round" />
+              {/* Hand/fist holding string */}
+              <circle cx="38" cy="2" r="3" fill="hsl(30 20% 25%)" />
+              {/* Other arm relaxed at side */}
+              <path d="M 16 20 Q 10 30 12 38" stroke="hsl(30 20% 25%)" strokeWidth="3" fill="none" strokeLinecap="round" />
               {/* Legs */}
-              <line x1="14" y1="45" x2="12" y2="58" stroke="hsl(30 20% 25%)" strokeWidth="3" strokeLinecap="round" />
-              <line x1="20" y1="45" x2="22" y2="58" stroke="hsl(30 20% 25%)" strokeWidth="3" strokeLinecap="round" />
+              <line x1="16" y1="48" x2="14" y2="63" stroke="hsl(30 20% 25%)" strokeWidth="3" strokeLinecap="round" />
+              <line x1="24" y1="48" x2="26" y2="63" stroke="hsl(30 20% 25%)" strokeWidth="3" strokeLinecap="round" />
             </svg>
           </div>
           
