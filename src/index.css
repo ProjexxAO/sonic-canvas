@@ -6,76 +6,76 @@
 
 @layer base {
   :root {
-    /* Light theme */
-    --background: 0 0% 98%;
+    /* Light theme (high-contrast, not washed out) */
+    --background: 210 30% 98%;
     --background-elevated: 0 0% 100%;
-    --background-panel: 210 20% 96%;
-    --foreground: 240 10% 10%;
-    
-    /* Primary - Cyan */
-    --primary: 168 80% 40%;
-    --primary-glow: 168 80% 50%;
+    --background-panel: 210 28% 95%;
+    --foreground: 225 20% 12%;
+
+    /* Primary - Cyan (deeper for light mode contrast) */
+    --primary: 168 75% 32%;
+    --primary-glow: 168 80% 42%;
     --primary-foreground: 0 0% 100%;
-    
+
     /* Secondary - Amber/Gold */
-    --secondary: 40 90% 45%;
-    --secondary-glow: 40 90% 55%;
+    --secondary: 38 92% 42%;
+    --secondary-glow: 38 92% 52%;
     --secondary-foreground: 0 0% 100%;
-    
+
     /* Accent - Violet */
-    --accent: 270 70% 55%;
-    --accent-glow: 270 70% 65%;
+    --accent: 270 65% 52%;
+    --accent-glow: 270 70% 62%;
     --accent-foreground: 0 0% 100%;
-    
+
     /* Alert - Red */
-    --destructive: 340 80% 50%;
-    --destructive-glow: 340 80% 60%;
+    --destructive: 340 75% 46%;
+    --destructive-glow: 340 80% 56%;
     --destructive-foreground: 0 0% 100%;
-    
+
     /* Muted */
-    --muted: 210 20% 92%;
-    --muted-foreground: 215 15% 45%;
-    
+    --muted: 210 25% 93%;
+    --muted-foreground: 220 12% 40%;
+
     /* Surface colors */
-    --card: 0 0% 100%;
-    --card-foreground: 240 10% 10%;
+    --card: 210 20% 99%;
+    --card-foreground: 225 20% 12%;
     --popover: 0 0% 100%;
-    --popover-foreground: 240 10% 10%;
-    
+    --popover-foreground: 225 20% 12%;
+
     /* Borders */
-    --border: 214 20% 85%;
-    --border-glow: 168 80% 50%;
-    --input: 214 20% 90%;
-    --ring: 168 80% 40%;
-    
+    --border: 215 20% 83%;
+    --border-glow: 168 75% 38%;
+    --input: 215 22% 90%;
+    --ring: 168 75% 32%;
+
     /* Semantic */
-    --success: 150 70% 40%;
-    --warning: 40 90% 45%;
-    --error: 340 80% 50%;
-    --info: 200 80% 45%;
-    
+    --success: 150 55% 36%;
+    --warning: 38 92% 42%;
+    --error: 340 75% 46%;
+    --info: 200 70% 40%;
+
     /* Sonic specific */
-    --sonic-cyan: 168 80% 40%;
-    --sonic-amber: 40 90% 45%;
-    --sonic-violet: 270 70% 55%;
-    --sonic-red: 340 80% 50%;
-    --sonic-green: 150 70% 40%;
-    
+    --sonic-cyan: 168 75% 32%;
+    --sonic-amber: 38 92% 42%;
+    --sonic-violet: 270 65% 52%;
+    --sonic-red: 340 75% 46%;
+    --sonic-green: 150 55% 36%;
+
     /* Grid/HUD */
-    --grid-line: 214 20% 85%;
-    --scanline: 168 80% 40%;
-    
+    --grid-line: 215 20% 83%;
+    --scanline: 168 75% 32%;
+
     --radius: 0.25rem;
-    
+
     /* Sidebar */
-    --sidebar-background: 210 20% 96%;
-    --sidebar-foreground: 240 10% 10%;
-    --sidebar-primary: 168 80% 40%;
+    --sidebar-background: 210 28% 96%;
+    --sidebar-foreground: 225 20% 12%;
+    --sidebar-primary: 168 75% 32%;
     --sidebar-primary-foreground: 0 0% 100%;
-    --sidebar-accent: 270 70% 55%;
+    --sidebar-accent: 270 65% 52%;
     --sidebar-accent-foreground: 0 0% 100%;
-    --sidebar-border: 214 20% 85%;
-    --sidebar-ring: 168 80% 40%;
+    --sidebar-border: 215 20% 83%;
+    --sidebar-ring: 168 75% 32%;
   }
 
   .dark {

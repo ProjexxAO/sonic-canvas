@@ -562,7 +562,7 @@ export default function Atlas() {
             
             {/* Inner circle - Cosmic Orb */}
             <div 
-              className={`absolute inset-8 rounded-full bg-black/80 border border-border flex items-center justify-center overflow-hidden ${
+              className={`absolute inset-8 rounded-full bg-background-elevated/80 border border-border flex items-center justify-center overflow-hidden ${
                 !isConnected && !isConnecting ? 'cursor-pointer hover:border-primary/50 transition-colors' : ''
               }`}
               onClick={() => {
