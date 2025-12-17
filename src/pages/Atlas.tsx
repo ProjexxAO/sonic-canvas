@@ -474,14 +474,14 @@ export default function Atlas() {
                 
                 {/* Center icon */}
                 <div className="absolute inset-0 flex items-center justify-center">
-                  <div className={`w-8 h-8 rounded-full flex items-center justify-center transition-all duration-300 ${
+                  <div className={`w-14 h-14 rounded-full flex items-center justify-center transition-all duration-300 ${
                     isConnected 
                       ? conversation.isSpeaking 
                         ? 'bg-secondary text-secondary-foreground scale-110' 
                         : 'bg-primary/80 text-primary-foreground'
                       : 'bg-muted text-muted-foreground'
                   }`}>
-                    <Hexagon size={16} className={isConnected && !conversation.isSpeaking ? 'animate-slow-spin' : ''} />
+                    <Hexagon size={28} className={isConnected && !conversation.isSpeaking ? 'animate-slow-spin' : ''} />
                   </div>
                 </div>
               </div>
