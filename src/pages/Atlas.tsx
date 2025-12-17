@@ -633,114 +633,256 @@ export default function Atlas() {
             }}
           />
           
-          {/* Earth Orbiting the Orb - Slow realistic orbit */}
-          <div 
-            className="earth-orbit"
-            style={{
-              position: 'absolute',
-              top: '50%',
-              left: '25%',
-              width: '300px',
-              height: '300px',
-              marginTop: '-150px',
-              marginLeft: '-150px',
-              animation: 'orbit-rotation 360s linear infinite',
-              pointerEvents: 'none',
-            }}
-          >
-            {/* Earth positioned at edge of orbit */}
-            <div 
-              style={{
-                position: 'absolute',
-                top: '0',
-                left: '50%',
-                marginLeft: '-12px',
-                marginTop: '-12px',
-              }}
-            >
-              <svg width="24" height="24" viewBox="0 0 48 48" style={{ filter: 'drop-shadow(0 0 8px hsl(200 80% 50% / 0.6))' }}>
+          {/* === SOLAR SYSTEM - All planets with realistic relative orbits === */}
+          
+          {/* Mercury - Closest, fastest orbit */}
+          <div style={{
+            position: 'absolute',
+            top: '50%',
+            left: '25%',
+            width: '160px',
+            height: '160px',
+            marginTop: '-80px',
+            marginLeft: '-80px',
+            animation: 'orbit-rotation 24s linear infinite',
+            pointerEvents: 'none',
+          }}>
+            <div style={{ position: 'absolute', top: '0', left: '50%', marginLeft: '-5px', marginTop: '-5px' }}>
+              <svg width="10" height="10" viewBox="0 0 20 20" style={{ filter: 'drop-shadow(0 0 3px hsl(30 30% 60% / 0.5))' }}>
                 <defs>
-                  {/* Earth gradient - ocean */}
-                  <radialGradient id="earthOcean" cx="35%" cy="35%" r="60%">
-                    <stop offset="0%" stopColor="hsl(200 70% 55%)" />
-                    <stop offset="100%" stopColor="hsl(210 80% 35%)" />
-                  </radialGradient>
-                  {/* Atmosphere glow */}
-                  <radialGradient id="earthAtmosphere" cx="50%" cy="50%" r="50%">
-                    <stop offset="85%" stopColor="transparent" />
-                    <stop offset="100%" stopColor="hsl(200 80% 70% / 0.4)" />
+                  <radialGradient id="mercurySurface" cx="35%" cy="35%" r="60%">
+                    <stop offset="0%" stopColor="hsl(30 15% 65%)" />
+                    <stop offset="100%" stopColor="hsl(30 10% 40%)" />
                   </radialGradient>
                 </defs>
-                
-                {/* Atmosphere glow */}
-                <circle cx="24" cy="24" r="23" fill="url(#earthAtmosphere)" />
-                
-                {/* Ocean base */}
-                <circle cx="24" cy="24" r="20" fill="url(#earthOcean)" />
-                
-                {/* Continents */}
-                {/* North America */}
-                <ellipse cx="14" cy="14" rx="6" ry="5" fill="hsl(120 35% 40%)" opacity="0.9" />
-                {/* South America */}
-                <ellipse cx="16" cy="28" rx="3" ry="6" fill="hsl(120 35% 38%)" opacity="0.9" />
-                {/* Europe/Africa */}
-                <ellipse cx="26" cy="18" rx="4" ry="3" fill="hsl(120 30% 42%)" opacity="0.9" />
-                <ellipse cx="27" cy="28" rx="4" ry="6" fill="hsl(45 50% 45%)" opacity="0.85" />
-                {/* Asia */}
-                <ellipse cx="34" cy="14" rx="7" ry="5" fill="hsl(120 32% 40%)" opacity="0.9" />
-                {/* Australia */}
-                <ellipse cx="38" cy="32" rx="3" ry="2" fill="hsl(30 45% 45%)" opacity="0.85" />
-                
-                {/* Cloud wisps */}
-                <ellipse cx="18" cy="12" rx="5" ry="2" fill="white" opacity="0.4" />
-                <ellipse cx="30" cy="24" rx="6" ry="2" fill="white" opacity="0.35" />
-                <ellipse cx="12" cy="30" rx="4" ry="1.5" fill="white" opacity="0.3" />
-                
-                {/* Highlight/shine */}
-                <ellipse cx="16" cy="16" rx="6" ry="5" fill="white" opacity="0.15" />
+                <circle cx="10" cy="10" r="9" fill="url(#mercurySurface)" />
+                <circle cx="6" cy="7" r="2" fill="hsl(30 10% 35%)" opacity="0.4" />
+                <circle cx="12" cy="12" r="1.5" fill="hsl(30 10% 38%)" opacity="0.3" />
               </svg>
             </div>
           </div>
           
-          {/* Moon orbiting Earth - realistic relative speed */}
-          <div 
-            className="moon-orbit"
-            style={{
-              position: 'absolute',
-              top: '50%',
-              left: '25%',
-              width: '300px',
-              height: '300px',
-              marginTop: '-150px',
-              marginLeft: '-150px',
-              animation: 'orbit-rotation 360s linear infinite',
-              pointerEvents: 'none',
-            }}
-          >
-            <div 
-              style={{
-                position: 'absolute',
-                top: '0',
-                left: '50%',
-                marginLeft: '-12px',
-                marginTop: '-12px',
-                width: '40px',
-                height: '40px',
-                animation: 'moon-around-earth 8s linear infinite',
-              }}
-            >
-              <svg width="8" height="8" viewBox="0 0 16 16" style={{ filter: 'drop-shadow(0 0 4px hsl(0 0% 80% / 0.5))' }}>
+          {/* Venus - Second planet */}
+          <div style={{
+            position: 'absolute',
+            top: '50%',
+            left: '25%',
+            width: '220px',
+            height: '220px',
+            marginTop: '-110px',
+            marginLeft: '-110px',
+            animation: 'orbit-rotation 62s linear infinite',
+            pointerEvents: 'none',
+          }}>
+            <div style={{ position: 'absolute', top: '0', left: '50%', marginLeft: '-7px', marginTop: '-7px' }}>
+              <svg width="14" height="14" viewBox="0 0 28 28" style={{ filter: 'drop-shadow(0 0 4px hsl(45 60% 70% / 0.5))' }}>
                 <defs>
-                  <radialGradient id="moonSurface" cx="35%" cy="35%" r="60%">
-                    <stop offset="0%" stopColor="hsl(40 5% 85%)" />
-                    <stop offset="100%" stopColor="hsl(40 5% 60%)" />
+                  <radialGradient id="venusSurface" cx="35%" cy="35%" r="60%">
+                    <stop offset="0%" stopColor="hsl(45 50% 75%)" />
+                    <stop offset="100%" stopColor="hsl(35 40% 55%)" />
                   </radialGradient>
                 </defs>
-                <circle cx="8" cy="8" r="7" fill="url(#moonSurface)" />
-                {/* Craters */}
-                <circle cx="5" cy="6" r="1.5" fill="hsl(40 5% 50%)" opacity="0.4" />
-                <circle cx="10" cy="9" r="2" fill="hsl(40 5% 52%)" opacity="0.35" />
-                <circle cx="7" cy="11" r="1" fill="hsl(40 5% 48%)" opacity="0.3" />
+                <circle cx="14" cy="14" r="13" fill="url(#venusSurface)" />
+                {/* Thick atmosphere clouds */}
+                <ellipse cx="10" cy="10" rx="5" ry="3" fill="hsl(45 30% 80%)" opacity="0.5" />
+                <ellipse cx="16" cy="16" rx="6" ry="3" fill="hsl(40 35% 78%)" opacity="0.4" />
+              </svg>
+            </div>
+          </div>
+          
+          {/* Earth - Third planet */}
+          <div style={{
+            position: 'absolute',
+            top: '50%',
+            left: '25%',
+            width: '300px',
+            height: '300px',
+            marginTop: '-150px',
+            marginLeft: '-150px',
+            animation: 'orbit-rotation 100s linear infinite',
+            pointerEvents: 'none',
+          }}>
+            <div style={{ position: 'absolute', top: '0', left: '50%', marginLeft: '-10px', marginTop: '-10px' }}>
+              <svg width="20" height="20" viewBox="0 0 40 40" style={{ filter: 'drop-shadow(0 0 6px hsl(200 80% 50% / 0.6))' }}>
+                <defs>
+                  <radialGradient id="earthOcean" cx="35%" cy="35%" r="60%">
+                    <stop offset="0%" stopColor="hsl(200 70% 55%)" />
+                    <stop offset="100%" stopColor="hsl(210 80% 35%)" />
+                  </radialGradient>
+                </defs>
+                <circle cx="20" cy="20" r="18" fill="url(#earthOcean)" />
+                <ellipse cx="12" cy="12" rx="5" ry="4" fill="hsl(120 35% 40%)" opacity="0.9" />
+                <ellipse cx="14" cy="24" rx="2.5" ry="5" fill="hsl(120 35% 38%)" opacity="0.9" />
+                <ellipse cx="22" cy="15" rx="3" ry="2.5" fill="hsl(120 30% 42%)" opacity="0.9" />
+                <ellipse cx="28" cy="12" rx="5" ry="4" fill="hsl(120 32% 40%)" opacity="0.9" />
+                <ellipse cx="15" cy="10" rx="4" ry="1.5" fill="white" opacity="0.35" />
+              </svg>
+            </div>
+            {/* Moon orbiting Earth */}
+            <div style={{
+              position: 'absolute',
+              top: '0',
+              left: '50%',
+              marginLeft: '-10px',
+              marginTop: '-10px',
+              width: '30px',
+              height: '30px',
+              animation: 'moon-around-earth 8s linear infinite',
+            }}>
+              <svg width="6" height="6" viewBox="0 0 12 12" style={{ filter: 'drop-shadow(0 0 2px hsl(0 0% 80% / 0.4))' }}>
+                <circle cx="6" cy="6" r="5" fill="hsl(40 5% 75%)" />
+                <circle cx="4" cy="4" r="1" fill="hsl(40 5% 55%)" opacity="0.4" />
+              </svg>
+            </div>
+          </div>
+          
+          {/* Mars - Fourth planet */}
+          <div style={{
+            position: 'absolute',
+            top: '50%',
+            left: '25%',
+            width: '380px',
+            height: '380px',
+            marginTop: '-190px',
+            marginLeft: '-190px',
+            animation: 'orbit-rotation 188s linear infinite',
+            pointerEvents: 'none',
+          }}>
+            <div style={{ position: 'absolute', top: '0', left: '50%', marginLeft: '-6px', marginTop: '-6px' }}>
+              <svg width="12" height="12" viewBox="0 0 24 24" style={{ filter: 'drop-shadow(0 0 4px hsl(15 70% 50% / 0.5))' }}>
+                <defs>
+                  <radialGradient id="marsSurface" cx="35%" cy="35%" r="60%">
+                    <stop offset="0%" stopColor="hsl(15 60% 55%)" />
+                    <stop offset="100%" stopColor="hsl(10 50% 35%)" />
+                  </radialGradient>
+                </defs>
+                <circle cx="12" cy="12" r="11" fill="url(#marsSurface)" />
+                {/* Polar ice cap */}
+                <ellipse cx="12" cy="4" rx="5" ry="2" fill="hsl(0 0% 90%)" opacity="0.6" />
+                {/* Dark regions */}
+                <ellipse cx="8" cy="12" rx="3" ry="4" fill="hsl(15 40% 30%)" opacity="0.3" />
+              </svg>
+            </div>
+          </div>
+          
+          {/* Jupiter - Fifth planet, largest */}
+          <div style={{
+            position: 'absolute',
+            top: '50%',
+            left: '25%',
+            width: '500px',
+            height: '500px',
+            marginTop: '-250px',
+            marginLeft: '-250px',
+            animation: 'orbit-rotation 1186s linear infinite',
+            pointerEvents: 'none',
+          }}>
+            <div style={{ position: 'absolute', top: '0', left: '50%', marginLeft: '-14px', marginTop: '-14px' }}>
+              <svg width="28" height="28" viewBox="0 0 56 56" style={{ filter: 'drop-shadow(0 0 8px hsl(30 50% 60% / 0.5))' }}>
+                <defs>
+                  <linearGradient id="jupiterBands" x1="0%" y1="0%" x2="0%" y2="100%">
+                    <stop offset="0%" stopColor="hsl(35 45% 70%)" />
+                    <stop offset="20%" stopColor="hsl(25 50% 55%)" />
+                    <stop offset="35%" stopColor="hsl(40 40% 75%)" />
+                    <stop offset="50%" stopColor="hsl(30 55% 50%)" />
+                    <stop offset="65%" stopColor="hsl(35 45% 70%)" />
+                    <stop offset="80%" stopColor="hsl(20 50% 55%)" />
+                    <stop offset="100%" stopColor="hsl(35 40% 65%)" />
+                  </linearGradient>
+                </defs>
+                <circle cx="28" cy="28" r="26" fill="url(#jupiterBands)" />
+                {/* Great Red Spot */}
+                <ellipse cx="20" cy="30" rx="5" ry="3" fill="hsl(10 60% 50%)" opacity="0.7" />
+              </svg>
+            </div>
+          </div>
+          
+          {/* Saturn - Sixth planet, with rings */}
+          <div style={{
+            position: 'absolute',
+            top: '50%',
+            left: '25%',
+            width: '620px',
+            height: '620px',
+            marginTop: '-310px',
+            marginLeft: '-310px',
+            animation: 'orbit-rotation 2946s linear infinite',
+            pointerEvents: 'none',
+          }}>
+            <div style={{ position: 'absolute', top: '0', left: '50%', marginLeft: '-20px', marginTop: '-12px' }}>
+              <svg width="40" height="24" viewBox="0 0 80 48" style={{ filter: 'drop-shadow(0 0 6px hsl(45 50% 70% / 0.5))' }}>
+                <defs>
+                  <linearGradient id="saturnBands" x1="0%" y1="0%" x2="0%" y2="100%">
+                    <stop offset="0%" stopColor="hsl(45 40% 75%)" />
+                    <stop offset="30%" stopColor="hsl(40 45% 65%)" />
+                    <stop offset="60%" stopColor="hsl(50 35% 70%)" />
+                    <stop offset="100%" stopColor="hsl(45 40% 60%)" />
+                  </linearGradient>
+                </defs>
+                {/* Rings behind */}
+                <ellipse cx="40" cy="24" rx="38" ry="8" fill="none" stroke="hsl(45 30% 70%)" strokeWidth="3" opacity="0.4" />
+                <ellipse cx="40" cy="24" rx="32" ry="6" fill="none" stroke="hsl(50 35% 75%)" strokeWidth="4" opacity="0.5" />
+                {/* Planet */}
+                <ellipse cx="40" cy="24" rx="18" ry="16" fill="url(#saturnBands)" />
+                {/* Rings in front */}
+                <path d="M 58 24 A 38 8 0 0 1 22 24" fill="none" stroke="hsl(45 30% 70%)" strokeWidth="3" opacity="0.5" />
+                <path d="M 54 24 A 32 6 0 0 1 26 24" fill="none" stroke="hsl(50 35% 75%)" strokeWidth="4" opacity="0.6" />
+              </svg>
+            </div>
+          </div>
+          
+          {/* Uranus - Seventh planet */}
+          <div style={{
+            position: 'absolute',
+            top: '50%',
+            left: '25%',
+            width: '740px',
+            height: '740px',
+            marginTop: '-370px',
+            marginLeft: '-370px',
+            animation: 'orbit-rotation 8401s linear infinite',
+            pointerEvents: 'none',
+          }}>
+            <div style={{ position: 'absolute', top: '0', left: '50%', marginLeft: '-8px', marginTop: '-8px' }}>
+              <svg width="16" height="16" viewBox="0 0 32 32" style={{ filter: 'drop-shadow(0 0 5px hsl(180 50% 70% / 0.5))' }}>
+                <defs>
+                  <radialGradient id="uranusSurface" cx="35%" cy="35%" r="60%">
+                    <stop offset="0%" stopColor="hsl(180 45% 75%)" />
+                    <stop offset="100%" stopColor="hsl(185 50% 55%)" />
+                  </radialGradient>
+                </defs>
+                <circle cx="16" cy="16" r="14" fill="url(#uranusSurface)" />
+                {/* Subtle banding */}
+                <ellipse cx="16" cy="12" rx="10" ry="2" fill="hsl(175 40% 80%)" opacity="0.3" />
+              </svg>
+            </div>
+          </div>
+          
+          {/* Neptune - Eighth planet, outermost */}
+          <div style={{
+            position: 'absolute',
+            top: '50%',
+            left: '25%',
+            width: '860px',
+            height: '860px',
+            marginTop: '-430px',
+            marginLeft: '-430px',
+            animation: 'orbit-rotation 16480s linear infinite',
+            pointerEvents: 'none',
+          }}>
+            <div style={{ position: 'absolute', top: '0', left: '50%', marginLeft: '-7px', marginTop: '-7px' }}>
+              <svg width="14" height="14" viewBox="0 0 28 28" style={{ filter: 'drop-shadow(0 0 5px hsl(220 60% 60% / 0.5))' }}>
+                <defs>
+                  <radialGradient id="neptuneSurface" cx="35%" cy="35%" r="60%">
+                    <stop offset="0%" stopColor="hsl(220 55% 65%)" />
+                    <stop offset="100%" stopColor="hsl(225 60% 45%)" />
+                  </radialGradient>
+                </defs>
+                <circle cx="14" cy="14" r="12" fill="url(#neptuneSurface)" />
+                {/* Dark spot */}
+                <ellipse cx="10" cy="12" rx="3" ry="2" fill="hsl(230 50% 35%)" opacity="0.4" />
+                {/* Bright clouds */}
+                <ellipse cx="16" cy="8" rx="4" ry="1" fill="hsl(200 60% 80%)" opacity="0.5" />
               </svg>
             </div>
           </div>
