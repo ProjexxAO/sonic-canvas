@@ -432,7 +432,7 @@ export default function Atlas() {
                   isConnected 
                     ? conversation.isSpeaking 
                       ? 'bg-secondary/30 shadow-[0_0_30px_hsl(var(--secondary))]' 
-                      : 'bg-primary/20 shadow-[0_0_20px_hsl(var(--primary))]'
+                      : 'bg-primary/20 shadow-[0_0_20px_hsl(var(--primary))] animate-breathe'
                     : 'bg-muted/10'
                 }`} />
                 
