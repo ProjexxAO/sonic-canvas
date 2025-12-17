@@ -601,35 +601,55 @@ export default function Atlas() {
             }}
           />
           
-          {/* Shooting Stars - Rare occurrences */}
+          {/* Shooting Stars - Rare occurrences with varied positions */}
           <div 
-            className="absolute w-1 h-1 bg-white rounded-full"
+            className="absolute w-2 h-2 bg-white rounded-full"
             style={{ 
-              top: '15%',
-              left: '20%',
-              boxShadow: '0 0 6px 2px rgba(255,255,255,0.6)',
-              animation: 'shooting-star-1 45s ease-in-out infinite',
+              top: '8%',
+              left: '15%',
+              boxShadow: '0 0 8px 3px rgba(255,255,255,0.8)',
+              animation: 'shooting-star-1 40s ease-in-out infinite',
               animationDelay: '0s'
             }}
           />
           <div 
-            className="absolute w-1 h-1 bg-white rounded-full"
+            className="absolute w-2 h-2 bg-white rounded-full"
             style={{ 
-              top: '35%',
-              left: '60%',
-              boxShadow: '0 0 6px 2px rgba(255,255,255,0.6)',
-              animation: 'shooting-star-2 70s ease-in-out infinite',
-              animationDelay: '20s'
+              top: '45%',
+              left: '85%',
+              boxShadow: '0 0 8px 3px rgba(255,255,255,0.8)',
+              animation: 'shooting-star-2 55s ease-in-out infinite',
+              animationDelay: '15s'
             }}
           />
           <div 
-            className="absolute w-0.5 h-0.5 bg-white rounded-full"
+            className="absolute w-1.5 h-1.5 bg-white rounded-full"
             style={{ 
-              top: '25%',
-              left: '80%',
-              boxShadow: '0 0 4px 1px rgba(255,255,255,0.5)',
-              animation: 'shooting-star-3 90s ease-in-out infinite',
-              animationDelay: '45s'
+              top: '22%',
+              left: '55%',
+              boxShadow: '0 0 6px 2px rgba(255,255,255,0.7)',
+              animation: 'shooting-star-3 70s ease-in-out infinite',
+              animationDelay: '35s'
+            }}
+          />
+          <div 
+            className="absolute w-1.5 h-1.5 bg-white rounded-full"
+            style={{ 
+              top: '65%',
+              left: '30%',
+              boxShadow: '0 0 6px 2px rgba(255,255,255,0.7)',
+              animation: 'shooting-star-4 65s ease-in-out infinite',
+              animationDelay: '50s'
+            }}
+          />
+          <div 
+            className="absolute w-2 h-2 bg-white rounded-full"
+            style={{ 
+              top: '12%',
+              left: '70%',
+              boxShadow: '0 0 8px 3px rgba(255,255,255,0.8)',
+              animation: 'shooting-star-5 80s ease-in-out infinite',
+              animationDelay: '25s'
             }}
           />
           
