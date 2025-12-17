@@ -56,6 +56,7 @@ export function useWakeWord({
 }: UseWakeWordOptions) {
   const [isListening, setIsListening] = useState(false);
   const [isSupported, setIsSupported] = useState(false);
+  const [lastError, setLastError] = useState<string | null>(null);
   const recognitionRef = useRef<ISpeechRecognition | null>(null);
   const restartTimeoutRef = useRef<NodeJS.Timeout>();
   const enabledRef = useRef(enabled);
@@ -151,6 +152,8 @@ export function useWakeWord({
       // Chrome's SpeechRecognition is cloud-backed; "network" is common on flaky connections
       console.log('[WakeWord] Error:', event.error);
 
+      setLastError(event.error);
+
       if (!enabledRef.current) return;
 
       if (event.error === 'not-allowed') {
@@ -177,21 +180,27 @@ export function useWakeWord({
     };
   }, [wakeWord]);
 
-  const startListening = useCallback(async () => {
+  const startListening = useCallback(async (): Promise<boolean> => {
     if (!enabledRef.current) {
       console.log('[WakeWord] startListening ignored (disabled)');
-      return;
+      return false;
     }
-    if (!recognitionRef.current || isListeningRef.current) return;
+    if (!recognitionRef.current || isListeningRef.current) return true;
 
     try {
       await navigator.mediaDevices.getUserMedia({ audio: true });
       recognitionRef.current.start();
       isListeningRef.current = true;
       setIsListening(true);
+      setLastError(null);
       console.log('[WakeWord] Started listening for:', wakeWord);
+      return true;
     } catch (error) {
+      const name = (error as any)?.name;
+      const msg = error instanceof Error ? error.message : String(error);
       console.error('[WakeWord] Failed to start:', error);
+      setLastError(name ? `${name}` : msg);
+      return false;
     }
   }, [wakeWord]);
 
@@ -210,6 +219,7 @@ export function useWakeWord({
   return {
     isListening,
     isSupported,
+    lastError,
     startListening,
     stopListening,
   };
