@@ -442,103 +442,22 @@ export default function Atlas() {
                   </>
                 )}
                 
-                {/* Cosmic plasma sphere */}
-                <div className={`absolute inset-0 m-auto w-32 h-32 rounded-full overflow-hidden transition-all duration-500 ${
-                  isConnected && conversation.isSpeaking ? 'opacity-100 scale-100' : 'opacity-50 scale-90'
-                }`}>
-                  {/* Base plasma layer - swirling gradient */}
-                  <div className={`absolute inset-0 rounded-full ${
-                    isConnected && conversation.isSpeaking ? 'animate-plasma-swirl' : 'animate-plasma-idle'
-                  }`}
-                  style={{
-                    background: isConnected && conversation.isSpeaking
-                      ? 'conic-gradient(from 0deg, hsl(168 100% 50% / 0.8), hsl(270 100% 60% / 0.8), hsl(340 100% 60% / 0.6), hsl(40 100% 50% / 0.8), hsl(168 100% 50% / 0.8))'
-                      : 'conic-gradient(from 0deg, hsl(168 100% 50% / 0.4), hsl(270 100% 60% / 0.3), hsl(168 100% 50% / 0.4))',
-                    filter: 'blur(8px)',
-                  }} />
-                  
-                  {/* Secondary plasma layer - counter rotation */}
-                  <div className={`absolute inset-2 rounded-full ${
-                    isConnected && conversation.isSpeaking ? 'animate-plasma-counter' : ''
-                  }`}
-                  style={{
-                    background: isConnected && conversation.isSpeaking
-                      ? 'conic-gradient(from 180deg, hsl(40 100% 60% / 0.7), hsl(168 100% 60% / 0.6), hsl(270 100% 70% / 0.5), hsl(40 100% 60% / 0.7))'
-                      : 'conic-gradient(from 180deg, hsl(168 100% 50% / 0.2), hsl(270 100% 60% / 0.15), hsl(168 100% 50% / 0.2))',
-                    filter: 'blur(6px)',
-                  }} />
-                  
-                  {/* Inner energy core */}
-                  <div className={`absolute inset-4 rounded-full ${
-                    isConnected && conversation.isSpeaking ? 'animate-energy-pulse' : ''
-                  }`}
-                  style={{
-                    background: isConnected && conversation.isSpeaking
-                      ? 'radial-gradient(circle, hsl(40 100% 70% / 0.9) 0%, hsl(340 100% 60% / 0.6) 30%, hsl(270 100% 50% / 0.4) 60%, transparent 100%)'
-                      : 'radial-gradient(circle, hsl(168 100% 50% / 0.3) 0%, hsl(168 100% 50% / 0.1) 50%, transparent 100%)',
-                    filter: 'blur(4px)',
-                  }} />
-                  
-                  {/* Plasma tendrils */}
-                  {isConnected && conversation.isSpeaking && (
-                    <>
-                      {Array.from({ length: 6 }).map((_, i) => (
-                        <div
-                          key={`tendril-${i}`}
-                          className="absolute inset-0 m-auto w-full h-full animate-tendril"
-                          style={{
-                            background: `linear-gradient(${i * 60}deg, transparent 40%, hsl(${168 + i * 30} 100% 60% / 0.6) 50%, transparent 60%)`,
-                            animationDelay: `${i * 0.15}s`,
-                            filter: 'blur(2px)',
-                          }}
-                        />
-                      ))}
-                    </>
-                  )}
-                  
-                  {/* Sparkle particles */}
-                  {Array.from({ length: 15 }).map((_, i) => {
-                    const angle = (i / 15) * 360;
-                    const distance = 20 + (i % 3) * 15;
-                    const size = 1 + (i % 2);
-                    return (
-                      <div
-                        key={`sparkle-${i}`}
-                        className={`absolute rounded-full ${
-                          isConnected && conversation.isSpeaking 
-                            ? 'animate-sparkle bg-white' 
-                            : 'bg-primary/40'
-                        }`}
-                        style={{
-                          width: `${size}px`,
-                          height: `${size}px`,
-                          left: `${50 + distance * Math.cos(angle * Math.PI / 180)}%`,
-                          top: `${50 + distance * Math.sin(angle * Math.PI / 180)}%`,
-                          animationDelay: `${i * 0.1}s`,
-                          boxShadow: isConnected && conversation.isSpeaking 
-                            ? `0 0 ${size * 4}px hsl(${[168, 270, 40, 340][i % 4]} 100% 70%)` 
-                            : 'none'
-                        }}
-                      />
-                    );
-                  })}
-                  
-                  {/* Glass overlay for depth */}
-                  <div className="absolute inset-0 rounded-full"
-                    style={{
-                      background: 'radial-gradient(circle at 30% 30%, hsl(0 0% 100% / 0.15) 0%, transparent 50%)',
-                    }}
-                  />
-                </div>
-                
-                {/* Center glow */}
-                <div className={`absolute inset-0 m-auto w-12 h-12 rounded-full transition-all duration-300 ${
+                {/* Center icon */}
+                <div className={`absolute inset-0 m-auto w-16 h-16 rounded-full flex items-center justify-center transition-all duration-300 ${
                   isConnected 
                     ? conversation.isSpeaking 
-                      ? 'bg-secondary/30 shadow-[0_0_30px_hsl(var(--secondary))]' 
-                      : 'bg-primary/20 shadow-[0_0_20px_hsl(var(--primary))] animate-breathe'
-                    : 'bg-muted/10'
-                }`} />
+                      ? 'bg-secondary/20 shadow-[0_0_40px_hsl(var(--secondary)/0.5)]' 
+                      : 'bg-primary/20 shadow-[0_0_25px_hsl(var(--primary)/0.3)] animate-breathe'
+                    : 'bg-muted/20'
+                }`}>
+                  <Zap className={`w-8 h-8 transition-all duration-300 ${
+                    isConnected
+                      ? conversation.isSpeaking
+                        ? 'text-secondary animate-pulse'
+                        : 'text-primary'
+                      : 'text-muted-foreground'
+                  }`} />
+                </div>
                 
                 {/* Radial bars */}
                 {audioLevels.map((level, i) => {
