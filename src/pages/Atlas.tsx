@@ -517,7 +517,7 @@ export default function Atlas() {
                     transform: `scale(${1 + (conversation.isSpeaking ? outputVolume : inputVolume) * 0.1})`
                   }}
                 >
-                  <Zap className={`w-8 h-8 transition-all duration-150 ${
+                  <Hexagon className={`w-8 h-8 transition-all duration-150 ${
                     isConnected
                       ? conversation.isSpeaking
                         ? 'text-secondary'
