@@ -27,7 +27,6 @@ import { useDashboardAgents } from '@/hooks/useDashboardAgents';
 import { useAtlasContext } from '@/hooks/useAtlasContext';
 import { Button } from '@/components/ui/button';
 import { ScrollArea } from '@/components/ui/scroll-area';
-import { ToolActivityIndicator } from '@/components/atlas/ToolActivityIndicator';
 import { ActionLogItem } from '@/components/atlas/ActionLogItem';
 
 const ATLAS_AGENT_ID = "agent_7501kbh21cg1eht9xtjw6kvkpm4m";
@@ -57,7 +56,7 @@ export default function Atlas() {
   const [actionLogs, setActionLogs] = useState<ActionLog[]>([]);
   const [searchResults, setSearchResults] = useState<SearchResult[]>([]);
   const [synthesizedAgent, setSynthesizedAgent] = useState<any>(null);
-  const [toolActivities, setToolActivities] = useState<{ tool: string; status: 'active' | 'success' | 'error'; timestamp: Date }[]>([]);
+  
   const [audioLevels, setAudioLevels] = useState<number[]>(new Array(20).fill(0));
   const [transcript, setTranscript] = useState<string>('');
   const [isTranscribing, setIsTranscribing] = useState(false);
@@ -69,16 +68,6 @@ export default function Atlas() {
   // Get active agents (those with ACTIVE or PROCESSING status)
   const activeAgents = agents.filter(a => a.status === 'ACTIVE' || a.status === 'PROCESSING').slice(0, 6);
 
-  const addToolActivity = (tool: string, status: 'active' | 'success' | 'error') => {
-    setToolActivities(prev => [{ tool, status, timestamp: new Date() }, ...prev].slice(0, 5));
-    
-    // Auto-remove after 3 seconds for success/error
-    if (status !== 'active') {
-      setTimeout(() => {
-        setToolActivities(prev => prev.filter(a => !(a.tool === tool && a.status === status)));
-      }, 3000);
-    }
-  };
 
   const addLog = (action: string, params: Record<string, unknown>, result: string, status: 'success' | 'error' | 'pending') => {
     const log: ActionLog = {
@@ -97,7 +86,6 @@ export default function Atlas() {
     clientTools: {
       // Search agents by query
       searchAgents: async (params: { query: string }) => {
-        addToolActivity('searchAgents', 'active');
         const logId = addLog('searchAgents', params, 'Searching...', 'pending');
         try {
           const response = await supabase.functions.invoke('atlas-orchestrator', {
@@ -113,7 +101,6 @@ export default function Atlas() {
             l.id === logId ? { ...l, result: `Found ${agents.length} agents`, status: 'success' } : l
           ));
           
-          addToolActivity('searchAgents', 'success');
           toast.success(`Found ${agents.length} agents matching "${params.query}"`);
           return `Found ${agents.length} agents: ${agents.map((a: any) => a.name).join(', ')}`;
         } catch (error) {
@@ -121,14 +108,12 @@ export default function Atlas() {
           setActionLogs(prev => prev.map(l => 
             l.id === logId ? { ...l, result: msg, status: 'error' } : l
           ));
-          addToolActivity('searchAgents', 'error');
           toast.error('Search failed');
           return `Error: ${msg}`;
         }
       },
 
       synthesizeAgent: async (params: { agentIds: string[]; requirements: string }) => {
-        addToolActivity('synthesizeAgent', 'active');
         const logId = addLog('synthesizeAgent', params, 'Synthesizing...', 'pending');
         try {
           const response = await supabase.functions.invoke('atlas-orchestrator', {
@@ -148,7 +133,6 @@ export default function Atlas() {
             l.id === logId ? { ...l, result: `Synthesized: ${newAgent?.name || 'New Agent'}`, status: 'success' } : l
           ));
           
-          addToolActivity('synthesizeAgent', 'success');
           toast.success(`Synthesized new agent: ${newAgent?.name}`);
           return `Successfully synthesized agent: ${newAgent?.name}. Description: ${newAgent?.description}`;
         } catch (error) {
@@ -156,7 +140,6 @@ export default function Atlas() {
           setActionLogs(prev => prev.map(l => 
             l.id === logId ? { ...l, result: msg, status: 'error' } : l
           ));
-          addToolActivity('synthesizeAgent', 'error');
           toast.error('Synthesis failed');
           return `Error: ${msg}`;
         }
@@ -164,7 +147,6 @@ export default function Atlas() {
 
       // Navigate to different pages
       navigateTo: (params: { page: string }) => {
-        addToolActivity('navigateTo', 'active');
         addLog('navigateTo', params, `Navigating to ${params.page}`, 'success');
         
         const routes: Record<string, string> = {
@@ -179,14 +161,12 @@ export default function Atlas() {
         
         const route = routes[params.page.toLowerCase()] || '/';
         toast.info(`Navigating to ${params.page}`);
-        addToolActivity('navigateTo', 'success');
         
         setTimeout(() => navigate(route), 500);
         return `Navigating to ${params.page}`;
       },
 
       showNotification: (params: { title: string; message: string; type?: string }) => {
-        addToolActivity('showNotification', 'active');
         addLog('showNotification', params, 'Notification shown', 'success');
         
         const toastType = params.type || 'info';
@@ -195,45 +175,30 @@ export default function Atlas() {
         else if (toastType === 'warning') toast.warning(params.message);
         else toast.info(params.message);
         
-        addToolActivity('showNotification', 'success');
         return `Displayed ${toastType} notification: ${params.title}`;
       },
 
       getSystemStatus: () => {
-        addToolActivity('getSystemStatus', 'active');
         addLog('getSystemStatus', {}, 'Status retrieved', 'success');
         
-        const status = {
-          connected: true,
-          searchResults: searchResults.length,
-          lastSynthesis: synthesizedAgent?.name || 'None',
-          actionLogsCount: actionLogs.length
-        };
-        
-        addToolActivity('getSystemStatus', 'success');
         return `System online. ${searchResults.length} agents in memory. Last synthesis: ${synthesizedAgent?.name || 'None'}. ${actionLogs.length} actions logged.`;
       },
 
       clearResults: () => {
-        addToolActivity('clearResults', 'active');
         addLog('clearResults', {}, 'Results cleared', 'success');
         setSearchResults([]);
         setSynthesizedAgent(null);
         toast.info('Results cleared');
-        addToolActivity('clearResults', 'success');
         return 'Search results and synthesis data cleared';
       },
 
       listSectors: () => {
-        addToolActivity('listSectors', 'active');
         addLog('listSectors', {}, 'Sectors listed', 'success');
         const sectors = ['FINANCE', 'BIOTECH', 'SECURITY', 'DATA', 'CREATIVE', 'UTILITY'];
-        addToolActivity('listSectors', 'success');
         return `Available sectors: ${sectors.join(', ')}`;
       },
 
       getAgentDetails: (params: { agentId: string }) => {
-        addToolActivity('getAgentDetails', 'active');
         const logId = addLog('getAgentDetails', params, 'Fetching details...', 'pending');
         
         const agent = searchResults.find(a => a.id === params.agentId);
@@ -241,14 +206,12 @@ export default function Atlas() {
           setActionLogs(prev => prev.map(l => 
             l.id === logId ? { ...l, result: `Found: ${agent.name}`, status: 'success' } : l
           ));
-          addToolActivity('getAgentDetails', 'success');
           return `Agent: ${agent.name}, Sector: ${agent.sector}, Description: ${agent.description || 'No description'}`;
         }
         
         setActionLogs(prev => prev.map(l => 
           l.id === logId ? { ...l, result: 'Agent not found', status: 'error' } : l
         ));
-        addToolActivity('getAgentDetails', 'error');
         return 'Agent not found in current search results. Please search first.';
       }
     },
@@ -502,9 +465,6 @@ export default function Atlas() {
       <main className="flex-1 flex gap-4 p-4 overflow-hidden">
         {/* Left Panel - Visualizer & Controls */}
         <div className="flex-1 flex flex-col items-center justify-center relative">
-          {/* Tool Activity Indicator */}
-          <ToolActivityIndicator activities={toolActivities} />
-          
           {/* Central Visualizer */}
           <div className="relative w-64 h-64 mb-6">
             {/* Bass-reactive outer ring */}
