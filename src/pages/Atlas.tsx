@@ -5,11 +5,11 @@ import { useNavigate } from 'react-router-dom';
 import { useConversation } from "@elevenlabs/react";
 import { supabase } from '@/integrations/supabase/client';
 import { toast } from 'sonner';
-import { 
-  Mic, 
-  MicOff, 
-  Volume2, 
-  VolumeX, 
+import {
+  Mic,
+  MicOff,
+  Volume2,
+  VolumeX,
   ArrowLeft,
   Radio,
   Hexagon,
@@ -57,7 +57,8 @@ interface SearchResult {
 export default function Atlas() {
   const navigate = useNavigate();
   const { user } = useAuth();
-  const { theme, setTheme } = useTheme();
+  const { resolvedTheme, setTheme } = useTheme();
+  const theme = resolvedTheme ?? "dark";
   const { agents, loading: agentsLoading } = useDashboardAgents({ limit: 200 });
   const [isConnecting, setIsConnecting] = useState(false);
   const [isMuted, setIsMuted] = useState(false);
@@ -463,12 +464,17 @@ export default function Atlas() {
           <button 
             onClick={() => setTheme(theme === 'dark' ? 'light' : 'dark')}
             className="flex items-center gap-1.5 px-2 py-1 rounded bg-muted/50 border border-border hover:bg-muted transition-colors"
+            aria-label={theme === 'dark' ? 'Switch to light mode' : 'Switch to dark mode'}
+            title={theme === 'dark' ? 'Light mode' : 'Dark mode'}
           >
             {theme === 'dark' ? (
-              <Sun size={14} className="text-secondary" />
-            ) : (
               <Moon size={14} className="text-primary" />
+            ) : (
+              <Sun size={14} className="text-secondary" />
             )}
+            <span className="text-[10px] font-mono text-muted-foreground">
+              {theme === 'dark' ? 'Dark' : 'Light'}
+            </span>
           </button>
 
           {/* State Streaming Indicator */}

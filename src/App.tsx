@@ -14,7 +14,12 @@ import NotFound from "./pages/NotFound";
 const queryClient = new QueryClient();
 
 const App = () => (
-  <ThemeProvider attribute="class" defaultTheme="dark" enableSystem>
+  <ThemeProvider
+    attribute="class"
+    defaultTheme="dark"
+    enableSystem={false}
+    storageKey="sonic-theme"
+  >
     <QueryClientProvider client={queryClient}>
       <AuthProvider>
         <TooltipProvider>
