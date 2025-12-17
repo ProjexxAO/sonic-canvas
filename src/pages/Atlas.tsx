@@ -21,10 +21,12 @@ import {
   Sparkles,
   Database,
   Users,
-  Eye
+  Eye,
+  Ear
 } from 'lucide-react';
 import { useAgents } from '@/hooks/useAgents';
 import { useAtlasContext } from '@/hooks/useAtlasContext';
+import { useWakeWord } from '@/hooks/useWakeWord';
 import { Button } from '@/components/ui/button';
 import { ScrollArea } from '@/components/ui/scroll-area';
 import { ToolActivityIndicator } from '@/components/atlas/ToolActivityIndicator';
@@ -64,6 +66,7 @@ export default function Atlas() {
   const [inputVolume, setInputVolume] = useState(0);
   const [outputVolume, setOutputVolume] = useState(0);
   const [frequencyBands, setFrequencyBands] = useState({ bass: 0, mid: 0, treble: 0 });
+  const [wakeWordEnabled, setWakeWordEnabled] = useState(false);
   const animationRef = useRef<number>();
   const conversationRef = useRef<any>(null);
 
@@ -292,6 +295,9 @@ export default function Atlas() {
       await navigator.mediaDevices.getUserMedia({ audio: true });
       console.log("[Atlas] Microphone permission granted, starting session...");
       
+      // Stop wake word listening when starting conversation
+      stopWakeWordListening();
+      
       await conversation.startSession({
         agentId: ATLAS_AGENT_ID,
         connectionType: "webrtc",
@@ -320,6 +326,29 @@ export default function Atlas() {
   }, [conversation, isMuted]);
 
   const isConnected = conversation.status === "connected";
+
+  // Wake word detection
+  const { isListening: isWakeWordListening, isSupported: isWakeWordSupported, startListening: startWakeWordListening, stopListening: stopWakeWordListening } = useWakeWord({
+    wakeWord: 'atlas',
+    onWakeWordDetected: () => {
+      if (!isConnected && !isConnecting) {
+        toast.info('Wake word detected! Activating Atlas...');
+        startConversation();
+      }
+    },
+    enabled: wakeWordEnabled && !isConnected
+  });
+
+  // Toggle wake word mode
+  const toggleWakeWord = useCallback(async () => {
+    if (isWakeWordListening) {
+      stopWakeWordListening();
+      setWakeWordEnabled(false);
+    } else {
+      setWakeWordEnabled(true);
+      await startWakeWordListening();
+    }
+  }, [isWakeWordListening, startWakeWordListening, stopWakeWordListening]);
 
   // Real-time state streaming to Atlas
   const sendContextualUpdate = useCallback((text: string) => {
@@ -519,10 +548,20 @@ export default function Atlas() {
                 : 'border-border/50'
             }`} style={{ animationDuration: '3s' }} />
             
-            {/* Inner circle - Cosmic Orb */}
-            <div className="absolute inset-8 rounded-full bg-black/80 border border-border flex items-center justify-center overflow-hidden">
+            {/* Inner circle - Cosmic Orb - CLICKABLE TO ACTIVATE */}
+            <div 
+              className={`absolute inset-8 rounded-full bg-black/80 border border-border flex items-center justify-center overflow-hidden ${
+                !isConnected && !isConnecting ? 'cursor-pointer hover:border-primary/50 transition-colors' : ''
+              }`}
+              onClick={() => {
+                if (!isConnected && !isConnecting) {
+                  startConversation();
+                }
+              }}
+              title={!isConnected ? "Click to activate Atlas" : undefined}
+            >
               {/* Cosmic Orb Container */}
-              <div className="relative w-full h-full flex items-center justify-center">
+              <div className="relative w-full h-full flex items-center justify-center pointer-events-none">
                 {/* Cosmic Orb - fills the center */}
                 <div 
                   className="absolute w-[85%] h-[85%] rounded-full overflow-hidden"
@@ -536,11 +575,15 @@ export default function Atlas() {
                     className="absolute inset-0 rounded-full"
                     style={{
                       background: `radial-gradient(ellipse at ${30 + frequencyBands.bass * 20}% ${40 + frequencyBands.mid * 20}%, 
-                        hsl(270 100% ${isConnected ? 45 + outputVolume * 35 : 35}% / ${0.8 + outputVolume * 0.2}) 0%,
-                        hsl(220 100% ${isConnected ? 35 + outputVolume * 25 : 28}% / ${0.7 + outputVolume * 0.3}) 30%,
-                        hsl(280 100% ${isConnected ? 28 + outputVolume * 20 : 22}% / ${0.6 + outputVolume * 0.3}) 60%,
+                        hsl(270 100% ${isConnected ? 45 + outputVolume * 35 : isWakeWordListening ? 40 : 35}% / ${0.8 + outputVolume * 0.2}) 0%,
+                        hsl(220 100% ${isConnected ? 35 + outputVolume * 25 : isWakeWordListening ? 32 : 28}% / ${0.7 + outputVolume * 0.3}) 30%,
+                        hsl(280 100% ${isConnected ? 28 + outputVolume * 20 : isWakeWordListening ? 25 : 22}% / ${0.6 + outputVolume * 0.3}) 60%,
                         transparent 100%)`,
-                      animation: isConnected && conversation.isSpeaking ? 'orb-pulse 0.5s ease-in-out infinite' : 'orb-idle 4s ease-in-out infinite',
+                      animation: isConnected && conversation.isSpeaking 
+                        ? 'orb-pulse 0.5s ease-in-out infinite' 
+                        : isWakeWordListening 
+                          ? 'orb-pulse 2s ease-in-out infinite' 
+                          : 'orb-idle 4s ease-in-out infinite',
                     }}
                   />
                   
@@ -620,43 +663,81 @@ export default function Atlas() {
                     }}
                   />
                 </div>
+                
+                {/* Activation hint when not connected */}
+                {!isConnected && !isConnecting && (
+                  <div className="absolute inset-0 flex items-center justify-center">
+                    <span className="text-[10px] font-mono text-primary/60 animate-pulse">
+                      TAP TO ACTIVATE
+                    </span>
+                  </div>
+                )}
+                
+                {/* Connecting indicator */}
+                {isConnecting && (
+                  <div className="absolute inset-0 flex items-center justify-center">
+                    <span className="text-[10px] font-mono text-primary animate-pulse">
+                      CONNECTING...
+                    </span>
+                  </div>
+                )}
               </div>
             </div>
 
           </div>
 
           {/* Controls */}
-          <div className="flex justify-center gap-3 mt-8">
-            {!isConnected ? (
-              <Button
-                onClick={startConversation}
-                disabled={isConnecting}
-                variant="outline"
-                size="lg"
-                className="gap-2 font-mono rounded-full bg-transparent border-primary/50 text-primary hover:bg-primary/10 hover:border-primary shadow-[0_0_15px_hsl(var(--primary)/0.3)] hover:shadow-[0_0_25px_hsl(var(--primary)/0.5)] transition-all duration-300"
-              >
-                <Mic className="w-5 h-5" />
-                {isConnecting ? "CONNECTING..." : "ACTIVATE ATLAS"}
-              </Button>
-            ) : (
-              <>
-                <Button
-                  onClick={toggleMute}
-                  variant="outline"
-                  className="gap-2 font-mono"
-                >
-                  {isMuted ? <VolumeX className="w-4 h-4" /> : <Volume2 className="w-4 h-4" />}
-                  {isMuted ? "UNMUTE" : "MUTE"}
-                </Button>
-                <Button
-                  onClick={stopConversation}
-                  variant="destructive"
-                  className="gap-2 font-mono"
-                >
-                  <MicOff className="w-4 h-4" />
-                  DEACTIVATE
-                </Button>
-              </>
+          <div className="flex flex-col items-center gap-4 mt-8">
+            {/* Main controls */}
+            <div className="flex justify-center gap-3">
+              {!isConnected ? (
+                <>
+                  {/* Wake word toggle */}
+                  {isWakeWordSupported && (
+                    <Button
+                      onClick={toggleWakeWord}
+                      variant="outline"
+                      size="lg"
+                      className={`gap-2 font-mono rounded-full transition-all duration-300 ${
+                        isWakeWordListening 
+                          ? 'bg-primary/20 border-primary text-primary shadow-[0_0_20px_hsl(var(--primary)/0.4)]' 
+                          : 'bg-transparent border-border/50 text-muted-foreground hover:border-primary/50 hover:text-primary'
+                      }`}
+                    >
+                      <Ear className={`w-5 h-5 ${isWakeWordListening ? 'animate-pulse' : ''}`} />
+                      {isWakeWordListening ? 'LISTENING...' : 'WAKE WORD'}
+                    </Button>
+                  )}
+                </>
+              ) : (
+                <>
+                  <Button
+                    onClick={toggleMute}
+                    variant="outline"
+                    className="gap-2 font-mono"
+                  >
+                    {isMuted ? <VolumeX className="w-4 h-4" /> : <Volume2 className="w-4 h-4" />}
+                    {isMuted ? "UNMUTE" : "MUTE"}
+                  </Button>
+                  <Button
+                    onClick={stopConversation}
+                    variant="destructive"
+                    className="gap-2 font-mono"
+                  >
+                    <MicOff className="w-4 h-4" />
+                    DEACTIVATE
+                  </Button>
+                </>
+              )}
+            </div>
+            
+            {/* Activation hint */}
+            {!isConnected && !isConnecting && (
+              <p className="text-[10px] font-mono text-muted-foreground/60">
+                {isWakeWordListening 
+                  ? 'Say "Atlas" to activate' 
+                  : 'Tap the orb or enable wake word'}
+              </p>
             )}
           </div>
 
