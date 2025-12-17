@@ -232,6 +232,7 @@
       transform: translate(-50%, -50%) rotate(var(--particle-angle, 0deg)) translateY(-60px);
       opacity: 0;
       scale: 0.5;
+    }
   }
   
   /* Pulsing ring expansion with color-shifting glow trail */
@@ -282,6 +283,7 @@
       transform: scale(1.15);
       opacity: 1;
       box-shadow: 0 0 35px hsl(var(--primary) / 0.6);
+    }
   }
   
   /* Slow rotation for idle icon */
@@ -297,7 +299,86 @@
       transform: rotate(360deg);
     }
   }
+  
+  /* Nebula pulse for speaking */
+  .animate-nebula-pulse {
+    animation: nebula-pulse 1.5s ease-in-out infinite;
   }
+  
+  @keyframes nebula-pulse {
+    0%, 100% {
+      opacity: 0.6;
+      transform: scale(1);
+    }
+    50% {
+      opacity: 1;
+      transform: scale(1.1);
+    }
+  }
+  
+  /* Star twinkle effect */
+  .animate-star-twinkle {
+    animation: star-twinkle 0.8s ease-in-out infinite;
+  }
+  
+  @keyframes star-twinkle {
+    0%, 100% {
+      opacity: 0.4;
+      transform: scale(1);
+    }
+    50% {
+      opacity: 1;
+      transform: scale(1.5);
+    }
+  }
+  
+  /* Expanding orbit rings */
+  .animate-orbit-expand {
+    animation: orbit-expand 2s ease-out infinite;
+  }
+  
+  @keyframes orbit-expand {
+    0% {
+      transform: scale(0.8);
+      opacity: 0.6;
+    }
+    100% {
+      transform: scale(1.5);
+      opacity: 0;
+    }
+  }
+  
+  /* Speaking pulse for center icon */
+  .animate-speaking-pulse {
+    animation: speaking-pulse 0.6s ease-in-out infinite;
+  }
+  
+  @keyframes speaking-pulse {
+    0%, 100% {
+      box-shadow: 0 0 20px hsl(var(--secondary) / 0.6);
+    }
+    50% {
+      box-shadow: 0 0 40px hsl(var(--secondary) / 0.9);
+    }
+  }
+  
+  /* Speaking icon animation */
+  .animate-speaking-icon {
+    animation: speaking-icon 0.4s ease-in-out infinite alternate;
+  }
+  
+  @keyframes speaking-icon {
+    from {
+      transform: scale(1) rotate(0deg);
+    }
+    to {
+      transform: scale(1.1) rotate(15deg);
+    }
+  }
+  
+  /* Radial gradient for universe effect */
+  .bg-gradient-radial {
+    background: radial-gradient(circle, var(--tw-gradient-stops));
   }
   
   /* Hover lift */

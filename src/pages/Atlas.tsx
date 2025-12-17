@@ -427,6 +427,54 @@ export default function Atlas() {
                   </>
                 )}
                 
+                {/* Cosmic universe layer */}
+                <div className={`absolute inset-0 m-auto w-28 h-28 rounded-full overflow-hidden transition-all duration-500 ${
+                  isConnected && conversation.isSpeaking ? 'opacity-100 scale-100' : 'opacity-40 scale-90'
+                }`}>
+                  {/* Nebula background */}
+                  <div className={`absolute inset-0 rounded-full ${
+                    isConnected && conversation.isSpeaking 
+                      ? 'bg-gradient-radial from-secondary/40 via-primary/20 to-transparent animate-nebula-pulse' 
+                      : 'bg-gradient-radial from-primary/20 via-primary/10 to-transparent'
+                  }`} />
+                  
+                  {/* Stars */}
+                  {Array.from({ length: 20 }).map((_, i) => {
+                    const angle = (i / 20) * 360 + Math.random() * 18;
+                    const distance = 15 + Math.random() * 35;
+                    const size = 1 + Math.random() * 2;
+                    const delay = Math.random() * 2;
+                    return (
+                      <div
+                        key={`star-${i}`}
+                        className={`absolute rounded-full ${
+                          isConnected && conversation.isSpeaking 
+                            ? 'bg-secondary animate-star-twinkle' 
+                            : 'bg-primary/60'
+                        }`}
+                        style={{
+                          width: `${size}px`,
+                          height: `${size}px`,
+                          left: `${50 + distance * Math.cos(angle * Math.PI / 180)}%`,
+                          top: `${50 + distance * Math.sin(angle * Math.PI / 180)}%`,
+                          animationDelay: `${delay}s`,
+                          boxShadow: isConnected && conversation.isSpeaking 
+                            ? `0 0 ${size * 3}px hsl(var(--secondary))` 
+                            : `0 0 ${size * 2}px hsl(var(--primary))`
+                        }}
+                      />
+                    );
+                  })}
+                  
+                  {/* Orbital rings when speaking */}
+                  {isConnected && conversation.isSpeaking && (
+                    <>
+                      <div className="absolute inset-0 m-auto w-20 h-20 rounded-full border border-secondary/30 animate-orbit-expand" />
+                      <div className="absolute inset-0 m-auto w-16 h-16 rounded-full border border-secondary/20 animate-orbit-expand" style={{ animationDelay: '0.3s' }} />
+                    </>
+                  )}
+                </div>
+                
                 {/* Center glow */}
                 <div className={`absolute inset-0 m-auto w-12 h-12 rounded-full transition-all duration-300 ${
                   isConnected 
@@ -477,11 +525,20 @@ export default function Atlas() {
                   <div className={`w-14 h-14 rounded-full flex items-center justify-center transition-all duration-300 ${
                     isConnected 
                       ? conversation.isSpeaking 
-                        ? 'bg-secondary text-secondary-foreground scale-110' 
+                        ? 'bg-secondary text-secondary-foreground scale-110 animate-speaking-pulse' 
                         : 'bg-primary/80 text-primary-foreground'
                       : 'bg-muted text-muted-foreground'
                   }`}>
-                    <Hexagon size={28} className={isConnected && !conversation.isSpeaking ? 'animate-slow-spin' : ''} />
+                    <Hexagon 
+                      size={28} 
+                      className={`transition-transform duration-200 ${
+                        isConnected 
+                          ? conversation.isSpeaking 
+                            ? 'animate-speaking-icon' 
+                            : 'animate-slow-spin'
+                          : ''
+                      }`} 
+                    />
                   </div>
                 </div>
               </div>
