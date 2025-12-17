@@ -20,8 +20,9 @@ import {
   Bot,
   Sparkles,
   Database,
-  Terminal
+  Users
 } from 'lucide-react';
+import { useAgents } from '@/hooks/useAgents';
 import { Button } from '@/components/ui/button';
 import { ScrollArea } from '@/components/ui/scroll-area';
 import { ToolActivityIndicator } from '@/components/atlas/ToolActivityIndicator';
@@ -48,6 +49,7 @@ interface SearchResult {
 
 export default function Atlas() {
   const navigate = useNavigate();
+  const { agents, loading: agentsLoading } = useAgents();
   const [isConnecting, setIsConnecting] = useState(false);
   const [isMuted, setIsMuted] = useState(false);
   const [actionLogs, setActionLogs] = useState<ActionLog[]>([]);
@@ -61,6 +63,9 @@ export default function Atlas() {
   const [outputVolume, setOutputVolume] = useState(0);
   const [frequencyBands, setFrequencyBands] = useState({ bass: 0, mid: 0, treble: 0 });
   const animationRef = useRef<number>();
+
+  // Get active agents (those with ACTIVE or PROCESSING status)
+  const activeAgents = agents.filter(a => a.status === 'ACTIVE' || a.status === 'PROCESSING').slice(0, 6);
 
   const addToolActivity = (tool: string, status: 'active' | 'success' | 'error') => {
     setToolActivities(prev => [{ tool, status, timestamp: new Date() }, ...prev].slice(0, 5));
@@ -682,27 +687,44 @@ export default function Atlas() {
             </div>
           )}
 
-          {/* Action Logs */}
+          {/* Active Agents */}
           <div className="flex-1 bg-card/50 border border-border rounded-lg p-3">
             <div className="flex items-center gap-2 mb-2">
-              <Terminal size={14} className="text-primary" />
-              <span className="text-xs font-mono text-muted-foreground">ACTION LOG</span>
-              {actionLogs.some(l => l.status === 'pending') && (
-                <div className="ml-auto flex items-center gap-1">
-                  <div className="w-1.5 h-1.5 rounded-full bg-secondary animate-pulse" />
-                  <span className="text-[10px] text-secondary">PROCESSING</span>
-                </div>
-              )}
+              <Users size={14} className="text-primary" />
+              <span className="text-xs font-mono text-muted-foreground">ACTIVE AGENTS</span>
+              <span className="ml-auto text-[10px] text-muted-foreground font-mono">
+                {activeAgents.length}/{agents.length}
+              </span>
             </div>
             <ScrollArea className="h-64">
-              <div className="space-y-1">
-                {actionLogs.length === 0 ? (
+              <div className="space-y-2">
+                {agentsLoading ? (
                   <div className="text-muted-foreground/50 text-center py-4 text-xs">
-                    No actions yet. Activate Atlas to begin.
+                    Loading agents...
+                  </div>
+                ) : activeAgents.length === 0 ? (
+                  <div className="text-muted-foreground/50 text-center py-4 text-xs">
+                    No active agents. Visit the Forge to create agents.
                   </div>
                 ) : (
-                  actionLogs.map((log) => (
-                    <ActionLogItem key={log.id} log={log} />
+                  activeAgents.map((agent) => (
+                    <div 
+                      key={agent.id} 
+                      className="flex items-center gap-3 p-2 rounded bg-background/50 border border-border/50 hover:border-primary/30 transition-colors"
+                    >
+                      <div 
+                        className="w-3 h-3 rounded-full animate-pulse"
+                        style={{ backgroundColor: agent.sonicDNA.color }}
+                      />
+                      <div className="flex-1 min-w-0">
+                        <p className="text-xs font-mono text-foreground truncate">{agent.name}</p>
+                        <p className="text-[10px] text-muted-foreground">{agent.designation}</p>
+                      </div>
+                      <div className="flex flex-col items-end">
+                        <span className="text-[10px] font-mono text-secondary">{agent.status}</span>
+                        <span className="text-[10px] text-muted-foreground">{agent.sector}</span>
+                      </div>
+                    </div>
                   ))
                 )}
               </div>
