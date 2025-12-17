@@ -423,9 +423,138 @@ export default function Atlas() {
   }, [isConnected, conversation]);
 
   return (
-    <div className="min-h-screen bg-background text-foreground flex flex-col">
+    <div className="min-h-screen bg-background text-foreground flex flex-col relative overflow-hidden">
+      {/* Full Page Star System Background - Dark Mode Only */}
+      {theme === 'dark' && (
+        <div className="fixed inset-0 pointer-events-none z-0">
+          {/* Deep space base */}
+          <div 
+            className="absolute inset-0"
+            style={{
+              background: `radial-gradient(ellipse at 50% 50%, 
+                hsl(240 30% 8%) 0%, 
+                hsl(250 35% 4%) 50%, 
+                hsl(260 40% 2%) 100%)`
+            }}
+          />
+          {/* Milky Way band - sweeping across */}
+          <div 
+            className="absolute inset-0 opacity-60"
+            style={{
+              background: `linear-gradient(135deg, 
+                transparent 10%,
+                hsl(270 40% 15% / 0.2) 20%,
+                hsl(250 50% 25% / 0.3) 30%,
+                hsl(220 60% 30% / 0.35) 40%,
+                hsl(200 55% 35% / 0.3) 50%,
+                hsl(270 45% 25% / 0.2) 60%,
+                transparent 75%)`
+            }}
+          />
+          {/* Nebula clouds */}
+          <div 
+            className="absolute inset-0 opacity-40"
+            style={{
+              background: `
+                radial-gradient(ellipse 60% 40% at 15% 30%, hsl(320 60% 30% / 0.25) 0%, transparent 70%),
+                radial-gradient(ellipse 50% 35% at 85% 60%, hsl(280 55% 35% / 0.2) 0%, transparent 65%),
+                radial-gradient(ellipse 40% 30% at 50% 20%, hsl(200 65% 40% / 0.15) 0%, transparent 60%),
+                radial-gradient(ellipse 45% 25% at 70% 80%, hsl(270 50% 30% / 0.2) 0%, transparent 60%)`
+            }}
+          />
+          {/* Dense distant stars */}
+          <div 
+            className="absolute inset-0"
+            style={{
+              backgroundImage: `
+                radial-gradient(0.5px 0.5px at 3% 5%, hsl(0 0% 100% / 0.7) 100%, transparent),
+                radial-gradient(0.5px 0.5px at 8% 15%, hsl(0 0% 90% / 0.5) 100%, transparent),
+                radial-gradient(0.5px 0.5px at 15% 8%, hsl(0 0% 100% / 0.6) 100%, transparent),
+                radial-gradient(0.5px 0.5px at 22% 25%, hsl(0 0% 95% / 0.5) 100%, transparent),
+                radial-gradient(0.5px 0.5px at 28% 12%, hsl(0 0% 100% / 0.6) 100%, transparent),
+                radial-gradient(0.5px 0.5px at 35% 35%, hsl(0 0% 90% / 0.5) 100%, transparent),
+                radial-gradient(0.5px 0.5px at 42% 5%, hsl(0 0% 100% / 0.7) 100%, transparent),
+                radial-gradient(0.5px 0.5px at 48% 22%, hsl(0 0% 95% / 0.5) 100%, transparent),
+                radial-gradient(0.5px 0.5px at 55% 45%, hsl(0 0% 100% / 0.6) 100%, transparent),
+                radial-gradient(0.5px 0.5px at 62% 18%, hsl(0 0% 90% / 0.5) 100%, transparent),
+                radial-gradient(0.5px 0.5px at 68% 55%, hsl(0 0% 100% / 0.6) 100%, transparent),
+                radial-gradient(0.5px 0.5px at 75% 8%, hsl(0 0% 95% / 0.5) 100%, transparent),
+                radial-gradient(0.5px 0.5px at 82% 32%, hsl(0 0% 100% / 0.6) 100%, transparent),
+                radial-gradient(0.5px 0.5px at 88% 65%, hsl(0 0% 90% / 0.5) 100%, transparent),
+                radial-gradient(0.5px 0.5px at 95% 15%, hsl(0 0% 100% / 0.6) 100%, transparent),
+                radial-gradient(0.5px 0.5px at 5% 75%, hsl(0 0% 95% / 0.5) 100%, transparent),
+                radial-gradient(0.5px 0.5px at 12% 88%, hsl(0 0% 100% / 0.6) 100%, transparent),
+                radial-gradient(0.5px 0.5px at 25% 72%, hsl(0 0% 90% / 0.5) 100%, transparent),
+                radial-gradient(0.5px 0.5px at 38% 95%, hsl(0 0% 100% / 0.6) 100%, transparent),
+                radial-gradient(0.5px 0.5px at 52% 78%, hsl(0 0% 95% / 0.5) 100%, transparent),
+                radial-gradient(0.5px 0.5px at 65% 92%, hsl(0 0% 100% / 0.6) 100%, transparent),
+                radial-gradient(0.5px 0.5px at 78% 82%, hsl(0 0% 90% / 0.5) 100%, transparent),
+                radial-gradient(0.5px 0.5px at 92% 88%, hsl(0 0% 100% / 0.6) 100%, transparent)
+              `
+            }}
+          />
+          {/* Medium colored stars */}
+          <div 
+            className="absolute inset-0"
+            style={{
+              backgroundImage: `
+                radial-gradient(1px 1px at 5% 12%, hsl(200 100% 85%) 100%, transparent),
+                radial-gradient(1px 1px at 18% 38%, hsl(35 100% 85%) 100%, transparent),
+                radial-gradient(1px 1px at 32% 62%, hsl(0 0% 100%) 100%, transparent),
+                radial-gradient(1px 1px at 45% 15%, hsl(270 80% 88%) 100%, transparent),
+                radial-gradient(1px 1px at 58% 75%, hsl(180 90% 82%) 100%, transparent),
+                radial-gradient(1px 1px at 72% 28%, hsl(0 0% 100%) 100%, transparent),
+                radial-gradient(1px 1px at 85% 52%, hsl(220 85% 88%) 100%, transparent),
+                radial-gradient(1px 1px at 15% 85%, hsl(35 90% 82%) 100%, transparent),
+                radial-gradient(1px 1px at 42% 92%, hsl(0 0% 100%) 100%, transparent),
+                radial-gradient(1px 1px at 68% 8%, hsl(200 95% 85%) 100%, transparent),
+                radial-gradient(1px 1px at 92% 72%, hsl(270 85% 85%) 100%, transparent),
+                radial-gradient(1px 1px at 8% 48%, hsl(180 90% 88%) 100%, transparent)
+              `,
+              animation: 'twinkle 4s ease-in-out infinite alternate'
+            }}
+          />
+          {/* Bright prominent stars */}
+          <div 
+            className="absolute inset-0"
+            style={{
+              backgroundImage: `
+                radial-gradient(2px 2px at 10% 20%, hsl(0 0% 100%) 50%, hsl(200 100% 80% / 0.4) 100%, transparent),
+                radial-gradient(2px 2px at 30% 45%, hsl(0 0% 100%) 50%, hsl(35 100% 80% / 0.4) 100%, transparent),
+                radial-gradient(2px 2px at 55% 25%, hsl(0 0% 100%) 50%, hsl(270 90% 85% / 0.4) 100%, transparent),
+                radial-gradient(2px 2px at 75% 65%, hsl(0 0% 100%) 50%, hsl(180 95% 82% / 0.4) 100%, transparent),
+                radial-gradient(2px 2px at 90% 35%, hsl(0 0% 100%) 50%, hsl(220 90% 85% / 0.4) 100%, transparent),
+                radial-gradient(1.5px 1.5px at 20% 70%, hsl(0 0% 100%) 50%, hsl(0 0% 90% / 0.4) 100%, transparent),
+                radial-gradient(1.5px 1.5px at 48% 85%, hsl(0 0% 100%) 50%, hsl(200 85% 85% / 0.4) 100%, transparent),
+                radial-gradient(1.5px 1.5px at 82% 15%, hsl(0 0% 100%) 50%, hsl(35 90% 82% / 0.4) 100%, transparent)
+              `,
+              animation: 'twinkle 2.5s ease-in-out infinite'
+            }}
+          />
+          {/* Star clusters along milky way */}
+          <div 
+            className="absolute inset-0 opacity-60"
+            style={{
+              backgroundImage: `
+                radial-gradient(0.8px 0.8px at 25% 30%, white 100%, transparent),
+                radial-gradient(0.8px 0.8px at 28% 33%, hsl(0 0% 90%) 100%, transparent),
+                radial-gradient(0.8px 0.8px at 32% 36%, white 100%, transparent),
+                radial-gradient(0.8px 0.8px at 35% 38%, hsl(0 0% 95%) 100%, transparent),
+                radial-gradient(0.8px 0.8px at 38% 41%, white 100%, transparent),
+                radial-gradient(0.8px 0.8px at 42% 44%, hsl(0 0% 90%) 100%, transparent),
+                radial-gradient(0.8px 0.8px at 45% 47%, white 100%, transparent),
+                radial-gradient(0.8px 0.8px at 48% 50%, hsl(0 0% 95%) 100%, transparent),
+                radial-gradient(0.8px 0.8px at 52% 53%, white 100%, transparent),
+                radial-gradient(0.8px 0.8px at 55% 55%, hsl(0 0% 90%) 100%, transparent),
+                radial-gradient(0.8px 0.8px at 58% 58%, white 100%, transparent),
+                radial-gradient(0.8px 0.8px at 62% 61%, hsl(0 0% 95%) 100%, transparent)
+              `
+            }}
+          />
+        </div>
+      )}
       {/* Header */}
-      <header className="h-14 bg-card/95 border-b border-border flex items-center justify-between px-6 shadow-sm">
+      <header className="h-14 bg-card/95 border-b border-border flex items-center justify-between px-6 shadow-sm relative z-10">
         <div className="flex items-center gap-4">
           <button
             onClick={() => navigate('/')}
@@ -499,7 +628,7 @@ export default function Atlas() {
       </header>
 
       {/* Main Content */}
-      <main className="flex-1 flex gap-4 p-4 overflow-hidden">
+      <main className="flex-1 flex gap-4 p-4 overflow-hidden relative z-10">
         {/* Left Panel - Visualizer & Controls */}
         <div className="flex-1 flex flex-col items-center justify-center relative">
           {/* Central Visualizer */}
