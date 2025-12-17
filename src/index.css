@@ -672,15 +672,20 @@
   }
 }
 
-/* Light mode scene animations */
-@keyframes cloud-drift {
-  0%, 100% { transform: translateX(0); }
-  50% { transform: translateX(20px); }
+/* Cloud floating animations - continuous movement across screen */
+@keyframes cloud-float-1 {
+  0% { left: 110%; }
+  100% { left: -20%; }
 }
 
-@keyframes cloud-drift-slow {
-  0%, 100% { transform: translateX(0); }
-  50% { transform: translateX(-15px); }
+@keyframes cloud-float-2 {
+  0% { left: -20%; }
+  100% { left: 110%; }
+}
+
+@keyframes cloud-float-3 {
+  0% { left: 105%; }
+  100% { left: -15%; }
 }
 
 /* Balloon floating animations - continuous movement across screen */

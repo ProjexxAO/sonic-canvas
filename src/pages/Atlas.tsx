@@ -628,29 +628,29 @@ export default function Atlas() {
             />
           </div>
           
-          {/* Clouds layer 1 - far */}
+          {/* Clouds layer 1 - floats right to left */}
           <div 
-            className="absolute top-[12%] left-[5%] w-48 h-16 opacity-70"
-            style={{ animation: 'cloud-drift 20s ease-in-out infinite' }}
+            className="absolute top-[12%] w-48 h-16 opacity-70"
+            style={{ animation: 'cloud-float-1 80s linear infinite' }}
           >
             <div className="absolute inset-0 rounded-full bg-white/80 blur-md" />
             <div className="absolute top-2 left-8 w-24 h-12 rounded-full bg-white/90 blur-sm" />
             <div className="absolute top-1 left-20 w-20 h-10 rounded-full bg-white/85 blur-sm" />
           </div>
           
-          {/* Clouds layer 2 */}
+          {/* Clouds layer 2 - floats left to right */}
           <div 
-            className="absolute top-[18%] right-[25%] w-36 h-14 opacity-60"
-            style={{ animation: 'cloud-drift-slow 25s ease-in-out infinite' }}
+            className="absolute top-[18%] w-36 h-14 opacity-60"
+            style={{ animation: 'cloud-float-2 100s linear infinite' }}
           >
             <div className="absolute inset-0 rounded-full bg-white/75 blur-md" />
             <div className="absolute top-1 left-6 w-20 h-10 rounded-full bg-white/85 blur-sm" />
           </div>
           
-          {/* Clouds layer 3 */}
+          {/* Clouds layer 3 - floats right to left, slower */}
           <div 
-            className="absolute top-[25%] left-[35%] w-32 h-12 opacity-50"
-            style={{ animation: 'cloud-drift 30s ease-in-out infinite' }}
+            className="absolute top-[25%] w-32 h-12 opacity-50"
+            style={{ animation: 'cloud-float-3 120s linear infinite' }}
           >
             <div className="absolute inset-0 rounded-full bg-white/70 blur-lg" />
           </div>
