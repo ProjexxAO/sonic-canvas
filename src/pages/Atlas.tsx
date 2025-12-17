@@ -504,6 +504,130 @@ export default function Atlas() {
         <div className="flex-1 flex flex-col items-center justify-center relative">
           {/* Central Visualizer */}
           <div className="relative w-64 h-64 mb-6">
+            {/* Atmospheric Background */}
+            <div className="absolute -inset-12 rounded-full overflow-hidden pointer-events-none">
+              {theme === 'dark' ? (
+                /* Dark Mode: Starfield */
+                <div className="absolute inset-0">
+                  {/* Deep space gradient */}
+                  <div 
+                    className="absolute inset-0 rounded-full"
+                    style={{
+                      background: `radial-gradient(circle at 50% 50%, 
+                        hsl(240 20% 8% / 0.9) 0%, 
+                        hsl(240 25% 4% / 0.95) 50%, 
+                        transparent 70%)`
+                    }}
+                  />
+                  {/* Animated stars layer 1 - small */}
+                  <div 
+                    className="absolute inset-0 rounded-full animate-pulse"
+                    style={{
+                      backgroundImage: `
+                        radial-gradient(1px 1px at 10% 15%, white 100%, transparent),
+                        radial-gradient(1px 1px at 25% 35%, hsl(200 100% 90%) 100%, transparent),
+                        radial-gradient(1px 1px at 40% 10%, white 100%, transparent),
+                        radial-gradient(1px 1px at 55% 45%, hsl(270 80% 85%) 100%, transparent),
+                        radial-gradient(1px 1px at 70% 20%, white 100%, transparent),
+                        radial-gradient(1px 1px at 85% 55%, hsl(180 100% 85%) 100%, transparent),
+                        radial-gradient(1px 1px at 15% 70%, white 100%, transparent),
+                        radial-gradient(1px 1px at 30% 85%, hsl(220 90% 90%) 100%, transparent),
+                        radial-gradient(1px 1px at 60% 75%, white 100%, transparent),
+                        radial-gradient(1px 1px at 80% 90%, hsl(200 80% 88%) 100%, transparent),
+                        radial-gradient(1px 1px at 5% 50%, white 100%, transparent),
+                        radial-gradient(1px 1px at 95% 40%, hsl(260 70% 90%) 100%, transparent)
+                      `,
+                      animationDuration: '3s'
+                    }}
+                  />
+                  {/* Animated stars layer 2 - medium */}
+                  <div 
+                    className="absolute inset-0 rounded-full"
+                    style={{
+                      backgroundImage: `
+                        radial-gradient(1.5px 1.5px at 20% 25%, hsl(180 100% 80%) 100%, transparent),
+                        radial-gradient(1.5px 1.5px at 45% 60%, hsl(270 90% 85%) 100%, transparent),
+                        radial-gradient(1.5px 1.5px at 75% 35%, hsl(200 100% 85%) 100%, transparent),
+                        radial-gradient(1.5px 1.5px at 35% 80%, hsl(220 80% 82%) 100%, transparent),
+                        radial-gradient(1.5px 1.5px at 90% 70%, hsl(180 90% 88%) 100%, transparent),
+                        radial-gradient(1.5px 1.5px at 8% 85%, hsl(260 85% 85%) 100%, transparent)
+                      `,
+                      animation: 'twinkle 2s ease-in-out infinite alternate'
+                    }}
+                  />
+                  {/* Space dust nebula */}
+                  <div 
+                    className="absolute inset-4 rounded-full opacity-30"
+                    style={{
+                      background: `radial-gradient(ellipse at 30% 40%, hsl(270 60% 30% / 0.4) 0%, transparent 50%),
+                        radial-gradient(ellipse at 70% 60%, hsl(200 50% 25% / 0.3) 0%, transparent 45%)`
+                    }}
+                  />
+                </div>
+              ) : (
+                /* Light Mode: Soft ethereal glow */
+                <div className="absolute inset-0">
+                  {/* Soft radial gradient */}
+                  <div 
+                    className="absolute inset-0 rounded-full"
+                    style={{
+                      background: `radial-gradient(circle at 50% 50%, 
+                        hsl(210 30% 94% / 0.95) 0%, 
+                        hsl(220 25% 90% / 0.8) 40%, 
+                        transparent 70%)`
+                    }}
+                  />
+                  {/* Soft light rays */}
+                  <div 
+                    className="absolute inset-0 rounded-full opacity-40"
+                    style={{
+                      background: `conic-gradient(from 0deg at 50% 50%,
+                        transparent 0deg,
+                        hsl(36 60% 75% / 0.3) 20deg,
+                        transparent 40deg,
+                        hsl(173 50% 70% / 0.25) 80deg,
+                        transparent 100deg,
+                        hsl(201 55% 72% / 0.3) 140deg,
+                        transparent 160deg,
+                        hsl(36 55% 78% / 0.25) 200deg,
+                        transparent 220deg,
+                        hsl(222 45% 70% / 0.3) 260deg,
+                        transparent 280deg,
+                        hsl(173 50% 75% / 0.25) 320deg,
+                        transparent 360deg)`,
+                      animation: 'spin 30s linear infinite'
+                    }}
+                  />
+                  {/* Floating particles */}
+                  <div 
+                    className="absolute inset-0 rounded-full"
+                    style={{
+                      backgroundImage: `
+                        radial-gradient(2px 2px at 15% 20%, hsl(173 60% 45% / 0.4) 100%, transparent),
+                        radial-gradient(2px 2px at 35% 70%, hsl(222 55% 50% / 0.35) 100%, transparent),
+                        radial-gradient(2px 2px at 65% 25%, hsl(36 65% 55% / 0.4) 100%, transparent),
+                        radial-gradient(2px 2px at 80% 65%, hsl(201 60% 48% / 0.35) 100%, transparent),
+                        radial-gradient(2px 2px at 25% 85%, hsl(173 55% 50% / 0.3) 100%, transparent),
+                        radial-gradient(2px 2px at 55% 50%, hsl(222 50% 55% / 0.35) 100%, transparent),
+                        radial-gradient(1.5px 1.5px at 45% 15%, hsl(36 60% 52% / 0.4) 100%, transparent),
+                        radial-gradient(1.5px 1.5px at 90% 45%, hsl(201 55% 50% / 0.35) 100%, transparent)
+                      `,
+                      animation: 'float-particles 8s ease-in-out infinite'
+                    }}
+                  />
+                  {/* Soft cloud wisps */}
+                  <div 
+                    className="absolute inset-2 rounded-full opacity-25"
+                    style={{
+                      background: `radial-gradient(ellipse at 25% 35%, hsl(210 30% 85% / 0.6) 0%, transparent 40%),
+                        radial-gradient(ellipse at 75% 55%, hsl(36 40% 88% / 0.5) 0%, transparent 35%),
+                        radial-gradient(ellipse at 50% 80%, hsl(173 35% 82% / 0.4) 0%, transparent 30%)`
+                    }}
+                  />
+                </div>
+              )}
+            </div>
+            
             {/* Bass-reactive outer ring */}
             {isConnected && (
               <div
