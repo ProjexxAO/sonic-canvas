@@ -374,6 +374,21 @@ export default function Atlas() {
           
           {/* Central Visualizer */}
           <div className="relative w-64 h-64 mb-6">
+            {/* Pulsing concentric rings - only when speaking */}
+            {isConnected && conversation.isSpeaking && (
+              <>
+                {[0, 1, 2].map((i) => (
+                  <div
+                    key={`ring-${i}`}
+                    className="absolute inset-0 rounded-full border border-secondary/50 animate-ring-pulse"
+                    style={{
+                      animationDelay: `${i * 0.4}s`,
+                    }}
+                  />
+                ))}
+              </>
+            )}
+            
             {/* Outer ring */}
             <div className={`absolute inset-0 rounded-full border-2 ${
               isConnected ? 'border-primary animate-pulse' : 'border-border'
