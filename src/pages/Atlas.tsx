@@ -632,6 +632,49 @@ export default function Atlas() {
               animationDelay: '7s'
             }}
           />
+          
+          {/* Star Wars-style Spacecraft */}
+          <div 
+            className="absolute opacity-60"
+            style={{ 
+              top: '40%',
+              animation: 'spacecraft-cruise 45s linear infinite',
+            }}
+          >
+            <svg width="35" height="20" viewBox="0 0 70 40" className="drop-shadow-lg">
+              {/* TIE Fighter inspired silhouette */}
+              {/* Left wing panel */}
+              <polygon 
+                points="0,2 8,2 8,38 0,38" 
+                fill="hsl(220 20% 25%)"
+                stroke="hsl(220 30% 40%)"
+                strokeWidth="0.5"
+              />
+              <line x1="4" y1="2" x2="4" y2="38" stroke="hsl(220 30% 35%)" strokeWidth="0.5" />
+              
+              {/* Right wing panel */}
+              <polygon 
+                points="62,2 70,2 70,38 62,38" 
+                fill="hsl(220 20% 25%)"
+                stroke="hsl(220 30% 40%)"
+                strokeWidth="0.5"
+              />
+              <line x1="66" y1="2" x2="66" y2="38" stroke="hsl(220 30% 35%)" strokeWidth="0.5" />
+              
+              {/* Wing struts */}
+              <rect x="8" y="18" width="12" height="4" fill="hsl(220 15% 30%)" />
+              <rect x="50" y="18" width="12" height="4" fill="hsl(220 15% 30%)" />
+              
+              {/* Central cockpit */}
+              <circle cx="35" cy="20" r="10" fill="hsl(220 20% 20%)" stroke="hsl(220 30% 40%)" strokeWidth="1" />
+              <circle cx="35" cy="20" r="6" fill="hsl(220 25% 15%)" />
+              {/* Cockpit window */}
+              <ellipse cx="35" cy="20" rx="3" ry="4" fill="hsl(200 40% 35%)" opacity="0.7" />
+              
+              {/* Engine glow */}
+              <circle cx="35" cy="20" r="2" fill="hsl(200 80% 60%)" opacity="0.5" />
+            </svg>
+          </div>
         </div>
       )}
 
