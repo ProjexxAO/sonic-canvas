@@ -91,36 +91,36 @@ export default function Atlas() {
       { 
         size: 50, 
         opacity: 0.75, 
-        duration: 50 + Math.random() * 30,
-        startY: 20 + Math.random() * 25,
-        delay: Math.random() * -60,
+        duration: 40 + Math.random() * 15, // Fast - close balloon
+        startY: 20 + Math.random() * 20,
+        delay: Math.random() * -40,
         direction: 'rtl',
         color: colors[Math.floor(Math.random() * colors.length)]
       },
       { 
         size: 38, 
         opacity: 0.55, 
-        duration: 60 + Math.random() * 40,
-        startY: 35 + Math.random() * 25,
-        delay: Math.random() * -80,
+        duration: 70 + Math.random() * 20, // Medium speed
+        startY: 30 + Math.random() * 20,
+        delay: Math.random() * -70,
         direction: 'ltr',
         color: colors[Math.floor(Math.random() * colors.length)]
       },
       { 
         size: 24, 
         opacity: 0.35, 
-        duration: 70 + Math.random() * 50,
-        startY: 45 + Math.random() * 20,
-        delay: Math.random() * -100,
+        duration: 110 + Math.random() * 30, // Slower - distant
+        startY: 40 + Math.random() * 20,
+        delay: Math.random() * -110,
         direction: 'rtl',
         color: colors[Math.floor(Math.random() * colors.length)]
       },
       { 
-        size: 18, 
-        opacity: 0.25, 
-        duration: 90 + Math.random() * 60,
-        startY: 55 + Math.random() * 15,
-        delay: Math.random() * -120,
+        size: 16, 
+        opacity: 0.22, 
+        duration: 160 + Math.random() * 40, // Very slow - far away
+        startY: 50 + Math.random() * 15,
+        delay: Math.random() * -160,
         direction: 'ltr',
         color: colors[Math.floor(Math.random() * colors.length)]
       },
