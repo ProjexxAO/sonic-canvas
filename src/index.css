@@ -76,6 +76,13 @@
     --sidebar-accent-foreground: 0 0% 100%;
     --sidebar-border: 215 20% 83%;
     --sidebar-ring: 168 75% 32%;
+
+    /* Orb colors (light mode - soft gradient) */
+    --orb-bg: 220 25% 94%;
+    --orb-primary: 270 55% 65%;
+    --orb-secondary: 220 60% 60%;
+    --orb-tertiary: 280 50% 58%;
+    --orb-highlight: 180 60% 55%;
   }
 
   .dark {
@@ -147,6 +154,13 @@
     --sidebar-accent-foreground: 0 0% 100%;
     --sidebar-border: 180 50% 20%;
     --sidebar-ring: 168 100% 50%;
+
+    /* Orb colors (dark mode - neon cosmic) */
+    --orb-bg: 240 10% 6%;
+    --orb-primary: 270 100% 50%;
+    --orb-secondary: 220 100% 40%;
+    --orb-tertiary: 280 100% 35%;
+    --orb-highlight: 180 100% 50%;
   }
 }
 
@@ -166,12 +180,21 @@
 }
 
 @layer components {
-  /* HUD Panel styling */
+  /* HUD Panel styling - adapts to theme */
   .hud-panel {
     @apply relative bg-card/80 backdrop-blur-sm border border-border;
+  }
+  
+  .dark .hud-panel {
     box-shadow: 
       0 0 20px hsl(var(--primary) / 0.1),
       inset 0 1px 0 hsl(var(--primary) / 0.1);
+  }
+  
+  :root .hud-panel {
+    box-shadow: 
+      0 4px 20px hsl(220 20% 10% / 0.08),
+      0 1px 3px hsl(220 20% 10% / 0.06);
   }
   
   .hud-panel::before {
@@ -184,30 +207,46 @@
     @apply absolute bottom-0 right-0 w-4 h-4 border-b-2 border-r-2 border-primary;
   }
   
-  /* Glow text */
-  .text-glow-cyan {
+  /* Glow text - neon in dark, bold color in light */
+  .dark .text-glow-cyan {
     text-shadow: 0 0 10px hsl(var(--primary)), 0 0 20px hsl(var(--primary) / 0.5);
   }
+  :root .text-glow-cyan {
+    text-shadow: none;
+    @apply font-semibold;
+  }
   
-  .text-glow-amber {
+  .dark .text-glow-amber {
     text-shadow: 0 0 10px hsl(var(--secondary)), 0 0 20px hsl(var(--secondary) / 0.5);
   }
+  :root .text-glow-amber {
+    text-shadow: none;
+    @apply font-semibold;
+  }
   
-  .text-glow-violet {
+  .dark .text-glow-violet {
     text-shadow: 0 0 10px hsl(var(--accent)), 0 0 20px hsl(var(--accent) / 0.5);
   }
-  
-  .text-glow-red {
-    text-shadow: 0 0 10px hsl(var(--destructive)), 0 0 20px hsl(var(--destructive) / 0.5);
+  :root .text-glow-violet {
+    text-shadow: none;
+    @apply font-semibold;
   }
   
-  /* Scanline effect */
+  .dark .text-glow-red {
+    text-shadow: 0 0 10px hsl(var(--destructive)), 0 0 20px hsl(var(--destructive) / 0.5);
+  }
+  :root .text-glow-red {
+    text-shadow: none;
+    @apply font-semibold;
+  }
+  
+  /* Scanline effect - only visible in dark mode */
   .scanlines {
     position: relative;
     overflow: hidden;
   }
   
-  .scanlines::after {
+  .dark .scanlines::after {
     content: '';
     position: absolute;
     inset: 0;
@@ -229,12 +268,17 @@
     background-size: 20px 20px;
   }
   
-  /* Neon border */
-  .neon-border {
+  /* Neon border - glows in dark, shadows in light */
+  .dark .neon-border {
     box-shadow: 
       0 0 5px hsl(var(--primary)),
       0 0 10px hsl(var(--primary) / 0.5),
       inset 0 0 5px hsl(var(--primary) / 0.1);
+  }
+  :root .neon-border {
+    box-shadow: 
+      0 2px 8px hsl(var(--primary) / 0.15),
+      0 1px 2px hsl(220 20% 10% / 0.1);
   }
   
   /* Pulse animation */
