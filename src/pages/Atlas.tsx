@@ -20,9 +20,11 @@ import {
   Bot,
   Sparkles,
   Database,
-  Users
+  Users,
+  Eye
 } from 'lucide-react';
 import { useAgents } from '@/hooks/useAgents';
+import { useAtlasContext } from '@/hooks/useAtlasContext';
 import { Button } from '@/components/ui/button';
 import { ScrollArea } from '@/components/ui/scroll-area';
 import { ToolActivityIndicator } from '@/components/atlas/ToolActivityIndicator';
@@ -63,6 +65,7 @@ export default function Atlas() {
   const [outputVolume, setOutputVolume] = useState(0);
   const [frequencyBands, setFrequencyBands] = useState({ bass: 0, mid: 0, treble: 0 });
   const animationRef = useRef<number>();
+  const conversationRef = useRef<any>(null);
 
   // Get active agents (those with ACTIVE or PROCESSING status)
   const activeAgents = agents.filter(a => a.status === 'ACTIVE' || a.status === 'PROCESSING').slice(0, 6);
@@ -318,6 +321,33 @@ export default function Atlas() {
 
   const isConnected = conversation.status === "connected";
 
+  // Real-time state streaming to Atlas
+  const sendContextualUpdate = useCallback((text: string) => {
+    if (isConnected) {
+      conversation.sendContextualUpdate(text);
+    }
+  }, [isConnected, conversation]);
+
+  const { logActivity } = useAtlasContext({
+    agents,
+    isConnected,
+    sendContextualUpdate,
+    searchResults,
+    synthesizedAgent
+  });
+
+  // Log significant activities
+  useEffect(() => {
+    if (searchResults.length > 0) {
+      logActivity(`Search: found ${searchResults.length} agents`);
+    }
+  }, [searchResults, logActivity]);
+
+  useEffect(() => {
+    if (synthesizedAgent) {
+      logActivity(`Synthesized: ${synthesizedAgent.name}`);
+    }
+  }, [synthesizedAgent, logActivity]);
   // Sync audio visualization to actual voice output using ElevenLabs APIs
   useEffect(() => {
     if (!isConnected) {
@@ -404,13 +434,23 @@ export default function Atlas() {
         </div>
 
         {/* Connection Status */}
-        <div className="flex items-center gap-2">
-          <div className={`w-2 h-2 rounded-full ${
-            isConnected ? "bg-success animate-pulse" : "bg-destructive"
-          }`} />
-          <span className="text-xs font-mono text-muted-foreground">
-            {conversation.status.toUpperCase()}
-          </span>
+        <div className="flex items-center gap-4">
+          {/* State Streaming Indicator */}
+          {isConnected && (
+            <div className="flex items-center gap-2 px-2 py-1 rounded bg-primary/10 border border-primary/30">
+              <Eye size={12} className="text-primary animate-pulse" />
+              <span className="text-[10px] font-mono text-primary">CONTEXT SYNC</span>
+            </div>
+          )}
+          
+          <div className="flex items-center gap-2">
+            <div className={`w-2 h-2 rounded-full ${
+              isConnected ? "bg-success animate-pulse" : "bg-destructive"
+            }`} />
+            <span className="text-xs font-mono text-muted-foreground">
+              {conversation.status.toUpperCase()}
+            </span>
+          </div>
         </div>
       </header>
 
