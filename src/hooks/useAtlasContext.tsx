@@ -28,56 +28,45 @@ export function useAtlasContext({
   const location = useLocation();
   const lastContextRef = useRef<string>('');
   const activityLogRef = useRef<string[]>([]);
+  const lastSentAtRef = useRef<number>(0);
+  const connectedAtRef = useRef<number>(0);
 
   // Add activity to the log
   const logActivity = useCallback((activity: string) => {
     activityLogRef.current = [activity, ...activityLogRef.current].slice(0, 10);
   }, []);
 
-  // Build context string
-  const buildContextString = useCallback((): string => {
-    const activeAgents = agents
-      .filter(a => a.status === 'ACTIVE' || a.status === 'PROCESSING')
-      .slice(0, 6);
+  // Track connection time (to avoid spamming DataChannel during the first seconds)
+  useEffect(() => {
+    if (isConnected) {
+      connectedAtRef.current = Date.now();
+      lastSentAtRef.current = 0;
+    }
+  }, [isConnected]);
 
+  // Build a compact context string (keep payload small for realtime data channel)
+  const buildContextString = useCallback((): string => {
     const agentsByStatus = {
       active: agents.filter(a => a.status === 'ACTIVE').length,
       processing: agents.filter(a => a.status === 'PROCESSING').length,
       idle: agents.filter(a => a.status === 'IDLE').length,
       dormant: agents.filter(a => a.status === 'DORMANT').length,
-      error: agents.filter(a => a.status === 'ERROR').length
+      error: agents.filter(a => a.status === 'ERROR').length,
     };
 
-    const agentsBySector = agents.reduce((acc, agent) => {
-      acc[agent.sector] = (acc[agent.sector] || 0) + 1;
-      return acc;
-    }, {} as Record<string, number>);
+    const activeAgents = agents
+      .filter(a => a.status === 'ACTIVE' || a.status === 'PROCESSING')
+      .slice(0, 6);
 
     const pageName = getPageName(location.pathname);
-    
-    const context: AtlasContext = {
-      currentPage: pageName,
-      activeAgents: activeAgents.map(a => ({
-        name: a.name,
-        sector: a.sector,
-        status: a.status
-      })),
-      totalAgents: agents.length,
-      recentActivity: activityLogRef.current.slice(0, 5),
-      timestamp: new Date().toISOString()
-    };
 
-    let contextString = `[APP STATE UPDATE]
-Current view: ${context.currentPage}
-Total agents: ${context.totalAgents}
-Active: ${agentsByStatus.active}, Processing: ${agentsByStatus.processing}, Idle: ${agentsByStatus.idle}`;
+    let contextString = `[APP STATE UPDATE]\n`;
+    contextString += `Current view: ${pageName}\n`;
+    contextString += `Total agents: ${agents.length}\n`;
+    contextString += `Status counts: Active ${agentsByStatus.active}, Processing ${agentsByStatus.processing}, Idle ${agentsByStatus.idle}, Dormant ${agentsByStatus.dormant}, Error ${agentsByStatus.error}`;
 
     if (activeAgents.length > 0) {
-      contextString += `\nActive agents: ${activeAgents.map(a => `${a.name} (${a.sector})`).join(', ')}`;
-    }
-
-    if (Object.keys(agentsBySector).length > 0) {
-      contextString += `\nAgents by sector: ${Object.entries(agentsBySector).map(([k, v]) => `${k}: ${v}`).join(', ')}`;
+      contextString += `\nActive agents (sample): ${activeAgents.map(a => `${a.name} (${a.sector})`).join(', ')}`;
     }
 
     if (searchResults.length > 0) {
@@ -95,42 +84,39 @@ Active: ${agentsByStatus.active}, Processing: ${agentsByStatus.processing}, Idle
     return contextString;
   }, [agents, location.pathname, searchResults, synthesizedAgent]);
 
-  // Send context updates when connected and context changes
-  useEffect(() => {
+  const maybeSend = useCallback((contextString: string, reason: string) => {
     if (!isConnected) return;
 
-    const contextString = buildContextString();
-    
-    // Only send if context has changed significantly
-    if (contextString !== lastContextRef.current) {
-      lastContextRef.current = contextString;
-      
-      try {
-        sendContextualUpdate(contextString);
-        console.log('[Atlas Context] Sent state update:', contextString.substring(0, 100) + '...');
-      } catch (error) {
-        console.error('[Atlas Context] Failed to send update:', error);
-      }
+    // Avoid sending during initial handshake window
+    const now = Date.now();
+    if (connectedAtRef.current && now - connectedAtRef.current < 4000) {
+      return;
     }
-  }, [isConnected, buildContextString, sendContextualUpdate]);
 
-  // Send initial context on connection
+    // Throttle to avoid DataChannel overload
+    if (now - lastSentAtRef.current < 5000) {
+      return;
+    }
+
+    if (contextString === lastContextRef.current) return;
+
+    lastContextRef.current = contextString;
+    lastSentAtRef.current = now;
+
+    try {
+      sendContextualUpdate(contextString);
+      console.log('[Atlas Context] Sent state update (' + reason + ')');
+    } catch (error) {
+      console.error('[Atlas Context] Failed to send update:', error);
+    }
+  }, [isConnected, sendContextualUpdate]);
+
+  // Send context updates when connected and context changes (throttled)
   useEffect(() => {
-    if (isConnected) {
-      const timer = setTimeout(() => {
-        const contextString = buildContextString();
-        lastContextRef.current = contextString;
-        try {
-          sendContextualUpdate(contextString);
-          console.log('[Atlas Context] Sent initial state');
-        } catch (error) {
-          console.error('[Atlas Context] Failed to send initial state:', error);
-        }
-      }, 1000); // Wait 1 second after connection
-
-      return () => clearTimeout(timer);
-    }
-  }, [isConnected]);
+    if (!isConnected) return;
+    const contextString = buildContextString();
+    maybeSend(contextString, 'change');
+  }, [isConnected, buildContextString, maybeSend]);
 
   // Periodic state updates (every 30 seconds when connected)
   useEffect(() => {
@@ -138,19 +124,11 @@ Active: ${agentsByStatus.active}, Processing: ${agentsByStatus.processing}, Idle
 
     const interval = setInterval(() => {
       const contextString = buildContextString();
-      if (contextString !== lastContextRef.current) {
-        lastContextRef.current = contextString;
-        try {
-          sendContextualUpdate(contextString);
-          console.log('[Atlas Context] Periodic update sent');
-        } catch (error) {
-          console.error('[Atlas Context] Periodic update failed:', error);
-        }
-      }
+      maybeSend(contextString, 'periodic');
     }, 30000);
 
     return () => clearInterval(interval);
-  }, [isConnected, buildContextString, sendContextualUpdate]);
+  }, [isConnected, buildContextString, maybeSend]);
 
   return { logActivity };
 }
