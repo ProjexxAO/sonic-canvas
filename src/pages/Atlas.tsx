@@ -586,28 +586,6 @@ export default function Atlas() {
               </div>
             </div>
 
-            {/* Status text with volume indicator */}
-            <div className="absolute -bottom-8 left-0 right-0 text-center">
-              {/* Volume level bar */}
-              {isConnected && (
-                <div className="mt-2 flex justify-center gap-1">
-                  {Array.from({ length: 10 }).map((_, i) => (
-                    <div
-                      key={i}
-                      className="w-1 h-3 rounded-full transition-all duration-75"
-                      style={{
-                        backgroundColor: i < (conversation.isSpeaking ? outputVolume : inputVolume) * 10
-                          ? conversation.isSpeaking 
-                            ? 'hsl(var(--secondary))'
-                            : 'hsl(var(--primary))'
-                          : 'hsl(var(--muted))',
-                        opacity: i < (conversation.isSpeaking ? outputVolume : inputVolume) * 10 ? 1 : 0.3
-                      }}
-                    />
-                  ))}
-                </div>
-              )}
-            </div>
           </div>
 
           {/* Controls */}
