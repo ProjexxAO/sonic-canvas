@@ -553,6 +553,189 @@ export default function Atlas() {
           />
         </div>
       )}
+
+      {/* Full Page Sky Background - Light Mode Only */}
+      {theme === 'light' && (
+        <div className="fixed inset-0 pointer-events-none z-0">
+          {/* Sky gradient */}
+          <div 
+            className="absolute inset-0"
+            style={{
+              background: `linear-gradient(180deg, 
+                hsl(200 60% 85%) 0%, 
+                hsl(200 50% 90%) 30%,
+                hsl(40 40% 92%) 70%,
+                hsl(35 45% 88%) 100%)`
+            }}
+          />
+          
+          {/* Sun with rays */}
+          <div 
+            className="absolute top-[8%] right-[15%] w-24 h-24"
+            style={{ animation: 'sun-pulse 4s ease-in-out infinite' }}
+          >
+            {/* Sun glow */}
+            <div 
+              className="absolute inset-0 rounded-full"
+              style={{
+                background: `radial-gradient(circle, 
+                  hsl(45 100% 70% / 0.8) 0%, 
+                  hsl(40 90% 75% / 0.4) 40%,
+                  transparent 70%)`
+              }}
+            />
+            {/* Sun core */}
+            <div 
+              className="absolute inset-4 rounded-full"
+              style={{
+                background: `radial-gradient(circle, 
+                  hsl(48 100% 85%) 0%, 
+                  hsl(45 95% 75%) 100%)`
+              }}
+            />
+            {/* Sun rays */}
+            <div 
+              className="absolute -inset-8 opacity-30"
+              style={{
+                background: `conic-gradient(from 0deg,
+                  transparent 0deg,
+                  hsl(45 90% 70% / 0.5) 10deg,
+                  transparent 20deg,
+                  hsl(40 85% 75% / 0.4) 40deg,
+                  transparent 50deg,
+                  hsl(45 90% 70% / 0.5) 70deg,
+                  transparent 80deg,
+                  hsl(40 85% 75% / 0.4) 100deg,
+                  transparent 110deg,
+                  hsl(45 90% 70% / 0.5) 130deg,
+                  transparent 140deg,
+                  hsl(40 85% 75% / 0.4) 160deg,
+                  transparent 170deg,
+                  hsl(45 90% 70% / 0.5) 190deg,
+                  transparent 200deg,
+                  hsl(40 85% 75% / 0.4) 220deg,
+                  transparent 230deg,
+                  hsl(45 90% 70% / 0.5) 250deg,
+                  transparent 260deg,
+                  hsl(40 85% 75% / 0.4) 280deg,
+                  transparent 290deg,
+                  hsl(45 90% 70% / 0.5) 310deg,
+                  transparent 320deg,
+                  hsl(40 85% 75% / 0.4) 340deg,
+                  transparent 360deg)`,
+                animation: 'spin 60s linear infinite'
+              }}
+            />
+          </div>
+          
+          {/* Clouds layer 1 - far */}
+          <div 
+            className="absolute top-[12%] left-[5%] w-48 h-16 opacity-70"
+            style={{ animation: 'cloud-drift 20s ease-in-out infinite' }}
+          >
+            <div className="absolute inset-0 rounded-full bg-white/80 blur-md" />
+            <div className="absolute top-2 left-8 w-24 h-12 rounded-full bg-white/90 blur-sm" />
+            <div className="absolute top-1 left-20 w-20 h-10 rounded-full bg-white/85 blur-sm" />
+          </div>
+          
+          {/* Clouds layer 2 */}
+          <div 
+            className="absolute top-[18%] right-[25%] w-36 h-14 opacity-60"
+            style={{ animation: 'cloud-drift-slow 25s ease-in-out infinite' }}
+          >
+            <div className="absolute inset-0 rounded-full bg-white/75 blur-md" />
+            <div className="absolute top-1 left-6 w-20 h-10 rounded-full bg-white/85 blur-sm" />
+          </div>
+          
+          {/* Clouds layer 3 */}
+          <div 
+            className="absolute top-[25%] left-[35%] w-32 h-12 opacity-50"
+            style={{ animation: 'cloud-drift 30s ease-in-out infinite' }}
+          >
+            <div className="absolute inset-0 rounded-full bg-white/70 blur-lg" />
+          </div>
+          
+          {/* Girl with kite silhouette */}
+          <div className="absolute bottom-[5%] left-[8%]">
+            {/* Kite */}
+            <div 
+              className="absolute -top-[180px] left-[60px]"
+              style={{ 
+                animation: 'kite-sway 4s ease-in-out infinite',
+                transformOrigin: 'bottom center'
+              }}
+            >
+              {/* Kite shape - diamond */}
+              <svg width="40" height="50" viewBox="0 0 40 50" className="drop-shadow-md">
+                <polygon 
+                  points="20,0 40,20 20,50 0,20" 
+                  fill="hsl(350 70% 55%)"
+                  stroke="hsl(350 60% 40%)"
+                  strokeWidth="1"
+                />
+                <line x1="20" y1="0" x2="20" y2="50" stroke="hsl(350 60% 40%)" strokeWidth="1" />
+                <line x1="0" y1="20" x2="40" y2="20" stroke="hsl(350 60% 40%)" strokeWidth="1" />
+                {/* Kite tail */}
+                <path 
+                  d="M 20 50 Q 25 65 18 80 Q 22 95 15 110" 
+                  stroke="hsl(350 70% 55%)" 
+                  strokeWidth="2" 
+                  fill="none"
+                />
+                {/* Tail bows */}
+                <ellipse cx="22" cy="65" rx="4" ry="2" fill="hsl(200 70% 55%)" />
+                <ellipse cx="17" cy="85" rx="4" ry="2" fill="hsl(45 80% 55%)" />
+                <ellipse cx="20" cy="105" rx="4" ry="2" fill="hsl(280 60% 55%)" />
+              </svg>
+              
+              {/* Kite string - curved line to girl */}
+              <svg 
+                className="absolute top-[45px] left-[18px]" 
+                width="60" 
+                height="140" 
+                viewBox="0 0 60 140"
+                style={{ overflow: 'visible' }}
+              >
+                <path 
+                  d="M 2 0 Q 15 40 8 80 Q 0 120 20 135" 
+                  stroke="hsl(30 20% 30% / 0.6)" 
+                  strokeWidth="1" 
+                  fill="none"
+                />
+              </svg>
+            </div>
+            
+            {/* Girl silhouette */}
+            <svg width="35" height="60" viewBox="0 0 35 60" className="opacity-70">
+              {/* Head */}
+              <circle cx="17" cy="8" r="7" fill="hsl(30 20% 25%)" />
+              {/* Hair/ponytail */}
+              <ellipse cx="22" cy="6" rx="4" ry="3" fill="hsl(30 20% 25%)" />
+              <path d="M 22 8 Q 28 10 26 18" stroke="hsl(30 20% 25%)" strokeWidth="3" fill="none" />
+              {/* Body - dress */}
+              <path d="M 10 15 L 17 15 L 24 15 L 28 45 L 17 48 L 6 45 Z" fill="hsl(30 20% 25%)" />
+              {/* Arm reaching up for kite */}
+              <path d="M 20 18 Q 28 10 32 5" stroke="hsl(30 20% 25%)" strokeWidth="3" fill="none" strokeLinecap="round" />
+              {/* Other arm */}
+              <path d="M 14 20 Q 8 28 10 32" stroke="hsl(30 20% 25%)" strokeWidth="3" fill="none" strokeLinecap="round" />
+              {/* Legs */}
+              <line x1="14" y1="45" x2="12" y2="58" stroke="hsl(30 20% 25%)" strokeWidth="3" strokeLinecap="round" />
+              <line x1="20" y1="45" x2="22" y2="58" stroke="hsl(30 20% 25%)" strokeWidth="3" strokeLinecap="round" />
+            </svg>
+          </div>
+          
+          {/* Grass hint at bottom */}
+          <div 
+            className="absolute bottom-0 left-0 right-0 h-[8%] opacity-40"
+            style={{
+              background: `linear-gradient(180deg, 
+                transparent 0%,
+                hsl(100 35% 45% / 0.3) 50%,
+                hsl(100 40% 35% / 0.5) 100%)`
+            }}
+          />
+        </div>
+      )}
       {/* Header */}
       <header className="h-14 bg-card/95 border-b border-border flex items-center justify-between px-6 shadow-sm relative z-10">
         <div className="flex items-center gap-4">
