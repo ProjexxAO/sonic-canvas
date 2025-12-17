@@ -633,7 +633,7 @@ export default function Atlas() {
             }}
           />
           
-          {/* Earth Orbiting the Orb */}
+          {/* Earth Orbiting the Orb - Slow realistic orbit */}
           <div 
             className="earth-orbit"
             style={{
@@ -644,7 +644,7 @@ export default function Atlas() {
               height: '300px',
               marginTop: '-150px',
               marginLeft: '-150px',
-              animation: 'orbit-rotation 60s linear infinite',
+              animation: 'orbit-rotation 360s linear infinite',
               pointerEvents: 'none',
             }}
           >
@@ -702,7 +702,7 @@ export default function Atlas() {
             </div>
           </div>
           
-          {/* Moon orbiting Earth (smaller, faster orbit) */}
+          {/* Moon orbiting Earth - realistic relative speed */}
           <div 
             className="moon-orbit"
             style={{
@@ -713,7 +713,7 @@ export default function Atlas() {
               height: '300px',
               marginTop: '-150px',
               marginLeft: '-150px',
-              animation: 'orbit-rotation 60s linear infinite',
+              animation: 'orbit-rotation 360s linear infinite',
               pointerEvents: 'none',
             }}
           >
