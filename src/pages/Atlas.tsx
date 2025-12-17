@@ -295,11 +295,20 @@ export default function Atlas() {
     try {
       console.log("[Atlas] Requesting microphone permission...");
       await navigator.mediaDevices.getUserMedia({ audio: true });
-      console.log("[Atlas] Microphone permission granted, starting session...");
+      console.log("[Atlas] Microphone permission granted, fetching signed URL...");
+      
+      // Fetch signed URL from our edge function for authenticated session
+      const { data, error } = await supabase.functions.invoke('elevenlabs-conversation-token');
+      
+      if (error || !data?.signed_url) {
+        console.error("[Atlas] Failed to get signed URL:", error || 'No signed_url in response');
+        throw new Error(error?.message || 'Failed to authenticate with voice service');
+      }
+      
+      console.log("[Atlas] Got signed URL, starting session...");
       
       await conversation.startSession({
-        agentId: ATLAS_AGENT_ID,
-        connectionType: "webrtc",
+        signedUrl: data.signed_url,
       });
       console.log("[Atlas] Session started successfully");
     } catch (error) {
