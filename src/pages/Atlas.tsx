@@ -507,60 +507,130 @@ export default function Atlas() {
             {/* Atmospheric Background */}
             <div className="absolute -inset-12 rounded-full overflow-hidden pointer-events-none">
               {theme === 'dark' ? (
-                /* Dark Mode: Starfield */
+                /* Dark Mode: Full Milky Way Star System */
                 <div className="absolute inset-0">
-                  {/* Deep space gradient */}
+                  {/* Deep space base */}
                   <div 
                     className="absolute inset-0 rounded-full"
                     style={{
                       background: `radial-gradient(circle at 50% 50%, 
-                        hsl(240 20% 8% / 0.9) 0%, 
-                        hsl(240 25% 4% / 0.95) 50%, 
-                        transparent 70%)`
+                        hsl(240 30% 6%) 0%, 
+                        hsl(250 35% 3%) 60%, 
+                        hsl(260 40% 1%) 100%)`
                     }}
                   />
-                  {/* Animated stars layer 1 - small */}
+                  {/* Milky Way band - diagonal nebula streak */}
                   <div 
-                    className="absolute inset-0 rounded-full animate-pulse"
+                    className="absolute inset-0 rounded-full"
                     style={{
-                      backgroundImage: `
-                        radial-gradient(1px 1px at 10% 15%, white 100%, transparent),
-                        radial-gradient(1px 1px at 25% 35%, hsl(200 100% 90%) 100%, transparent),
-                        radial-gradient(1px 1px at 40% 10%, white 100%, transparent),
-                        radial-gradient(1px 1px at 55% 45%, hsl(270 80% 85%) 100%, transparent),
-                        radial-gradient(1px 1px at 70% 20%, white 100%, transparent),
-                        radial-gradient(1px 1px at 85% 55%, hsl(180 100% 85%) 100%, transparent),
-                        radial-gradient(1px 1px at 15% 70%, white 100%, transparent),
-                        radial-gradient(1px 1px at 30% 85%, hsl(220 90% 90%) 100%, transparent),
-                        radial-gradient(1px 1px at 60% 75%, white 100%, transparent),
-                        radial-gradient(1px 1px at 80% 90%, hsl(200 80% 88%) 100%, transparent),
-                        radial-gradient(1px 1px at 5% 50%, white 100%, transparent),
-                        radial-gradient(1px 1px at 95% 40%, hsl(260 70% 90%) 100%, transparent)
-                      `,
-                      animationDuration: '3s'
+                      background: `linear-gradient(135deg, 
+                        transparent 15%,
+                        hsl(270 40% 20% / 0.15) 25%,
+                        hsl(250 50% 35% / 0.2) 35%,
+                        hsl(220 60% 40% / 0.25) 45%,
+                        hsl(200 55% 45% / 0.2) 55%,
+                        hsl(270 45% 35% / 0.15) 65%,
+                        transparent 80%)`
                     }}
                   />
-                  {/* Animated stars layer 2 - medium */}
+                  {/* Nebula clouds - pink/purple */}
+                  <div 
+                    className="absolute inset-0 rounded-full opacity-50"
+                    style={{
+                      background: `
+                        radial-gradient(ellipse 40% 25% at 25% 40%, hsl(320 60% 35% / 0.3) 0%, transparent 70%),
+                        radial-gradient(ellipse 35% 30% at 75% 55%, hsl(280 55% 40% / 0.25) 0%, transparent 65%),
+                        radial-gradient(ellipse 25% 20% at 60% 30%, hsl(200 65% 45% / 0.2) 0%, transparent 60%)`
+                    }}
+                  />
+                  {/* Dense star field - tiny distant stars */}
                   <div 
                     className="absolute inset-0 rounded-full"
                     style={{
                       backgroundImage: `
-                        radial-gradient(1.5px 1.5px at 20% 25%, hsl(180 100% 80%) 100%, transparent),
-                        radial-gradient(1.5px 1.5px at 45% 60%, hsl(270 90% 85%) 100%, transparent),
-                        radial-gradient(1.5px 1.5px at 75% 35%, hsl(200 100% 85%) 100%, transparent),
-                        radial-gradient(1.5px 1.5px at 35% 80%, hsl(220 80% 82%) 100%, transparent),
-                        radial-gradient(1.5px 1.5px at 90% 70%, hsl(180 90% 88%) 100%, transparent),
-                        radial-gradient(1.5px 1.5px at 8% 85%, hsl(260 85% 85%) 100%, transparent)
-                      `,
-                      animation: 'twinkle 2s ease-in-out infinite alternate'
+                        radial-gradient(0.5px 0.5px at 5% 8%, hsl(0 0% 100% / 0.8) 100%, transparent),
+                        radial-gradient(0.5px 0.5px at 12% 22%, hsl(0 0% 95% / 0.6) 100%, transparent),
+                        radial-gradient(0.5px 0.5px at 18% 45%, hsl(0 0% 100% / 0.7) 100%, transparent),
+                        radial-gradient(0.5px 0.5px at 8% 67%, hsl(0 0% 90% / 0.5) 100%, transparent),
+                        radial-gradient(0.5px 0.5px at 25% 12%, hsl(0 0% 100% / 0.6) 100%, transparent),
+                        radial-gradient(0.5px 0.5px at 32% 38%, hsl(0 0% 95% / 0.7) 100%, transparent),
+                        radial-gradient(0.5px 0.5px at 28% 72%, hsl(0 0% 100% / 0.5) 100%, transparent),
+                        radial-gradient(0.5px 0.5px at 38% 5%, hsl(0 0% 90% / 0.6) 100%, transparent),
+                        radial-gradient(0.5px 0.5px at 45% 28%, hsl(0 0% 100% / 0.7) 100%, transparent),
+                        radial-gradient(0.5px 0.5px at 52% 55%, hsl(0 0% 95% / 0.6) 100%, transparent),
+                        radial-gradient(0.5px 0.5px at 48% 82%, hsl(0 0% 100% / 0.5) 100%, transparent),
+                        radial-gradient(0.5px 0.5px at 58% 15%, hsl(0 0% 90% / 0.7) 100%, transparent),
+                        radial-gradient(0.5px 0.5px at 65% 42%, hsl(0 0% 100% / 0.6) 100%, transparent),
+                        radial-gradient(0.5px 0.5px at 72% 68%, hsl(0 0% 95% / 0.5) 100%, transparent),
+                        radial-gradient(0.5px 0.5px at 68% 92%, hsl(0 0% 100% / 0.6) 100%, transparent),
+                        radial-gradient(0.5px 0.5px at 78% 8%, hsl(0 0% 90% / 0.7) 100%, transparent),
+                        radial-gradient(0.5px 0.5px at 85% 35%, hsl(0 0% 100% / 0.5) 100%, transparent),
+                        radial-gradient(0.5px 0.5px at 92% 58%, hsl(0 0% 95% / 0.6) 100%, transparent),
+                        radial-gradient(0.5px 0.5px at 88% 78%, hsl(0 0% 100% / 0.7) 100%, transparent),
+                        radial-gradient(0.5px 0.5px at 95% 25%, hsl(0 0% 90% / 0.5) 100%, transparent)
+                      `
                     }}
                   />
-                  {/* Space dust nebula */}
+                  {/* Medium stars with color variation */}
                   <div 
-                    className="absolute inset-4 rounded-full opacity-30"
+                    className="absolute inset-0 rounded-full"
                     style={{
-                      background: `radial-gradient(ellipse at 30% 40%, hsl(270 60% 30% / 0.4) 0%, transparent 50%),
-                        radial-gradient(ellipse at 70% 60%, hsl(200 50% 25% / 0.3) 0%, transparent 45%)`
+                      backgroundImage: `
+                        radial-gradient(1px 1px at 8% 20%, hsl(200 100% 85%) 100%, transparent),
+                        radial-gradient(1px 1px at 22% 48%, hsl(35 100% 85%) 100%, transparent),
+                        radial-gradient(1px 1px at 15% 75%, hsl(0 0% 100%) 100%, transparent),
+                        radial-gradient(1px 1px at 35% 15%, hsl(270 80% 88%) 100%, transparent),
+                        radial-gradient(1px 1px at 42% 62%, hsl(180 90% 82%) 100%, transparent),
+                        radial-gradient(1px 1px at 55% 35%, hsl(0 0% 100%) 100%, transparent),
+                        radial-gradient(1px 1px at 62% 85%, hsl(220 85% 88%) 100%, transparent),
+                        radial-gradient(1px 1px at 75% 22%, hsl(35 90% 82%) 100%, transparent),
+                        radial-gradient(1px 1px at 82% 52%, hsl(0 0% 100%) 100%, transparent),
+                        radial-gradient(1px 1px at 90% 78%, hsl(200 95% 85%) 100%, transparent)
+                      `,
+                      animation: 'twinkle 3s ease-in-out infinite alternate'
+                    }}
+                  />
+                  {/* Bright twinkling stars */}
+                  <div 
+                    className="absolute inset-0 rounded-full"
+                    style={{
+                      backgroundImage: `
+                        radial-gradient(2px 2px at 12% 35%, hsl(0 0% 100%) 50%, hsl(200 100% 80% / 0.5) 100%, transparent),
+                        radial-gradient(2px 2px at 48% 18%, hsl(0 0% 100%) 50%, hsl(35 100% 80% / 0.5) 100%, transparent),
+                        radial-gradient(2px 2px at 72% 65%, hsl(0 0% 100%) 50%, hsl(270 90% 85% / 0.5) 100%, transparent),
+                        radial-gradient(1.5px 1.5px at 28% 82%, hsl(0 0% 100%) 50%, hsl(180 95% 82% / 0.5) 100%, transparent),
+                        radial-gradient(1.5px 1.5px at 88% 28%, hsl(0 0% 100%) 50%, hsl(0 0% 90% / 0.5) 100%, transparent)
+                      `,
+                      animation: 'twinkle 2s ease-in-out infinite'
+                    }}
+                  />
+                  {/* Star clusters in milky way band */}
+                  <div 
+                    className="absolute inset-0 rounded-full opacity-70"
+                    style={{
+                      backgroundImage: `
+                        radial-gradient(0.8px 0.8px at 30% 35%, white 100%, transparent),
+                        radial-gradient(0.8px 0.8px at 32% 38%, hsl(0 0% 90%) 100%, transparent),
+                        radial-gradient(0.8px 0.8px at 35% 40%, white 100%, transparent),
+                        radial-gradient(0.8px 0.8px at 38% 42%, hsl(0 0% 95%) 100%, transparent),
+                        radial-gradient(0.8px 0.8px at 40% 45%, white 100%, transparent),
+                        radial-gradient(0.8px 0.8px at 42% 48%, hsl(0 0% 90%) 100%, transparent),
+                        radial-gradient(0.8px 0.8px at 45% 50%, white 100%, transparent),
+                        radial-gradient(0.8px 0.8px at 48% 52%, hsl(0 0% 95%) 100%, transparent),
+                        radial-gradient(0.8px 0.8px at 50% 55%, white 100%, transparent),
+                        radial-gradient(0.8px 0.8px at 53% 58%, hsl(0 0% 90%) 100%, transparent),
+                        radial-gradient(0.8px 0.8px at 55% 60%, white 100%, transparent),
+                        radial-gradient(0.8px 0.8px at 58% 62%, hsl(0 0% 95%) 100%, transparent)
+                      `
+                    }}
+                  />
+                  {/* Cosmic dust glow */}
+                  <div 
+                    className="absolute inset-0 rounded-full opacity-40"
+                    style={{
+                      background: `
+                        radial-gradient(ellipse 50% 35% at 40% 45%, hsl(220 50% 60% / 0.15) 0%, transparent 70%),
+                        radial-gradient(ellipse 30% 40% at 65% 50%, hsl(270 45% 55% / 0.1) 0%, transparent 60%)`
                     }}
                   />
                 </div>
