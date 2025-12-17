@@ -53,11 +53,11 @@ export function useAgents() {
       let hasMore = true;
       let offset = 0;
 
+      // RLS automatically filters: superadmin sees all, users see assigned agents
       while (hasMore && offset < maxAgents) {
         const { data, error } = await supabase
           .from('sonic_agents')
           .select('*')
-          .eq('user_id', user.id)
           .order('created_at', { ascending: false })
           .limit(batchSize)
           .range(offset, offset + batchSize - 1);
@@ -101,6 +101,7 @@ export function useAgents() {
   useEffect(() => {
     if (!user) return;
 
+    // Subscribe to changes - RLS filters what the user can see
     const channel = supabase
       .channel('sonic-agents-changes')
       .on(
@@ -108,8 +109,7 @@ export function useAgents() {
         {
           event: '*',
           schema: 'public',
-          table: 'sonic_agents',
-          filter: `user_id=eq.${user.id}`
+          table: 'sonic_agents'
         },
         (payload) => {
           if (payload.eventType === 'INSERT') {
@@ -219,11 +219,11 @@ export function useAgents() {
     dbUpdates.last_active = new Date().toISOString();
 
     try {
+      // RLS handles permission check
       const { error } = await supabase
         .from('sonic_agents')
         .update(dbUpdates)
-        .eq('id', id)
-        .eq('user_id', user.id);
+        .eq('id', id);
 
       if (error) throw error;
       return true;
@@ -239,11 +239,11 @@ export function useAgents() {
     if (!user) return false;
 
     try {
+      // RLS handles permission check
       const { error } = await supabase
         .from('sonic_agents')
         .delete()
-        .eq('id', id)
-        .eq('user_id', user.id);
+        .eq('id', id);
 
       if (error) throw error;
       return true;
