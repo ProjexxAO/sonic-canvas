@@ -594,8 +594,9 @@ export default function Atlas() {
               <Button
                 onClick={startConversation}
                 disabled={isConnecting}
+                variant="outline"
                 size="lg"
-                className="gap-2 font-mono"
+                className="gap-2 font-mono bg-transparent border-primary/50 text-primary hover:bg-primary/10 hover:border-primary shadow-[0_0_15px_hsl(var(--primary)/0.3)] hover:shadow-[0_0_25px_hsl(var(--primary)/0.5)] transition-all duration-300"
               >
                 <Mic className="w-5 h-5" />
                 {isConnecting ? "CONNECTING..." : "ACTIVATE ATLAS"}
