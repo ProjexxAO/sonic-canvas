@@ -425,7 +425,7 @@ export default function Atlas() {
   return (
     <div className="min-h-screen bg-background text-foreground flex flex-col">
       {/* Header */}
-      <header className="h-14 bg-card/80 border-b border-border flex items-center justify-between px-6">
+      <header className="h-14 bg-card/95 border-b border-border flex items-center justify-between px-6 shadow-sm">
         <div className="flex items-center gap-4">
           <button
             onClick={() => navigate('/')}
@@ -564,7 +564,7 @@ export default function Atlas() {
             <div 
               className={`absolute inset-8 rounded-full border border-border flex items-center justify-center overflow-hidden ${
                 !isConnected && !isConnecting ? 'cursor-pointer hover:border-primary/50 transition-colors' : ''
-              } ${theme === 'dark' ? 'bg-[hsl(240_10%_6%/0.9)]' : 'bg-white shadow-[0_4px_24px_-4px_rgba(0,0,0,0.12),0_0_0_1px_rgba(0,0,0,0.04)]'}`}
+              } ${theme === 'dark' ? 'bg-[hsl(240_10%_6%/0.9)]' : 'bg-[hsl(220_18%_94%)] shadow-[0_8px_32px_-8px_rgba(0,0,0,0.18),0_0_0_1px_rgba(0,0,0,0.06)]'}`}
               onClick={() => {
                 if (!isConnected && !isConnecting) {
                   startConversation();
@@ -768,7 +768,7 @@ export default function Atlas() {
         <div className="w-96 flex flex-col gap-4">
           {/* Search Results */}
           {searchResults.length > 0 && (
-            <div className="bg-card/50 border border-border rounded-lg p-3">
+            <div className="bg-card/90 border border-border rounded-lg p-3 shadow-sm">
               <div className="flex items-center gap-2 mb-2">
                 <Search size={14} className="text-primary" />
                 <span className="text-xs font-mono text-muted-foreground">
@@ -778,7 +778,7 @@ export default function Atlas() {
               <ScrollArea className="h-32">
                 <div className="space-y-2">
                   {searchResults.map((agent) => (
-                    <div key={agent.id} className="p-2 bg-background/50 rounded border border-border/50">
+                    <div key={agent.id} className="p-2 bg-background rounded border border-border">
                       <div className="flex items-center justify-between">
                         <span className="text-sm font-mono text-foreground">{agent.name}</span>
                         <span className="text-[10px] text-primary">{agent.sector}</span>
@@ -797,12 +797,12 @@ export default function Atlas() {
 
           {/* Synthesized Agent */}
           {synthesizedAgent && (
-            <div className="bg-card/50 border border-secondary/50 rounded-lg p-3">
+            <div className="bg-card/90 border border-secondary/60 rounded-lg p-3 shadow-sm">
               <div className="flex items-center gap-2 mb-2">
                 <Sparkles size={14} className="text-secondary" />
                 <span className="text-xs font-mono text-muted-foreground">SYNTHESIZED AGENT</span>
               </div>
-              <div className="p-2 bg-background/50 rounded border border-border/50">
+              <div className="p-2 bg-background rounded border border-border">
                 <div className="text-sm font-mono text-secondary">{synthesizedAgent.name}</div>
                 <div className="text-[10px] text-muted-foreground mt-1">{synthesizedAgent.sector}</div>
                 <div className="text-xs text-foreground/80 mt-2">{synthesizedAgent.description}</div>
@@ -811,7 +811,7 @@ export default function Atlas() {
           )}
 
           {/* Active Agents */}
-          <div className="flex-1 bg-card/50 border border-border rounded-lg p-3">
+          <div className="flex-1 bg-card/90 border border-border rounded-lg p-3 shadow-sm">
             <div className="flex items-center gap-2 mb-2">
               <Users size={14} className="text-primary" />
               <span className="text-xs font-mono text-muted-foreground">ACTIVE AGENTS</span>
@@ -833,7 +833,7 @@ export default function Atlas() {
                   activeAgents.map((agent) => (
                     <div 
                       key={agent.id} 
-                      className="flex items-center gap-3 p-2 rounded bg-background/50 border border-border/50 hover:border-primary/30 transition-colors"
+                      className="flex items-center gap-3 p-2 rounded bg-background border border-border hover:border-primary/40 transition-colors"
                     >
                       <div 
                         className="w-3 h-3 rounded-full animate-pulse"
@@ -859,7 +859,7 @@ export default function Atlas() {
 
       {/* Live Transcript Display - Bottom Bar */}
       {isConnected && (
-        <div className="border-t border-border bg-card/80 backdrop-blur-sm px-6 py-3">
+        <div className="border-t border-border bg-card/95 backdrop-blur-sm px-6 py-3 shadow-[0_-2px_8px_rgba(0,0,0,0.04)]">
           <div className="flex items-center gap-3">
             <div className={`w-2 h-2 rounded-full flex-shrink-0 ${isTranscribing ? 'bg-secondary animate-pulse' : 'bg-muted'}`} />
             <span className="text-[10px] font-mono text-muted-foreground tracking-wider flex-shrink-0">

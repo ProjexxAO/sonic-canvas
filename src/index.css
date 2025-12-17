@@ -6,83 +6,83 @@
 
 @layer base {
   :root {
-    /* C-Suite Light Theme - Executive, Clean, Premium */
-    --background: 0 0% 99%;
-    --background-elevated: 0 0% 100%;
-    --background-panel: 220 14% 96%;
+    /* C-Suite Light Theme - Softer, Higher Contrast */
+    --background: 220 16% 96%;
+    --background-elevated: 220 14% 98%;
+    --background-panel: 220 18% 93%;
     --foreground: 222 47% 11%;
 
-    /* Primary - Deep Teal (professional, trustworthy) */
-    --primary: 173 58% 32%;
-    --primary-glow: 173 58% 42%;
+    /* Primary - Deeper Teal */
+    --primary: 173 65% 28%;
+    --primary-glow: 173 60% 38%;
     --primary-foreground: 0 0% 100%;
 
-    /* Secondary - Refined Gold (executive accent) */
-    --secondary: 36 72% 44%;
-    --secondary-glow: 36 72% 54%;
+    /* Secondary - Richer Gold */
+    --secondary: 36 78% 40%;
+    --secondary-glow: 36 75% 50%;
     --secondary-foreground: 0 0% 100%;
 
-    /* Accent - Deep Navy */
-    --accent: 222 47% 35%;
-    --accent-glow: 222 47% 45%;
+    /* Accent - Deeper Navy */
+    --accent: 222 50% 30%;
+    --accent-glow: 222 48% 40%;
     --accent-foreground: 0 0% 100%;
 
     /* Alert - Professional Red */
-    --destructive: 0 72% 45%;
-    --destructive-glow: 0 72% 55%;
+    --destructive: 0 72% 42%;
+    --destructive-glow: 0 72% 52%;
     --destructive-foreground: 0 0% 100%;
 
-    /* Muted - Sophisticated Gray */
-    --muted: 220 14% 94%;
-    --muted-foreground: 220 9% 46%;
+    /* Muted - Warmer Gray */
+    --muted: 220 16% 90%;
+    --muted-foreground: 220 12% 40%;
 
-    /* Surface colors - Clean whites */
-    --card: 0 0% 100%;
+    /* Surface colors - Softer whites */
+    --card: 220 14% 98%;
     --card-foreground: 222 47% 11%;
-    --popover: 0 0% 100%;
+    --popover: 220 14% 99%;
     --popover-foreground: 222 47% 11%;
 
-    /* Borders - Subtle, refined */
-    --border: 220 13% 88%;
-    --border-glow: 173 58% 42%;
-    --input: 220 13% 91%;
-    --ring: 173 58% 32%;
+    /* Borders - More visible */
+    --border: 220 16% 82%;
+    --border-glow: 173 60% 38%;
+    --input: 220 16% 88%;
+    --ring: 173 65% 28%;
 
-    /* Semantic - Professional palette */
-    --success: 160 60% 38%;
-    --warning: 36 72% 44%;
-    --error: 0 72% 45%;
-    --info: 201 72% 42%;
+    /* Semantic - Richer colors */
+    --success: 160 65% 32%;
+    --warning: 36 78% 40%;
+    --error: 0 72% 42%;
+    --info: 201 75% 38%;
 
-    /* Sonic specific - Muted for light */
-    --sonic-cyan: 173 58% 32%;
-    --sonic-amber: 36 72% 44%;
-    --sonic-violet: 222 47% 35%;
-    --sonic-red: 0 72% 45%;
-    --sonic-green: 160 60% 38%;
+    /* Sonic specific - Deeper tones */
+    --sonic-cyan: 173 65% 28%;
+    --sonic-amber: 36 78% 40%;
+    --sonic-violet: 222 50% 30%;
+    --sonic-red: 0 72% 42%;
+    --sonic-green: 160 65% 32%;
 
-    /* Grid/HUD - Subtle */
-    --grid-line: 220 13% 90%;
-    --scanline: 173 58% 32%;
+    /* Grid/HUD - More visible */
+    --grid-line: 220 16% 85%;
+    --scanline: 173 65% 28%;
 
     --radius: 0.375rem;
 
-    /* Sidebar - Clean */
-    --sidebar-background: 220 14% 97%;
+    /* Sidebar */
+    --sidebar-background: 220 18% 94%;
     --sidebar-foreground: 222 47% 11%;
-    --sidebar-primary: 173 58% 32%;
+    --sidebar-primary: 173 65% 28%;
     --sidebar-primary-foreground: 0 0% 100%;
-    --sidebar-accent: 222 47% 35%;
+    --sidebar-accent: 222 50% 30%;
     --sidebar-accent-foreground: 0 0% 100%;
-    --sidebar-border: 220 13% 88%;
-    --sidebar-ring: 173 58% 32%;
+    --sidebar-border: 220 16% 82%;
+    --sidebar-ring: 173 65% 28%;
 
-    /* Orb colors (light mode - sophisticated) */
-    --orb-bg: 220 14% 96%;
-    --orb-primary: 222 45% 55%;
-    --orb-secondary: 201 55% 50%;
-    --orb-tertiary: 173 50% 45%;
-    --orb-highlight: 36 65% 55%;
+    /* Orb colors */
+    --orb-bg: 220 18% 94%;
+    --orb-primary: 222 50% 45%;
+    --orb-secondary: 201 55% 42%;
+    --orb-tertiary: 173 55% 38%;
+    --orb-highlight: 36 70% 48%;
   }
 
   .dark {
@@ -182,7 +182,7 @@
 @layer components {
   /* HUD Panel styling - adapts to theme */
   .hud-panel {
-    @apply relative bg-card/80 backdrop-blur-sm border border-border;
+    @apply relative bg-card/90 backdrop-blur-sm border border-border;
   }
   
   .dark .hud-panel {
@@ -193,8 +193,9 @@
   
   :root .hud-panel {
     box-shadow: 
-      0 4px 20px hsl(220 20% 10% / 0.08),
-      0 1px 3px hsl(220 20% 10% / 0.06);
+      0 6px 24px hsl(220 30% 10% / 0.12),
+      0 2px 6px hsl(220 30% 10% / 0.08),
+      inset 0 1px 0 hsl(0 0% 100% / 0.5);
   }
   
   .hud-panel::before {
