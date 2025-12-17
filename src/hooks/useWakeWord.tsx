@@ -58,25 +58,37 @@ export function useWakeWord({
   const [isSupported, setIsSupported] = useState(false);
   const recognitionRef = useRef<ISpeechRecognition | null>(null);
   const restartTimeoutRef = useRef<NodeJS.Timeout>();
+  const enabledRef = useRef(enabled);
   const isListeningRef = useRef(false);
   const cooldownRef = useRef(false);
   const onWakeWordDetectedRef = useRef(onWakeWordDetected);
 
-  // Keep callback ref updated without re-running effect
+  // Keep refs updated
   useEffect(() => {
     onWakeWordDetectedRef.current = onWakeWordDetected;
   }, [onWakeWordDetected]);
 
-  // Keep isListening ref in sync
+  useEffect(() => {
+    enabledRef.current = enabled;
+    // If disabled, force stop
+    if (!enabled) {
+      try {
+        recognitionRef.current?.stop();
+      } catch (e) {
+        // ignore
+      }
+      isListeningRef.current = false;
+      setIsListening(false);
+    }
+  }, [enabled]);
+
   useEffect(() => {
     isListeningRef.current = isListening;
   }, [isListening]);
 
   useEffect(() => {
-    // Check for browser support
     const SpeechRecognitionAPI = window.SpeechRecognition || window.webkitSpeechRecognition;
     setIsSupported(!!SpeechRecognitionAPI);
-
     if (!SpeechRecognitionAPI) return;
 
     const recognition = new SpeechRecognitionAPI();
@@ -84,8 +96,20 @@ export function useWakeWord({
     recognition.interimResults = true;
     recognition.lang = 'en-US';
 
+    const safeRestart = (delayMs: number) => {
+      if (restartTimeoutRef.current) clearTimeout(restartTimeoutRef.current);
+      restartTimeoutRef.current = setTimeout(() => {
+        if (!enabledRef.current || !isListeningRef.current || cooldownRef.current) return;
+        try {
+          recognition.start();
+        } catch (e) {
+          // ignore
+        }
+      }, delayMs);
+    };
+
     recognition.onresult = (event: SpeechRecognitionEvent) => {
-      // Don't process during cooldown
+      if (!enabledRef.current) return;
       if (cooldownRef.current) return;
 
       const results = Array.from({ length: event.results.length }, (_, i) => event.results[i]);
@@ -98,63 +122,69 @@ export function useWakeWord({
 
       if (transcript.includes(wakeWord.toLowerCase())) {
         console.log('[WakeWord] Wake word detected!');
-        
-        // Set cooldown to prevent rapid re-activation
+
         cooldownRef.current = true;
         setTimeout(() => {
           cooldownRef.current = false;
         }, 3000);
-        
-        // Stop listening and trigger callback
-        recognition.stop();
-        setIsListening(false);
+
+        try {
+          recognition.stop();
+        } catch (e) {
+          // ignore
+        }
         isListeningRef.current = false;
+        setIsListening(false);
+
         onWakeWordDetectedRef.current();
       }
     };
 
     recognition.onend = () => {
-      // Only auto-restart if actively listening and no cooldown
+      if (!enabledRef.current) return;
       if (isListeningRef.current && !cooldownRef.current) {
-        restartTimeoutRef.current = setTimeout(() => {
-          try {
-            if (isListeningRef.current) {
-              recognition.start();
-            }
-          } catch (e) {
-            console.log('[WakeWord] Could not restart:', e);
-          }
-        }, 100);
+        safeRestart(150);
       }
     };
 
     recognition.onerror = (event: SpeechRecognitionErrorEvent) => {
+      // Chrome's SpeechRecognition is cloud-backed; "network" is common on flaky connections
       console.log('[WakeWord] Error:', event.error);
+
+      if (!enabledRef.current) return;
+
       if (event.error === 'not-allowed') {
-        setIsListening(false);
         isListeningRef.current = false;
+        setIsListening(false);
+        return;
+      }
+
+      if (event.error === 'network') {
+        // Try to recover automatically while still enabled
+        safeRestart(1000);
       }
     };
 
     recognitionRef.current = recognition;
 
     return () => {
-      if (restartTimeoutRef.current) {
-        clearTimeout(restartTimeoutRef.current);
-      }
+      if (restartTimeoutRef.current) clearTimeout(restartTimeoutRef.current);
       try {
         recognition.stop();
       } catch (e) {
-        // Ignore errors when stopping
+        // ignore
       }
     };
   }, [wakeWord]);
 
   const startListening = useCallback(async () => {
+    if (!enabledRef.current) {
+      console.log('[WakeWord] startListening ignored (disabled)');
+      return;
+    }
     if (!recognitionRef.current || isListeningRef.current) return;
 
     try {
-      // Request microphone permission first
       await navigator.mediaDevices.getUserMedia({ audio: true });
       recognitionRef.current.start();
       isListeningRef.current = true;
@@ -166,15 +196,13 @@ export function useWakeWord({
   }, [wakeWord]);
 
   const stopListening = useCallback(() => {
-    if (restartTimeoutRef.current) {
-      clearTimeout(restartTimeoutRef.current);
-    }
+    if (restartTimeoutRef.current) clearTimeout(restartTimeoutRef.current);
     isListeningRef.current = false;
     setIsListening(false);
     try {
       recognitionRef.current?.stop();
     } catch (e) {
-      // Ignore errors when stopping
+      // ignore
     }
     console.log('[WakeWord] Stopped listening');
   }, []);
@@ -183,6 +211,6 @@ export function useWakeWord({
     isListening,
     isSupported,
     startListening,
-    stopListening
+    stopListening,
   };
 }

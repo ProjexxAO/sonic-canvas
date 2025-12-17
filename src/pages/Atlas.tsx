@@ -551,17 +551,18 @@ export default function Atlas() {
                 : 'border-border/50'
             }`} style={{ animationDuration: '3s' }} />
             
-            {/* Inner circle - Cosmic Orb - CLICKABLE TO ACTIVATE */}
+            {/* Inner circle - Cosmic Orb */}
             <div 
               className={`absolute inset-8 rounded-full bg-black/80 border border-border flex items-center justify-center overflow-hidden ${
-                !isConnected && !isConnecting ? 'cursor-pointer hover:border-primary/50 transition-colors' : ''
+                !isConnected && !isConnecting && !wakeWordEnabled ? 'cursor-pointer hover:border-primary/50 transition-colors' : ''
               }`}
               onClick={() => {
-                if (!isConnected && !isConnecting) {
+                // Tap activation is ONLY when wake word mode is off
+                if (!wakeWordEnabled && !isConnected && !isConnecting) {
                   startConversation();
                 }
               }}
-              title={!isConnected ? "Click to activate Atlas" : undefined}
+              title={!isConnected && !wakeWordEnabled ? "Tap to activate Atlas" : undefined}
             >
               {/* Cosmic Orb Container */}
               <div className="relative w-full h-full flex items-center justify-center pointer-events-none">
@@ -668,7 +669,7 @@ export default function Atlas() {
                 </div>
                 
                 {/* Activation hint when not connected */}
-                {!isConnected && !isConnecting && (
+                {!isConnected && !isConnecting && !wakeWordEnabled && (
                   <div className="absolute inset-0 flex items-center justify-center">
                     <span className="text-[10px] font-mono text-primary/60 animate-pulse">
                       TAP TO ACTIVATE
@@ -737,9 +738,9 @@ export default function Atlas() {
             {/* Activation hint */}
             {!isConnected && !isConnecting && (
               <p className="text-[10px] font-mono text-muted-foreground/60">
-                {isWakeWordListening 
-                  ? 'Say "Atlas" to activate' 
-                  : 'Tap the orb or enable wake word'}
+                {wakeWordEnabled
+                  ? (isWakeWordListening ? 'Say "Atlas" to activate' : 'Enable wake word to start listening')
+                  : 'Tap the orb to activate'}
               </p>
             )}
           </div>
