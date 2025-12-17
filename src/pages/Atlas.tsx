@@ -67,8 +67,8 @@ export default function Atlas() {
   const [outputVolume, setOutputVolume] = useState(0);
   const [frequencyBands, setFrequencyBands] = useState({ bass: 0, mid: 0, treble: 0 });
   const [wakeWordEnabled, setWakeWordEnabled] = useState(true);
+  const [wakeWordNeedsPermission, setWakeWordNeedsPermission] = useState(false);
   const animationRef = useRef<number>();
-  const conversationRef = useRef<any>(null);
 
   // Get active agents (those with ACTIVE or PROCESSING status)
   const activeAgents = agents.filter(a => a.status === 'ACTIVE' || a.status === 'PROCESSING').slice(0, 6);
@@ -331,27 +331,52 @@ export default function Atlas() {
   const isConnected = conversation.status === "connected";
 
   // Wake word detection
-  const { isListening: isWakeWordListening, isSupported: isWakeWordSupported, startListening: startWakeWordListening, stopListening: stopWakeWordListening } = useWakeWord({
+  const handleWakeWordDetected = useCallback(() => {
+    if (!isConnected && !isConnecting) {
+      toast.info('Wake word detected! Activating Atlas...');
+      startConversation();
+    }
+  }, [isConnected, isConnecting, startConversation]);
+
+  const {
+    isListening: isWakeWordListening,
+    isSupported: isWakeWordSupported,
+    lastError: wakeWordLastError,
+    startListening: startWakeWordListening,
+    stopListening: stopWakeWordListening,
+  } = useWakeWord({
     wakeWord: 'atlas',
-    onWakeWordDetected: () => {
-      if (!isConnected && !isConnecting) {
-        toast.info('Wake word detected! Activating Atlas...');
-        startConversation();
-      }
-    },
-    enabled: wakeWordEnabled && !isConnected
+    onWakeWordDetected: handleWakeWordDetected,
+    enabled: wakeWordEnabled && !isConnected,
   });
 
-  // Toggle wake word mode
-  const toggleWakeWord = useCallback(() => {
-    setWakeWordEnabled(prev => !prev);
-  }, []);
+  const handleWakeWordButton = useCallback(async () => {
+    // Turn ON
+    if (!wakeWordEnabled) {
+      setWakeWordNeedsPermission(false);
+      setWakeWordEnabled(true);
+      return;
+    }
+
+    // If ON but not currently listening, this click is treated as the required user-gesture
+    if (wakeWordEnabled && !isWakeWordListening) {
+      const ok = await startWakeWordListening();
+      setWakeWordNeedsPermission(!ok);
+      return;
+    }
+
+    // Turn OFF
+    setWakeWordNeedsPermission(false);
+    setWakeWordEnabled(false);
+  }, [wakeWordEnabled, isWakeWordListening, startWakeWordListening]);
 
   // Keep wake word listening state in sync with the toggle + connection state
   useEffect(() => {
     // When wake word mode is ON and we're not connected, ensure listening is active
     if (wakeWordEnabled && !isConnected && isWakeWordSupported && !isWakeWordListening) {
-      startWakeWordListening();
+      startWakeWordListening().then((ok) => {
+        setWakeWordNeedsPermission(!ok);
+      });
       return;
     }
 
@@ -714,17 +739,21 @@ export default function Atlas() {
                   {/* Wake word toggle */}
                   {isWakeWordSupported && (
                     <Button
-                      onClick={toggleWakeWord}
+                      onClick={handleWakeWordButton}
                       variant="outline"
                       size="lg"
                       className={`gap-2 font-mono rounded-full transition-all duration-300 ${
-                        isWakeWordListening 
-                          ? 'bg-primary/20 border-primary text-primary shadow-[0_0_20px_hsl(var(--primary)/0.4)]' 
+                        isWakeWordListening
+                          ? 'bg-primary/20 border-primary text-primary shadow-[0_0_20px_hsl(var(--primary)/0.4)]'
                           : 'bg-transparent border-border/50 text-muted-foreground hover:border-primary/50 hover:text-primary'
                       }`}
                     >
                       <Ear className={`w-5 h-5 ${isWakeWordListening ? 'animate-pulse' : ''}`} />
-                      {isWakeWordListening ? 'LISTENING...' : 'WAKE WORD'}
+                      {isWakeWordListening
+                        ? 'LISTENING...'
+                        : wakeWordEnabled && wakeWordNeedsPermission
+                          ? 'ENABLE MIC'
+                          : 'WAKE WORD'}
                     </Button>
                   )}
                 </>
@@ -754,7 +783,11 @@ export default function Atlas() {
             {!isConnected && !isConnecting && (
               <p className="text-[10px] font-mono text-muted-foreground/60">
                 {wakeWordEnabled
-                  ? (isWakeWordListening ? 'Say "Atlas" to activate' : 'Enable wake word to start listening')
+                  ? (isWakeWordListening
+                      ? 'Say "Atlas" to activate'
+                      : wakeWordNeedsPermission || wakeWordLastError === 'not-allowed' || wakeWordLastError === 'NotAllowedError'
+                        ? 'Click WAKE WORD once to allow microphone'
+                        : 'Starting wake word…')
                   : 'Tap the orb to activate'}
               </p>
             )}
