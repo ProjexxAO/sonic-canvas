@@ -655,83 +655,56 @@ export default function Atlas() {
             <div className="absolute inset-0 rounded-full bg-white/70 blur-lg" />
           </div>
           
-          {/* Hot Air Balloon 1 - Large, foreground left */}
+          {/* Hot Air Balloon 1 - Large, floats right to left */}
           <div 
-            className="absolute top-[15%] left-[10%] opacity-80"
-            style={{ animation: 'balloon-drift 35s ease-in-out infinite' }}
+            className="absolute bottom-[25%] opacity-75"
+            style={{ animation: 'balloon-float-1 60s linear infinite' }}
           >
             <svg width="50" height="70" viewBox="0 0 50 70" className="drop-shadow-lg">
-              {/* Balloon envelope */}
               <ellipse cx="25" cy="22" rx="22" ry="24" fill="hsl(350 70% 60%)" />
-              <ellipse cx="25" cy="22" rx="22" ry="24" fill="url(#balloon1-gradient)" />
-              {/* Balloon stripes */}
               <path d="M 8 18 Q 25 45 42 18" stroke="hsl(45 80% 65%)" strokeWidth="4" fill="none" />
               <path d="M 12 12 Q 25 38 38 12" stroke="hsl(200 60% 55%)" strokeWidth="3" fill="none" />
-              {/* Basket ropes */}
               <line x1="12" y1="42" x2="18" y2="58" stroke="hsl(30 30% 35%)" strokeWidth="1" />
               <line x1="38" y1="42" x2="32" y2="58" stroke="hsl(30 30% 35%)" strokeWidth="1" />
               <line x1="25" y1="46" x2="25" y2="58" stroke="hsl(30 30% 35%)" strokeWidth="1" />
-              {/* Basket */}
               <rect x="16" y="58" width="18" height="10" rx="2" fill="hsl(30 40% 45%)" />
               <rect x="16" y="58" width="18" height="3" rx="1" fill="hsl(30 35% 55%)" />
-              <defs>
-                <linearGradient id="balloon1-gradient" x1="0%" y1="0%" x2="100%" y2="0%">
-                  <stop offset="0%" stopColor="hsl(350 70% 50%)" stopOpacity="0.3" />
-                  <stop offset="50%" stopColor="transparent" />
-                  <stop offset="100%" stopColor="hsl(350 70% 40%)" stopOpacity="0.4" />
-                </linearGradient>
-              </defs>
             </svg>
           </div>
           
-          {/* Hot Air Balloon 2 - Medium, mid-right */}
+          {/* Hot Air Balloon 2 - Medium, floats left to right higher */}
           <div 
-            className="absolute top-[25%] right-[15%] opacity-60"
-            style={{ animation: 'balloon-drift-slow 45s ease-in-out infinite', animationDelay: '-10s' }}
+            className="absolute bottom-[45%] opacity-55"
+            style={{ animation: 'balloon-float-2 75s linear infinite' }}
           >
-            <svg width="35" height="50" viewBox="0 0 50 70" className="drop-shadow-md">
-              {/* Balloon envelope */}
+            <svg width="38" height="54" viewBox="0 0 50 70" className="drop-shadow-md">
               <ellipse cx="25" cy="22" rx="22" ry="24" fill="hsl(200 65% 55%)" />
-              <ellipse cx="25" cy="22" rx="22" ry="24" fill="url(#balloon2-gradient)" />
-              {/* Balloon pattern */}
               <path d="M 6 20 L 25 46 L 44 20" stroke="hsl(45 75% 70%)" strokeWidth="3" fill="none" />
-              {/* Basket ropes */}
               <line x1="12" y1="42" x2="18" y2="58" stroke="hsl(30 30% 35%)" strokeWidth="1" />
               <line x1="38" y1="42" x2="32" y2="58" stroke="hsl(30 30% 35%)" strokeWidth="1" />
-              {/* Basket */}
               <rect x="16" y="58" width="18" height="10" rx="2" fill="hsl(30 40% 45%)" />
-              <defs>
-                <linearGradient id="balloon2-gradient" x1="0%" y1="0%" x2="100%" y2="0%">
-                  <stop offset="0%" stopColor="hsl(200 65% 45%)" stopOpacity="0.3" />
-                  <stop offset="50%" stopColor="transparent" />
-                  <stop offset="100%" stopColor="hsl(200 65% 35%)" stopOpacity="0.4" />
-                </linearGradient>
-              </defs>
             </svg>
           </div>
           
-          {/* Hot Air Balloon 3 - Small, distant background */}
+          {/* Hot Air Balloon 3 - Small, floats right to left, distant */}
           <div 
-            className="absolute top-[35%] left-[45%] opacity-40"
-            style={{ animation: 'balloon-drift 55s ease-in-out infinite', animationDelay: '-20s' }}
+            className="absolute bottom-[55%] opacity-35"
+            style={{ animation: 'balloon-float-3 90s linear infinite' }}
           >
-            <svg width="22" height="32" viewBox="0 0 50 70" className="drop-shadow-sm">
-              {/* Balloon envelope */}
+            <svg width="24" height="34" viewBox="0 0 50 70" className="drop-shadow-sm">
               <ellipse cx="25" cy="22" rx="22" ry="24" fill="hsl(280 55% 60%)" />
-              {/* Basket ropes */}
               <line x1="15" y1="42" x2="20" y2="58" stroke="hsl(30 30% 35%)" strokeWidth="1.5" />
               <line x1="35" y1="42" x2="30" y2="58" stroke="hsl(30 30% 35%)" strokeWidth="1.5" />
-              {/* Basket */}
               <rect x="18" y="58" width="14" height="8" rx="2" fill="hsl(30 40% 45%)" />
             </svg>
           </div>
           
-          {/* Hot Air Balloon 4 - Tiny, very distant */}
+          {/* Hot Air Balloon 4 - Tiny, very distant, slow float */}
           <div 
-            className="absolute top-[20%] left-[70%] opacity-30"
-            style={{ animation: 'balloon-drift-slow 60s ease-in-out infinite', animationDelay: '-30s' }}
+            className="absolute bottom-[65%] opacity-25"
+            style={{ animation: 'balloon-float-4 120s linear infinite' }}
           >
-            <svg width="16" height="24" viewBox="0 0 50 70">
+            <svg width="18" height="26" viewBox="0 0 50 70">
               <ellipse cx="25" cy="22" rx="22" ry="24" fill="hsl(150 50% 55%)" />
               <rect x="18" y="58" width="14" height="8" rx="2" fill="hsl(30 35% 50%)" />
             </svg>
