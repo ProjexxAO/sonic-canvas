@@ -763,7 +763,7 @@ export default function Atlas() {
                   </div>
                 ) : activeAgents.length === 0 ? (
                   <div className="text-muted-foreground/50 text-center py-4 text-xs">
-                    No active agents. Visit the Forge to create agents.
+                    {agents.length === 0 ? 'No agents in system' : 'No agents currently running'}
                   </div>
                 ) : (
                   activeAgents.map((agent) => (
