@@ -289,14 +289,17 @@ export default function Atlas() {
   });
 
   const startConversation = useCallback(async () => {
+    // Guard against multiple activation attempts
+    if (isConnecting || conversation.status === 'connected') {
+      console.log("[Atlas] Already connecting or connected, ignoring");
+      return;
+    }
+    
     setIsConnecting(true);
     try {
       console.log("[Atlas] Requesting microphone permission...");
       await navigator.mediaDevices.getUserMedia({ audio: true });
       console.log("[Atlas] Microphone permission granted, starting session...");
-      
-      // Stop wake word listening when starting conversation
-      stopWakeWordListening();
       
       await conversation.startSession({
         agentId: ATLAS_AGENT_ID,
@@ -310,7 +313,7 @@ export default function Atlas() {
     } finally {
       setIsConnecting(false);
     }
-  }, [conversation]);
+  }, [conversation, isConnecting]);
 
   const stopConversation = useCallback(async () => {
     await conversation.endSession();
