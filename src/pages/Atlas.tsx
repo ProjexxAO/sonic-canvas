@@ -588,16 +588,6 @@ export default function Atlas() {
 
             {/* Status text with volume indicator */}
             <div className="absolute -bottom-8 left-0 right-0 text-center">
-              <p className="text-sm font-mono text-muted-foreground">
-                {isConnected 
-                  ? conversation.isSpeaking 
-                    ? "ATLAS IS SPEAKING" 
-                    : inputVolume > 0.1 
-                      ? "LISTENING..." 
-                      : "AWAITING INPUT"
-                  : "OFFLINE"
-                }
-              </p>
               {/* Volume level bar */}
               {isConnected && (
                 <div className="mt-2 flex justify-center gap-1">
