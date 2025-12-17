@@ -639,7 +639,7 @@ export default function Atlas() {
             style={{
               position: 'absolute',
               top: '50%',
-              left: '50%',
+              left: '25%',
               width: '300px',
               height: '300px',
               marginTop: '-150px',
@@ -708,7 +708,7 @@ export default function Atlas() {
             style={{
               position: 'absolute',
               top: '50%',
-              left: '50%',
+              left: '25%',
               width: '300px',
               height: '300px',
               marginTop: '-150px',
