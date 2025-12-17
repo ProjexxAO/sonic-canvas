@@ -574,14 +574,6 @@ export default function Atlas() {
                         inset 0 0 ${60 + outputVolume * 60}px hsl(200 100% 30% / ${0.3 + outputVolume * 0.3})`,
                     }}
                   />
-                  
-                  {/* Glass reflection */}
-                  <div 
-                    className="absolute inset-0 rounded-full"
-                    style={{
-                      background: 'linear-gradient(135deg, hsl(0 0% 100% / 0.08) 0%, transparent 50%)',
-                    }}
-                  />
                 </div>
               </div>
             </div>
