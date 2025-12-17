@@ -16,8 +16,9 @@ import CodeArtifact from '@/components/CodeArtifact';
 import WaveformDisplay from '@/components/WaveformDisplay';
 import BootScreen from '@/components/BootScreen';
 import AgentFilters, { AgentFiltersState } from '@/components/AgentFilters';
+import AtlasVoiceAgent from '@/components/AtlasVoiceAgent';
 import { toast } from 'sonner';
-import { Loader2 } from 'lucide-react';
+import { Loader2, MessageCircle, X } from 'lucide-react';
 
 export default function Index() {
   const navigate = useNavigate();
@@ -35,6 +36,7 @@ export default function Index() {
     status: 'ALL',
     class: 'ALL',
   });
+  const [showAtlas, setShowAtlas] = useState(false);
 
   // Filter agents based on selected filters
   const filteredAgents = useMemo(() => {
@@ -272,6 +274,32 @@ export default function Index() {
             />
           </div>
         </div>
+
+        {/* Atlas Voice Agent Floating Panel */}
+        {showAtlas && (
+          <div className="absolute bottom-20 left-4 z-50 w-80 animate-in slide-in-from-bottom-4">
+            <div className="relative">
+              <button
+                onClick={() => setShowAtlas(false)}
+                className="absolute -top-2 -right-2 z-10 w-6 h-6 bg-destructive text-destructive-foreground rounded-full flex items-center justify-center hover:bg-destructive/80 transition-colors"
+              >
+                <X size={14} />
+              </button>
+              <AtlasVoiceAgent />
+            </div>
+          </div>
+        )}
+
+        {/* Atlas Toggle Button */}
+        {!showAtlas && (
+          <button
+            onClick={() => setShowAtlas(true)}
+            className="absolute bottom-20 left-4 z-50 flex items-center gap-2 px-4 py-3 bg-primary text-primary-foreground rounded-lg shadow-lg hover:bg-primary/90 transition-all hover:scale-105 font-mono text-sm"
+          >
+            <MessageCircle size={18} />
+            ATLAS VOICE
+          </button>
+        )}
         
         {/* Right panels */}
         <div className="w-[600px] flex flex-col">
