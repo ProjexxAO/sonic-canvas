@@ -510,12 +510,14 @@ export default function Atlas() {
                 className="absolute -inset-4 rounded-full border-2 transition-all duration-100"
                 style={{
                   borderColor: conversation.isSpeaking 
-                    ? `hsl(var(--secondary) / ${0.3 + frequencyBands.bass * 0.7})` 
-                    : `hsl(var(--primary) / ${0.2 + inputVolume * 0.5})`,
+                    ? `hsl(var(--secondary) / ${theme === 'dark' ? 0.3 + frequencyBands.bass * 0.7 : 0.5 + frequencyBands.bass * 0.5})` 
+                    : `hsl(var(--primary) / ${theme === 'dark' ? 0.2 + inputVolume * 0.5 : 0.4 + inputVolume * 0.4})`,
                   transform: `scale(${1 + frequencyBands.bass * 0.1})`,
-                  boxShadow: frequencyBands.bass > 0.3 
-                    ? `0 0 ${20 + frequencyBands.bass * 30}px hsl(var(--secondary) / ${frequencyBands.bass * 0.5})`
-                    : 'none'
+                  boxShadow: theme === 'dark'
+                    ? (frequencyBands.bass > 0.3 
+                        ? `0 0 ${20 + frequencyBands.bass * 30}px hsl(var(--secondary) / ${frequencyBands.bass * 0.5})`
+                        : 'none')
+                    : `0 0 ${8 + frequencyBands.bass * 15}px hsl(var(--secondary) / ${0.15 + frequencyBands.bass * 0.25})`
                 }}
               />
             )}
@@ -526,10 +528,10 @@ export default function Atlas() {
                 {[0, 1, 2].map((i) => (
                   <div
                     key={`ring-${i}`}
-                    className="absolute inset-0 rounded-full border animate-ring-pulse"
+                    className="absolute inset-0 rounded-full border-2 animate-ring-pulse"
                     style={{
                       animationDelay: `${i * 0.4}s`,
-                      borderColor: `hsl(var(--secondary) / ${0.3 + frequencyBands.mid * 0.5})`,
+                      borderColor: `hsl(var(--secondary) / ${theme === 'dark' ? 0.3 + frequencyBands.mid * 0.5 : 0.5 + frequencyBands.mid * 0.4})`,
                       transform: `scale(${1 + frequencyBands.mid * 0.05 * i})`,
                     }}
                   />
@@ -540,28 +542,49 @@ export default function Atlas() {
             {/* User speaking indicator - input volume reactive */}
             {isConnected && !conversation.isSpeaking && inputVolume > 0.1 && (
               <div
-                className="absolute -inset-2 rounded-full border-2 border-primary/50 animate-pulse"
+                className="absolute -inset-2 rounded-full border-2 animate-pulse"
                 style={{
+                  borderColor: `hsl(var(--primary) / ${theme === 'dark' ? 0.5 : 0.7})`,
                   transform: `scale(${1 + inputVolume * 0.15})`,
-                  boxShadow: `0 0 ${15 + inputVolume * 25}px hsl(var(--primary) / ${inputVolume * 0.6})`
+                  boxShadow: theme === 'dark'
+                    ? `0 0 ${15 + inputVolume * 25}px hsl(var(--primary) / ${inputVolume * 0.6})`
+                    : `0 0 ${10 + inputVolume * 18}px hsl(var(--primary) / ${0.2 + inputVolume * 0.4})`
                 }}
               />
             )}
             
             {/* Outer ring */}
-            <div className={`absolute inset-0 rounded-full border-2 ${
-              isConnected ? 'border-primary animate-pulse' : 'border-border'
-            }`} />
+            <div 
+              className={`absolute inset-0 rounded-full border-2 ${
+                isConnected ? 'border-primary animate-pulse' : ''
+              }`}
+              style={{
+                borderColor: isConnected 
+                  ? undefined 
+                  : `hsl(var(--border) / ${theme === 'dark' ? 1 : 1})`,
+                boxShadow: theme === 'light' && !isConnected
+                  ? 'inset 0 0 0 1px hsl(var(--border) / 0.5), 0 2px 8px hsl(220 30% 10% / 0.08)'
+                  : undefined
+              }}
+            />
             
             {/* Middle ring */}
-            <div className={`absolute inset-4 rounded-full border ${
-              isConnected && conversation.isSpeaking 
-                ? 'border-secondary animate-spin' 
-                : 'border-border/50'
-            }`} style={{ animationDuration: '3s' }} />
+            <div 
+              className={`absolute inset-4 rounded-full border-2 ${
+                isConnected && conversation.isSpeaking 
+                  ? 'border-secondary animate-spin' 
+                  : ''
+              }`}
+              style={{ 
+                animationDuration: '3s',
+                borderColor: !(isConnected && conversation.isSpeaking)
+                  ? `hsl(var(--border) / ${theme === 'dark' ? 0.5 : 0.8})`
+                  : undefined
+              }}
+            />
             
             {/* Inner circle - Cosmic Orb */}
-            <div 
+            <div
               className={`absolute inset-8 rounded-full border border-border flex items-center justify-center overflow-hidden ${
                 !isConnected && !isConnecting ? 'cursor-pointer hover:border-primary/50 transition-colors' : ''
               } ${theme === 'dark' ? 'bg-[hsl(240_10%_6%/0.9)]' : 'bg-gradient-to-br from-[hsl(220_20%_92%)] to-[hsl(220_25%_88%)] shadow-[0_8px_32px_-8px_rgba(0,0,0,0.2),0_0_0_1px_rgba(0,0,0,0.08)]'}`}
