@@ -639,7 +639,7 @@ export default function Atlas() {
           <div style={{
             position: 'absolute',
             top: '50%',
-            left: '33%',
+            left: 'calc(50% - 200px)',
             width: '160px',
             height: '160px',
             marginTop: '-80px',
@@ -666,7 +666,7 @@ export default function Atlas() {
           <div style={{
             position: 'absolute',
             top: '50%',
-            left: '33%',
+            left: 'calc(50% - 200px)',
             width: '220px',
             height: '220px',
             marginTop: '-110px',
@@ -694,7 +694,7 @@ export default function Atlas() {
           <div style={{
             position: 'absolute',
             top: '50%',
-            left: '33%',
+            left: 'calc(50% - 200px)',
             width: '300px',
             height: '300px',
             marginTop: '-150px',
@@ -740,7 +740,7 @@ export default function Atlas() {
           <div style={{
             position: 'absolute',
             top: '50%',
-            left: '33%',
+            left: 'calc(50% - 200px)',
             width: '380px',
             height: '380px',
             marginTop: '-190px',
@@ -769,7 +769,7 @@ export default function Atlas() {
           <div style={{
             position: 'absolute',
             top: '50%',
-            left: '33%',
+            left: 'calc(50% - 200px)',
             width: '500px',
             height: '500px',
             marginTop: '-250px',
@@ -801,7 +801,7 @@ export default function Atlas() {
           <div style={{
             position: 'absolute',
             top: '50%',
-            left: '33%',
+            left: 'calc(50% - 200px)',
             width: '620px',
             height: '620px',
             marginTop: '-310px',
@@ -835,7 +835,7 @@ export default function Atlas() {
           <div style={{
             position: 'absolute',
             top: '50%',
-            left: '33%',
+            left: 'calc(50% - 200px)',
             width: '740px',
             height: '740px',
             marginTop: '-370px',
@@ -862,7 +862,7 @@ export default function Atlas() {
           <div style={{
             position: 'absolute',
             top: '50%',
-            left: '33%',
+            left: 'calc(50% - 200px)',
             width: '860px',
             height: '860px',
             marginTop: '-430px',
