@@ -633,7 +633,7 @@ export default function Atlas() {
             }}
           />
           
-          {/* Star Wars-style Spacecraft */}
+          {/* Star Trek-style Spacecraft */}
           <div 
             className="absolute opacity-60"
             style={{ 
@@ -641,38 +641,42 @@ export default function Atlas() {
               animation: 'spacecraft-cruise 45s linear infinite',
             }}
           >
-            <svg width="35" height="20" viewBox="0 0 70 40" className="drop-shadow-lg">
-              {/* TIE Fighter inspired silhouette */}
-              {/* Left wing panel */}
-              <polygon 
-                points="0,2 8,2 8,38 0,38" 
-                fill="hsl(220 20% 25%)"
-                stroke="hsl(220 30% 40%)"
-                strokeWidth="0.5"
-              />
-              <line x1="4" y1="2" x2="4" y2="38" stroke="hsl(220 30% 35%)" strokeWidth="0.5" />
+            <svg width="45" height="22" viewBox="0 0 90 44" className="drop-shadow-lg">
+              {/* Enterprise-inspired silhouette */}
               
-              {/* Right wing panel */}
-              <polygon 
-                points="62,2 70,2 70,38 62,38" 
-                fill="hsl(220 20% 25%)"
-                stroke="hsl(220 30% 40%)"
-                strokeWidth="0.5"
-              />
-              <line x1="66" y1="2" x2="66" y2="38" stroke="hsl(220 30% 35%)" strokeWidth="0.5" />
+              {/* Saucer section */}
+              <ellipse cx="25" cy="22" rx="22" ry="8" fill="hsl(220 15% 35%)" />
+              <ellipse cx="25" cy="22" rx="18" ry="6" fill="hsl(220 20% 40%)" />
+              <ellipse cx="25" cy="22" rx="8" ry="3" fill="hsl(220 25% 50%)" />
+              {/* Bridge dome */}
+              <ellipse cx="25" cy="22" rx="4" ry="2" fill="hsl(200 30% 55%)" opacity="0.8" />
               
-              {/* Wing struts */}
-              <rect x="8" y="18" width="12" height="4" fill="hsl(220 15% 30%)" />
-              <rect x="50" y="18" width="12" height="4" fill="hsl(220 15% 30%)" />
+              {/* Neck connecting saucer to engineering hull */}
+              <rect x="38" y="19" width="12" height="6" fill="hsl(220 15% 32%)" />
               
-              {/* Central cockpit */}
-              <circle cx="35" cy="20" r="10" fill="hsl(220 20% 20%)" stroke="hsl(220 30% 40%)" strokeWidth="1" />
-              <circle cx="35" cy="20" r="6" fill="hsl(220 25% 15%)" />
-              {/* Cockpit window */}
-              <ellipse cx="35" cy="20" rx="3" ry="4" fill="hsl(200 40% 35%)" opacity="0.7" />
+              {/* Engineering hull (secondary hull) */}
+              <ellipse cx="62" cy="22" rx="14" ry="6" fill="hsl(220 15% 35%)" />
+              <ellipse cx="62" cy="22" rx="10" ry="4" fill="hsl(220 20% 40%)" />
               
-              {/* Engine glow */}
-              <circle cx="35" cy="20" r="2" fill="hsl(200 80% 60%)" opacity="0.5" />
+              {/* Nacelle pylons */}
+              <line x1="55" y1="22" x2="55" y2="8" stroke="hsl(220 15% 35%)" strokeWidth="2" />
+              <line x1="55" y1="22" x2="55" y2="36" stroke="hsl(220 15% 35%)" strokeWidth="2" />
+              
+              {/* Upper nacelle */}
+              <rect x="55" y="4" width="30" height="5" rx="2" fill="hsl(220 15% 32%)" />
+              <rect x="58" y="5" width="24" height="3" rx="1" fill="hsl(220 20% 38%)" />
+              {/* Nacelle glow - Bussard collector */}
+              <ellipse cx="58" cy="6.5" rx="2" ry="1.5" fill="hsl(0 70% 50%)" opacity="0.8" />
+              {/* Warp glow */}
+              <rect x="70" y="5.5" width="12" height="2" rx="1" fill="hsl(200 80% 60%)" opacity="0.6" />
+              
+              {/* Lower nacelle */}
+              <rect x="55" y="35" width="30" height="5" rx="2" fill="hsl(220 15% 32%)" />
+              <rect x="58" y="36" width="24" height="3" rx="1" fill="hsl(220 20% 38%)" />
+              {/* Nacelle glow - Bussard collector */}
+              <ellipse cx="58" cy="37.5" rx="2" ry="1.5" fill="hsl(0 70% 50%)" opacity="0.8" />
+              {/* Warp glow */}
+              <rect x="70" y="36.5" width="12" height="2" rx="1" fill="hsl(200 80% 60%)" opacity="0.6" />
             </svg>
           </div>
         </div>
