@@ -601,14 +601,14 @@ export default function Atlas() {
             }}
           />
           
-          {/* Shooting Stars */}
+          {/* Shooting Stars - Rare occurrences */}
           <div 
             className="absolute w-1 h-1 bg-white rounded-full"
             style={{ 
               top: '15%',
               left: '20%',
               boxShadow: '0 0 6px 2px rgba(255,255,255,0.6)',
-              animation: 'shooting-star-1 8s ease-in-out infinite',
+              animation: 'shooting-star-1 45s ease-in-out infinite',
               animationDelay: '0s'
             }}
           />
@@ -618,8 +618,8 @@ export default function Atlas() {
               top: '35%',
               left: '60%',
               boxShadow: '0 0 6px 2px rgba(255,255,255,0.6)',
-              animation: 'shooting-star-2 12s ease-in-out infinite',
-              animationDelay: '4s'
+              animation: 'shooting-star-2 70s ease-in-out infinite',
+              animationDelay: '20s'
             }}
           />
           <div 
@@ -628,8 +628,8 @@ export default function Atlas() {
               top: '25%',
               left: '80%',
               boxShadow: '0 0 4px 1px rgba(255,255,255,0.5)',
-              animation: 'shooting-star-3 15s ease-in-out infinite',
-              animationDelay: '7s'
+              animation: 'shooting-star-3 90s ease-in-out infinite',
+              animationDelay: '45s'
             }}
           />
           
