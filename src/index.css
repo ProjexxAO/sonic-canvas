@@ -6,7 +6,80 @@
 
 @layer base {
   :root {
-    /* Core backgrounds */
+    /* Light theme */
+    --background: 0 0% 98%;
+    --background-elevated: 0 0% 100%;
+    --background-panel: 210 20% 96%;
+    --foreground: 240 10% 10%;
+    
+    /* Primary - Cyan */
+    --primary: 168 80% 40%;
+    --primary-glow: 168 80% 50%;
+    --primary-foreground: 0 0% 100%;
+    
+    /* Secondary - Amber/Gold */
+    --secondary: 40 90% 45%;
+    --secondary-glow: 40 90% 55%;
+    --secondary-foreground: 0 0% 100%;
+    
+    /* Accent - Violet */
+    --accent: 270 70% 55%;
+    --accent-glow: 270 70% 65%;
+    --accent-foreground: 0 0% 100%;
+    
+    /* Alert - Red */
+    --destructive: 340 80% 50%;
+    --destructive-glow: 340 80% 60%;
+    --destructive-foreground: 0 0% 100%;
+    
+    /* Muted */
+    --muted: 210 20% 92%;
+    --muted-foreground: 215 15% 45%;
+    
+    /* Surface colors */
+    --card: 0 0% 100%;
+    --card-foreground: 240 10% 10%;
+    --popover: 0 0% 100%;
+    --popover-foreground: 240 10% 10%;
+    
+    /* Borders */
+    --border: 214 20% 85%;
+    --border-glow: 168 80% 50%;
+    --input: 214 20% 90%;
+    --ring: 168 80% 40%;
+    
+    /* Semantic */
+    --success: 150 70% 40%;
+    --warning: 40 90% 45%;
+    --error: 340 80% 50%;
+    --info: 200 80% 45%;
+    
+    /* Sonic specific */
+    --sonic-cyan: 168 80% 40%;
+    --sonic-amber: 40 90% 45%;
+    --sonic-violet: 270 70% 55%;
+    --sonic-red: 340 80% 50%;
+    --sonic-green: 150 70% 40%;
+    
+    /* Grid/HUD */
+    --grid-line: 214 20% 85%;
+    --scanline: 168 80% 40%;
+    
+    --radius: 0.25rem;
+    
+    /* Sidebar */
+    --sidebar-background: 210 20% 96%;
+    --sidebar-foreground: 240 10% 10%;
+    --sidebar-primary: 168 80% 40%;
+    --sidebar-primary-foreground: 0 0% 100%;
+    --sidebar-accent: 270 70% 55%;
+    --sidebar-accent-foreground: 0 0% 100%;
+    --sidebar-border: 214 20% 85%;
+    --sidebar-ring: 168 80% 40%;
+  }
+
+  .dark {
+    /* Dark theme - Cyberpunk */
     --background: 240 10% 4%;
     --background-elevated: 240 10% 6%;
     --background-panel: 240 10% 8%;
@@ -64,8 +137,6 @@
     /* Grid/HUD */
     --grid-line: 168 50% 15%;
     --scanline: 168 100% 50%;
-    
-    --radius: 0.25rem;
     
     /* Sidebar */
     --sidebar-background: 240 10% 5%;
