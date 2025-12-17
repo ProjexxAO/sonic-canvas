@@ -390,6 +390,28 @@ export default function Atlas() {
             <div className="absolute inset-8 rounded-full bg-card/50 backdrop-blur-sm border border-border flex items-center justify-center overflow-hidden">
               {/* Radial audio visualizer */}
               <div className="relative w-full h-full">
+                {/* Floating particles - only when speaking */}
+                {isConnected && conversation.isSpeaking && (
+                  <>
+                    {Array.from({ length: 12 }).map((_, i) => {
+                      const angle = (i / 12) * 360 + Math.random() * 30;
+                      const delay = i * 0.15;
+                      const duration = 1.5 + Math.random() * 0.5;
+                      return (
+                        <div
+                          key={`particle-${i}`}
+                          className="absolute left-1/2 top-1/2 w-1.5 h-1.5 rounded-full bg-secondary animate-particle"
+                          style={{
+                            '--particle-angle': `${angle}deg`,
+                            animationDelay: `${delay}s`,
+                            animationDuration: `${duration}s`,
+                          } as React.CSSProperties}
+                        />
+                      );
+                    })}
+                  </>
+                )}
+                
                 {/* Center glow */}
                 <div className={`absolute inset-0 m-auto w-12 h-12 rounded-full transition-all duration-300 ${
                   isConnected 

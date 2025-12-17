@@ -217,6 +217,24 @@
     50% { opacity: 0; }
   }
   
+  /* Particle emanation */
+  .animate-particle {
+    animation: particle-emanate var(--duration, 1.5s) ease-out infinite;
+  }
+  
+  @keyframes particle-emanate {
+    0% {
+      transform: translate(-50%, -50%) rotate(var(--particle-angle, 0deg)) translateY(0);
+      opacity: 1;
+      scale: 1;
+    }
+    100% {
+      transform: translate(-50%, -50%) rotate(var(--particle-angle, 0deg)) translateY(-60px);
+      opacity: 0;
+      scale: 0.5;
+    }
+  }
+  
   /* Hover lift */
   .hover-lift {
     @apply transition-all duration-300;
