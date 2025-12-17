@@ -46,14 +46,17 @@ export type Database = {
       }
       sonic_agents: {
         Row: {
+          capabilities: string[] | null
           class: Database["public"]["Enums"]["agent_class"]
           code_artifact: string | null
           color: string
           created_at: string
           cycles: number
           density: number
+          description: string | null
           designation: string
           efficiency: number
+          embedding: string | null
           frequency: number
           id: string
           last_active: string
@@ -67,14 +70,17 @@ export type Database = {
           waveform: Database["public"]["Enums"]["waveform_type"]
         }
         Insert: {
+          capabilities?: string[] | null
           class?: Database["public"]["Enums"]["agent_class"]
           code_artifact?: string | null
           color?: string
           created_at?: string
           cycles?: number
           density?: number
+          description?: string | null
           designation: string
           efficiency?: number
+          embedding?: string | null
           frequency?: number
           id?: string
           last_active?: string
@@ -88,14 +94,17 @@ export type Database = {
           waveform?: Database["public"]["Enums"]["waveform_type"]
         }
         Update: {
+          capabilities?: string[] | null
           class?: Database["public"]["Enums"]["agent_class"]
           code_artifact?: string | null
           color?: string
           created_at?: string
           cycles?: number
           density?: number
+          description?: string | null
           designation?: string
           efficiency?: number
+          embedding?: string | null
           frequency?: number
           id?: string
           last_active?: string
@@ -115,7 +124,22 @@ export type Database = {
       [_ in never]: never
     }
     Functions: {
-      [_ in never]: never
+      search_agents_by_embedding: {
+        Args: {
+          match_count?: number
+          match_threshold?: number
+          query_embedding: string
+        }
+        Returns: {
+          capabilities: string[]
+          code_artifact: string
+          description: string
+          id: string
+          name: string
+          sector: string
+          similarity: number
+        }[]
+      }
     }
     Enums: {
       agent_class: "BASIC" | "ADVANCED" | "ELITE" | "SINGULARITY"
