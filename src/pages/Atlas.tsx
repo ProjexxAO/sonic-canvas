@@ -470,115 +470,139 @@ export default function Atlas() {
                 : 'border-border/50'
             }`} style={{ animationDuration: '3s' }} />
             
-            {/* Inner circle with visualizer */}
-            <div className="absolute inset-8 rounded-full bg-card/50 backdrop-blur-sm border border-border flex items-center justify-center overflow-hidden">
-              {/* Radial audio visualizer */}
-              <div className="relative w-full h-full">
-                {/* Treble-reactive floating particles */}
+            {/* Inner circle - Cosmic Orb */}
+            <div className="absolute inset-8 rounded-full bg-black/80 border border-border flex items-center justify-center overflow-hidden">
+              {/* Cosmic Orb Container */}
+              <div className="relative w-full h-full flex items-center justify-center">
+                {/* Cosmic Orb - fills the center */}
+                <div 
+                  className="absolute w-[85%] h-[85%] rounded-full overflow-hidden"
+                  style={{
+                    transform: `scale(${1 + (conversation.isSpeaking ? outputVolume : inputVolume) * 0.15})`,
+                    transition: 'transform 0.1s ease-out'
+                  }}
+                >
+                  {/* Base nebula layer */}
+                  <div 
+                    className="absolute inset-0 rounded-full"
+                    style={{
+                      background: `radial-gradient(ellipse at ${30 + frequencyBands.bass * 20}% ${40 + frequencyBands.mid * 20}%, 
+                        hsl(270 80% ${isConnected ? 30 + outputVolume * 30 : 20}%) 0%,
+                        hsl(220 70% ${isConnected ? 20 + outputVolume * 20 : 15}%) 30%,
+                        hsl(280 60% ${isConnected ? 15 + outputVolume * 15 : 10}%) 60%,
+                        hsl(200 50% 5%) 100%)`,
+                      animation: isConnected && conversation.isSpeaking ? 'orb-pulse 0.5s ease-in-out infinite' : 'orb-idle 4s ease-in-out infinite',
+                    }}
+                  />
+                  
+                  {/* Swirling nebula clouds layer 1 */}
+                  <div 
+                    className="absolute inset-0 rounded-full mix-blend-screen"
+                    style={{
+                      background: `conic-gradient(from ${Date.now() / 50 % 360}deg at 50% 50%,
+                        transparent 0deg,
+                        hsl(280 100% ${40 + frequencyBands.bass * 40}% / ${0.3 + outputVolume * 0.4}) 60deg,
+                        transparent 120deg,
+                        hsl(200 100% ${50 + frequencyBands.mid * 40}% / ${0.25 + outputVolume * 0.35}) 180deg,
+                        transparent 240deg,
+                        hsl(320 100% ${45 + frequencyBands.treble * 40}% / ${0.2 + outputVolume * 0.3}) 300deg,
+                        transparent 360deg)`,
+                      animation: isConnected && conversation.isSpeaking 
+                        ? `orb-swirl ${2 - outputVolume}s linear infinite` 
+                        : 'orb-swirl 8s linear infinite',
+                      filter: `blur(${8 - outputVolume * 4}px)`,
+                    }}
+                  />
+                  
+                  {/* Secondary swirl - counter rotation */}
+                  <div 
+                    className="absolute inset-2 rounded-full mix-blend-screen"
+                    style={{
+                      background: `conic-gradient(from ${180 + Date.now() / 80 % 360}deg at 55% 45%,
+                        transparent 0deg,
+                        hsl(180 100% ${60 + frequencyBands.treble * 30}% / ${0.2 + outputVolume * 0.3}) 90deg,
+                        transparent 180deg,
+                        hsl(260 100% ${50 + frequencyBands.bass * 30}% / ${0.25 + outputVolume * 0.35}) 270deg,
+                        transparent 360deg)`,
+                      animation: isConnected && conversation.isSpeaking 
+                        ? `orb-swirl-reverse ${2.5 - outputVolume * 0.5}s linear infinite` 
+                        : 'orb-swirl-reverse 10s linear infinite',
+                      filter: `blur(${6 - outputVolume * 3}px)`,
+                    }}
+                  />
+                  
+                  {/* Stars/sparkles layer */}
+                  <div 
+                    className="absolute inset-0 rounded-full"
+                    style={{
+                      backgroundImage: `radial-gradient(1px 1px at 20% 30%, white ${0.3 + outputVolume * 0.7}, transparent),
+                        radial-gradient(1px 1px at 40% 70%, white ${0.2 + outputVolume * 0.6}, transparent),
+                        radial-gradient(1px 1px at 60% 20%, white ${0.25 + outputVolume * 0.65}, transparent),
+                        radial-gradient(1.5px 1.5px at 80% 50%, hsl(180 100% 70%) ${0.3 + outputVolume * 0.5}, transparent),
+                        radial-gradient(1.5px 1.5px at 30% 80%, hsl(280 100% 70%) ${0.25 + outputVolume * 0.5}, transparent),
+                        radial-gradient(1px 1px at 70% 60%, white ${0.2 + outputVolume * 0.6}, transparent),
+                        radial-gradient(1px 1px at 15% 55%, white ${0.15 + outputVolume * 0.5}, transparent),
+                        radial-gradient(1.5px 1.5px at 85% 25%, hsl(200 100% 80%) ${0.2 + outputVolume * 0.5}, transparent)`,
+                      animation: 'orb-stars 3s ease-in-out infinite',
+                    }}
+                  />
+                  
+                  {/* Energy core - bass reactive */}
+                  <div 
+                    className="absolute inset-0 m-auto rounded-full"
+                    style={{
+                      width: `${30 + frequencyBands.bass * 40}%`,
+                      height: `${30 + frequencyBands.bass * 40}%`,
+                      background: `radial-gradient(circle,
+                        hsl(${isConnected && conversation.isSpeaking ? '40 100%' : '180 100%'} ${70 + outputVolume * 30}% / ${0.6 + outputVolume * 0.4}) 0%,
+                        hsl(${isConnected && conversation.isSpeaking ? '320 100%' : '200 100%'} 50% / ${0.3 + outputVolume * 0.3}) 40%,
+                        transparent 70%)`,
+                      filter: `blur(${4 - outputVolume * 2}px)`,
+                      transition: 'width 0.1s, height 0.1s',
+                    }}
+                  />
+                  
+                  {/* Outer glow ring */}
+                  <div 
+                    className="absolute inset-0 rounded-full"
+                    style={{
+                      boxShadow: `inset 0 0 ${30 + outputVolume * 40}px hsl(${isConnected && conversation.isSpeaking ? '280' : '200'} 100% 50% / ${0.3 + outputVolume * 0.4}),
+                        inset 0 0 ${60 + outputVolume * 60}px hsl(200 100% 30% / ${0.2 + outputVolume * 0.2})`,
+                    }}
+                  />
+                  
+                  {/* Glass reflection */}
+                  <div 
+                    className="absolute inset-0 rounded-full"
+                    style={{
+                      background: 'linear-gradient(135deg, hsl(0 0% 100% / 0.15) 0%, transparent 50%)',
+                    }}
+                  />
+                </div>
+                
+                {/* Floating particles around orb */}
                 {isConnected && (conversation.isSpeaking || outputVolume > 0.1) && (
                   <>
-                    {Array.from({ length: 12 }).map((_, i) => {
-                      const angle = (i / 12) * 360;
-                      const delay = i * 0.15;
-                      const duration = 1.5 - frequencyBands.treble * 0.5;
+                    {Array.from({ length: 8 }).map((_, i) => {
+                      const angle = (i / 8) * 360;
                       return (
                         <div
-                          key={`particle-${i}`}
-                          className="absolute left-1/2 top-1/2 rounded-full bg-secondary animate-particle"
+                          key={`orb-particle-${i}`}
+                          className="absolute rounded-full animate-orbit"
                           style={{
-                            '--particle-angle': `${angle}deg`,
-                            animationDelay: `${delay}s`,
-                            animationDuration: `${Math.max(0.8, duration)}s`,
-                            width: `${2 + frequencyBands.treble * 4}px`,
-                            height: `${2 + frequencyBands.treble * 4}px`,
-                            opacity: 0.5 + frequencyBands.treble * 0.5,
+                            width: `${3 + frequencyBands.treble * 5}px`,
+                            height: `${3 + frequencyBands.treble * 5}px`,
+                            background: `hsl(${180 + i * 20} 100% 70%)`,
+                            boxShadow: `0 0 ${6 + outputVolume * 10}px hsl(${180 + i * 20} 100% 60%)`,
+                            animationDuration: `${3 - outputVolume}s`,
+                            animationDelay: `${i * 0.375}s`,
+                            '--orbit-angle': `${angle}deg`,
                           } as React.CSSProperties}
                         />
                       );
                     })}
                   </>
                 )}
-                
-                {/* Center icon - volume reactive glow */}
-                <div 
-                  className={`absolute inset-0 m-auto w-16 h-16 rounded-full flex items-center justify-center transition-all duration-100 ${
-                    isConnected 
-                      ? conversation.isSpeaking 
-                        ? 'bg-secondary/20' 
-                        : 'bg-primary/20'
-                      : 'bg-muted/20'
-                  }`}
-                  style={{
-                    boxShadow: isConnected
-                      ? conversation.isSpeaking
-                        ? `0 0 ${30 + outputVolume * 40}px hsl(var(--secondary) / ${0.3 + outputVolume * 0.5})`
-                        : `0 0 ${20 + inputVolume * 30}px hsl(var(--primary) / ${0.2 + inputVolume * 0.4})`
-                      : 'none',
-                    transform: `scale(${1 + (conversation.isSpeaking ? outputVolume : inputVolume) * 0.1})`
-                  }}
-                >
-                  <Hexagon className={`w-8 h-8 transition-all duration-150 ${
-                    isConnected
-                      ? conversation.isSpeaking
-                        ? 'text-secondary'
-                        : 'text-primary'
-                      : 'text-muted-foreground'
-                  }`} 
-                  style={{
-                    filter: isConnected && outputVolume > 0.3 
-                      ? `drop-shadow(0 0 ${outputVolume * 15}px hsl(var(--secondary)))` 
-                      : 'none'
-                  }}
-                  />
-                </div>
-                
-                {/* Radial bars - frequency reactive */}
-                {audioLevels.map((level, i) => {
-                  const angle = (i / audioLevels.length) * 360;
-                  const barHeight = isConnected ? 20 + level * 40 + outputVolume * 10 : 12;
-                  // Color varies by position: bass (left) -> mid (top) -> treble (right)
-                  const normalizedPos = i / audioLevels.length;
-                  const isBass = normalizedPos < 0.33;
-                  const isTreble = normalizedPos > 0.66;
-                  
-                  return (
-                    <div
-                      key={i}
-                      className="absolute left-1/2 top-1/2 origin-bottom"
-                      style={{
-                        transform: `translate(-50%, -100%) rotate(${angle}deg)`,
-                        height: `${barHeight}px`,
-                        width: '3px',
-                      }}
-                    >
-                      <div 
-                        className="w-full rounded-full transition-all duration-75"
-                        style={{
-                          height: '100%',
-                          background: isConnected 
-                            ? conversation.isSpeaking 
-                              ? isBass 
-                                ? `linear-gradient(to top, hsl(var(--secondary)), hsl(var(--secondary) / 0.3))`
-                                : isTreble
-                                  ? `linear-gradient(to top, hsl(168 100% 50%), hsl(168 100% 50% / 0.3))`
-                                  : `linear-gradient(to top, hsl(270 100% 60%), hsl(270 100% 60% / 0.3))`
-                              : `linear-gradient(to top, hsl(var(--primary)), hsl(var(--primary) / 0.3))`
-                            : 'hsl(var(--muted) / 0.3)',
-                          opacity: isConnected ? 0.5 + level * 0.5 : 0.2,
-                          boxShadow: isConnected && level > 0.3 
-                            ? conversation.isSpeaking
-                              ? isBass 
-                                ? `0 0 ${8 + frequencyBands.bass * 12}px hsl(var(--secondary))`
-                                : isTreble
-                                  ? `0 0 ${8 + frequencyBands.treble * 12}px hsl(168 100% 50%)`
-                                  : `0 0 ${8 + frequencyBands.mid * 12}px hsl(270 100% 60%)`
-                              : '0 0 6px hsl(var(--primary))'
-                            : 'none'
-                        }}
-                      />
-                    </div>
-                  );
-                })}
               </div>
             </div>
 
