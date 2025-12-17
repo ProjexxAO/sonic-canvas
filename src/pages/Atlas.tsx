@@ -446,6 +446,12 @@ export default function Atlas() {
 
         {/* Connection Status */}
         <div className="flex items-center gap-4">
+          {/* Tools Indicator */}
+          <div className="flex items-center gap-1.5 px-2 py-1 rounded bg-accent/10 border border-accent/30">
+            <Zap size={12} className="text-accent" />
+            <span className="text-[10px] font-mono text-accent">8</span>
+          </div>
+
           {/* State Streaming Indicator */}
           {isConnected && (
             <div className="flex items-center gap-2 px-2 py-1 rounded bg-primary/10 border border-primary/30">
@@ -784,26 +790,6 @@ export default function Atlas() {
             </ScrollArea>
           </div>
 
-          {/* Status Cards */}
-          <div className="grid grid-cols-3 gap-2">
-            <div className="bg-card/50 border border-border rounded p-2 text-center">
-              <Waves size={16} className="mx-auto mb-1 text-primary" />
-              <p className="text-[10px] text-muted-foreground">AUDIO</p>
-              <p className="text-xs font-mono">{isConnected ? 'ON' : 'OFF'}</p>
-            </div>
-            <div className="bg-card/50 border border-border rounded p-2 text-center">
-              <Activity size={16} className="mx-auto mb-1 text-secondary" />
-              <p className="text-[10px] text-muted-foreground">MODE</p>
-              <p className="text-xs font-mono">
-                {isConnected ? (conversation.isSpeaking ? 'OUT' : 'IN') : '---'}
-              </p>
-            </div>
-            <div className="bg-card/50 border border-border rounded p-2 text-center">
-              <Zap size={16} className="mx-auto mb-1 text-accent" />
-              <p className="text-[10px] text-muted-foreground">TOOLS</p>
-              <p className="text-xs font-mono">8</p>
-            </div>
-          </div>
         </div>
       </main>
 
