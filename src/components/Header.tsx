@@ -14,7 +14,8 @@ import {
   LogIn,
   LogOut,
   User as UserIcon,
-  Download
+  Download,
+  MessageCircle
 } from 'lucide-react';
 
 interface HeaderProps {
@@ -86,6 +87,14 @@ export default function Header({ onToggleAudio, audioEnabled, user, onSignOut }:
           title={audioEnabled ? 'Mute audio' : 'Enable audio'}
         >
           {audioEnabled ? <Volume2 size={18} /> : <VolumeX size={18} />}
+        </button>
+        
+        <button
+          onClick={() => navigate('/atlas')}
+          className="p-2 text-primary hover:text-primary/80 transition-colors"
+          title="Atlas Voice Agent"
+        >
+          <MessageCircle size={18} />
         </button>
         
         <button
