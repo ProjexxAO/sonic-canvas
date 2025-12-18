@@ -33,6 +33,7 @@ import { useTheme } from 'next-themes';
 import { useAuth } from '@/hooks/useAuth';
 import { useDashboardAgents } from '@/hooks/useDashboardAgents';
 import { useAtlasContext } from '@/hooks/useAtlasContext';
+import { useAtlasConversations } from '@/hooks/useAtlasConversations';
 import { Button } from '@/components/ui/button';
 import { ScrollArea } from '@/components/ui/scroll-area';
 import { ActionLogItem } from '@/components/atlas/ActionLogItem';
@@ -62,6 +63,7 @@ export default function Atlas() {
   const { resolvedTheme, setTheme } = useTheme();
   const theme = resolvedTheme ?? "dark";
   const { agents, loading: agentsLoading } = useDashboardAgents({ limit: 200 });
+  const { messages: conversationHistory, saveMessage, startNewSession } = useAtlasConversations({ userId: user?.id });
   const [isConnecting, setIsConnecting] = useState(false);
   const [isMuted, setIsMuted] = useState(false);
   const [actionLogs, setActionLogs] = useState<ActionLog[]>([]);
@@ -75,6 +77,7 @@ export default function Atlas() {
   const [outputVolume, setOutputVolume] = useState(0);
   const [frequencyBands, setFrequencyBands] = useState({ bass: 0, mid: 0, treble: 0 });
   const [textInput, setTextInput] = useState('');
+  const lastSavedMessageRef = useRef<string>('');
   const animationRef = useRef<number>();
 
   // Get active agents (those with ACTIVE or PROCESSING status)
@@ -296,8 +299,16 @@ export default function Atlas() {
       // --- Chat-style fallback (what you currently receive)
       if (typeof message?.message === "string") {
         const who = message.role === "agent" ? "Atlas" : "You";
-        setTranscript(`${who}: ${message.message}`);
+        const content = message.message;
+        setTranscript(`${who}: ${content}`);
         setIsTranscribing(message.role === "agent");
+        
+        // Save to conversation history (avoid duplicates)
+        if (content && content !== lastSavedMessageRef.current) {
+          lastSavedMessageRef.current = content;
+          const role = message.role === "agent" ? 'assistant' : 'user';
+          saveMessage(role, content);
+        }
         return;
       }
 
@@ -307,6 +318,12 @@ export default function Atlas() {
         if (userText) {
           setTranscript(`You: ${userText}`);
           setIsTranscribing(false);
+          
+          // Save user message
+          if (userText !== lastSavedMessageRef.current) {
+            lastSavedMessageRef.current = userText;
+            saveMessage('user', userText);
+          }
         }
         return;
       }
@@ -316,6 +333,12 @@ export default function Atlas() {
         if (agentText) {
           setTranscript(`Atlas: ${agentText}`);
           setIsTranscribing(true);
+          
+          // Save agent response
+          if (agentText !== lastSavedMessageRef.current) {
+            lastSavedMessageRef.current = agentText;
+            saveMessage('assistant', agentText);
+          }
         }
         return;
       }
@@ -1614,8 +1637,10 @@ export default function Atlas() {
           onSubmit={(e) => {
             e.preventDefault();
             if (textInput.trim() && isConnected) {
-              conversation.sendUserMessage(textInput.trim());
-              setTranscript(`You: ${textInput.trim()}`);
+              const msg = textInput.trim();
+              conversation.sendUserMessage(msg);
+              setTranscript(`You: ${msg}`);
+              saveMessage('user', msg);
               setTextInput('');
             }
           }}
