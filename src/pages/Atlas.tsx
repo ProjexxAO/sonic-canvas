@@ -25,8 +25,10 @@ import {
   Wifi,
   WifiOff,
   Sun,
-  Moon
+  Moon,
+  Send
 } from 'lucide-react';
+import { Input } from '@/components/ui/input';
 import { useTheme } from 'next-themes';
 import { useAuth } from '@/hooks/useAuth';
 import { useDashboardAgents } from '@/hooks/useDashboardAgents';
@@ -72,6 +74,7 @@ export default function Atlas() {
   const [inputVolume, setInputVolume] = useState(0);
   const [outputVolume, setOutputVolume] = useState(0);
   const [frequencyBands, setFrequencyBands] = useState({ bass: 0, mid: 0, treble: 0 });
+  const [textInput, setTextInput] = useState('');
   const animationRef = useRef<number>();
 
   // Get active agents (those with ACTIVE or PROCESSING status)
@@ -1584,10 +1587,11 @@ export default function Atlas() {
         </div>
       </main>
 
-      {/* Live Transcript Display - Bottom Bar */}
-      {isConnected && (
-        <div className="border-t border-border bg-card/95 backdrop-blur-sm px-6 py-3 shadow-[0_-2px_8px_rgba(0,0,0,0.04)]">
-          <div className="flex items-center gap-3">
+      {/* Bottom Bar - Transcript & Text Input */}
+      <div className="border-t border-border bg-card/95 backdrop-blur-sm px-6 py-3 shadow-[0_-2px_8px_rgba(0,0,0,0.04)]">
+        {/* Transcript */}
+        {isConnected && (
+          <div className="flex items-center gap-3 mb-3">
             <div className={`w-2 h-2 rounded-full flex-shrink-0 ${isTranscribing ? 'bg-secondary animate-pulse' : 'bg-muted'}`} />
             <span className="text-[10px] font-mono text-muted-foreground tracking-wider flex-shrink-0">
               {isTranscribing ? 'ATLAS SPEAKING' : 'TRANSCRIPT'}
@@ -1603,8 +1607,37 @@ export default function Atlas() {
               </p>
             </div>
           </div>
-        </div>
-      )}
+        )}
+        
+        {/* Text Input */}
+        <form 
+          onSubmit={(e) => {
+            e.preventDefault();
+            if (textInput.trim() && isConnected) {
+              conversation.sendUserMessage(textInput.trim());
+              setTranscript(`You: ${textInput.trim()}`);
+              setTextInput('');
+            }
+          }}
+          className="flex items-center gap-3"
+        >
+          <Input
+            value={textInput}
+            onChange={(e) => setTextInput(e.target.value)}
+            placeholder={isConnected ? "Type a message to Atlas..." : "Connect to Atlas to send messages..."}
+            disabled={!isConnected}
+            className="flex-1 font-mono text-sm bg-background border-border focus:border-primary"
+          />
+          <Button 
+            type="submit" 
+            size="icon"
+            disabled={!isConnected || !textInput.trim()}
+            className="shrink-0"
+          >
+            <Send className="w-4 h-4" />
+          </Button>
+        </form>
+      </div>
     </div>
   );
 }
