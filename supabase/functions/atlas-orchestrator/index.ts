@@ -77,6 +77,52 @@ serve(async (req) => {
       });
     }
 
+    if (action === 'web_search') {
+      const perplexityKey = Deno.env.get('PERPLEXITY_API_KEY');
+      
+      if (!perplexityKey) {
+        return new Response(JSON.stringify({ 
+          error: 'Web search not configured' 
+        }), {
+          status: 500,
+          headers: { ...corsHeaders, 'Content-Type': 'application/json' },
+        });
+      }
+
+      console.log('[atlas-orchestrator] Performing web search:', query);
+
+      const response = await fetch("https://api.perplexity.ai/chat/completions", {
+        method: "POST",
+        headers: {
+          "Authorization": `Bearer ${perplexityKey}`,
+          "Content-Type": "application/json",
+        },
+        body: JSON.stringify({
+          model: "sonar",
+          messages: [
+            { role: "system", content: "Be precise and concise. Provide factual, up-to-date information." },
+            { role: "user", content: query }
+          ],
+        }),
+      });
+
+      if (!response.ok) {
+        const errorText = await response.text();
+        console.error('[atlas-orchestrator] Perplexity error:', errorText);
+        throw new Error('Web search failed');
+      }
+
+      const data = await response.json();
+      
+      return new Response(JSON.stringify({ 
+        answer: data.choices?.[0]?.message?.content || "No results found",
+        citations: data.citations || [],
+        searchMethod: 'web'
+      }), {
+        headers: { ...corsHeaders, 'Content-Type': 'application/json' },
+      });
+    }
+
     if (action === 'synthesize') {
       const { agentIds, requirements } = await req.json();
       
