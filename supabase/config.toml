@@ -14,3 +14,6 @@ verify_jwt = false
 
 [functions.perplexity-search]
 verify_jwt = false
+
+[functions.csuite-generate-report]
+verify_jwt = false
