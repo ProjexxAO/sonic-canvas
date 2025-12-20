@@ -37,6 +37,7 @@ import { useAtlasConversations } from '@/hooks/useAtlasConversations';
 import { Button } from '@/components/ui/button';
 import { ScrollArea } from '@/components/ui/scroll-area';
 import { ActionLogItem } from '@/components/atlas/ActionLogItem';
+import { CSuiteDataHub } from '@/components/csuite/CSuiteDataHub';
 
 const ATLAS_AGENT_ID = "agent_7501kbh21cg1eht9xtjw6kvkpm4m";
 
@@ -1592,49 +1593,8 @@ export default function Atlas() {
             </div>
           )}
 
-          {/* Active Agents */}
-          <div className="flex-1 bg-card/90 border border-border rounded-lg p-3 shadow-sm">
-            <div className="flex items-center gap-2 mb-2">
-              <Users size={14} className="text-primary" />
-              <span className="text-xs font-mono text-muted-foreground">ACTIVE AGENTS</span>
-              <span className="ml-auto text-[10px] text-muted-foreground font-mono">
-                {activeAgents.length}/{agents.length}
-              </span>
-            </div>
-            <ScrollArea className="h-64">
-              <div className="space-y-2">
-                {agentsLoading ? (
-                  <div className="text-muted-foreground/50 text-center py-4 text-xs">
-                    Loading agents...
-                  </div>
-                ) : activeAgents.length === 0 ? (
-                  <div className="text-muted-foreground/50 text-center py-4 text-xs">
-                    {agents.length === 0 ? 'No agents in system' : 'No agents currently running'}
-                  </div>
-                ) : (
-                  activeAgents.map((agent) => (
-                    <div 
-                      key={agent.id} 
-                      className="flex items-center gap-3 p-2 rounded bg-background border border-border hover:border-primary/40 transition-colors"
-                    >
-                      <div 
-                        className="w-3 h-3 rounded-full animate-pulse"
-                        style={{ backgroundColor: agent.sonicDNA.color }}
-                      />
-                      <div className="flex-1 min-w-0">
-                        <p className="text-xs font-mono text-foreground truncate">{agent.name}</p>
-                        <p className="text-[10px] text-muted-foreground">{agent.designation}</p>
-                      </div>
-                      <div className="flex flex-col items-end">
-                        <span className="text-[10px] font-mono text-secondary">{agent.status}</span>
-                        <span className="text-[10px] text-muted-foreground">{agent.sector}</span>
-                      </div>
-                    </div>
-                  ))
-                )}
-              </div>
-            </ScrollArea>
-          </div>
+          {/* C-Suite Data Hub */}
+          <CSuiteDataHub userId={user?.id} />
 
         </div>
       </main>
