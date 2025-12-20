@@ -148,6 +148,35 @@ export default function Atlas() {
 
   const conversation = useConversation({
     clientTools: {
+      // Web search using Perplexity
+      webSearch: async (params: { query: string }) => {
+        const logId = addLog('webSearch', params, 'Searching the web...', 'pending');
+        try {
+          const response = await supabase.functions.invoke('atlas-orchestrator', {
+            body: { action: 'web_search', query: params.query }
+          });
+          
+          if (response.error) throw response.error;
+          
+          const answer = response.data?.answer || 'No results found';
+          const citations = response.data?.citations || [];
+          
+          setActionLogs(prev => prev.map(l => 
+            l.id === logId ? { ...l, result: `Web search complete`, status: 'success' } : l
+          ));
+          
+          toast.success(`Web search complete for "${params.query}"`);
+          return `${answer}${citations.length > 0 ? `\n\nSources: ${citations.join(', ')}` : ''}`;
+        } catch (error) {
+          const msg = error instanceof Error ? error.message : 'Web search failed';
+          setActionLogs(prev => prev.map(l => 
+            l.id === logId ? { ...l, result: msg, status: 'error' } : l
+          ));
+          toast.error('Web search failed');
+          return `Error: ${msg}`;
+        }
+      },
+
       // Search agents by query
       searchAgents: async (params: { query: string }) => {
         const logId = addLog('searchAgents', params, 'Searching...', 'pending');
