@@ -464,31 +464,138 @@ export type Database = {
         }
         Relationships: []
       }
+      organization_members: {
+        Row: {
+          created_at: string
+          id: string
+          org_id: string
+          role: string
+          user_id: string
+        }
+        Insert: {
+          created_at?: string
+          id?: string
+          org_id: string
+          role?: string
+          user_id: string
+        }
+        Update: {
+          created_at?: string
+          id?: string
+          org_id?: string
+          role?: string
+          user_id?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "organization_members_org_id_fkey"
+            columns: ["org_id"]
+            isOneToOne: false
+            referencedRelation: "organizations"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      organizations: {
+        Row: {
+          agent_cluster_id: string | null
+          compliance_mode: Database["public"]["Enums"]["compliance_mode"]
+          created_at: string
+          data_retention_days: number
+          domain: string | null
+          id: string
+          industry: string | null
+          name: string
+          orchestrator_tenant_id: string | null
+          owner_user_id: string
+          plan: Database["public"]["Enums"]["org_plan"]
+          size: number | null
+          sso_enabled: boolean
+          updated_at: string
+          workspace_visibility: string
+        }
+        Insert: {
+          agent_cluster_id?: string | null
+          compliance_mode?: Database["public"]["Enums"]["compliance_mode"]
+          created_at?: string
+          data_retention_days?: number
+          domain?: string | null
+          id?: string
+          industry?: string | null
+          name: string
+          orchestrator_tenant_id?: string | null
+          owner_user_id: string
+          plan?: Database["public"]["Enums"]["org_plan"]
+          size?: number | null
+          sso_enabled?: boolean
+          updated_at?: string
+          workspace_visibility?: string
+        }
+        Update: {
+          agent_cluster_id?: string | null
+          compliance_mode?: Database["public"]["Enums"]["compliance_mode"]
+          created_at?: string
+          data_retention_days?: number
+          domain?: string | null
+          id?: string
+          industry?: string | null
+          name?: string
+          orchestrator_tenant_id?: string | null
+          owner_user_id?: string
+          plan?: Database["public"]["Enums"]["org_plan"]
+          size?: number | null
+          sso_enabled?: boolean
+          updated_at?: string
+          workspace_visibility?: string
+        }
+        Relationships: []
+      }
       profiles: {
         Row: {
+          atlas_agent_profile_id: string | null
+          atlas_voice_profile_id: string | null
           avatar_url: string | null
           created_at: string
           display_name: string | null
           id: string
+          last_active_at: string | null
+          locale: string | null
           operator_handle: string | null
+          preferred_persona: string | null
+          status: Database["public"]["Enums"]["user_status"] | null
+          timezone: string | null
           updated_at: string
           user_id: string
         }
         Insert: {
+          atlas_agent_profile_id?: string | null
+          atlas_voice_profile_id?: string | null
           avatar_url?: string | null
           created_at?: string
           display_name?: string | null
           id?: string
+          last_active_at?: string | null
+          locale?: string | null
           operator_handle?: string | null
+          preferred_persona?: string | null
+          status?: Database["public"]["Enums"]["user_status"] | null
+          timezone?: string | null
           updated_at?: string
           user_id: string
         }
         Update: {
+          atlas_agent_profile_id?: string | null
+          atlas_voice_profile_id?: string | null
           avatar_url?: string | null
           created_at?: string
           display_name?: string | null
           id?: string
+          last_active_at?: string | null
+          locale?: string | null
           operator_handle?: string | null
+          preferred_persona?: string | null
+          status?: Database["public"]["Enums"]["user_status"] | null
+          timezone?: string | null
           updated_at?: string
           user_id?: string
         }
@@ -622,6 +729,133 @@ export type Database = {
         }
         Relationships: []
       }
+      workspace_members: {
+        Row: {
+          assigned_agent_cluster_id: string | null
+          assigned_persona: string | null
+          can_delete_workspace: boolean
+          can_export_reports: boolean
+          can_issue_voice_commands: boolean
+          can_manage_connectors: boolean
+          can_manage_members: boolean
+          can_manage_personas: boolean
+          can_merge_agents: boolean
+          can_retire_agents: boolean
+          can_spawn_agents: boolean
+          can_view_data: boolean
+          created_at: string
+          id: string
+          role: Database["public"]["Enums"]["workspace_role"]
+          updated_at: string
+          user_id: string
+          workspace_id: string
+        }
+        Insert: {
+          assigned_agent_cluster_id?: string | null
+          assigned_persona?: string | null
+          can_delete_workspace?: boolean
+          can_export_reports?: boolean
+          can_issue_voice_commands?: boolean
+          can_manage_connectors?: boolean
+          can_manage_members?: boolean
+          can_manage_personas?: boolean
+          can_merge_agents?: boolean
+          can_retire_agents?: boolean
+          can_spawn_agents?: boolean
+          can_view_data?: boolean
+          created_at?: string
+          id?: string
+          role?: Database["public"]["Enums"]["workspace_role"]
+          updated_at?: string
+          user_id: string
+          workspace_id: string
+        }
+        Update: {
+          assigned_agent_cluster_id?: string | null
+          assigned_persona?: string | null
+          can_delete_workspace?: boolean
+          can_export_reports?: boolean
+          can_issue_voice_commands?: boolean
+          can_manage_connectors?: boolean
+          can_manage_members?: boolean
+          can_manage_personas?: boolean
+          can_merge_agents?: boolean
+          can_retire_agents?: boolean
+          can_spawn_agents?: boolean
+          can_view_data?: boolean
+          created_at?: string
+          id?: string
+          role?: Database["public"]["Enums"]["workspace_role"]
+          updated_at?: string
+          user_id?: string
+          workspace_id?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "workspace_members_workspace_id_fkey"
+            columns: ["workspace_id"]
+            isOneToOne: false
+            referencedRelation: "workspaces"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      workspaces: {
+        Row: {
+          agent_cluster_id: string | null
+          created_at: string
+          created_by: string
+          data_domains_enabled: string[] | null
+          data_scope: string
+          default_persona: string | null
+          id: string
+          insight_cadence: Database["public"]["Enums"]["insight_cadence"]
+          name: string
+          org_id: string | null
+          type: Database["public"]["Enums"]["workspace_type"]
+          updated_at: string
+          visibility: string
+        }
+        Insert: {
+          agent_cluster_id?: string | null
+          created_at?: string
+          created_by: string
+          data_domains_enabled?: string[] | null
+          data_scope?: string
+          default_persona?: string | null
+          id?: string
+          insight_cadence?: Database["public"]["Enums"]["insight_cadence"]
+          name: string
+          org_id?: string | null
+          type?: Database["public"]["Enums"]["workspace_type"]
+          updated_at?: string
+          visibility?: string
+        }
+        Update: {
+          agent_cluster_id?: string | null
+          created_at?: string
+          created_by?: string
+          data_domains_enabled?: string[] | null
+          data_scope?: string
+          default_persona?: string | null
+          id?: string
+          insight_cadence?: Database["public"]["Enums"]["insight_cadence"]
+          name?: string
+          org_id?: string | null
+          type?: Database["public"]["Enums"]["workspace_type"]
+          updated_at?: string
+          visibility?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "workspaces_org_id_fkey"
+            columns: ["org_id"]
+            isOneToOne: false
+            referencedRelation: "organizations"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
     }
     Views: {
       [_ in never]: never
@@ -632,6 +866,18 @@ export type Database = {
           _role: Database["public"]["Enums"]["app_role"]
           _user_id: string
         }
+        Returns: boolean
+      }
+      has_workspace_permission: {
+        Args: { _permission: string; _user_id: string; _workspace_id: string }
+        Returns: boolean
+      }
+      is_org_member: {
+        Args: { _org_id: string; _user_id: string }
+        Returns: boolean
+      }
+      is_workspace_member: {
+        Args: { _user_id: string; _workspace_id: string }
         Returns: boolean
       }
       search_agents_by_embedding: {
@@ -662,7 +908,13 @@ export type Database = {
         | "UTILITY"
       agent_status: "IDLE" | "ACTIVE" | "PROCESSING" | "ERROR" | "DORMANT"
       app_role: "superadmin" | "admin" | "user"
+      compliance_mode: "standard" | "gdpr" | "hipaa" | "enterprise"
+      insight_cadence: "daily" | "weekly" | "monthly" | "manual"
+      org_plan: "free" | "personal" | "pro" | "team" | "enterprise"
+      user_status: "active" | "invited" | "disabled"
       waveform_type: "sine" | "square" | "sawtooth" | "triangle"
+      workspace_role: "owner" | "admin" | "editor" | "viewer"
+      workspace_type: "personal" | "team" | "department" | "client" | "project"
     }
     CompositeTypes: {
       [_ in never]: never
@@ -801,7 +1053,13 @@ export const Constants = {
       ],
       agent_status: ["IDLE", "ACTIVE", "PROCESSING", "ERROR", "DORMANT"],
       app_role: ["superadmin", "admin", "user"],
+      compliance_mode: ["standard", "gdpr", "hipaa", "enterprise"],
+      insight_cadence: ["daily", "weekly", "monthly", "manual"],
+      org_plan: ["free", "personal", "pro", "team", "enterprise"],
+      user_status: ["active", "invited", "disabled"],
       waveform_type: ["sine", "square", "sawtooth", "triangle"],
+      workspace_role: ["owner", "admin", "editor", "viewer"],
+      workspace_type: ["personal", "team", "department", "client", "project"],
     },
   },
 } as const
