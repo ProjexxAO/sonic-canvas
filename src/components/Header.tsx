@@ -4,6 +4,7 @@ import { useState } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { audioEngine } from '@/lib/audioEngine';
 import { User } from '@supabase/supabase-js';
+import WorkspaceSelector from './WorkspaceSelector';
 import { 
   Volume2, 
   VolumeX, 
@@ -54,13 +55,15 @@ export default function Header({ onToggleAudio, audioEnabled, user, onSignOut }:
         </div>
       </div>
 
-      {/* Center - Status */}
-      <div className="hidden md:flex items-center gap-6">
+      {/* Center - Workspace Selector & Status */}
+      <div className="hidden md:flex items-center gap-4">
+        {user && <WorkspaceSelector compact />}
+        <div className="h-4 w-px bg-border" />
         {user ? (
           <div className="flex items-center gap-2">
             <span className="w-2 h-2 bg-success rounded-full animate-pulse" />
             <span className="text-xs text-muted-foreground">
-              OPERATOR: <span className="text-primary">{user.email?.split('@')[0].toUpperCase()}</span>
+              <span className="text-primary">{user.email?.split('@')[0].toUpperCase()}</span>
             </span>
           </div>
         ) : (
@@ -69,10 +72,6 @@ export default function Header({ onToggleAudio, audioEnabled, user, onSignOut }:
             <span className="text-xs text-muted-foreground">GUEST MODE</span>
           </div>
         )}
-        <div className="h-4 w-px bg-border" />
-        <div className="text-xs text-muted-foreground">
-          BUILD <span className="text-primary">2024.12.16</span>
-        </div>
       </div>
 
       {/* Right controls */}
