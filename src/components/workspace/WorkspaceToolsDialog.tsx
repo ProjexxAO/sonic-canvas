@@ -112,9 +112,12 @@ export function WorkspaceToolsDialog() {
   return (
     <Dialog open={open} onOpenChange={setOpen}>
       <DialogTrigger asChild>
-        <Button variant="ghost" size="icon" className="h-8 w-8">
-          <Settings2 className="h-4 w-4" />
-        </Button>
+        <button
+          className="p-2 text-muted-foreground hover:text-foreground transition-colors"
+          title="Tool Permissions"
+        >
+          <Settings2 size={18} />
+        </button>
       </DialogTrigger>
       <DialogContent className="max-w-4xl max-h-[85vh] overflow-y-auto">
         <DialogHeader>
