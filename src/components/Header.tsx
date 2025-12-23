@@ -16,9 +16,9 @@ import {
   LogOut,
   User as UserIcon,
   Download,
-  MessageCircle
+  MessageCircle,
+  Wrench
 } from 'lucide-react';
-import { WorkspaceToolsDialog } from './workspace/WorkspaceToolsDialog';
 
 interface HeaderProps {
   onToggleAudio: (enabled: boolean) => void;
@@ -105,7 +105,15 @@ export default function Header({ onToggleAudio, audioEnabled, user, onSignOut }:
           <Download size={18} />
         </button>
         
-        {user && <WorkspaceToolsDialog />}
+        {user && (
+          <button
+            onClick={() => navigate('/workspace/tools')}
+            className="p-2 text-muted-foreground hover:text-foreground transition-colors"
+            title="Tool Permissions"
+          >
+            <Wrench size={18} />
+          </button>
+        )}
         
         <button
           className="p-2 text-muted-foreground hover:text-foreground transition-colors"
