@@ -18,6 +18,7 @@ import {
   Download,
   MessageCircle
 } from 'lucide-react';
+import { WorkspaceToolsDialog } from './workspace/WorkspaceToolsDialog';
 
 interface HeaderProps {
   onToggleAudio: (enabled: boolean) => void;
@@ -103,6 +104,8 @@ export default function Header({ onToggleAudio, audioEnabled, user, onSignOut }:
         >
           <Download size={18} />
         </button>
+        
+        {user && <WorkspaceToolsDialog />}
         
         <button
           className="p-2 text-muted-foreground hover:text-foreground transition-colors"
