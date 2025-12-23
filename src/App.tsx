@@ -34,8 +34,7 @@ const App = () => (
                 <Route path="/auth" element={<Auth />} />
                 <Route path="/atlas" element={<Atlas />} />
                 <Route path="/import" element={<ImportAgents />} />
-                <Route path="/workspace/tools" element={<UserToolPermissions />} />
-                <Route path="/workspace/tools/:userId" element={<UserToolPermissions />} />
+                <Route path="/workspace/tools/:userId?" element={<UserToolPermissions />} />
                 {/* ADD ALL CUSTOM ROUTES ABOVE THE CATCH-ALL "*" ROUTE */}
                 <Route path="*" element={<NotFound />} />
               </Routes>
