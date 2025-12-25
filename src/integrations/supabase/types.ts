@@ -712,6 +712,53 @@ export type Database = {
         }
         Relationships: []
       }
+      tool_governance: {
+        Row: {
+          boost: number | null
+          created_at: string
+          created_by: string | null
+          id: string
+          level: Database["public"]["Enums"]["governance_level"]
+          level_id: string
+          reason: string | null
+          status: Database["public"]["Enums"]["tool_permission_status"]
+          tool_id: string
+          updated_at: string
+        }
+        Insert: {
+          boost?: number | null
+          created_at?: string
+          created_by?: string | null
+          id?: string
+          level: Database["public"]["Enums"]["governance_level"]
+          level_id: string
+          reason?: string | null
+          status?: Database["public"]["Enums"]["tool_permission_status"]
+          tool_id: string
+          updated_at?: string
+        }
+        Update: {
+          boost?: number | null
+          created_at?: string
+          created_by?: string | null
+          id?: string
+          level?: Database["public"]["Enums"]["governance_level"]
+          level_id?: string
+          reason?: string | null
+          status?: Database["public"]["Enums"]["tool_permission_status"]
+          tool_id?: string
+          updated_at?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "tool_governance_tool_id_fkey"
+            columns: ["tool_id"]
+            isOneToOne: false
+            referencedRelation: "tool_catalog"
+            referencedColumns: ["tool_id"]
+          },
+        ]
+      }
       user_agents: {
         Row: {
           agent_id: string
@@ -938,6 +985,32 @@ export type Database = {
       [_ in never]: never
     }
     Functions: {
+      compute_agent_tool_permissions: {
+        Args: { _agent_id: string; _user_id?: string; _workspace_id?: string }
+        Returns: {
+          effective_boost: number
+          final_status: Database["public"]["Enums"]["tool_permission_status"]
+          source_level: Database["public"]["Enums"]["governance_level"]
+          source_reason: string
+          tool_id: string
+          tool_name: string
+        }[]
+      }
+      get_governance_rules_by_level: {
+        Args: {
+          _level: Database["public"]["Enums"]["governance_level"]
+          _level_id: string
+        }
+        Returns: {
+          boost: number
+          created_at: string
+          id: string
+          reason: string
+          status: Database["public"]["Enums"]["tool_permission_status"]
+          tool_id: string
+          tool_name: string
+        }[]
+      }
       has_role: {
         Args: {
           _role: Database["public"]["Enums"]["app_role"]
@@ -986,8 +1059,10 @@ export type Database = {
       agent_status: "IDLE" | "ACTIVE" | "PROCESSING" | "ERROR" | "DORMANT"
       app_role: "superadmin" | "admin" | "user"
       compliance_mode: "standard" | "gdpr" | "hipaa" | "enterprise"
+      governance_level: "persona" | "industry" | "workspace" | "user" | "agent"
       insight_cadence: "daily" | "weekly" | "monthly" | "manual"
       org_plan: "free" | "personal" | "pro" | "team" | "enterprise"
+      tool_permission_status: "allowed" | "blocked" | "preferred"
       user_status: "active" | "invited" | "disabled"
       waveform_type: "sine" | "square" | "sawtooth" | "triangle"
       workspace_role: "owner" | "admin" | "editor" | "viewer"
@@ -1131,8 +1206,10 @@ export const Constants = {
       agent_status: ["IDLE", "ACTIVE", "PROCESSING", "ERROR", "DORMANT"],
       app_role: ["superadmin", "admin", "user"],
       compliance_mode: ["standard", "gdpr", "hipaa", "enterprise"],
+      governance_level: ["persona", "industry", "workspace", "user", "agent"],
       insight_cadence: ["daily", "weekly", "monthly", "manual"],
       org_plan: ["free", "personal", "pro", "team", "enterprise"],
+      tool_permission_status: ["allowed", "blocked", "preferred"],
       user_status: ["active", "invited", "disabled"],
       waveform_type: ["sine", "square", "sawtooth", "triangle"],
       workspace_role: ["owner", "admin", "editor", "viewer"],
