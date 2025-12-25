@@ -411,10 +411,11 @@ export default function Atlas() {
         throw new Error(error?.message || 'Failed to authenticate with voice service');
       }
       
-      console.log("[Atlas] Got signed URL, starting session...");
+      console.log("[Atlas] Got signed URL, starting session with WebSocket...");
       
       await conversation.startSession({
         signedUrl: data.signed_url,
+        connectionType: "websocket",
       });
       console.log("[Atlas] Session started successfully");
     } catch (error) {
@@ -469,6 +470,22 @@ export default function Atlas() {
       logActivity(`Synthesized: ${synthesizedAgent.name}`);
     }
   }, [synthesizedAgent, logActivity]);
+
+  // Keepalive: send user activity ping every 25 seconds to prevent WebSocket timeout
+  useEffect(() => {
+    if (!isConnected) return;
+    
+    const interval = setInterval(() => {
+      try {
+        // sendUserActivity keeps the connection alive without interrupting the agent
+        (conversation as any).sendUserActivity?.();
+      } catch (e) {
+        console.log("[Atlas] Keepalive ping failed (may not be supported):", e);
+      }
+    }, 25000);
+    
+    return () => clearInterval(interval);
+  }, [isConnected, conversation]);
   // Sync audio visualization to actual voice output using ElevenLabs APIs
   useEffect(() => {
     if (!isConnected) {
