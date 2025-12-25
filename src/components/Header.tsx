@@ -17,7 +17,8 @@ import {
   User as UserIcon,
   Download,
   MessageCircle,
-  Wrench
+  Wrench,
+  Shield
 } from 'lucide-react';
 
 interface HeaderProps {
@@ -106,13 +107,22 @@ export default function Header({ onToggleAudio, audioEnabled, user, onSignOut }:
         </button>
         
         {user && (
-          <button
-            onClick={() => navigate('/workspace/tools')}
-            className="p-2 text-muted-foreground hover:text-foreground transition-colors"
-            title="Tool Permissions"
-          >
-            <Wrench size={18} />
-          </button>
+          <>
+            <button
+              onClick={() => navigate('/governance')}
+              className="p-2 text-muted-foreground hover:text-foreground transition-colors"
+              title="Tool Governance"
+            >
+              <Shield size={18} />
+            </button>
+            <button
+              onClick={() => navigate('/workspace/tools')}
+              className="p-2 text-muted-foreground hover:text-foreground transition-colors"
+              title="Tool Permissions"
+            >
+              <Wrench size={18} />
+            </button>
+          </>
         )}
         
         <button

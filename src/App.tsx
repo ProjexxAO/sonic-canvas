@@ -11,6 +11,7 @@ import Auth from "./pages/Auth";
 import Atlas from "./pages/Atlas";
 import ImportAgents from "./pages/ImportAgents";
 import UserToolPermissions from "./pages/UserToolPermissions";
+import ToolGovernance from "./pages/ToolGovernance";
 import NotFound from "./pages/NotFound";
 
 const queryClient = new QueryClient();
@@ -35,6 +36,7 @@ const App = () => (
                 <Route path="/atlas" element={<Atlas />} />
                 <Route path="/import" element={<ImportAgents />} />
                 <Route path="/workspace/tools/:userId?" element={<UserToolPermissions />} />
+                <Route path="/governance" element={<ToolGovernance />} />
                 {/* ADD ALL CUSTOM ROUTES ABOVE THE CATCH-ALL "*" ROUTE */}
                 <Route path="*" element={<NotFound />} />
               </Routes>
