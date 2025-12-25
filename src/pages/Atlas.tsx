@@ -412,11 +412,19 @@ export default function Atlas() {
       }
       
       console.log("[Atlas] Got signed URL, starting session...");
-      
-      // Use signedUrl for WebSocket connection - don't specify connectionType
-      // as the SDK auto-detects it from the URL
+
+      const userDisplayName =
+        (user?.user_metadata as any)?.display_name ||
+        (user?.user_metadata as any)?.full_name ||
+        user?.email?.split("@")[0] ||
+        "Operator";
+
       await conversation.startSession({
         signedUrl: data.signed_url,
+        userId: user?.id,
+        dynamicVariables: {
+          _userDisplayName_: userDisplayName,
+        },
       });
       console.log("[Atlas] Session started successfully");
     } catch (error) {
@@ -426,7 +434,7 @@ export default function Atlas() {
     } finally {
       setIsConnecting(false);
     }
-  }, [conversation, isConnecting]);
+  }, [conversation, isConnecting, user?.id, user?.email, user?.user_metadata]);
 
   const stopConversation = useCallback(async () => {
     await conversation.endSession();
