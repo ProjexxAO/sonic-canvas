@@ -314,9 +314,9 @@ export default function Atlas() {
       addLog('system', {}, 'Connected to Atlas', 'success');
       toast.success('Atlas online');
     },
-    onDisconnect: () => {
-      console.log("[Atlas] Disconnected from voice agent");
-      addLog('system', {}, 'Disconnected from Atlas', 'success');
+    onDisconnect: (reason?: any) => {
+      console.log("[Atlas] Disconnected from voice agent", reason);
+      addLog('system', { reason }, 'Disconnected from Atlas', 'success');
     },
     onMessage: (message: any) => {
       console.log("[Atlas] Message:", message);
@@ -411,11 +411,12 @@ export default function Atlas() {
         throw new Error(error?.message || 'Failed to authenticate with voice service');
       }
       
-      console.log("[Atlas] Got signed URL, starting session with WebSocket...");
+      console.log("[Atlas] Got signed URL, starting session...");
       
+      // Use signedUrl for WebSocket connection - don't specify connectionType
+      // as the SDK auto-detects it from the URL
       await conversation.startSession({
         signedUrl: data.signed_url,
-        connectionType: "websocket",
       });
       console.log("[Atlas] Session started successfully");
     } catch (error) {
