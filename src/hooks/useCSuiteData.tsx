@@ -26,6 +26,66 @@ export interface CSuiteReport {
   generatedAt: Date;
 }
 
+// Domain item types
+export interface DomainItem {
+  id: string;
+  title: string;
+  preview: string;
+  date: Date;
+  type: string;
+  metadata?: Record<string, any>;
+}
+
+export interface CommunicationItem extends DomainItem {
+  from_address?: string;
+  to_addresses?: string[];
+  subject?: string;
+}
+
+export interface DocumentItem extends DomainItem {
+  file_path?: string;
+  file_size?: number;
+  mime_type?: string;
+}
+
+export interface EventItem extends DomainItem {
+  start_at?: Date;
+  end_at?: Date;
+  location?: string;
+  attendees?: string[];
+}
+
+export interface FinancialItem extends DomainItem {
+  amount?: number;
+  currency?: string;
+  category?: string;
+  status?: string;
+}
+
+export interface TaskItem extends DomainItem {
+  status?: string;
+  priority?: string;
+  due_date?: Date;
+  assigned_to?: string;
+}
+
+export interface KnowledgeItem extends DomainItem {
+  category?: string;
+  tags?: string[];
+  content?: string;
+}
+
+export type DomainKey = 'communications' | 'documents' | 'events' | 'financials' | 'tasks' | 'knowledge';
+
+const DOMAIN_TABLE_MAP: Record<DomainKey, string> = {
+  communications: 'csuite_communications',
+  documents: 'csuite_documents',
+  events: 'csuite_events',
+  financials: 'csuite_financials',
+  tasks: 'csuite_tasks',
+  knowledge: 'csuite_knowledge',
+};
+
 export function useCSuiteData(userId: string | undefined) {
   const [stats, setStats] = useState<DataDomainStats>({
     communications: 0,
@@ -39,6 +99,22 @@ export function useCSuiteData(userId: string | undefined) {
   const [reports, setReports] = useState<CSuiteReport[]>([]);
   const [isLoading, setIsLoading] = useState(true);
   const [isUploading, setIsUploading] = useState(false);
+  const [domainItems, setDomainItems] = useState<Record<DomainKey, DomainItem[]>>({
+    communications: [],
+    documents: [],
+    events: [],
+    financials: [],
+    tasks: [],
+    knowledge: [],
+  });
+  const [loadingDomains, setLoadingDomains] = useState<Record<DomainKey, boolean>>({
+    communications: false,
+    documents: false,
+    events: false,
+    financials: false,
+    tasks: false,
+    knowledge: false,
+  });
 
   // Fetch data stats
   const fetchStats = useCallback(async () => {
@@ -66,6 +142,100 @@ export function useCSuiteData(userId: string | undefined) {
       });
     } catch (error) {
       console.error('Error fetching stats:', error);
+    }
+  }, [userId]);
+
+  // Fetch items for a specific domain
+  const fetchDomainItems = useCallback(async (domain: DomainKey): Promise<DomainItem[]> => {
+    if (!userId) return [];
+
+    setLoadingDomains(prev => ({ ...prev, [domain]: true }));
+
+    try {
+      const client = supabase as any;
+      const tableName = DOMAIN_TABLE_MAP[domain];
+      
+      const { data, error } = await client
+        .from(tableName)
+        .select('*')
+        .eq('user_id', userId)
+        .order('created_at', { ascending: false })
+        .limit(20);
+
+      if (error) throw error;
+
+      const items: DomainItem[] = (data || []).map((item: any) => {
+        const baseItem: DomainItem = {
+          id: item.id,
+          title: item.title || item.subject || 'Untitled',
+          preview: item.content?.slice(0, 100) || item.description?.slice(0, 100) || '',
+          date: new Date(item.created_at),
+          type: item.type || domain,
+          metadata: item.metadata,
+        };
+
+        // Add domain-specific fields
+        switch (domain) {
+          case 'communications':
+            return {
+              ...baseItem,
+              from_address: item.from_address,
+              to_addresses: item.to_addresses,
+              subject: item.subject,
+              title: item.subject || 'No Subject',
+            } as CommunicationItem;
+          case 'documents':
+            return {
+              ...baseItem,
+              file_path: item.file_path,
+              file_size: item.file_size,
+              mime_type: item.mime_type,
+            } as DocumentItem;
+          case 'events':
+            return {
+              ...baseItem,
+              start_at: item.start_at ? new Date(item.start_at) : undefined,
+              end_at: item.end_at ? new Date(item.end_at) : undefined,
+              location: item.location,
+              attendees: item.attendees,
+              preview: item.description?.slice(0, 100) || '',
+            } as EventItem;
+          case 'financials':
+            return {
+              ...baseItem,
+              amount: item.amount,
+              currency: item.currency,
+              category: item.category,
+              status: item.status,
+            } as FinancialItem;
+          case 'tasks':
+            return {
+              ...baseItem,
+              status: item.status,
+              priority: item.priority,
+              due_date: item.due_date ? new Date(item.due_date) : undefined,
+              assigned_to: item.assigned_to,
+              preview: item.description?.slice(0, 100) || '',
+            } as TaskItem;
+          case 'knowledge':
+            return {
+              ...baseItem,
+              category: item.category,
+              tags: item.tags,
+              content: item.content,
+            } as KnowledgeItem;
+          default:
+            return baseItem;
+        }
+      });
+
+      setDomainItems(prev => ({ ...prev, [domain]: items }));
+      return items;
+    } catch (error) {
+      console.error(`Error fetching ${domain} items:`, error);
+      return [];
+    } finally {
+      setLoadingDomains(prev => ({ ...prev, [domain]: false }));
     }
   }, [userId]);
 
@@ -174,6 +344,7 @@ export function useCSuiteData(userId: string | undefined) {
 
       toast.success(`Uploaded: ${file.name}`);
       fetchStats();
+      fetchDomainItems('documents');
       return data;
     } catch (error) {
       console.error('Upload error:', error);
@@ -182,7 +353,7 @@ export function useCSuiteData(userId: string | undefined) {
     } finally {
       setIsUploading(false);
     }
-  }, [userId, fetchStats]);
+  }, [userId, fetchStats, fetchDomainItems]);
 
   // Connect OAuth provider (placeholder - will need backend implementation)
   const connectProvider = useCallback(async (provider: string) => {
@@ -234,9 +405,12 @@ export function useCSuiteData(userId: string | undefined) {
     reports,
     isLoading,
     isUploading,
+    domainItems,
+    loadingDomains,
     uploadFile,
     connectProvider,
     generateReport,
+    fetchDomainItems,
     refresh: () => Promise.all([fetchStats(), fetchConnectors(), fetchReports()]),
   };
 }
