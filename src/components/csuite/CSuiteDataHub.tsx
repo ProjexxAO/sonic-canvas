@@ -20,7 +20,7 @@ import { Button } from '@/components/ui/button';
 import { ScrollArea } from '@/components/ui/scroll-area';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
 import { useCSuiteData, DataDomainStats, DomainKey, DomainItem } from '@/hooks/useCSuiteData';
-import { ExpandableDomainCard } from './ExpandableDomainCard';
+import { DomainDetailView } from './DomainDetailView';
 import { DomainItemDrawer } from './DomainItemDrawer';
 
 interface CSuiteDataHubProps {
@@ -67,8 +67,8 @@ export function CSuiteDataHub({ userId }: CSuiteDataHubProps) {
 
   const [activeTab, setActiveTab] = useState('data');
   const [generatingPersona, setGeneratingPersona] = useState<string | null>(null);
+  const [expandedDomain, setExpandedDomain] = useState<DomainKey | null>(null);
   const [selectedItem, setSelectedItem] = useState<DomainItem | null>(null);
-  const [selectedDomain, setSelectedDomain] = useState<DomainKey | null>(null);
   const [drawerOpen, setDrawerOpen] = useState(false);
   const fileInputRef = useRef<HTMLInputElement>(null);
 
@@ -91,13 +91,24 @@ export function CSuiteDataHub({ userId }: CSuiteDataHubProps) {
     setGeneratingPersona(null);
   };
 
-  const handleItemClick = (item: DomainItem, domain: DomainKey) => {
+  const handleDomainClick = (domain: DomainKey) => {
+    setExpandedDomain(domain);
+    if (domainItems[domain].length === 0) {
+      fetchDomainItems(domain);
+    }
+  };
+
+  const handleItemClick = (item: DomainItem) => {
     setSelectedItem(item);
-    setSelectedDomain(domain);
     setDrawerOpen(true);
   };
 
   const totalItems = Object.values(stats).reduce((a, b) => a + b, 0);
+
+  // Get expanded domain config
+  const expandedDomainConfig = expandedDomain 
+    ? DOMAIN_CONFIG.find(d => d.key === expandedDomain) 
+    : null;
 
   return (
     <>
@@ -120,227 +131,253 @@ export function CSuiteDataHub({ userId }: CSuiteDataHubProps) {
             </Button>
           </div>
 
-          {/* Tabs */}
-          <TabsList className="w-full justify-start rounded-none border-b border-border bg-transparent px-1 py-0 h-8">
-            <TabsTrigger 
-              value="data" 
-              className="text-[10px] font-mono px-2 py-1 rounded-none data-[state=active]:border-b-2 data-[state=active]:border-primary data-[state=active]:bg-transparent"
-            >
-              DATA
-            </TabsTrigger>
-            <TabsTrigger 
-              value="connectors" 
-              className="text-[10px] font-mono px-2 py-1 rounded-none data-[state=active]:border-b-2 data-[state=active]:border-primary data-[state=active]:bg-transparent"
-            >
-              CONNECTORS
-            </TabsTrigger>
-            <TabsTrigger 
-              value="personas" 
-              className="text-[10px] font-mono px-2 py-1 rounded-none data-[state=active]:border-b-2 data-[state=active]:border-primary data-[state=active]:bg-transparent"
-            >
-              PERSONAS
-            </TabsTrigger>
-            <TabsTrigger 
-              value="reports" 
-              className="text-[10px] font-mono px-2 py-1 rounded-none data-[state=active]:border-b-2 data-[state=active]:border-primary data-[state=active]:bg-transparent"
-            >
-              REPORTS
-            </TabsTrigger>
-          </TabsList>
+          {/* Tabs - Hide when domain is expanded */}
+          {!expandedDomain && (
+            <TabsList className="w-full justify-start rounded-none border-b border-border bg-transparent px-1 py-0 h-8">
+              <TabsTrigger 
+                value="data" 
+                className="text-[10px] font-mono px-2 py-1 rounded-none data-[state=active]:border-b-2 data-[state=active]:border-primary data-[state=active]:bg-transparent"
+              >
+                DATA
+              </TabsTrigger>
+              <TabsTrigger 
+                value="connectors" 
+                className="text-[10px] font-mono px-2 py-1 rounded-none data-[state=active]:border-b-2 data-[state=active]:border-primary data-[state=active]:bg-transparent"
+              >
+                CONNECTORS
+              </TabsTrigger>
+              <TabsTrigger 
+                value="personas" 
+                className="text-[10px] font-mono px-2 py-1 rounded-none data-[state=active]:border-b-2 data-[state=active]:border-primary data-[state=active]:bg-transparent"
+              >
+                PERSONAS
+              </TabsTrigger>
+              <TabsTrigger 
+                value="reports" 
+                className="text-[10px] font-mono px-2 py-1 rounded-none data-[state=active]:border-b-2 data-[state=active]:border-primary data-[state=active]:bg-transparent"
+              >
+                REPORTS
+              </TabsTrigger>
+            </TabsList>
+          )}
 
           {/* Content */}
           <div className="flex-1 overflow-hidden">
+            {/* Expanded Domain View */}
+            {expandedDomain && expandedDomainConfig && (
+              <DomainDetailView
+                domainKey={expandedDomain}
+                label={expandedDomainConfig.label}
+                color={expandedDomainConfig.color}
+                items={domainItems[expandedDomain]}
+                isLoading={loadingDomains[expandedDomain]}
+                onBack={() => setExpandedDomain(null)}
+                onItemClick={handleItemClick}
+              />
+            )}
+
             {/* Data Domains Tab */}
-            <TabsContent value="data" className="h-full m-0 p-2">
-              <ScrollArea className="h-full">
-                <div className="space-y-2">
-                  {/* Summary */}
-                  <div className="p-2 rounded bg-background border border-border">
-                    <div className="flex items-center justify-between mb-2">
-                      <span className="text-[10px] font-mono text-muted-foreground">TOTAL ITEMS</span>
-                      <span className="text-sm font-mono text-primary">{totalItems}</span>
-                    </div>
-                    <div className="h-1.5 bg-muted rounded-full overflow-hidden">
-                      <div 
-                        className="h-full bg-gradient-to-r from-primary to-secondary transition-all"
-                        style={{ width: `${Math.min((totalItems / 100) * 100, 100)}%` }}
-                      />
-                    </div>
-                  </div>
-
-                  {/* Expandable Domain Cards */}
+            {!expandedDomain && (
+              <TabsContent value="data" className="h-full m-0 p-2">
+                <ScrollArea className="h-full">
                   <div className="space-y-2">
-                    {DOMAIN_CONFIG.map(({ key, label, icon, color }) => (
-                      <ExpandableDomainCard
-                        key={key}
-                        domainKey={key}
-                        label={label}
-                        icon={icon}
-                        color={color}
-                        count={stats[key]}
-                        items={domainItems[key]}
-                        isLoading={loadingDomains[key]}
-                        onExpand={() => fetchDomainItems(key)}
-                        onItemClick={(item) => handleItemClick(item, key)}
-                      />
-                    ))}
-                  </div>
-
-                  {/* Upload Section */}
-                  <div className="p-2 rounded bg-background border border-border">
-                    <div className="flex items-center gap-2 mb-2">
-                      <Upload size={12} className="text-secondary" />
-                      <span className="text-[10px] font-mono text-muted-foreground">QUICK UPLOAD</span>
+                    {/* Summary */}
+                    <div className="p-2 rounded bg-background border border-border">
+                      <div className="flex items-center justify-between mb-2">
+                        <span className="text-[10px] font-mono text-muted-foreground">TOTAL ITEMS</span>
+                        <span className="text-sm font-mono text-primary">{totalItems}</span>
+                      </div>
+                      <div className="h-1.5 bg-muted rounded-full overflow-hidden">
+                        <div 
+                          className="h-full bg-gradient-to-r from-primary to-secondary transition-all"
+                          style={{ width: `${Math.min((totalItems / 100) * 100, 100)}%` }}
+                        />
+                      </div>
                     </div>
-                    <input
-                      ref={fileInputRef}
-                      type="file"
-                      multiple
-                      accept=".pdf,.doc,.docx,.xls,.xlsx,.csv,.txt,.md,.pptx"
-                      onChange={handleFileUpload}
-                      className="hidden"
-                      id="file-upload"
-                    />
-                    <Button
-                      variant="outline"
-                      size="sm"
-                      className="w-full text-[10px] font-mono"
-                      onClick={() => fileInputRef.current?.click()}
-                      disabled={isUploading || !userId}
-                    >
-                      {isUploading ? 'UPLOADING...' : 'SELECT FILES'}
-                    </Button>
+
+                    {/* Domain Grid - Clickable Cards */}
+                    <div className="grid grid-cols-2 gap-2">
+                      {DOMAIN_CONFIG.map(({ key, label, icon: Icon, color }) => (
+                        <button
+                          key={key}
+                          onClick={() => handleDomainClick(key)}
+                          className="p-2 rounded bg-background border border-border hover:border-primary/40 hover:bg-muted/30 transition-all text-left group"
+                        >
+                          <div className="flex items-center gap-2 mb-1">
+                            <Icon size={12} style={{ color }} />
+                            <span className="text-[10px] font-mono text-muted-foreground group-hover:text-foreground transition-colors">
+                              {label}
+                            </span>
+                          </div>
+                          <span className="text-lg font-mono text-foreground group-hover:text-primary transition-colors">
+                            {stats[key]}
+                          </span>
+                        </button>
+                      ))}
+                    </div>
+
+                    {/* Upload Section */}
+                    <div className="p-2 rounded bg-background border border-border">
+                      <div className="flex items-center gap-2 mb-2">
+                        <Upload size={12} className="text-secondary" />
+                        <span className="text-[10px] font-mono text-muted-foreground">QUICK UPLOAD</span>
+                      </div>
+                      <input
+                        ref={fileInputRef}
+                        type="file"
+                        multiple
+                        accept=".pdf,.doc,.docx,.xls,.xlsx,.csv,.txt,.md,.pptx"
+                        onChange={handleFileUpload}
+                        className="hidden"
+                        id="file-upload"
+                      />
+                      <Button
+                        variant="outline"
+                        size="sm"
+                        className="w-full text-[10px] font-mono"
+                        onClick={() => fileInputRef.current?.click()}
+                        disabled={isUploading || !userId}
+                      >
+                        {isUploading ? 'UPLOADING...' : 'SELECT FILES'}
+                      </Button>
+                    </div>
                   </div>
-                </div>
-              </ScrollArea>
-            </TabsContent>
+                </ScrollArea>
+              </TabsContent>
+            )}
 
             {/* Connectors Tab */}
-            <TabsContent value="connectors" className="h-full m-0 p-2">
-              <ScrollArea className="h-full">
-                <div className="space-y-2">
-                  {connectors.map((conn) => {
-                    const config = CONNECTOR_CONFIG[conn.provider];
-                    if (!config) return null;
-                    const Icon = config.icon;
-                    
-                    return (
-                      <div
-                        key={conn.provider}
-                        className="p-2 rounded bg-background border border-border"
-                      >
-                        <div className="flex items-center justify-between">
-                          <div className="flex items-center gap-2">
-                            <Icon size={14} style={{ color: config.color }} />
-                            <span className="text-xs font-mono text-foreground">{config.label}</span>
+            {!expandedDomain && (
+              <TabsContent value="connectors" className="h-full m-0 p-2">
+                <ScrollArea className="h-full">
+                  <div className="space-y-2">
+                    {connectors.map((conn) => {
+                      const config = CONNECTOR_CONFIG[conn.provider];
+                      if (!config) return null;
+                      const Icon = config.icon;
+                      
+                      return (
+                        <div
+                          key={conn.provider}
+                          className="p-2 rounded bg-background border border-border"
+                        >
+                          <div className="flex items-center justify-between">
+                            <div className="flex items-center gap-2">
+                              <Icon size={14} style={{ color: config.color }} />
+                              <span className="text-xs font-mono text-foreground">{config.label}</span>
+                            </div>
+                            <div className="flex items-center gap-2">
+                              <span className={`text-[10px] font-mono ${
+                                conn.status === 'connected' ? 'text-green-500' :
+                                conn.status === 'syncing' ? 'text-yellow-500' :
+                                conn.status === 'error' ? 'text-red-500' :
+                                'text-muted-foreground'
+                              }`}>
+                                {conn.status.toUpperCase()}
+                              </span>
+                              {conn.provider !== 'local' && conn.status === 'disconnected' && (
+                                <Button
+                                  variant="outline"
+                                  size="sm"
+                                  className="h-6 text-[10px] font-mono px-2"
+                                  onClick={() => connectProvider(conn.provider)}
+                                >
+                                  <ExternalLink size={10} className="mr-1" />
+                                  CONNECT
+                                </Button>
+                              )}
+                            </div>
                           </div>
-                          <div className="flex items-center gap-2">
-                            <span className={`text-[10px] font-mono ${
-                              conn.status === 'connected' ? 'text-green-500' :
-                              conn.status === 'syncing' ? 'text-yellow-500' :
-                              conn.status === 'error' ? 'text-red-500' :
-                              'text-muted-foreground'
-                            }`}>
-                              {conn.status.toUpperCase()}
-                            </span>
-                            {conn.provider !== 'local' && conn.status === 'disconnected' && (
-                              <Button
-                                variant="outline"
-                                size="sm"
-                                className="h-6 text-[10px] font-mono px-2"
-                                onClick={() => connectProvider(conn.provider)}
-                              >
-                                <ExternalLink size={10} className="mr-1" />
-                                CONNECT
-                              </Button>
-                            )}
-                          </div>
+                          {conn.lastSync && (
+                            <div className="text-[9px] text-muted-foreground mt-1">
+                              Last sync: {conn.lastSync.toLocaleString()}
+                            </div>
+                          )}
                         </div>
-                        {conn.lastSync && (
-                          <div className="text-[9px] text-muted-foreground mt-1">
-                            Last sync: {conn.lastSync.toLocaleString()}
-                          </div>
-                        )}
-                      </div>
-                    );
-                  })}
-                </div>
-              </ScrollArea>
-            </TabsContent>
+                      );
+                    })}
+                  </div>
+                </ScrollArea>
+              </TabsContent>
+            )}
 
             {/* Personas Tab */}
-            <TabsContent value="personas" className="h-full m-0 p-2">
-              <ScrollArea className="h-full">
-                <div className="space-y-2">
-                  {PERSONAS.map(({ id, label, icon: Icon, description }) => (
-                    <div
-                      key={id}
-                      className="p-2 rounded bg-background border border-border"
-                    >
-                      <div className="flex items-center justify-between mb-1">
-                        <div className="flex items-center gap-2">
-                          <Icon size={14} className="text-primary" />
-                          <span className="text-xs font-mono text-foreground">{label}</span>
-                        </div>
-                        <Button
-                          variant="outline"
-                          size="sm"
-                          className="h-6 text-[10px] font-mono px-2"
-                          onClick={() => handleGenerateReport(id)}
-                          disabled={generatingPersona !== null || !userId || totalItems === 0}
-                        >
-                          {generatingPersona === id ? (
-                            <>
-                              <RefreshCw size={10} className="mr-1 animate-spin" />
-                              GENERATING...
-                            </>
-                          ) : (
-                            <>
-                              <Sparkles size={10} className="mr-1" />
-                              GENERATE
-                            </>
-                          )}
-                        </Button>
-                      </div>
-                      <p className="text-[10px] text-muted-foreground">{description}</p>
-                    </div>
-                  ))}
-                </div>
-              </ScrollArea>
-            </TabsContent>
-
-            {/* Reports Tab */}
-            <TabsContent value="reports" className="h-full m-0 p-2">
-              <ScrollArea className="h-full">
-                <div className="space-y-2">
-                  {reports.length === 0 ? (
-                    <div className="text-center py-8">
-                      <Sparkles size={24} className="mx-auto text-muted-foreground/50 mb-2" />
-                      <p className="text-xs text-muted-foreground">No reports generated yet</p>
-                      <p className="text-[10px] text-muted-foreground/70">Select a persona to generate insights</p>
-                    </div>
-                  ) : (
-                    reports.map((report) => (
+            {!expandedDomain && (
+              <TabsContent value="personas" className="h-full m-0 p-2">
+                <ScrollArea className="h-full">
+                  <div className="space-y-2">
+                    {PERSONAS.map(({ id, label, icon: Icon, description }) => (
                       <div
-                        key={report.id}
+                        key={id}
                         className="p-2 rounded bg-background border border-border"
                       >
                         <div className="flex items-center justify-between mb-1">
-                          <span className="text-xs font-mono text-foreground">{report.title}</span>
-                          <span className="text-[10px] text-primary">{report.persona.toUpperCase()}</span>
+                          <div className="flex items-center gap-2">
+                            <Icon size={14} className="text-primary" />
+                            <span className="text-xs font-mono text-foreground">{label}</span>
+                          </div>
+                          <Button
+                            variant="outline"
+                            size="sm"
+                            className="h-6 text-[10px] font-mono px-2"
+                            onClick={() => handleGenerateReport(id)}
+                            disabled={generatingPersona !== null || !userId || totalItems === 0}
+                          >
+                            {generatingPersona === id ? (
+                              <>
+                                <RefreshCw size={10} className="mr-1 animate-spin" />
+                                GENERATING...
+                              </>
+                            ) : (
+                              <>
+                                <Sparkles size={10} className="mr-1" />
+                                GENERATE
+                              </>
+                            )}
+                          </Button>
                         </div>
-                        <p className="text-[10px] text-muted-foreground line-clamp-2">
-                          {report.content.slice(0, 150)}...
-                        </p>
-                        <div className="text-[9px] text-muted-foreground/70 mt-1">
-                          {report.generatedAt.toLocaleString()}
-                        </div>
+                        <p className="text-[10px] text-muted-foreground">{description}</p>
                       </div>
-                    ))
-                  )}
-                </div>
-              </ScrollArea>
-            </TabsContent>
+                    ))}
+                  </div>
+                </ScrollArea>
+              </TabsContent>
+            )}
+
+            {/* Reports Tab */}
+            {!expandedDomain && (
+              <TabsContent value="reports" className="h-full m-0 p-2">
+                <ScrollArea className="h-full">
+                  <div className="space-y-2">
+                    {reports.length === 0 ? (
+                      <div className="text-center py-8">
+                        <Sparkles size={24} className="mx-auto text-muted-foreground/50 mb-2" />
+                        <p className="text-xs text-muted-foreground">No reports generated yet</p>
+                        <p className="text-[10px] text-muted-foreground/70">Select a persona to generate insights</p>
+                      </div>
+                    ) : (
+                      reports.map((report) => (
+                        <div
+                          key={report.id}
+                          className="p-2 rounded bg-background border border-border"
+                        >
+                          <div className="flex items-center justify-between mb-1">
+                            <span className="text-xs font-mono text-foreground">{report.title}</span>
+                            <span className="text-[10px] text-primary">{report.persona.toUpperCase()}</span>
+                          </div>
+                          <p className="text-[10px] text-muted-foreground line-clamp-2">
+                            {report.content.slice(0, 150)}...
+                          </p>
+                          <div className="text-[9px] text-muted-foreground/70 mt-1">
+                            {report.generatedAt.toLocaleString()}
+                          </div>
+                        </div>
+                      ))
+                    )}
+                  </div>
+                </ScrollArea>
+              </TabsContent>
+            )}
           </div>
         </Tabs>
       </div>
@@ -348,7 +385,7 @@ export function CSuiteDataHub({ userId }: CSuiteDataHubProps) {
       {/* Item Detail Drawer */}
       <DomainItemDrawer
         item={selectedItem}
-        domain={selectedDomain}
+        domain={expandedDomain}
         open={drawerOpen}
         onOpenChange={setDrawerOpen}
       />
