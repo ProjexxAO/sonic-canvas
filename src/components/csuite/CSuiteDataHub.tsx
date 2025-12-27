@@ -1,4 +1,4 @@
-import { useState, useRef, useMemo } from 'react';
+import { useState, useRef, useMemo, useCallback } from 'react';
 import { 
   Mail, 
   FileText, 
@@ -29,6 +29,7 @@ import { Badge } from '@/components/ui/badge';
 import { useCSuiteData, DataDomainStats, DomainKey, DomainItem } from '@/hooks/useCSuiteData';
 import { DomainDetailView } from './DomainDetailView';
 import { DomainItemDrawer } from './DomainItemDrawer';
+import { PersonaConfigPopover, PersonaConfig, ReportDepth } from './PersonaConfigPopover';
 
 interface CSuiteDataHubProps {
   userId: string | undefined;
@@ -42,6 +43,7 @@ interface Persona {
   icon: typeof User;
   description: string;
   category: PersonaCategory;
+  focusAreas: string[];
 }
 
 const DOMAIN_CONFIG = [
@@ -55,22 +57,22 @@ const DOMAIN_CONFIG = [
 
 const PERSONAS: Persona[] = [
   // Executive
-  { id: 'ceo', label: 'CEO', icon: User, description: 'Strategic overview & key decisions', category: 'executive' },
-  { id: 'cfo', label: 'CFO', icon: DollarSign, description: 'Financial health & forecasts', category: 'executive' },
-  { id: 'coo', label: 'COO', icon: TrendingUp, description: 'Operations & efficiency', category: 'executive' },
-  { id: 'chief_of_staff', label: 'Chief of Staff', icon: Briefcase, description: 'Cross-functional insights', category: 'executive' },
+  { id: 'ceo', label: 'CEO', icon: User, description: 'Strategic overview & key decisions', category: 'executive', focusAreas: ['strategic_overview', 'key_decisions', 'market_position', 'stakeholder_concerns'] },
+  { id: 'cfo', label: 'CFO', icon: DollarSign, description: 'Financial health & forecasts', category: 'executive', focusAreas: ['financial_health', 'cash_flow', 'forecasts', 'compliance'] },
+  { id: 'coo', label: 'COO', icon: TrendingUp, description: 'Operations & efficiency', category: 'executive', focusAreas: ['operations_efficiency', 'process_optimization', 'team_performance', 'resource_allocation'] },
+  { id: 'chief_of_staff', label: 'Chief of Staff', icon: Briefcase, description: 'Cross-functional insights', category: 'executive', focusAreas: ['cross_functional', 'executive_priorities', 'organizational_alignment', 'action_items'] },
   // Tech Leadership
-  { id: 'cto', label: 'CTO', icon: Cpu, description: 'Technology strategy & innovation', category: 'tech' },
-  { id: 'ciso', label: 'CISO', icon: Scale, description: 'Security posture & risk assessment', category: 'tech' },
+  { id: 'cto', label: 'CTO', icon: Cpu, description: 'Technology strategy & innovation', category: 'tech', focusAreas: ['technology_strategy', 'innovation', 'technical_debt', 'infrastructure'] },
+  { id: 'ciso', label: 'CISO', icon: Scale, description: 'Security posture & risk assessment', category: 'tech', focusAreas: ['security_posture', 'risk_assessment', 'compliance', 'incident_response'] },
   // People & Culture
-  { id: 'chro', label: 'CHRO', icon: Users, description: 'Workforce analytics & culture', category: 'people' },
-  { id: 'chief_people', label: 'Chief People Officer', icon: Users, description: 'Employee engagement & talent', category: 'people' },
+  { id: 'chro', label: 'CHRO', icon: Users, description: 'Workforce analytics & culture', category: 'people', focusAreas: ['workforce_analytics', 'culture', 'talent_acquisition', 'retention'] },
+  { id: 'chief_people', label: 'Chief People Officer', icon: Users, description: 'Employee engagement & talent', category: 'people', focusAreas: ['employee_engagement', 'talent_development', 'organizational_culture', 'wellbeing'] },
   // Growth & Marketing
-  { id: 'cmo', label: 'CMO', icon: Megaphone, description: 'Marketing performance & brand', category: 'growth' },
-  { id: 'cro', label: 'CRO', icon: TrendingUp, description: 'Revenue growth & pipeline', category: 'growth' },
+  { id: 'cmo', label: 'CMO', icon: Megaphone, description: 'Marketing performance & brand', category: 'growth', focusAreas: ['marketing_performance', 'brand_health', 'customer_insights', 'campaigns'] },
+  { id: 'cro', label: 'CRO', icon: TrendingUp, description: 'Revenue growth & pipeline', category: 'growth', focusAreas: ['revenue_growth', 'pipeline', 'sales_performance', 'customer_success'] },
   // Legal & Compliance
-  { id: 'clo', label: 'CLO', icon: Scale, description: 'Legal matters & contracts', category: 'legal' },
-  { id: 'cco', label: 'CCO', icon: CheckSquare, description: 'Compliance & regulatory', category: 'legal' },
+  { id: 'clo', label: 'CLO', icon: Scale, description: 'Legal matters & contracts', category: 'legal', focusAreas: ['legal_matters', 'contracts', 'intellectual_property', 'litigation'] },
+  { id: 'cco', label: 'CCO', icon: CheckSquare, description: 'Compliance & regulatory', category: 'legal', focusAreas: ['compliance', 'regulatory', 'ethics', 'governance'] },
 ];
 
 const PERSONA_CATEGORIES: { id: PersonaCategory; label: string }[] = [
@@ -111,6 +113,19 @@ export function CSuiteDataHub({ userId }: CSuiteDataHubProps) {
   const [selectedCategories, setSelectedCategories] = useState<PersonaCategory[]>([]);
   const fileInputRef = useRef<HTMLInputElement>(null);
 
+  // Initialize persona configs with defaults
+  const [personaConfigs, setPersonaConfigs] = useState<Record<string, PersonaConfig>>(() => {
+    const configs: Record<string, PersonaConfig> = {};
+    PERSONAS.forEach(p => {
+      configs[p.id] = { focusAreas: [...p.focusAreas], depth: 'standard' };
+    });
+    return configs;
+  });
+
+  const handleConfigChange = useCallback((personaId: string, config: PersonaConfig) => {
+    setPersonaConfigs(prev => ({ ...prev, [personaId]: config }));
+  }, []);
+
   const filteredPersonas = useMemo(() => {
     if (selectedCategories.length === 0) return PERSONAS;
     return PERSONAS.filter(p => selectedCategories.includes(p.category));
@@ -141,7 +156,11 @@ export function CSuiteDataHub({ userId }: CSuiteDataHubProps) {
 
   const handleGenerateReport = async (persona: string) => {
     setGeneratingPersona(persona);
-    await generateReport(persona);
+    const config = personaConfigs[persona];
+    await generateReport(persona, {
+      depth: config?.depth || 'standard',
+      focusAreas: config?.focusAreas || [],
+    });
     setGeneratingPersona(null);
   };
 
@@ -402,42 +421,70 @@ export function CSuiteDataHub({ userId }: CSuiteDataHubProps) {
 
                 <ScrollArea className="flex-1">
                   <div className="space-y-2">
-                    {filteredPersonas.map(({ id, label, icon: Icon, description, category }) => (
-                      <div
-                        key={id}
-                        className="p-2 rounded bg-background border border-border"
-                      >
-                        <div className="flex items-center justify-between mb-1">
-                          <div className="flex items-center gap-2">
-                            <Icon size={14} className="text-primary" />
-                            <span className="text-xs font-mono text-foreground">{label}</span>
-                            <Badge variant="secondary" className="text-[8px] font-mono px-1 py-0">
-                              {category}
-                            </Badge>
+                    {filteredPersonas.map(({ id, label, icon: Icon, description, category, focusAreas }) => {
+                      const config = personaConfigs[id];
+                      const customized = config && (
+                        config.depth !== 'standard' || 
+                        config.focusAreas.length !== focusAreas.length
+                      );
+                      
+                      return (
+                        <div
+                          key={id}
+                          className="p-2 rounded bg-background border border-border"
+                        >
+                          <div className="flex items-center justify-between mb-1">
+                            <div className="flex items-center gap-2">
+                              <Icon size={14} className="text-primary" />
+                              <span className="text-xs font-mono text-foreground">{label}</span>
+                              <Badge variant="secondary" className="text-[8px] font-mono px-1 py-0">
+                                {category}
+                              </Badge>
+                              {customized && (
+                                <Badge variant="outline" className="text-[8px] font-mono px-1 py-0 border-primary/50 text-primary">
+                                  custom
+                                </Badge>
+                              )}
+                            </div>
+                            <div className="flex items-center gap-1">
+                              <PersonaConfigPopover
+                                personaId={id}
+                                availableFocusAreas={focusAreas}
+                                config={config || { focusAreas: [...focusAreas], depth: 'standard' }}
+                                onConfigChange={handleConfigChange}
+                              />
+                              <Button
+                                variant="outline"
+                                size="sm"
+                                className="h-6 text-[10px] font-mono px-2"
+                                onClick={() => handleGenerateReport(id)}
+                                disabled={generatingPersona !== null || !userId || totalItems === 0}
+                              >
+                                {generatingPersona === id ? (
+                                  <>
+                                    <RefreshCw size={10} className="mr-1 animate-spin" />
+                                    GENERATING...
+                                  </>
+                                ) : (
+                                  <>
+                                    <Sparkles size={10} className="mr-1" />
+                                    GENERATE
+                                  </>
+                                )}
+                              </Button>
+                            </div>
                           </div>
-                          <Button
-                            variant="outline"
-                            size="sm"
-                            className="h-6 text-[10px] font-mono px-2"
-                            onClick={() => handleGenerateReport(id)}
-                            disabled={generatingPersona !== null || !userId || totalItems === 0}
-                          >
-                            {generatingPersona === id ? (
-                              <>
-                                <RefreshCw size={10} className="mr-1 animate-spin" />
-                                GENERATING...
-                              </>
-                            ) : (
-                              <>
-                                <Sparkles size={10} className="mr-1" />
-                                GENERATE
-                              </>
+                          <div className="flex items-center justify-between">
+                            <p className="text-[10px] text-muted-foreground">{description}</p>
+                            {config && (
+                              <span className="text-[9px] text-muted-foreground/70">
+                                {config.depth} • {config.focusAreas.length} areas
+                              </span>
                             )}
-                          </Button>
+                          </div>
                         </div>
-                        <p className="text-[10px] text-muted-foreground">{description}</p>
-                      </div>
-                    ))}
+                      );
+                    })}
                   </div>
                 </ScrollArea>
               </TabsContent>
