@@ -34,10 +34,13 @@ import { useAuth } from '@/hooks/useAuth';
 import { useDashboardAgents } from '@/hooks/useDashboardAgents';
 import { useAtlasContext } from '@/hooks/useAtlasContext';
 import { useAtlasConversations } from '@/hooks/useAtlasConversations';
+import { useOnboarding } from '@/hooks/useOnboarding';
+import { useCSuiteData } from '@/hooks/useCSuiteData';
 import { Button } from '@/components/ui/button';
 import { ScrollArea } from '@/components/ui/scroll-area';
 import { ActionLogItem } from '@/components/atlas/ActionLogItem';
 import { CSuiteDataHub } from '@/components/csuite/CSuiteDataHub';
+import { OnboardingFlow } from '@/components/onboarding';
 
 const ATLAS_AGENT_ID = "agent_7501kbh21cg1eht9xtjw6kvkpm4m";
 
@@ -80,6 +83,15 @@ export default function Atlas() {
   const [textInput, setTextInput] = useState('');
   const lastSavedMessageRef = useRef<string>('');
   const animationRef = useRef<number>();
+  const fileInputRef = useRef<HTMLInputElement>(null);
+  const [generatingPersona, setGeneratingPersona] = useState<string | null>(null);
+
+  // Onboarding
+  const onboarding = useOnboarding(user?.id);
+  
+  // C-Suite data for onboarding
+  const csuiteData = useCSuiteData(user?.id);
+  const totalDataItems = Object.values(csuiteData.stats).reduce((a, b) => a + b, 0);
 
   // Get active agents (those with ACTIVE or PROCESSING status)
   const activeAgents = agents.filter(a => a.status === 'ACTIVE' || a.status === 'PROCESSING').slice(0, 6);
@@ -552,6 +564,62 @@ export default function Atlas() {
       }
     };
   }, [isConnected, conversation]);
+
+  // Onboarding handlers
+  const handleOnboardingUpload = useCallback(() => {
+    fileInputRef.current?.click();
+  }, []);
+
+  const handleOnboardingFileChange = async (e: React.ChangeEvent<HTMLInputElement>) => {
+    const files = e.target.files;
+    if (!files?.length) return;
+    
+    for (const file of Array.from(files)) {
+      await csuiteData.uploadFile(file);
+    }
+    
+    if (fileInputRef.current) {
+      fileInputRef.current.value = '';
+    }
+  };
+
+  const handleOnboardingGenerateReport = async (persona: string) => {
+    setGeneratingPersona(persona);
+    await csuiteData.generateReport(persona);
+    setGeneratingPersona(null);
+  };
+
+  // Show onboarding for new users
+  if (onboarding.showOnboarding) {
+    return (
+      <>
+        <input
+          ref={fileInputRef}
+          type="file"
+          multiple
+          accept=".pdf,.doc,.docx,.xls,.xlsx,.csv,.txt,.md,.pptx"
+          onChange={handleOnboardingFileChange}
+          className="hidden"
+        />
+        <OnboardingFlow
+          currentStep={onboarding.currentStep}
+          onNext={onboarding.nextStep}
+          onPrev={onboarding.prevStep}
+          onSkip={onboarding.skipOnboarding}
+          onComplete={onboarding.completeOnboarding}
+          onGoToStep={onboarding.goToStep}
+          hasConnectedData={onboarding.hasConnectedData}
+          hasGeneratedReport={onboarding.hasGeneratedReport}
+          onMarkDataConnected={onboarding.markDataConnected}
+          onMarkReportGenerated={onboarding.markReportGenerated}
+          totalDataItems={totalDataItems}
+          onUploadFile={handleOnboardingUpload}
+          onGenerateReport={handleOnboardingGenerateReport}
+          isGenerating={generatingPersona !== null}
+        />
+      </>
+    );
+  }
 
   return (
     <div className="min-h-screen bg-background text-foreground flex flex-col relative overflow-hidden">
