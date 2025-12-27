@@ -17,3 +17,6 @@ verify_jwt = false
 
 [functions.csuite-generate-report]
 verify_jwt = false
+
+[functions.atlas-allocate-agents]
+verify_jwt = false
