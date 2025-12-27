@@ -4,6 +4,7 @@ import { WelcomeScreen } from './WelcomeScreen';
 import { FeatureTour } from './FeatureTour';
 import { ConnectDataStep } from './ConnectDataStep';
 import { GenerateReportStep } from './GenerateReportStep';
+import { AllocateAgentsStep } from './AllocateAgentsStep';
 import { OnboardingComplete } from './OnboardingComplete';
 
 interface OnboardingFlowProps {
@@ -15,8 +16,11 @@ interface OnboardingFlowProps {
   onGoToStep: (step: OnboardingStep) => void;
   hasConnectedData: boolean;
   hasGeneratedReport: boolean;
+  hasAllocatedAgents: boolean;
+  selectedPersona: string;
   onMarkDataConnected: () => void;
-  onMarkReportGenerated: () => void;
+  onMarkReportGenerated: (persona?: string) => void;
+  onMarkAgentsAllocated: () => void;
   totalDataItems: number;
   onUploadFile: () => void;
   onGenerateReport: (persona: string) => Promise<void>;
@@ -32,8 +36,11 @@ export function OnboardingFlow({
   onGoToStep,
   hasConnectedData,
   hasGeneratedReport,
+  hasAllocatedAgents,
+  selectedPersona,
   onMarkDataConnected,
   onMarkReportGenerated,
+  onMarkAgentsAllocated,
   totalDataItems,
   onUploadFile,
   onGenerateReport,
@@ -73,16 +80,28 @@ export function OnboardingFlow({
       
       {currentStep === 'generate-report' && (
         <GenerateReportStep
-          onNext={() => {
-            onMarkReportGenerated();
-            onComplete();
+          onNext={(persona) => {
+            onMarkReportGenerated(persona);
+            onNext();
           }}
           onBack={onPrev}
-          onSkip={onComplete}
+          onSkip={() => onGoToStep('allocate-agents')}
           hasGeneratedReport={hasGeneratedReport}
           onGenerateReport={onGenerateReport}
           isGenerating={isGenerating}
           hasData={totalDataItems > 0}
+        />
+      )}
+      
+      {currentStep === 'allocate-agents' && (
+        <AllocateAgentsStep
+          onNext={() => {
+            onMarkAgentsAllocated();
+            onComplete();
+          }}
+          onBack={onPrev}
+          onSkip={onComplete}
+          selectedPersona={selectedPersona}
         />
       )}
     </div>

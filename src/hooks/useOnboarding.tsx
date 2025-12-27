@@ -5,6 +5,7 @@ export type OnboardingStep =
   | 'feature-tour'
   | 'connect-data'
   | 'generate-report'
+  | 'allocate-agents'
   | 'complete';
 
 interface OnboardingState {
@@ -13,6 +14,8 @@ interface OnboardingState {
   hasSeenWelcome: boolean;
   hasConnectedData: boolean;
   hasGeneratedReport: boolean;
+  hasAllocatedAgents: boolean;
+  selectedPersona: string;
 }
 
 const ONBOARDING_STORAGE_KEY = 'csuite-onboarding-state';
@@ -23,6 +26,8 @@ const DEFAULT_STATE: OnboardingState = {
   hasSeenWelcome: false,
   hasConnectedData: false,
   hasGeneratedReport: false,
+  hasAllocatedAgents: false,
+  selectedPersona: '',
 };
 
 export function useOnboarding(userId: string | undefined) {
@@ -76,7 +81,7 @@ export function useOnboarding(userId: string | undefined) {
 
   const nextStep = useCallback(() => {
     setState(prev => {
-      const steps: OnboardingStep[] = ['welcome', 'feature-tour', 'connect-data', 'generate-report', 'complete'];
+      const steps: OnboardingStep[] = ['welcome', 'feature-tour', 'connect-data', 'generate-report', 'allocate-agents', 'complete'];
       const currentIndex = steps.indexOf(prev.currentStep);
       const nextIndex = Math.min(currentIndex + 1, steps.length - 1);
       return { ...prev, currentStep: steps[nextIndex] };
@@ -85,7 +90,7 @@ export function useOnboarding(userId: string | undefined) {
 
   const prevStep = useCallback(() => {
     setState(prev => {
-      const steps: OnboardingStep[] = ['welcome', 'feature-tour', 'connect-data', 'generate-report', 'complete'];
+      const steps: OnboardingStep[] = ['welcome', 'feature-tour', 'connect-data', 'generate-report', 'allocate-agents', 'complete'];
       const currentIndex = steps.indexOf(prev.currentStep);
       const prevIndex = Math.max(currentIndex - 1, 0);
       return { ...prev, currentStep: steps[prevIndex] };
@@ -100,8 +105,20 @@ export function useOnboarding(userId: string | undefined) {
     setState(prev => ({ ...prev, hasConnectedData: true }));
   }, []);
 
-  const markReportGenerated = useCallback(() => {
-    setState(prev => ({ ...prev, hasGeneratedReport: true }));
+  const markReportGenerated = useCallback((persona?: string) => {
+    setState(prev => ({ 
+      ...prev, 
+      hasGeneratedReport: true,
+      selectedPersona: persona || prev.selectedPersona,
+    }));
+  }, []);
+
+  const markAgentsAllocated = useCallback(() => {
+    setState(prev => ({ ...prev, hasAllocatedAgents: true }));
+  }, []);
+
+  const setSelectedPersona = useCallback((persona: string) => {
+    setState(prev => ({ ...prev, selectedPersona: persona }));
   }, []);
 
   const completeOnboarding = useCallback(() => {
@@ -132,6 +149,8 @@ export function useOnboarding(userId: string | undefined) {
     markWelcomeSeen,
     markDataConnected,
     markReportGenerated,
+    markAgentsAllocated,
+    setSelectedPersona,
     completeOnboarding,
     resetOnboarding,
     skipOnboarding,

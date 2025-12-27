@@ -14,7 +14,7 @@ import { Button } from '@/components/ui/button';
 import { cn } from '@/lib/utils';
 
 interface GenerateReportStepProps {
-  onNext: () => void;
+  onNext: (persona: string) => void;
   onBack: () => void;
   onSkip: () => void;
   hasGeneratedReport: boolean;
@@ -69,10 +69,12 @@ export function GenerateReportStep({
           <StepIndicator step={2} completed />
           <div className="w-8 h-0.5 bg-primary" />
           <StepIndicator step={3} completed />
-          <div className="w-8 h-0.5 bg-primary" />
+72:           <div className="w-8 h-0.5 bg-primary" />
           <StepIndicator step={4} active />
+          <div className="w-8 h-0.5 bg-muted" />
+          <StepIndicator step={5} />
         </div>
-        <p className="text-xs text-center text-muted-foreground">Step 4 of 4: Generate Your First Report</p>
+        <p className="text-xs text-center text-muted-foreground">Step 4 of 5: Generate Your First Report</p>
       </div>
 
       {/* Main content */}
@@ -152,10 +154,10 @@ export function GenerateReportStep({
         )}
 
         {/* Complete button */}
-        {generated && (
-          <Button size="lg" className="px-8" onClick={onNext}>
+        {generated && selectedPersona && (
+          <Button size="lg" className="px-8" onClick={() => onNext(selectedPersona)}>
             <Check size={16} className="mr-2" />
-            Complete Setup
+            Continue to Agents
           </Button>
         )}
       </div>
