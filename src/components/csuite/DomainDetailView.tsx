@@ -102,7 +102,13 @@ export function DomainDetailView({
   };
 
   return (
-    <div className="h-full flex flex-col animate-fade-in">
+    <div className="h-full flex flex-col animate-slide-up-fade"
+      style={{ 
+        animationDuration: '0.35s',
+        animationFillMode: 'both',
+        animationTimingFunction: 'cubic-bezier(0.16, 1, 0.3, 1)'
+      }}
+    >
       {/* Header */}
       <div className="flex items-center gap-3 p-3 border-b border-border">
         <Button

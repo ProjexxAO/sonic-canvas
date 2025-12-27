@@ -196,12 +196,25 @@ export function CSuiteDataHub({ userId }: CSuiteDataHubProps) {
                     </div>
 
                     {/* Domain Grid - Clickable Cards */}
-                    <div className="grid grid-cols-2 gap-2">
-                      {DOMAIN_CONFIG.map(({ key, label, icon: Icon, color }) => (
+                    <div className="grid grid-cols-2 gap-2 animate-scale-fade-in"
+                      style={{ 
+                        animationDuration: '0.3s',
+                        animationFillMode: 'both',
+                        animationTimingFunction: 'cubic-bezier(0.16, 1, 0.3, 1)'
+                      }}
+                    >
+                      {DOMAIN_CONFIG.map(({ key, label, icon: Icon, color }, index) => (
                         <button
                           key={key}
                           onClick={() => handleDomainClick(key)}
-                          className="p-2 rounded bg-background border border-border hover:border-primary/40 hover:bg-muted/30 transition-all text-left group"
+                          className="p-2 rounded bg-background border border-border hover:border-primary/40 hover:bg-muted/30 transition-all text-left group hover:scale-[1.02] active:scale-[0.98]"
+                          style={{
+                            animationName: 'stagger-fade-in',
+                            animationDuration: '0.3s',
+                            animationDelay: `${index * 50}ms`,
+                            animationFillMode: 'both',
+                            animationTimingFunction: 'cubic-bezier(0.16, 1, 0.3, 1)'
+                          }}
                         >
                           <div className="flex items-center gap-2 mb-1">
                             <Icon size={12} style={{ color }} />
