@@ -20,16 +20,19 @@ import {
   Megaphone,
   Scale,
   Filter,
-  X
+  X,
+  Eye
 } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { ScrollArea } from '@/components/ui/scroll-area';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
 import { Badge } from '@/components/ui/badge';
-import { useCSuiteData, DataDomainStats, DomainKey, DomainItem } from '@/hooks/useCSuiteData';
+import { useCSuiteData, DataDomainStats, DomainKey, DomainItem, CSuiteReport } from '@/hooks/useCSuiteData';
 import { DomainDetailView } from './DomainDetailView';
 import { DomainItemDrawer } from './DomainItemDrawer';
 import { PersonaConfigPopover, PersonaConfig, ReportDepth } from './PersonaConfigPopover';
+import { ReportViewer } from './ReportViewer';
+import { ReportHistoryList } from './ReportHistoryList';
 
 interface CSuiteDataHubProps {
   userId: string | undefined;
@@ -111,6 +114,7 @@ export function CSuiteDataHub({ userId }: CSuiteDataHubProps) {
   const [selectedItem, setSelectedItem] = useState<DomainItem | null>(null);
   const [drawerOpen, setDrawerOpen] = useState(false);
   const [selectedCategories, setSelectedCategories] = useState<PersonaCategory[]>([]);
+  const [selectedReport, setSelectedReport] = useState<CSuiteReport | null>(null);
   const fileInputRef = useRef<HTMLInputElement>(null);
 
   // Initialize persona configs with defaults
@@ -493,35 +497,11 @@ export function CSuiteDataHub({ userId }: CSuiteDataHubProps) {
             {/* Reports Tab */}
             {!expandedDomain && (
               <TabsContent value="reports" className="h-full m-0 p-2">
-                <ScrollArea className="h-full">
-                  <div className="space-y-2">
-                    {reports.length === 0 ? (
-                      <div className="text-center py-8">
-                        <Sparkles size={24} className="mx-auto text-muted-foreground/50 mb-2" />
-                        <p className="text-xs text-muted-foreground">No reports generated yet</p>
-                        <p className="text-[10px] text-muted-foreground/70">Select a persona to generate insights</p>
-                      </div>
-                    ) : (
-                      reports.map((report) => (
-                        <div
-                          key={report.id}
-                          className="p-2 rounded bg-background border border-border"
-                        >
-                          <div className="flex items-center justify-between mb-1">
-                            <span className="text-xs font-mono text-foreground">{report.title}</span>
-                            <span className="text-[10px] text-primary">{report.persona.toUpperCase()}</span>
-                          </div>
-                          <p className="text-[10px] text-muted-foreground line-clamp-2">
-                            {report.content.slice(0, 150)}...
-                          </p>
-                          <div className="text-[9px] text-muted-foreground/70 mt-1">
-                            {report.generatedAt.toLocaleString()}
-                          </div>
-                        </div>
-                      ))
-                    )}
-                  </div>
-                </ScrollArea>
+                <ReportHistoryList
+                  reports={reports}
+                  onSelectReport={(report) => setSelectedReport(report)}
+                  selectedReportId={selectedReport?.id}
+                />
               </TabsContent>
             )}
           </div>
@@ -535,6 +515,16 @@ export function CSuiteDataHub({ userId }: CSuiteDataHubProps) {
         open={drawerOpen}
         onOpenChange={setDrawerOpen}
       />
+
+      {/* Report Viewer */}
+      {selectedReport && (
+        <ReportViewer
+          report={selectedReport}
+          reports={reports}
+          onClose={() => setSelectedReport(null)}
+          onNavigate={(report) => setSelectedReport(report)}
+        />
+      )}
     </>
   );
 }
