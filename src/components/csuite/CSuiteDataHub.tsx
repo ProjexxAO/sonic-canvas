@@ -1,4 +1,4 @@
-import { useState, useRef } from 'react';
+import { useState, useRef, useMemo } from 'react';
 import { 
   Mail, 
   FileText, 
@@ -14,17 +14,34 @@ import {
   BarChart3,
   Sparkles,
   RefreshCw,
-  ExternalLink
+  ExternalLink,
+  Cpu,
+  Users,
+  Megaphone,
+  Scale,
+  Filter,
+  X
 } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { ScrollArea } from '@/components/ui/scroll-area';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
+import { Badge } from '@/components/ui/badge';
 import { useCSuiteData, DataDomainStats, DomainKey, DomainItem } from '@/hooks/useCSuiteData';
 import { DomainDetailView } from './DomainDetailView';
 import { DomainItemDrawer } from './DomainItemDrawer';
 
 interface CSuiteDataHubProps {
   userId: string | undefined;
+}
+
+type PersonaCategory = 'executive' | 'tech' | 'people' | 'growth' | 'legal';
+
+interface Persona {
+  id: string;
+  label: string;
+  icon: typeof User;
+  description: string;
+  category: PersonaCategory;
 }
 
 const DOMAIN_CONFIG = [
@@ -36,11 +53,32 @@ const DOMAIN_CONFIG = [
   { key: 'knowledge' as DomainKey, label: 'Knowledge', icon: BookOpen, color: 'hsl(220 70% 55%)' },
 ];
 
-const PERSONAS = [
-  { id: 'ceo', label: 'CEO', icon: User, description: 'Strategic overview & key decisions' },
-  { id: 'cfo', label: 'CFO', icon: DollarSign, description: 'Financial health & forecasts' },
-  { id: 'coo', label: 'COO', icon: TrendingUp, description: 'Operations & efficiency' },
-  { id: 'chief_of_staff', label: 'Chief of Staff', icon: Briefcase, description: 'Cross-functional insights' },
+const PERSONAS: Persona[] = [
+  // Executive
+  { id: 'ceo', label: 'CEO', icon: User, description: 'Strategic overview & key decisions', category: 'executive' },
+  { id: 'cfo', label: 'CFO', icon: DollarSign, description: 'Financial health & forecasts', category: 'executive' },
+  { id: 'coo', label: 'COO', icon: TrendingUp, description: 'Operations & efficiency', category: 'executive' },
+  { id: 'chief_of_staff', label: 'Chief of Staff', icon: Briefcase, description: 'Cross-functional insights', category: 'executive' },
+  // Tech Leadership
+  { id: 'cto', label: 'CTO', icon: Cpu, description: 'Technology strategy & innovation', category: 'tech' },
+  { id: 'ciso', label: 'CISO', icon: Scale, description: 'Security posture & risk assessment', category: 'tech' },
+  // People & Culture
+  { id: 'chro', label: 'CHRO', icon: Users, description: 'Workforce analytics & culture', category: 'people' },
+  { id: 'chief_people', label: 'Chief People Officer', icon: Users, description: 'Employee engagement & talent', category: 'people' },
+  // Growth & Marketing
+  { id: 'cmo', label: 'CMO', icon: Megaphone, description: 'Marketing performance & brand', category: 'growth' },
+  { id: 'cro', label: 'CRO', icon: TrendingUp, description: 'Revenue growth & pipeline', category: 'growth' },
+  // Legal & Compliance
+  { id: 'clo', label: 'CLO', icon: Scale, description: 'Legal matters & contracts', category: 'legal' },
+  { id: 'cco', label: 'CCO', icon: CheckSquare, description: 'Compliance & regulatory', category: 'legal' },
+];
+
+const PERSONA_CATEGORIES: { id: PersonaCategory; label: string }[] = [
+  { id: 'executive', label: 'Executive' },
+  { id: 'tech', label: 'Tech' },
+  { id: 'people', label: 'People' },
+  { id: 'growth', label: 'Growth' },
+  { id: 'legal', label: 'Legal' },
 ];
 
 const CONNECTOR_CONFIG: Record<string, { label: string; icon: typeof Cloud; color: string }> = {
@@ -70,7 +108,23 @@ export function CSuiteDataHub({ userId }: CSuiteDataHubProps) {
   const [expandedDomain, setExpandedDomain] = useState<DomainKey | null>(null);
   const [selectedItem, setSelectedItem] = useState<DomainItem | null>(null);
   const [drawerOpen, setDrawerOpen] = useState(false);
+  const [selectedCategories, setSelectedCategories] = useState<PersonaCategory[]>([]);
   const fileInputRef = useRef<HTMLInputElement>(null);
+
+  const filteredPersonas = useMemo(() => {
+    if (selectedCategories.length === 0) return PERSONAS;
+    return PERSONAS.filter(p => selectedCategories.includes(p.category));
+  }, [selectedCategories]);
+
+  const toggleCategory = (category: PersonaCategory) => {
+    setSelectedCategories(prev => 
+      prev.includes(category) 
+        ? prev.filter(c => c !== category)
+        : [...prev, category]
+    );
+  };
+
+  const clearFilters = () => setSelectedCategories([]);
 
   const handleFileUpload = async (e: React.ChangeEvent<HTMLInputElement>) => {
     const files = e.target.files;
@@ -316,10 +370,39 @@ export function CSuiteDataHub({ userId }: CSuiteDataHubProps) {
 
             {/* Personas Tab */}
             {!expandedDomain && (
-              <TabsContent value="personas" className="h-full m-0 p-2">
-                <ScrollArea className="h-full">
+              <TabsContent value="personas" className="h-full m-0 p-2 flex flex-col">
+                {/* Filter Bar */}
+                <div className="flex items-center gap-1.5 pb-2 border-b border-border mb-2 flex-wrap">
+                  <Filter size={10} className="text-muted-foreground" />
+                  {PERSONA_CATEGORIES.map(({ id, label }) => (
+                    <Badge
+                      key={id}
+                      variant={selectedCategories.includes(id) ? 'default' : 'outline'}
+                      className="text-[9px] font-mono cursor-pointer hover:bg-primary/20 transition-colors px-1.5 py-0"
+                      onClick={() => toggleCategory(id)}
+                    >
+                      {label}
+                    </Badge>
+                  ))}
+                  {selectedCategories.length > 0 && (
+                    <Button
+                      variant="ghost"
+                      size="sm"
+                      className="h-4 px-1 text-[9px] text-muted-foreground hover:text-foreground"
+                      onClick={clearFilters}
+                    >
+                      <X size={8} className="mr-0.5" />
+                      Clear
+                    </Button>
+                  )}
+                  <span className="text-[9px] text-muted-foreground ml-auto">
+                    {filteredPersonas.length} of {PERSONAS.length}
+                  </span>
+                </div>
+
+                <ScrollArea className="flex-1">
                   <div className="space-y-2">
-                    {PERSONAS.map(({ id, label, icon: Icon, description }) => (
+                    {filteredPersonas.map(({ id, label, icon: Icon, description, category }) => (
                       <div
                         key={id}
                         className="p-2 rounded bg-background border border-border"
@@ -328,6 +411,9 @@ export function CSuiteDataHub({ userId }: CSuiteDataHubProps) {
                           <div className="flex items-center gap-2">
                             <Icon size={14} className="text-primary" />
                             <span className="text-xs font-mono text-foreground">{label}</span>
+                            <Badge variant="secondary" className="text-[8px] font-mono px-1 py-0">
+                              {category}
+                            </Badge>
                           </div>
                           <Button
                             variant="outline"
