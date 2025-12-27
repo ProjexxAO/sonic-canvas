@@ -610,8 +610,11 @@ export default function Atlas() {
           onGoToStep={onboarding.goToStep}
           hasConnectedData={onboarding.hasConnectedData}
           hasGeneratedReport={onboarding.hasGeneratedReport}
+          hasAllocatedAgents={onboarding.hasAllocatedAgents}
+          selectedPersona={onboarding.selectedPersona}
           onMarkDataConnected={onboarding.markDataConnected}
           onMarkReportGenerated={onboarding.markReportGenerated}
+          onMarkAgentsAllocated={onboarding.markAgentsAllocated}
           totalDataItems={totalDataItems}
           onUploadFile={handleOnboardingUpload}
           onGenerateReport={handleOnboardingGenerateReport}
