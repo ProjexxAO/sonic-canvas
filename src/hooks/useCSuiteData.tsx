@@ -366,8 +366,11 @@ export function useCSuiteData(userId: string | undefined) {
     // TODO: Implement OAuth flow via edge function
   }, [userId]);
 
-  // Generate C-Suite report
-  const generateReport = useCallback(async (persona: string) => {
+  // Generate C-Suite report with custom options
+  const generateReport = useCallback(async (
+    persona: string, 
+    options?: { depth?: 'brief' | 'standard' | 'detailed'; focusAreas?: string[] }
+  ) => {
     if (!userId) {
       toast.error('Please sign in to generate reports');
       return null;
@@ -375,7 +378,7 @@ export function useCSuiteData(userId: string | undefined) {
 
     try {
       const { data, error } = await supabase.functions.invoke('csuite-generate-report', {
-        body: { persona, userId },
+        body: { persona, userId, options },
       });
 
       if (error) throw error;
