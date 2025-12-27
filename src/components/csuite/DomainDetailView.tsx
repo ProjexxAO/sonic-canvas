@@ -1,3 +1,4 @@
+import { useState, useMemo } from 'react';
 import { format } from 'date-fns';
 import { 
   ArrowLeft,
@@ -7,9 +8,12 @@ import {
   DollarSign, 
   CheckSquare, 
   BookOpen,
-  Loader2
+  Loader2,
+  Search,
+  X
 } from 'lucide-react';
 import { Button } from '@/components/ui/button';
+import { Input } from '@/components/ui/input';
 import { ScrollArea } from '@/components/ui/scroll-area';
 import { Badge } from '@/components/ui/badge';
 import { 
@@ -50,6 +54,17 @@ export function DomainDetailView({
   onItemClick,
 }: DomainDetailViewProps) {
   const Icon = DOMAIN_ICONS[domainKey];
+  const [searchQuery, setSearchQuery] = useState('');
+
+  const filteredItems = useMemo(() => {
+    if (!searchQuery.trim()) return items;
+    const query = searchQuery.toLowerCase().trim();
+    return items.filter(item => 
+      item.title.toLowerCase().includes(query) ||
+      (item.preview && item.preview.toLowerCase().includes(query)) ||
+      item.type.toLowerCase().includes(query)
+    );
+  }, [items, searchQuery]);
 
   const getItemSubtitle = (item: DomainItem): string => {
     switch (domainKey) {
@@ -128,10 +143,38 @@ export function DomainDetailView({
         <div className="flex-1">
           <h3 className="text-sm font-mono text-foreground">{label}</h3>
           <p className="text-[10px] text-muted-foreground">
-            {items.length} items
+            {filteredItems.length === items.length 
+              ? `${items.length} items` 
+              : `${filteredItems.length} of ${items.length} items`}
           </p>
         </div>
       </div>
+
+      {/* Search Bar */}
+      {items.length > 0 && (
+        <div className="px-3 py-2 border-b border-border">
+          <div className="relative">
+            <Search size={12} className="absolute left-2.5 top-1/2 -translate-y-1/2 text-muted-foreground" />
+            <Input
+              type="text"
+              placeholder={`Search ${label.toLowerCase()}...`}
+              value={searchQuery}
+              onChange={(e) => setSearchQuery(e.target.value)}
+              className="h-7 pl-7 pr-7 text-[11px] font-mono bg-background"
+            />
+            {searchQuery && (
+              <Button
+                variant="ghost"
+                size="icon"
+                className="absolute right-1 top-1/2 -translate-y-1/2 h-5 w-5"
+                onClick={() => setSearchQuery('')}
+              >
+                <X size={10} />
+              </Button>
+            )}
+          </div>
+        </div>
+      )}
 
       {/* Content */}
       <ScrollArea className="flex-1">
@@ -148,9 +191,22 @@ export function DomainDetailView({
               Connect a data source or upload files to get started
             </p>
           </div>
+        ) : filteredItems.length === 0 ? (
+          <div className="flex flex-col items-center justify-center py-12">
+            <Search size={24} className="text-muted-foreground/30 mb-3" />
+            <p className="text-xs text-muted-foreground">No results for "{searchQuery}"</p>
+            <Button
+              variant="link"
+              size="sm"
+              className="text-[10px] text-primary mt-1 h-auto p-0"
+              onClick={() => setSearchQuery('')}
+            >
+              Clear search
+            </Button>
+          </div>
         ) : (
           <div className="p-2 space-y-1">
-            {items.map((item) => (
+            {filteredItems.map((item) => (
               <button
                 key={item.id}
                 onClick={() => onItemClick(item)}
