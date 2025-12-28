@@ -1648,7 +1648,7 @@ export default function Atlas() {
         </div>
 
         {/* Right Panel - Results & Logs (Scrollable) */}
-        <div className="w-96 flex flex-col gap-4 overflow-y-auto max-h-[calc(100vh-10rem)] pr-2 scrollbar-thin scrollbar-thumb-border scrollbar-track-transparent">
+        <div className="w-96 flex-shrink-0 flex flex-col gap-4 overflow-y-auto pr-2 scrollbar-thin scrollbar-thumb-border scrollbar-track-transparent pb-4">
           {/* Search Results */}
           {searchResults.length > 0 && (
             <div className="bg-card/90 border border-border rounded-lg p-3 shadow-sm">
