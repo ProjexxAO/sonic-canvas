@@ -377,6 +377,43 @@ export function CSuiteDataHub({ userId, agents = [], agentsLoading = false }: CS
                       </div>
                     </div>
 
+                    {/* Domain Access Permissions - Visual indicator */}
+                    {userPersona && (
+                      <div className="p-2 rounded bg-background border border-border">
+                        <div className="flex items-center gap-2 mb-2">
+                          <Shield size={10} className="text-primary" />
+                          <span className="text-[9px] font-mono text-muted-foreground">DOMAIN ACCESS</span>
+                          <Badge variant="outline" className="text-[7px] font-mono ml-auto">
+                            {currentPersona?.label}
+                          </Badge>
+                        </div>
+                        <div className="flex flex-wrap gap-1">
+                          {DOMAIN_CONFIG.map(({ key, label, icon: Icon, color }) => {
+                            const canView = personaPerms.canViewDomain(key);
+                            return (
+                              <Badge 
+                                key={key}
+                                variant={canView ? 'default' : 'outline'}
+                                className={`text-[8px] font-mono flex items-center gap-1 ${
+                                  canView 
+                                    ? 'bg-primary/20 text-primary border-primary/30' 
+                                    : 'opacity-50 text-muted-foreground'
+                                }`}
+                              >
+                                <Icon size={8} style={{ color: canView ? color : undefined }} />
+                                {label}
+                                {canView ? (
+                                  <Eye size={6} className="ml-0.5" />
+                                ) : (
+                                  <X size={6} className="ml-0.5" />
+                                )}
+                              </Badge>
+                            );
+                          })}
+                        </div>
+                      </div>
+                    )}
+
                     {/* Quick Action Cards - Persona-specific */}
                     <QuickActionCards 
                       personaId={userPersona}
