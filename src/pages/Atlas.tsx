@@ -41,9 +41,7 @@ import { ScrollArea } from '@/components/ui/scroll-area';
 import { ActionLogItem } from '@/components/atlas/ActionLogItem';
 import { CSuiteDataHub } from '@/components/csuite/CSuiteDataHub';
 import { OnboardingFlow } from '@/components/onboarding';
-import { ExecutiveDashboard } from '@/components/executive/ExecutiveDashboard';
-import { WorkflowManager } from '@/components/workflows/WorkflowManager';
-import { EnterpriseInsightsPanel } from '@/components/atlas/EnterpriseInsightsPanel';
+// Executive, Workflow, and Enterprise features now integrated into CSuiteDataHub
 
 const ATLAS_AGENT_ID = "agent_7501kbh21cg1eht9xtjw6kvkpm4m";
 
@@ -1693,21 +1691,8 @@ export default function Atlas() {
             </div>
           )}
 
-          {/* Enterprise Intelligence Panel - Atlas + C-Suite Integration */}
-          <EnterpriseInsightsPanel userId={user?.id} />
-
-          {/* C-Suite Data Hub */}
-          <CSuiteDataHub userId={user?.id} />
-
-          {/* Executive Dashboard */}
-          <div className="bg-card/90 border border-border rounded-lg shadow-sm overflow-hidden">
-            <ExecutiveDashboard userId={user?.id} agents={agents} agentsLoading={agentsLoading} />
-          </div>
-
-          {/* Workflow Manager */}
-          <div className="bg-card/90 border border-border rounded-lg shadow-sm overflow-hidden">
-            <WorkflowManager userId={user?.id} />
-          </div>
+          {/* C-Suite Data Hub - Consolidated Enterprise Control Center */}
+          <CSuiteDataHub userId={user?.id} agents={agents} agentsLoading={agentsLoading} />
 
         </div>
       </main>
