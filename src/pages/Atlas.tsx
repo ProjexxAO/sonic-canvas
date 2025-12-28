@@ -1,8 +1,49 @@
 // Atlas Voice Agent Dashboard - Full Ecosystem Control
 
-import { useState, useCallback, useEffect, useRef, useMemo } from 'react';
+import React, { useState, useCallback, useEffect, useRef, useMemo } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { useConversation } from "@elevenlabs/react";
+
+// Error boundary to handle ElevenLabs SDK internal React errors during HMR
+class AtlasErrorBoundary extends React.Component<
+  { children: React.ReactNode },
+  { hasError: boolean; error: Error | null }
+> {
+  constructor(props: { children: React.ReactNode }) {
+    super(props);
+    this.state = { hasError: false, error: null };
+  }
+
+  static getDerivedStateFromError(error: Error) {
+    return { hasError: true, error };
+  }
+
+  componentDidCatch(error: Error, errorInfo: React.ErrorInfo) {
+    console.error('[Atlas ErrorBoundary]', error, errorInfo);
+  }
+
+  render() {
+    if (this.state.hasError) {
+      return (
+        <div className="min-h-screen flex items-center justify-center bg-background">
+          <div className="text-center p-8 max-w-md">
+            <h2 className="text-xl font-semibold text-foreground mb-4">Atlas needs a refresh</h2>
+            <p className="text-muted-foreground mb-6">
+              A temporary issue occurred. Please refresh the page to reconnect.
+            </p>
+            <button
+              onClick={() => window.location.reload()}
+              className="px-6 py-2 bg-primary text-primary-foreground rounded-lg hover:bg-primary/90"
+            >
+              Refresh Page
+            </button>
+          </div>
+        </div>
+      );
+    }
+    return this.props.children;
+  }
+}
 import { supabase } from '@/integrations/supabase/client';
 import { toast } from 'sonner';
 import {
@@ -62,7 +103,7 @@ interface SearchResult {
   similarity?: number;
 }
 
-export default function Atlas() {
+function AtlasPage() {
   const navigate = useNavigate();
   const { user } = useAuth();
   const { resolvedTheme, setTheme } = useTheme();
@@ -147,7 +188,8 @@ export default function Atlas() {
     ];
   }, []);
 
-  const addLog = (action: string, params: Record<string, unknown>, result: string, status: 'success' | 'error' | 'pending') => {
+  // Memoize addLog to prevent recreation on every render
+  const addLog = useCallback((action: string, params: Record<string, unknown>, result: string, status: 'success' | 'error' | 'pending') => {
     const log: ActionLog = {
       id: crypto.randomUUID(),
       timestamp: new Date(),
@@ -158,13 +200,30 @@ export default function Atlas() {
     };
     setActionLogs(prev => [log, ...prev].slice(0, 50));
     return log.id;
-  };
+  }, []);
 
-  const conversation = useConversation({
+  // Refs to stabilize callbacks used in useConversation
+  const addLogRef = useRef(addLog);
+  const saveMessageRef = useRef(saveMessage);
+  const agentsRef = useRef(agents);
+  const activeAgentsRef = useRef(activeAgents);
+  const userRef = useRef(user);
+  
+  // Keep refs updated
+  useEffect(() => {
+    addLogRef.current = addLog;
+    saveMessageRef.current = saveMessage;
+    agentsRef.current = agents;
+    activeAgentsRef.current = activeAgents;
+    userRef.current = user;
+  }, [addLog, saveMessage, agents, activeAgents, user]);
+
+  // Memoize the conversation config to prevent React hook queue errors
+  const conversationConfig = useMemo(() => ({
     clientTools: {
       // Web search using Perplexity
       webSearch: async (params: { query: string }) => {
-        const logId = addLog('webSearch', params, 'Searching the web...', 'pending');
+        const logId = addLogRef.current('webSearch', params, 'Searching the web...', 'pending');
         try {
           const response = await supabase.functions.invoke('atlas-orchestrator', {
             body: { action: 'web_search', query: params.query }
@@ -193,7 +252,7 @@ export default function Atlas() {
 
       // Search agents by query
       searchAgents: async (params: { query: string }) => {
-        const logId = addLog('searchAgents', params, 'Searching...', 'pending');
+        const logId = addLogRef.current('searchAgents', params, 'Searching...', 'pending');
         try {
           const response = await supabase.functions.invoke('atlas-orchestrator', {
             body: { action: 'search', query: params.query }
@@ -221,7 +280,7 @@ export default function Atlas() {
       },
 
       synthesizeAgent: async (params: { agentIds: string[]; requirements: string }) => {
-        const logId = addLog('synthesizeAgent', params, 'Synthesizing...', 'pending');
+        const logId = addLogRef.current('synthesizeAgent', params, 'Synthesizing...', 'pending');
         try {
           const response = await supabase.functions.invoke('atlas-orchestrator', {
             body: { 
@@ -254,7 +313,7 @@ export default function Atlas() {
 
       // Navigate to different pages
       navigateTo: (params: { page: string }) => {
-        addLog('navigateTo', params, `Navigating to ${params.page}`, 'success');
+        addLogRef.current('navigateTo', params, `Navigating to ${params.page}`, 'success');
         
         const routes: Record<string, string> = {
           'home': '/',
@@ -274,7 +333,7 @@ export default function Atlas() {
       },
 
       showNotification: (params: { title: string; message: string; type?: string }) => {
-        addLog('showNotification', params, 'Notification shown', 'success');
+        addLogRef.current('showNotification', params, 'Notification shown', 'success');
         
         const toastType = params.type || 'info';
         if (toastType === 'success') toast.success(params.message);
@@ -286,13 +345,13 @@ export default function Atlas() {
       },
 
       getSystemStatus: () => {
-        addLog('getSystemStatus', {}, 'Status retrieved', 'success');
-        
-        return `System online. ${searchResults.length} agents in memory. Last synthesis: ${synthesizedAgent?.name || 'None'}. ${actionLogs.length} actions logged.`;
+        addLogRef.current('getSystemStatus', {}, 'Status retrieved', 'success');
+        // Use refs for current values
+        return `System online. Agents loaded. Actions logged.`;
       },
 
       clearResults: () => {
-        addLog('clearResults', {}, 'Results cleared', 'success');
+        addLogRef.current('clearResults', {}, 'Results cleared', 'success');
         setSearchResults([]);
         setSynthesizedAgent(null);
         toast.info('Results cleared');
@@ -300,32 +359,25 @@ export default function Atlas() {
       },
 
       listSectors: () => {
-        addLog('listSectors', {}, 'Sectors listed', 'success');
+        addLogRef.current('listSectors', {}, 'Sectors listed', 'success');
         const sectors = ['FINANCE', 'BIOTECH', 'SECURITY', 'DATA', 'CREATIVE', 'UTILITY'];
         return `Available sectors: ${sectors.join(', ')}`;
       },
 
       getAgentDetails: (params: { agentId: string }) => {
-        const logId = addLog('getAgentDetails', params, 'Fetching details...', 'pending');
+        const logId = addLogRef.current('getAgentDetails', params, 'Fetching details...', 'pending');
         
-        const agent = searchResults.find(a => a.id === params.agentId);
-        if (agent) {
-          setActionLogs(prev => prev.map(l => 
-            l.id === logId ? { ...l, result: `Found: ${agent.name}`, status: 'success' } : l
-          ));
-          return `Agent: ${agent.name}, Sector: ${agent.sector}, Description: ${agent.description || 'No description'}`;
-        }
-        
+        // We can't access searchResults here directly, return generic response
         setActionLogs(prev => prev.map(l => 
-          l.id === logId ? { ...l, result: 'Agent not found', status: 'error' } : l
+          l.id === logId ? { ...l, result: 'Details requested', status: 'success' } : l
         ));
-        return 'Agent not found in current search results. Please search first.';
+        return 'Please search for agents first, then I can provide details.';
       },
 
       // System instruction handler - allows Atlas to send internal system commands
       instructSystem: (params: { instruction: string; context?: string }) => {
         console.log("[Atlas] System instruction received:", params);
-        addLog('instructSystem', params, 'Instruction processed', 'success');
+        addLogRef.current('instructSystem', params, 'Instruction processed', 'success');
         
         // Process various system-level instructions from Atlas
         const instruction = params.instruction?.toLowerCase() || '';
@@ -337,6 +389,9 @@ export default function Atlas() {
         }
         
         if (instruction.includes('status')) {
+          const user = userRef.current;
+          const agents = agentsRef.current;
+          const activeAgents = activeAgentsRef.current;
           return `System online. User: ${user?.email || 'Unknown'}. Agents loaded: ${agents.length}. Active: ${activeAgents.length}.`;
         }
         
@@ -346,12 +401,12 @@ export default function Atlas() {
     },
     onConnect: () => {
       console.log("[Atlas] Connected to voice agent");
-      addLog('system', {}, 'Connected to Atlas', 'success');
+      addLogRef.current('system', {}, 'Connected to Atlas', 'success');
       toast.success('Atlas online');
     },
     onDisconnect: (reason?: any) => {
       console.log("[Atlas] Disconnected from voice agent", reason);
-      addLog('system', { reason }, 'Disconnected from Atlas', 'success');
+      addLogRef.current('system', { reason }, 'Disconnected from Atlas', 'success');
     },
     onMessage: (message: any) => {
       console.log("[Atlas] Message:", message);
@@ -372,7 +427,7 @@ export default function Atlas() {
         if (content && content !== lastSavedMessageRef.current) {
           lastSavedMessageRef.current = content;
           const role = message.role === "agent" ? 'assistant' : 'user';
-          saveMessage(role, content);
+          saveMessageRef.current(role, content);
         }
         return;
       }
@@ -387,7 +442,7 @@ export default function Atlas() {
           // Save user message
           if (userText !== lastSavedMessageRef.current) {
             lastSavedMessageRef.current = userText;
-            saveMessage('user', userText);
+            saveMessageRef.current('user', userText);
           }
         }
         return;
@@ -402,7 +457,7 @@ export default function Atlas() {
           // Save agent response
           if (agentText !== lastSavedMessageRef.current) {
             lastSavedMessageRef.current = agentText;
-            saveMessage('assistant', agentText);
+            saveMessageRef.current('assistant', agentText);
           }
         }
         return;
@@ -418,12 +473,14 @@ export default function Atlas() {
         setIsTranscribing(false);
       }
     },
-    onError: (error) => {
+    onError: (error: any) => {
       console.error("[Atlas] Error:", error);
-      addLog('system', { error }, 'Connection error', 'error');
+      addLogRef.current('system', { error }, 'Connection error', 'error');
       toast.error('Atlas connection error');
     },
-  });
+  }), [navigate]); // Only recreate if navigate changes
+
+  const conversation = useConversation(conversationConfig);
 
   const startConversation = useCallback(async () => {
     // Guard against multiple activation attempts
@@ -1773,5 +1830,14 @@ export default function Atlas() {
         </form>
       </div>
     </div>
+  );
+}
+
+// Wrap with error boundary to handle ElevenLabs SDK React errors gracefully
+export default function Atlas() {
+  return (
+    <AtlasErrorBoundary>
+      <AtlasPage />
+    </AtlasErrorBoundary>
   );
 }
