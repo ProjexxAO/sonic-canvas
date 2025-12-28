@@ -43,6 +43,7 @@ import { CSuiteDataHub } from '@/components/csuite/CSuiteDataHub';
 import { OnboardingFlow } from '@/components/onboarding';
 import { ExecutiveDashboard } from '@/components/executive/ExecutiveDashboard';
 import { WorkflowManager } from '@/components/workflows/WorkflowManager';
+import { EnterpriseInsightsPanel } from '@/components/atlas/EnterpriseInsightsPanel';
 
 const ATLAS_AGENT_ID = "agent_7501kbh21cg1eht9xtjw6kvkpm4m";
 
@@ -1691,6 +1692,9 @@ export default function Atlas() {
               </div>
             </div>
           )}
+
+          {/* Enterprise Intelligence Panel - Atlas + C-Suite Integration */}
+          <EnterpriseInsightsPanel userId={user?.id} />
 
           {/* C-Suite Data Hub */}
           <CSuiteDataHub userId={user?.id} />
