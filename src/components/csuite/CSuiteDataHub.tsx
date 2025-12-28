@@ -126,8 +126,6 @@ export function CSuiteDataHub({ userId, agents = [], agentsLoading = false }: CS
     refresh,
   } = useCSuiteData(userId);
 
-  const enterprise = useAtlasEnterprise(userId);
-
   const [activeTab, setActiveTab] = useState('command');
   const [generatingPersona, setGeneratingPersona] = useState<string | null>(null);
   const [expandedDomain, setExpandedDomain] = useState<DomainKey | null>(null);
@@ -140,6 +138,8 @@ export function CSuiteDataHub({ userId, agents = [], agentsLoading = false }: CS
   const [isSuperAdmin, setIsSuperAdmin] = useState(false);
   const fileInputRef = useRef<HTMLInputElement>(null);
 
+  // Initialize enterprise hook with persona for permission-aware queries
+  const enterprise = useAtlasEnterprise(userId, userPersona);
   const personaPerms = usePersonaPermissions(userPersona);
 
   useEffect(() => {
