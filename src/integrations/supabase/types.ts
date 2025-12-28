@@ -14,6 +14,188 @@ export type Database = {
   }
   public: {
     Tables: {
+      agent_capabilities: {
+        Row: {
+          agent_id: string
+          capability_name: string
+          capability_type: string
+          cooldown_seconds: number | null
+          created_at: string
+          description: string | null
+          id: string
+          invocation_count: number | null
+          is_active: boolean | null
+          last_invoked_at: string | null
+          max_autonomous_actions: number | null
+          requires_approval: boolean | null
+          trigger_conditions: Json | null
+          updated_at: string
+        }
+        Insert: {
+          agent_id: string
+          capability_name: string
+          capability_type: string
+          cooldown_seconds?: number | null
+          created_at?: string
+          description?: string | null
+          id?: string
+          invocation_count?: number | null
+          is_active?: boolean | null
+          last_invoked_at?: string | null
+          max_autonomous_actions?: number | null
+          requires_approval?: boolean | null
+          trigger_conditions?: Json | null
+          updated_at?: string
+        }
+        Update: {
+          agent_id?: string
+          capability_name?: string
+          capability_type?: string
+          cooldown_seconds?: number | null
+          created_at?: string
+          description?: string | null
+          id?: string
+          invocation_count?: number | null
+          is_active?: boolean | null
+          last_invoked_at?: string | null
+          max_autonomous_actions?: number | null
+          requires_approval?: boolean | null
+          trigger_conditions?: Json | null
+          updated_at?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "agent_capabilities_agent_id_fkey"
+            columns: ["agent_id"]
+            isOneToOne: false
+            referencedRelation: "sonic_agents"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      agent_notifications: {
+        Row: {
+          action_items: Json | null
+          created_at: string
+          expires_at: string | null
+          id: string
+          is_actioned: boolean | null
+          is_dismissed: boolean | null
+          is_read: boolean | null
+          message: string
+          metadata: Json | null
+          notification_type: string
+          priority: string | null
+          related_entity_id: string | null
+          related_entity_type: string | null
+          source_agent_id: string | null
+          source_agent_name: string | null
+          title: string
+          user_id: string
+        }
+        Insert: {
+          action_items?: Json | null
+          created_at?: string
+          expires_at?: string | null
+          id?: string
+          is_actioned?: boolean | null
+          is_dismissed?: boolean | null
+          is_read?: boolean | null
+          message: string
+          metadata?: Json | null
+          notification_type: string
+          priority?: string | null
+          related_entity_id?: string | null
+          related_entity_type?: string | null
+          source_agent_id?: string | null
+          source_agent_name?: string | null
+          title: string
+          user_id: string
+        }
+        Update: {
+          action_items?: Json | null
+          created_at?: string
+          expires_at?: string | null
+          id?: string
+          is_actioned?: boolean | null
+          is_dismissed?: boolean | null
+          is_read?: boolean | null
+          message?: string
+          metadata?: Json | null
+          notification_type?: string
+          priority?: string | null
+          related_entity_id?: string | null
+          related_entity_type?: string | null
+          source_agent_id?: string | null
+          source_agent_name?: string | null
+          title?: string
+          user_id?: string
+        }
+        Relationships: []
+      }
+      agent_task_queue: {
+        Row: {
+          agent_suggestions: Json | null
+          assigned_agents: string[] | null
+          completed_at: string | null
+          created_at: string
+          id: string
+          input_data: Json | null
+          orchestration_mode: string | null
+          output_data: Json | null
+          progress: number | null
+          scheduled_at: string | null
+          started_at: string | null
+          status: string
+          task_description: string | null
+          task_priority: string | null
+          task_title: string
+          task_type: string
+          updated_at: string
+          user_id: string
+        }
+        Insert: {
+          agent_suggestions?: Json | null
+          assigned_agents?: string[] | null
+          completed_at?: string | null
+          created_at?: string
+          id?: string
+          input_data?: Json | null
+          orchestration_mode?: string | null
+          output_data?: Json | null
+          progress?: number | null
+          scheduled_at?: string | null
+          started_at?: string | null
+          status?: string
+          task_description?: string | null
+          task_priority?: string | null
+          task_title: string
+          task_type: string
+          updated_at?: string
+          user_id: string
+        }
+        Update: {
+          agent_suggestions?: Json | null
+          assigned_agents?: string[] | null
+          completed_at?: string | null
+          created_at?: string
+          id?: string
+          input_data?: Json | null
+          orchestration_mode?: string | null
+          output_data?: Json | null
+          progress?: number | null
+          scheduled_at?: string | null
+          started_at?: string | null
+          status?: string
+          task_description?: string | null
+          task_priority?: string | null
+          task_title?: string
+          task_type?: string
+          updated_at?: string
+          user_id?: string
+        }
+        Relationships: []
+      }
       atlas_conversations: {
         Row: {
           content: string
@@ -939,6 +1121,39 @@ export type Database = {
           created_at?: string
           id?: string
           role?: Database["public"]["Enums"]["app_role"]
+          user_id?: string
+        }
+        Relationships: []
+      }
+      user_ui_preferences: {
+        Row: {
+          created_at: string
+          defaults_config: Json | null
+          id: string
+          layout_config: Json | null
+          shortcuts_config: Json | null
+          theme_config: Json | null
+          updated_at: string
+          user_id: string
+        }
+        Insert: {
+          created_at?: string
+          defaults_config?: Json | null
+          id?: string
+          layout_config?: Json | null
+          shortcuts_config?: Json | null
+          theme_config?: Json | null
+          updated_at?: string
+          user_id: string
+        }
+        Update: {
+          created_at?: string
+          defaults_config?: Json | null
+          id?: string
+          layout_config?: Json | null
+          shortcuts_config?: Json | null
+          theme_config?: Json | null
+          updated_at?: string
           user_id?: string
         }
         Relationships: []

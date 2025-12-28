@@ -1,0 +1,378 @@
+import { useState, useEffect, useCallback } from 'react';
+import { supabase } from '@/integrations/supabase/client';
+import { toast } from 'sonner';
+
+export interface AgentTask {
+  id: string;
+  user_id: string;
+  task_type: 'automation' | 'notification' | 'analysis' | 'assistance' | 'background';
+  task_title: string;
+  task_description?: string;
+  task_priority: 'low' | 'medium' | 'high' | 'critical';
+  assigned_agents: string[];
+  orchestration_mode: 'automatic' | 'user_directed' | 'hybrid' | 'autonomous';
+  status: 'pending' | 'in_progress' | 'awaiting_approval' | 'completed' | 'failed' | 'cancelled';
+  progress: number;
+  input_data: Record<string, any>;
+  output_data: Record<string, any>;
+  agent_suggestions: AgentSuggestion[];
+  scheduled_at?: Date;
+  started_at?: Date;
+  completed_at?: Date;
+  created_at: Date;
+}
+
+export interface AgentSuggestion {
+  agent_id: string;
+  agent_name: string;
+  action: string;
+  reason: string;
+  confidence: number;
+  requires_approval: boolean;
+}
+
+export interface AgentNotification {
+  id: string;
+  user_id: string;
+  notification_type: 'alert' | 'recommendation' | 'update' | 'reminder' | 'insight';
+  title: string;
+  message: string;
+  priority: 'low' | 'normal' | 'high' | 'urgent';
+  source_agent_id?: string;
+  source_agent_name?: string;
+  action_items: ActionItem[];
+  is_read: boolean;
+  is_dismissed: boolean;
+  is_actioned: boolean;
+  related_entity_type?: string;
+  related_entity_id?: string;
+  metadata: Record<string, any>;
+  expires_at?: Date;
+  created_at: Date;
+}
+
+export interface ActionItem {
+  label: string;
+  action_type: string;
+  action_data: Record<string, any>;
+}
+
+export interface AgentCapability {
+  id: string;
+  agent_id: string;
+  capability_name: string;
+  capability_type: 'automation' | 'analysis' | 'notification' | 'integration' | 'processing';
+  description?: string;
+  trigger_conditions: Record<string, any>;
+  requires_approval: boolean;
+  max_autonomous_actions: number;
+  cooldown_seconds: number;
+  is_active: boolean;
+  last_invoked_at?: Date;
+  invocation_count: number;
+}
+
+export function useAgentOrchestration(userId: string | undefined) {
+  const [tasks, setTasks] = useState<AgentTask[]>([]);
+  const [notifications, setNotifications] = useState<AgentNotification[]>([]);
+  const [unreadCount, setUnreadCount] = useState(0);
+  const [isLoading, setIsLoading] = useState(true);
+
+  // Fetch active tasks
+  const fetchTasks = useCallback(async () => {
+    if (!userId) return;
+
+    try {
+      const { data, error } = await (supabase as any)
+        .from('agent_task_queue')
+        .select('*')
+        .eq('user_id', userId)
+        .in('status', ['pending', 'in_progress', 'awaiting_approval'])
+        .order('created_at', { ascending: false })
+        .limit(20);
+
+      if (error) throw error;
+
+      setTasks(data?.map((t: any) => ({
+        ...t,
+        scheduled_at: t.scheduled_at ? new Date(t.scheduled_at) : undefined,
+        started_at: t.started_at ? new Date(t.started_at) : undefined,
+        completed_at: t.completed_at ? new Date(t.completed_at) : undefined,
+        created_at: new Date(t.created_at),
+      })) || []);
+    } catch (error) {
+      console.error('Error fetching tasks:', error);
+    }
+  }, [userId]);
+
+  // Fetch notifications
+  const fetchNotifications = useCallback(async () => {
+    if (!userId) return;
+
+    try {
+      const { data, error } = await (supabase as any)
+        .from('agent_notifications')
+        .select('*')
+        .eq('user_id', userId)
+        .eq('is_dismissed', false)
+        .order('created_at', { ascending: false })
+        .limit(50);
+
+      if (error) throw error;
+
+      const notifs = data?.map((n: any) => ({
+        ...n,
+        expires_at: n.expires_at ? new Date(n.expires_at) : undefined,
+        created_at: new Date(n.created_at),
+      })) || [];
+
+      setNotifications(notifs);
+      setUnreadCount(notifs.filter((n: AgentNotification) => !n.is_read).length);
+    } catch (error) {
+      console.error('Error fetching notifications:', error);
+    }
+  }, [userId]);
+
+  // Initial fetch
+  useEffect(() => {
+    if (userId) {
+      setIsLoading(true);
+      Promise.all([fetchTasks(), fetchNotifications()])
+        .finally(() => setIsLoading(false));
+    }
+  }, [userId, fetchTasks, fetchNotifications]);
+
+  // Real-time subscription for notifications
+  useEffect(() => {
+    if (!userId) return;
+
+    const channel = supabase
+      .channel('agent-notifications')
+      .on(
+        'postgres_changes',
+        {
+          event: 'INSERT',
+          schema: 'public',
+          table: 'agent_notifications',
+          filter: `user_id=eq.${userId}`,
+        },
+        (payload) => {
+          const newNotif = {
+            ...payload.new,
+            expires_at: payload.new.expires_at ? new Date(payload.new.expires_at) : undefined,
+            created_at: new Date(payload.new.created_at),
+          } as AgentNotification;
+
+          setNotifications(prev => [newNotif, ...prev]);
+          setUnreadCount(prev => prev + 1);
+
+          // Show toast for high priority notifications
+          if (newNotif.priority === 'high' || newNotif.priority === 'urgent') {
+            toast.info(newNotif.title, {
+              description: newNotif.message,
+            });
+          }
+        }
+      )
+      .subscribe();
+
+    return () => {
+      supabase.removeChannel(channel);
+    };
+  }, [userId]);
+
+  // Create a new task
+  const createTask = useCallback(async (task: Omit<AgentTask, 'id' | 'user_id' | 'created_at' | 'status' | 'progress'>) => {
+    if (!userId) return null;
+
+    try {
+      const { data, error } = await (supabase as any)
+        .from('agent_task_queue')
+        .insert({
+          user_id: userId,
+          ...task,
+          status: 'pending',
+          progress: 0,
+        })
+        .select()
+        .single();
+
+      if (error) throw error;
+
+      fetchTasks();
+      toast.success('Task created');
+      return data;
+    } catch (error) {
+      console.error('Error creating task:', error);
+      toast.error('Failed to create task');
+      return null;
+    }
+  }, [userId, fetchTasks]);
+
+  // Approve a task suggestion
+  const approveTaskSuggestion = useCallback(async (taskId: string, suggestionIndex: number) => {
+    if (!userId) return;
+
+    try {
+      const task = tasks.find(t => t.id === taskId);
+      if (!task) return;
+
+      const { error } = await (supabase as any)
+        .from('agent_task_queue')
+        .update({
+          status: 'in_progress',
+          started_at: new Date().toISOString(),
+        })
+        .eq('id', taskId)
+        .eq('user_id', userId);
+
+      if (error) throw error;
+
+      fetchTasks();
+      toast.success('Task approved and started');
+    } catch (error) {
+      console.error('Error approving task:', error);
+      toast.error('Failed to approve task');
+    }
+  }, [userId, tasks, fetchTasks]);
+
+  // Cancel a task
+  const cancelTask = useCallback(async (taskId: string) => {
+    if (!userId) return;
+
+    try {
+      const { error } = await (supabase as any)
+        .from('agent_task_queue')
+        .update({ status: 'cancelled' })
+        .eq('id', taskId)
+        .eq('user_id', userId);
+
+      if (error) throw error;
+
+      fetchTasks();
+      toast.success('Task cancelled');
+    } catch (error) {
+      console.error('Error cancelling task:', error);
+      toast.error('Failed to cancel task');
+    }
+  }, [userId, fetchTasks]);
+
+  // Mark notification as read
+  const markNotificationRead = useCallback(async (notificationId: string) => {
+    if (!userId) return;
+
+    try {
+      const { error } = await (supabase as any)
+        .from('agent_notifications')
+        .update({ is_read: true })
+        .eq('id', notificationId)
+        .eq('user_id', userId);
+
+      if (error) throw error;
+
+      setNotifications(prev =>
+        prev.map(n => n.id === notificationId ? { ...n, is_read: true } : n)
+      );
+      setUnreadCount(prev => Math.max(0, prev - 1));
+    } catch (error) {
+      console.error('Error marking notification read:', error);
+    }
+  }, [userId]);
+
+  // Dismiss notification
+  const dismissNotification = useCallback(async (notificationId: string) => {
+    if (!userId) return;
+
+    try {
+      const { error } = await (supabase as any)
+        .from('agent_notifications')
+        .update({ is_dismissed: true })
+        .eq('id', notificationId)
+        .eq('user_id', userId);
+
+      if (error) throw error;
+
+      const notif = notifications.find(n => n.id === notificationId);
+      setNotifications(prev => prev.filter(n => n.id !== notificationId));
+      if (notif && !notif.is_read) {
+        setUnreadCount(prev => Math.max(0, prev - 1));
+      }
+    } catch (error) {
+      console.error('Error dismissing notification:', error);
+    }
+  }, [userId, notifications]);
+
+  // Mark all notifications as read
+  const markAllRead = useCallback(async () => {
+    if (!userId) return;
+
+    try {
+      const { error } = await (supabase as any)
+        .from('agent_notifications')
+        .update({ is_read: true })
+        .eq('user_id', userId)
+        .eq('is_read', false);
+
+      if (error) throw error;
+
+      setNotifications(prev => prev.map(n => ({ ...n, is_read: true })));
+      setUnreadCount(0);
+    } catch (error) {
+      console.error('Error marking all read:', error);
+    }
+  }, [userId]);
+
+  // Execute notification action
+  const executeAction = useCallback(async (notificationId: string, action: ActionItem) => {
+    if (!userId) return;
+
+    try {
+      // Mark as actioned
+      await (supabase as any)
+        .from('agent_notifications')
+        .update({ is_actioned: true })
+        .eq('id', notificationId)
+        .eq('user_id', userId);
+
+      // Handle different action types
+      switch (action.action_type) {
+        case 'navigate':
+          // Navigation handled by caller
+          break;
+        case 'approve':
+          // Approve related task
+          if (action.action_data.task_id) {
+            await approveTaskSuggestion(action.action_data.task_id, 0);
+          }
+          break;
+        case 'dismiss':
+          await dismissNotification(notificationId);
+          break;
+        default:
+          console.log('Action executed:', action);
+      }
+
+      return action;
+    } catch (error) {
+      console.error('Error executing action:', error);
+      toast.error('Failed to execute action');
+      return null;
+    }
+  }, [userId, approveTaskSuggestion, dismissNotification]);
+
+  return {
+    tasks,
+    notifications,
+    unreadCount,
+    isLoading,
+    createTask,
+    approveTaskSuggestion,
+    cancelTask,
+    markNotificationRead,
+    dismissNotification,
+    markAllRead,
+    executeAction,
+    refreshTasks: fetchTasks,
+    refreshNotifications: fetchNotifications,
+  };
+}
