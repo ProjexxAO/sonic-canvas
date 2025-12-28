@@ -212,7 +212,7 @@ export function FinancialsFullScreenView({
   };
 
   return (
-    <div className="h-full flex flex-col bg-background overflow-hidden">
+    <div className="h-screen w-screen flex flex-col bg-background overflow-hidden">
       {user && (
         <FinancialFormDialog
           open={formOpen}
@@ -282,8 +282,8 @@ export function FinancialsFullScreenView({
         </TabsList>
 
         {/* Overview Tab */}
-        <TabsContent value="overview" className="flex-1 overflow-hidden m-0 p-0">
-          <ScrollArea className="h-full w-full">
+        <TabsContent value="overview" className="flex-1 min-h-0 m-0 p-0 data-[state=active]:flex data-[state=active]:flex-col">
+          <ScrollArea className="flex-1">
             <div className="p-3 space-y-4">
               {/* Metrics Cards */}
               <div className="grid grid-cols-2 lg:grid-cols-4 gap-3">
@@ -452,7 +452,7 @@ export function FinancialsFullScreenView({
         </TabsContent>
 
         {/* Transactions Tab */}
-        <TabsContent value="transactions" className="flex-1 overflow-hidden m-0 flex flex-col">
+        <TabsContent value="transactions" className="flex-1 min-h-0 m-0 data-[state=active]:flex data-[state=active]:flex-col">
           <div className="px-3 py-2 border-b border-border flex gap-2 flex-wrap">
             <Input
               placeholder="Search transactions..."
@@ -522,7 +522,7 @@ export function FinancialsFullScreenView({
         </TabsContent>
 
         {/* Invoices Tab */}
-        <TabsContent value="invoices" className="flex-1 overflow-hidden m-0 flex flex-col">
+        <TabsContent value="invoices" className="flex-1 min-h-0 m-0 data-[state=active]:flex data-[state=active]:flex-col">
           <div className="px-3 py-2 border-b border-border flex justify-between items-center">
             <p className="text-xs text-muted-foreground">{invoices.length} invoices</p>
             <Button size="sm" className="h-7 text-xs" onClick={() => handleAdd('invoice')}>
@@ -572,7 +572,7 @@ export function FinancialsFullScreenView({
         </TabsContent>
 
         {/* Bills Tab */}
-        <TabsContent value="bills" className="flex-1 overflow-hidden m-0 flex flex-col">
+        <TabsContent value="bills" className="flex-1 min-h-0 m-0 data-[state=active]:flex data-[state=active]:flex-col">
           <div className="px-3 py-2 border-b border-border flex justify-between items-center">
             <p className="text-xs text-muted-foreground">{bills.length} bills</p>
             <Button size="sm" className="h-7 text-xs" onClick={() => handleAdd('bill')}>
@@ -622,8 +622,8 @@ export function FinancialsFullScreenView({
         </TabsContent>
 
         {/* Reports Tab */}
-        <TabsContent value="reports" className="flex-1 overflow-hidden m-0">
-          <ScrollArea className="h-full">
+        <TabsContent value="reports" className="flex-1 min-h-0 m-0 p-0 data-[state=active]:flex data-[state=active]:flex-col">
+          <ScrollArea className="flex-1">
             <div className="p-3 space-y-4">
               <div className="grid grid-cols-1 lg:grid-cols-2 gap-4">
                 {/* Profit & Loss Summary */}
