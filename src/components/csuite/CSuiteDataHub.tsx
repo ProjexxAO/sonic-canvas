@@ -38,6 +38,7 @@ import { PersonaConfigPopover, PersonaConfig, ReportDepth } from './PersonaConfi
 import { ReportViewer } from './ReportViewer';
 import { ReportHistoryList } from './ReportHistoryList';
 import { AtlasSummaryTab } from './AtlasSummaryTab';
+import { UserPersonaManager } from './UserPersonaManager';
 import { useAtlasEnterprise } from '@/hooks/useAtlasEnterprise';
 import { supabase } from '@/integrations/supabase/client';
 
@@ -257,6 +258,12 @@ export function CSuiteDataHub({ userId, agents = [], agentsLoading = false }: CS
   };
 
   const totalItems = Object.values(stats).reduce((a, b) => a + b, 0);
+
+  // Check if user can manage personas (superadmin or admin persona)
+  const canManagePersonas = isSuperAdmin || userPersona === 'admin';
+
+  // Personas for the manager dropdown
+  const personasForManager = PERSONAS.map(p => ({ id: p.id, label: p.label, category: p.category }));
 
   // Get expanded domain config
   const expandedDomainConfig = expandedDomain 
@@ -723,6 +730,16 @@ export function CSuiteDataHub({ userId, agents = [], agentsLoading = false }: CS
                     {filteredPersonas.length} of {PERSONAS.length}
                   </span>
                 </div>
+
+                {/* User Persona Manager - Only for superadmin or admin persona */}
+                {canManagePersonas && (
+                  <div className="mb-3">
+                    <UserPersonaManager 
+                      personas={personasForManager} 
+                      currentUserId={userId} 
+                    />
+                  </div>
+                )}
 
                 <ScrollArea className="flex-1">
                   <div className="space-y-2">
