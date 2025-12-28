@@ -315,6 +315,146 @@ export type Database = {
         }
         Relationships: []
       }
+      bank_accounts: {
+        Row: {
+          access_token_encrypted: string | null
+          account_name: string
+          account_number_masked: string | null
+          account_type: string
+          available_balance: number | null
+          connection_id: string | null
+          connection_provider: string | null
+          created_at: string
+          currency: string
+          current_balance: number | null
+          id: string
+          institution_logo_url: string | null
+          institution_name: string
+          is_active: boolean | null
+          is_primary: boolean | null
+          last_sync_at: string | null
+          metadata: Json | null
+          sync_error: string | null
+          sync_status: string | null
+          updated_at: string
+          user_id: string
+        }
+        Insert: {
+          access_token_encrypted?: string | null
+          account_name: string
+          account_number_masked?: string | null
+          account_type?: string
+          available_balance?: number | null
+          connection_id?: string | null
+          connection_provider?: string | null
+          created_at?: string
+          currency?: string
+          current_balance?: number | null
+          id?: string
+          institution_logo_url?: string | null
+          institution_name: string
+          is_active?: boolean | null
+          is_primary?: boolean | null
+          last_sync_at?: string | null
+          metadata?: Json | null
+          sync_error?: string | null
+          sync_status?: string | null
+          updated_at?: string
+          user_id: string
+        }
+        Update: {
+          access_token_encrypted?: string | null
+          account_name?: string
+          account_number_masked?: string | null
+          account_type?: string
+          available_balance?: number | null
+          connection_id?: string | null
+          connection_provider?: string | null
+          created_at?: string
+          currency?: string
+          current_balance?: number | null
+          id?: string
+          institution_logo_url?: string | null
+          institution_name?: string
+          is_active?: boolean | null
+          is_primary?: boolean | null
+          last_sync_at?: string | null
+          metadata?: Json | null
+          sync_error?: string | null
+          sync_status?: string | null
+          updated_at?: string
+          user_id?: string
+        }
+        Relationships: []
+      }
+      bank_transactions: {
+        Row: {
+          amount: number
+          bank_account_id: string
+          category: string | null
+          created_at: string
+          currency: string
+          description: string
+          external_id: string | null
+          id: string
+          is_pending: boolean | null
+          merchant_category: string | null
+          merchant_name: string | null
+          metadata: Json | null
+          posted_date: string | null
+          transaction_date: string
+          transaction_type: string
+          updated_at: string
+          user_id: string
+        }
+        Insert: {
+          amount: number
+          bank_account_id: string
+          category?: string | null
+          created_at?: string
+          currency?: string
+          description: string
+          external_id?: string | null
+          id?: string
+          is_pending?: boolean | null
+          merchant_category?: string | null
+          merchant_name?: string | null
+          metadata?: Json | null
+          posted_date?: string | null
+          transaction_date: string
+          transaction_type: string
+          updated_at?: string
+          user_id: string
+        }
+        Update: {
+          amount?: number
+          bank_account_id?: string
+          category?: string | null
+          created_at?: string
+          currency?: string
+          description?: string
+          external_id?: string | null
+          id?: string
+          is_pending?: boolean | null
+          merchant_category?: string | null
+          merchant_name?: string | null
+          metadata?: Json | null
+          posted_date?: string | null
+          transaction_date?: string
+          transaction_type?: string
+          updated_at?: string
+          user_id?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "bank_transactions_bank_account_id_fkey"
+            columns: ["bank_account_id"]
+            isOneToOne: false
+            referencedRelation: "bank_accounts"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
       channel_members: {
         Row: {
           channel_id: string
@@ -941,6 +1081,66 @@ export type Database = {
         }
         Relationships: []
       }
+      financial_insights: {
+        Row: {
+          actioned_at: string | null
+          created_at: string
+          data: Json | null
+          description: string
+          expires_at: string | null
+          id: string
+          impact_amount: number | null
+          impact_currency: string | null
+          insight_type: string
+          is_actioned: boolean | null
+          is_read: boolean | null
+          priority: string
+          recommendation: string | null
+          related_entity_id: string | null
+          related_entity_type: string | null
+          title: string
+          user_id: string
+        }
+        Insert: {
+          actioned_at?: string | null
+          created_at?: string
+          data?: Json | null
+          description: string
+          expires_at?: string | null
+          id?: string
+          impact_amount?: number | null
+          impact_currency?: string | null
+          insight_type: string
+          is_actioned?: boolean | null
+          is_read?: boolean | null
+          priority?: string
+          recommendation?: string | null
+          related_entity_id?: string | null
+          related_entity_type?: string | null
+          title: string
+          user_id: string
+        }
+        Update: {
+          actioned_at?: string | null
+          created_at?: string
+          data?: Json | null
+          description?: string
+          expires_at?: string | null
+          id?: string
+          impact_amount?: number | null
+          impact_currency?: string | null
+          insight_type?: string
+          is_actioned?: boolean | null
+          is_read?: boolean | null
+          priority?: string
+          recommendation?: string | null
+          related_entity_id?: string | null
+          related_entity_type?: string | null
+          title?: string
+          user_id?: string
+        }
+        Relationships: []
+      }
       message_reactions: {
         Row: {
           created_at: string
@@ -1232,6 +1432,75 @@ export type Database = {
         }
         Relationships: []
       }
+      recurring_patterns: {
+        Row: {
+          amount_max: number | null
+          amount_min: number | null
+          category: string | null
+          confidence_score: number | null
+          created_at: string
+          day_of_month: number | null
+          day_of_week: number | null
+          description: string
+          frequency: string
+          id: string
+          is_active: boolean | null
+          is_essential: boolean | null
+          last_occurrence: string | null
+          merchant_pattern: string | null
+          metadata: Json | null
+          next_expected: string | null
+          pattern_type: string
+          typical_amount: number | null
+          updated_at: string
+          user_id: string
+        }
+        Insert: {
+          amount_max?: number | null
+          amount_min?: number | null
+          category?: string | null
+          confidence_score?: number | null
+          created_at?: string
+          day_of_month?: number | null
+          day_of_week?: number | null
+          description: string
+          frequency: string
+          id?: string
+          is_active?: boolean | null
+          is_essential?: boolean | null
+          last_occurrence?: string | null
+          merchant_pattern?: string | null
+          metadata?: Json | null
+          next_expected?: string | null
+          pattern_type: string
+          typical_amount?: number | null
+          updated_at?: string
+          user_id: string
+        }
+        Update: {
+          amount_max?: number | null
+          amount_min?: number | null
+          category?: string | null
+          confidence_score?: number | null
+          created_at?: string
+          day_of_month?: number | null
+          day_of_week?: number | null
+          description?: string
+          frequency?: string
+          id?: string
+          is_active?: boolean | null
+          is_essential?: boolean | null
+          last_occurrence?: string | null
+          merchant_pattern?: string | null
+          metadata?: Json | null
+          next_expected?: string | null
+          pattern_type?: string
+          typical_amount?: number | null
+          updated_at?: string
+          user_id?: string
+        }
+        Relationships: []
+      }
       sonic_agents: {
         Row: {
           capabilities: string[] | null
@@ -1304,6 +1573,66 @@ export type Database = {
           status?: Database["public"]["Enums"]["agent_status"]
           user_id?: string
           waveform?: Database["public"]["Enums"]["waveform_type"]
+        }
+        Relationships: []
+      }
+      tax_configurations: {
+        Row: {
+          country_code: string
+          country_name: string
+          created_at: string
+          effective_from: string
+          effective_to: string | null
+          filing_frequency: string | null
+          id: string
+          is_active: boolean | null
+          reduced_rates: Json | null
+          rules: Json | null
+          standard_rate: number
+          tax_name: string
+          tax_type: string
+          tax_year_start: string | null
+          threshold_amount: number | null
+          threshold_currency: string | null
+          updated_at: string
+        }
+        Insert: {
+          country_code: string
+          country_name: string
+          created_at?: string
+          effective_from: string
+          effective_to?: string | null
+          filing_frequency?: string | null
+          id?: string
+          is_active?: boolean | null
+          reduced_rates?: Json | null
+          rules?: Json | null
+          standard_rate: number
+          tax_name: string
+          tax_type: string
+          tax_year_start?: string | null
+          threshold_amount?: number | null
+          threshold_currency?: string | null
+          updated_at?: string
+        }
+        Update: {
+          country_code?: string
+          country_name?: string
+          created_at?: string
+          effective_from?: string
+          effective_to?: string | null
+          filing_frequency?: string | null
+          id?: string
+          is_active?: boolean | null
+          reduced_rates?: Json | null
+          rules?: Json | null
+          standard_rate?: number
+          tax_name?: string
+          tax_type?: string
+          tax_year_start?: string | null
+          threshold_amount?: number | null
+          threshold_currency?: string | null
+          updated_at?: string
         }
         Relationships: []
       }
@@ -1390,6 +1719,72 @@ export type Database = {
           },
         ]
       }
+      transaction_reconciliations: {
+        Row: {
+          bank_transaction_id: string
+          created_at: string
+          financial_record_id: string | null
+          id: string
+          match_confidence: number | null
+          match_notes: string | null
+          match_status: string
+          match_type: string
+          matched_by: string | null
+          reviewed_at: string | null
+          reviewed_by: string | null
+          split_details: Json | null
+          updated_at: string
+          user_id: string
+        }
+        Insert: {
+          bank_transaction_id: string
+          created_at?: string
+          financial_record_id?: string | null
+          id?: string
+          match_confidence?: number | null
+          match_notes?: string | null
+          match_status?: string
+          match_type: string
+          matched_by?: string | null
+          reviewed_at?: string | null
+          reviewed_by?: string | null
+          split_details?: Json | null
+          updated_at?: string
+          user_id: string
+        }
+        Update: {
+          bank_transaction_id?: string
+          created_at?: string
+          financial_record_id?: string | null
+          id?: string
+          match_confidence?: number | null
+          match_notes?: string | null
+          match_status?: string
+          match_type?: string
+          matched_by?: string | null
+          reviewed_at?: string | null
+          reviewed_by?: string | null
+          split_details?: Json | null
+          updated_at?: string
+          user_id?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "transaction_reconciliations_bank_transaction_id_fkey"
+            columns: ["bank_transaction_id"]
+            isOneToOne: false
+            referencedRelation: "bank_transactions"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "transaction_reconciliations_financial_record_id_fkey"
+            columns: ["financial_record_id"]
+            isOneToOne: false
+            referencedRelation: "csuite_financials"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
       user_agents: {
         Row: {
           agent_id: string
@@ -1439,6 +1834,57 @@ export type Database = {
           created_at?: string
           id?: string
           role?: Database["public"]["Enums"]["app_role"]
+          user_id?: string
+        }
+        Relationships: []
+      }
+      user_tax_settings: {
+        Row: {
+          accounting_method: string | null
+          auto_calculate_tax: boolean | null
+          created_at: string
+          filing_frequency: string | null
+          id: string
+          include_tax_in_prices: boolean | null
+          is_registered_for_tax: boolean | null
+          metadata: Json | null
+          primary_country_code: string
+          registration_date: string | null
+          tax_registration_number: string | null
+          tax_year_end_month: number | null
+          updated_at: string
+          user_id: string
+        }
+        Insert: {
+          accounting_method?: string | null
+          auto_calculate_tax?: boolean | null
+          created_at?: string
+          filing_frequency?: string | null
+          id?: string
+          include_tax_in_prices?: boolean | null
+          is_registered_for_tax?: boolean | null
+          metadata?: Json | null
+          primary_country_code: string
+          registration_date?: string | null
+          tax_registration_number?: string | null
+          tax_year_end_month?: number | null
+          updated_at?: string
+          user_id: string
+        }
+        Update: {
+          accounting_method?: string | null
+          auto_calculate_tax?: boolean | null
+          created_at?: string
+          filing_frequency?: string | null
+          id?: string
+          include_tax_in_prices?: boolean | null
+          is_registered_for_tax?: boolean | null
+          metadata?: Json | null
+          primary_country_code?: string
+          registration_date?: string | null
+          tax_registration_number?: string | null
+          tax_year_end_month?: number | null
+          updated_at?: string
           user_id?: string
         }
         Relationships: []
