@@ -26,6 +26,7 @@ import {
   EventItem
 } from '@/hooks/useCSuiteData';
 import { EventsCalendarView } from './EventsCalendarView';
+import { TasksKanbanView } from './TasksKanbanView';
 
 interface FullScreenDomainViewProps {
   domainKey: DomainKey;
@@ -58,6 +59,19 @@ export function FullScreenDomainView({
     return (
       <EventsCalendarView
         items={items as EventItem[]}
+        isLoading={isLoading}
+        onBack={onBack}
+        onItemClick={(item) => onItemClick(item)}
+        onRefresh={onRefresh}
+      />
+    );
+  }
+
+  // Use specialized view for Tasks
+  if (domainKey === 'tasks') {
+    return (
+      <TasksKanbanView
+        items={items as TaskItem[]}
         isLoading={isLoading}
         onBack={onBack}
         onItemClick={(item) => onItemClick(item)}

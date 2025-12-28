@@ -1,6 +1,6 @@
 import { useState, useEffect } from 'react';
-import { format } from 'date-fns';
-import { Calendar, Clock, MapPin, Users, Type, X, Trash2, Save, Loader2 } from 'lucide-react';
+import { format, addDays, addWeeks, addMonths } from 'date-fns';
+import { Calendar, Clock, MapPin, Users, Type, X, Trash2, Save, Loader2, Repeat } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Textarea } from '@/components/ui/textarea';
@@ -54,6 +54,14 @@ const EVENT_TYPES = [
   { value: 'other', label: 'Other' },
 ];
 
+const RECURRENCE_OPTIONS = [
+  { value: 'none', label: 'Does not repeat' },
+  { value: 'daily', label: 'Daily' },
+  { value: 'weekly', label: 'Weekly' },
+  { value: 'biweekly', label: 'Every 2 weeks' },
+  { value: 'monthly', label: 'Monthly' },
+];
+
 export function EventFormDialog({
   open,
   onOpenChange,
@@ -76,6 +84,8 @@ export function EventFormDialog({
   const [endDate, setEndDate] = useState('');
   const [endTime, setEndTime] = useState('');
   const [attendeesInput, setAttendeesInput] = useState('');
+  const [recurrence, setRecurrence] = useState('none');
+  const [recurrenceCount, setRecurrenceCount] = useState('4');
 
   const isEditing = !!event;
 
@@ -97,6 +107,8 @@ export function EventFormDialog({
           setEndTime(format(event.end_at, 'HH:mm'));
         }
         setAttendeesInput(event.attendees?.join(', ') || '');
+        setRecurrence((event.metadata as any)?.recurrence || 'none');
+        setRecurrenceCount((event.metadata as any)?.recurrenceCount?.toString() || '4');
       } else {
         // New event
         setTitle('');
@@ -113,6 +125,8 @@ export function EventFormDialog({
         setStartTime('09:00');
         setEndTime('10:00');
         setAttendeesInput('');
+        setRecurrence('none');
+        setRecurrenceCount('4');
       }
     }
   }, [open, event, selectedDate]);
@@ -142,20 +156,25 @@ export function EventFormDialog({
         .map(a => a.trim())
         .filter(a => a.length > 0);
 
-      const eventData = {
+      const baseEventData = {
         title: title.trim(),
         description: description.trim() || null,
         type: eventType,
         location: location.trim() || null,
-        start_at: startAt?.toISOString() || null,
-        end_at: endAt?.toISOString() || null,
         attendees: attendees.length > 0 ? attendees : null,
         source: 'manual',
         user_id: userId,
         updated_at: new Date().toISOString(),
+        metadata: recurrence !== 'none' ? { recurrence, recurrenceCount: parseInt(recurrenceCount) } : {},
       };
 
       if (isEditing && event) {
+        const eventData = {
+          ...baseEventData,
+          start_at: startAt?.toISOString() || null,
+          end_at: endAt?.toISOString() || null,
+        };
+        
         const { error } = await supabase
           .from('csuite_events')
           .update(eventData)
@@ -164,12 +183,48 @@ export function EventFormDialog({
         if (error) throw error;
         toast.success('Event updated');
       } else {
+        // Create events (with recurrence if selected)
+        const eventsToCreate = [];
+        const count = recurrence !== 'none' ? parseInt(recurrenceCount) : 1;
+        
+        for (let i = 0; i < count; i++) {
+          let eventStartAt = startAt;
+          let eventEndAt = endAt;
+          
+          if (i > 0 && startAt && endAt) {
+            switch (recurrence) {
+              case 'daily':
+                eventStartAt = addDays(startAt, i);
+                eventEndAt = addDays(endAt, i);
+                break;
+              case 'weekly':
+                eventStartAt = addWeeks(startAt, i);
+                eventEndAt = addWeeks(endAt, i);
+                break;
+              case 'biweekly':
+                eventStartAt = addWeeks(startAt, i * 2);
+                eventEndAt = addWeeks(endAt, i * 2);
+                break;
+              case 'monthly':
+                eventStartAt = addMonths(startAt, i);
+                eventEndAt = addMonths(endAt, i);
+                break;
+            }
+          }
+          
+          eventsToCreate.push({
+            ...baseEventData,
+            start_at: eventStartAt?.toISOString() || null,
+            end_at: eventEndAt?.toISOString() || null,
+          });
+        }
+
         const { error } = await supabase
           .from('csuite_events')
-          .insert(eventData);
+          .insert(eventsToCreate);
 
         if (error) throw error;
-        toast.success('Event created');
+        toast.success(count > 1 ? `${count} events created` : 'Event created');
       }
 
       onEventSaved();
@@ -343,6 +398,52 @@ export function EventFormDialog({
                 </div>
               )}
             </div>
+
+            {/* Recurrence - Only show for new events */}
+            {!isEditing && (
+              <div className="space-y-2 p-3 rounded-lg bg-muted/30 border border-border">
+                <Label className="text-xs font-mono flex items-center gap-1">
+                  <Repeat size={12} />
+                  Recurrence
+                </Label>
+                <Select value={recurrence} onValueChange={setRecurrence}>
+                  <SelectTrigger className="h-9">
+                    <SelectValue />
+                  </SelectTrigger>
+                  <SelectContent>
+                    {RECURRENCE_OPTIONS.map(opt => (
+                      <SelectItem key={opt.value} value={opt.value}>
+                        {opt.label}
+                      </SelectItem>
+                    ))}
+                  </SelectContent>
+                </Select>
+                {recurrence !== 'none' && (
+                  <div className="flex items-center gap-2 mt-2">
+                    <Label className="text-[10px] text-muted-foreground whitespace-nowrap">
+                      Create
+                    </Label>
+                    <Select value={recurrenceCount} onValueChange={setRecurrenceCount}>
+                      <SelectTrigger className="h-7 w-16">
+                        <SelectValue />
+                      </SelectTrigger>
+                      <SelectContent>
+                        {[2, 3, 4, 5, 6, 8, 10, 12].map(n => (
+                          <SelectItem key={n} value={n.toString()}>
+                            {n}
+                          </SelectItem>
+                        ))}
+                      </SelectContent>
+                    </Select>
+                    <span className="text-[10px] text-muted-foreground">
+                      {recurrence === 'daily' ? 'days' : 
+                       recurrence === 'weekly' ? 'weeks' : 
+                       recurrence === 'biweekly' ? 'occurrences' : 'months'}
+                    </span>
+                  </div>
+                )}
+              </div>
+            )}
 
             {/* Description */}
             <div className="space-y-2">
