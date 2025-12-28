@@ -377,6 +377,19 @@ export function CSuiteDataHub({ userId, agents = [], agentsLoading = false }: CS
 
   return (
     <>
+      {/* Full Page Domain View Overlay */}
+      {expandedDomain && (
+        <div className="fixed inset-0 z-50 bg-background animate-in fade-in-0 zoom-in-95 duration-200">
+          <FullScreenDomainView
+            domainKey={expandedDomain}
+            items={domainItems[expandedDomain]}
+            isLoading={loadingDomains[expandedDomain]}
+            onBack={() => setExpandedDomain(null)}
+            onItemClick={handleItemClick}
+          />
+        </div>
+      )}
+
       <div className="flex-1 bg-card/90 border border-border rounded-lg shadow-sm overflow-hidden flex flex-col">
         <Tabs value={activeTab} onValueChange={setActiveTab} className="flex flex-col h-full">
           {/* Header */}
@@ -402,56 +415,43 @@ export function CSuiteDataHub({ userId, agents = [], agentsLoading = false }: CS
           </div>
 
           {/* Restructured Tabs - 4 Main Sections */}
-          {!expandedDomain && (
-            <TabsList className="w-full justify-start rounded-none border-b border-border bg-transparent px-1 py-0 h-8 overflow-x-auto">
+          <TabsList className="w-full justify-start rounded-none border-b border-border bg-transparent px-1 py-0 h-8 overflow-x-auto">
+            <TabsTrigger 
+              value="command" 
+              className="text-[10px] font-mono px-2 py-1 rounded-none data-[state=active]:border-b-2 data-[state=active]:border-primary data-[state=active]:bg-transparent flex items-center gap-1"
+            >
+              <Command size={10} />
+              COMMAND
+            </TabsTrigger>
+            <TabsTrigger 
+              value="insights" 
+              className="text-[10px] font-mono px-2 py-1 rounded-none data-[state=active]:border-b-2 data-[state=active]:border-primary data-[state=active]:bg-transparent flex items-center gap-1"
+            >
+              <Lightbulb size={10} />
+              INSIGHTS
+            </TabsTrigger>
+            <TabsTrigger 
+              value="library" 
+              className="text-[10px] font-mono px-2 py-1 rounded-none data-[state=active]:border-b-2 data-[state=active]:border-primary data-[state=active]:bg-transparent flex items-center gap-1"
+            >
+              <Library size={10} />
+              LIBRARY
+            </TabsTrigger>
+            {canManagePersonas && (
               <TabsTrigger 
-                value="command" 
+                value="admin" 
                 className="text-[10px] font-mono px-2 py-1 rounded-none data-[state=active]:border-b-2 data-[state=active]:border-primary data-[state=active]:bg-transparent flex items-center gap-1"
               >
-                <Command size={10} />
-                COMMAND
+                <Settings size={10} />
+                ADMIN
               </TabsTrigger>
-              <TabsTrigger 
-                value="insights" 
-                className="text-[10px] font-mono px-2 py-1 rounded-none data-[state=active]:border-b-2 data-[state=active]:border-primary data-[state=active]:bg-transparent flex items-center gap-1"
-              >
-                <Lightbulb size={10} />
-                INSIGHTS
-              </TabsTrigger>
-              <TabsTrigger 
-                value="library" 
-                className="text-[10px] font-mono px-2 py-1 rounded-none data-[state=active]:border-b-2 data-[state=active]:border-primary data-[state=active]:bg-transparent flex items-center gap-1"
-              >
-                <Library size={10} />
-                LIBRARY
-              </TabsTrigger>
-              {canManagePersonas && (
-                <TabsTrigger 
-                  value="admin" 
-                  className="text-[10px] font-mono px-2 py-1 rounded-none data-[state=active]:border-b-2 data-[state=active]:border-primary data-[state=active]:bg-transparent flex items-center gap-1"
-                >
-                  <Settings size={10} />
-                  ADMIN
-                </TabsTrigger>
-              )}
-            </TabsList>
-          )}
+            )}
+          </TabsList>
 
           {/* Content */}
           <div className="flex-1 overflow-hidden">
-            {/* Expanded Domain View - Full Screen */}
-            {expandedDomain && expandedDomainConfig && (
-              <FullScreenDomainView
-                domainKey={expandedDomain}
-                items={domainItems[expandedDomain]}
-                isLoading={loadingDomains[expandedDomain]}
-                onBack={() => setExpandedDomain(null)}
-                onItemClick={handleItemClick}
-              />
-            )}
-
             {/* COMMAND CENTER TAB - Unified Dashboard */}
-            {!expandedDomain && (
+            {(
               <TabsContent value="command" className="h-full m-0">
                 <ScrollArea className="h-full">
                   <div className="p-2 space-y-3">
@@ -655,7 +655,7 @@ export function CSuiteDataHub({ userId, agents = [], agentsLoading = false }: CS
             )}
 
             {/* INSIGHTS TAB - AI Intelligence + Summary */}
-            {!expandedDomain && (
+            {(
               <TabsContent value="insights" className="h-full m-0">
                 <ScrollArea className="h-full">
                   <div className="p-2 space-y-3">
@@ -814,7 +814,7 @@ export function CSuiteDataHub({ userId, agents = [], agentsLoading = false }: CS
             )}
 
             {/* LIBRARY TAB - Data Domains + Reports */}
-            {!expandedDomain && (
+            {(
               <TabsContent value="library" className="h-full m-0">
                 <ScrollArea className="h-full">
                   <div className="p-2 space-y-3">
@@ -932,7 +932,7 @@ export function CSuiteDataHub({ userId, agents = [], agentsLoading = false }: CS
             )}
 
             {/* ADMIN TAB - Superadmin/Admin Only */}
-            {!expandedDomain && canManagePersonas && (
+            {canManagePersonas && (
               <TabsContent value="admin" className="h-full m-0 p-2 flex flex-col">
                 <ScrollArea className="flex-1">
                   <div className="space-y-3">
