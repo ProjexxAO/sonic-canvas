@@ -722,10 +722,13 @@ function AtlasPage() {
         });
         setAudioLevels(newLevels);
       } else {
-        // Subtle idle animation when not speaking
-        setAudioLevels(prev => prev.map((_, i) => 
-          0.1 + Math.sin(Date.now() / 500 + i * 0.3) * 0.05
-        ));
+        // Subtle idle animation when not speaking - use stable timestamp
+        const now = performance.now();
+        setAudioLevels(
+          Array.from({ length: 20 }, (_, i) => 
+            0.1 + Math.sin(now / 500 + i * 0.3) * 0.05
+          )
+        );
         setFrequencyBands({ bass: 0.1, mid: 0.1, treble: 0.1 });
       }
       
