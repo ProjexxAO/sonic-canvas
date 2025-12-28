@@ -51,7 +51,9 @@ import { PersonaLayoutRenderer } from './persona-layouts/PersonaLayoutRenderer';
 import { QuickActionCards } from './QuickActionCards';
 import { useAtlasEnterprise } from '@/hooks/useAtlasEnterprise';
 import { usePersonaPermissions } from '@/hooks/usePersonaPermissions';
+import { useDataHubController } from '@/hooks/useDataHubController';
 import { supabase } from '@/integrations/supabase/client';
+import { toast } from 'sonner';
 
 interface CSuiteDataHubProps {
   userId: string | undefined;
@@ -126,21 +128,102 @@ export function CSuiteDataHub({ userId, agents = [], agentsLoading = false }: CS
     refresh,
   } = useCSuiteData(userId);
 
-  const [activeTab, setActiveTab] = useState('command');
+  // Atlas Data Hub Controller integration
+  const dataHubController = useDataHubController();
+  
+  // Initialize enterprise hook with persona for permission-aware queries
+  const [userPersona, setUserPersona] = useState<string | null>(null);
+  const enterprise = useAtlasEnterprise(userId, userPersona);
+  const personaPerms = usePersonaPermissions(userPersona);
+  
+  // Persona configs - needed before effects
+  const [personaConfigs, setPersonaConfigs] = useState<Record<string, PersonaConfig>>(() => {
+    const configs: Record<string, PersonaConfig> = {};
+    PERSONAS.forEach(p => {
+      configs[p.id] = { focusAreas: [...p.focusAreas], depth: 'standard' };
+    });
+    return configs;
+  });
+  
+  // Sync local state with controller state
+  type TabId = 'command' | 'insights' | 'library' | 'admin';
+  const [activeTab, setActiveTabLocal] = useState<TabId>(dataHubController.activeTab);
   const [generatingPersona, setGeneratingPersona] = useState<string | null>(null);
-  const [expandedDomain, setExpandedDomain] = useState<DomainKey | null>(null);
+  const [expandedDomain, setExpandedDomainLocal] = useState<DomainKey | null>(dataHubController.expandedDomain);
   const [selectedItem, setSelectedItem] = useState<DomainItem | null>(null);
   const [drawerOpen, setDrawerOpen] = useState(false);
   const [selectedCategories, setSelectedCategories] = useState<PersonaCategory[]>([]);
   const [selectedReport, setSelectedReport] = useState<CSuiteReport | null>(null);
-  const [userPersona, setUserPersona] = useState<string | null>(null);
-  const [enterpriseQuery, setEnterpriseQuery] = useState('');
+  const [enterpriseQuery, setEnterpriseQuery] = useState(dataHubController.enterpriseQuery);
   const [isSuperAdmin, setIsSuperAdmin] = useState(false);
   const fileInputRef = useRef<HTMLInputElement>(null);
 
-  // Initialize enterprise hook with persona for permission-aware queries
-  const enterprise = useAtlasEnterprise(userId, userPersona);
-  const personaPerms = usePersonaPermissions(userPersona);
+  // Sync tab state with controller
+  const setActiveTab = useCallback((tab: TabId) => {
+    setActiveTabLocal(tab);
+    dataHubController.setActiveTab(tab);
+  }, [dataHubController]);
+
+  // Sync domain state with controller
+  const setExpandedDomain = useCallback((domain: DomainKey | null) => {
+    setExpandedDomainLocal(domain);
+    dataHubController.setExpandedDomain(domain);
+  }, [dataHubController]);
+
+  // Listen for controller state changes (from Atlas)
+  useEffect(() => {
+    const unsubscribe = useDataHubController.subscribe((state) => {
+      // Sync tab
+      if (state.activeTab !== activeTab) {
+        setActiveTabLocal(state.activeTab);
+      }
+      // Sync domain
+      if (state.expandedDomain !== expandedDomain) {
+        setExpandedDomainLocal(state.expandedDomain);
+        if (state.expandedDomain && domainItems[state.expandedDomain].length === 0) {
+          fetchDomainItems(state.expandedDomain);
+        }
+      }
+      // Sync enterprise query
+      if (state.enterpriseQuery !== enterpriseQuery) {
+        setEnterpriseQuery(state.enterpriseQuery);
+      }
+    });
+    return unsubscribe;
+  }, [activeTab, expandedDomain, enterpriseQuery, domainItems, fetchDomainItems]);
+
+  // Handle triggered enterprise query from Atlas
+  useEffect(() => {
+    if (dataHubController.triggerEnterpriseQuery && dataHubController.enterpriseQuery) {
+      enterprise.queryEnterprise(dataHubController.enterpriseQuery);
+      dataHubController.setTriggerEnterpriseQuery(false);
+    }
+  }, [dataHubController.triggerEnterpriseQuery, dataHubController.enterpriseQuery, enterprise]);
+
+  // Handle triggered report generation from Atlas
+  useEffect(() => {
+    if (dataHubController.triggerReportGeneration && dataHubController.reportPersona) {
+      const persona = dataHubController.reportPersona;
+      const config = personaConfigs[persona];
+      setGeneratingPersona(persona);
+      generateReport(persona, {
+        depth: config?.depth || 'standard',
+        focusAreas: config?.focusAreas || [],
+      }).then(() => {
+        setGeneratingPersona(null);
+        toast.success(`${persona.toUpperCase()} report generated`);
+      });
+      dataHubController.clearReportRequest();
+    }
+  }, [dataHubController.triggerReportGeneration, dataHubController.reportPersona, generateReport, personaConfigs]);
+
+  // Handle triggered refresh from Atlas
+  useEffect(() => {
+    if (dataHubController.triggerRefresh) {
+      refresh();
+      dataHubController.clearRefreshRequest();
+    }
+  }, [dataHubController.triggerRefresh, refresh]);
 
   useEffect(() => {
     if (!userId) return;
@@ -181,13 +264,6 @@ export function CSuiteDataHub({ userId, agents = [], agentsLoading = false }: CS
     loadUserPersona();
   }, [userId]);
 
-  const [personaConfigs, setPersonaConfigs] = useState<Record<string, PersonaConfig>>(() => {
-    const configs: Record<string, PersonaConfig> = {};
-    PERSONAS.forEach(p => {
-      configs[p.id] = { focusAreas: [...p.focusAreas], depth: 'standard' };
-    });
-    return configs;
-  });
 
   const handleConfigChange = useCallback((personaId: string, config: PersonaConfig) => {
     setPersonaConfigs(prev => ({ ...prev, [personaId]: config }));
