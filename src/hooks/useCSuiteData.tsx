@@ -402,6 +402,21 @@ export function useCSuiteData(userId: string | undefined) {
     }
   }, [userId, fetchStats, fetchConnectors, fetchReports]);
 
+  // Refresh all data with loading state
+  const refresh = useCallback(async () => {
+    if (!userId) return;
+    setIsLoading(true);
+    try {
+      await Promise.all([fetchStats(), fetchConnectors(), fetchReports()]);
+      toast.success('Data refreshed');
+    } catch (error) {
+      console.error('Refresh error:', error);
+      toast.error('Failed to refresh data');
+    } finally {
+      setIsLoading(false);
+    }
+  }, [userId, fetchStats, fetchConnectors, fetchReports]);
+
   return {
     stats,
     connectors,
@@ -414,6 +429,6 @@ export function useCSuiteData(userId: string | undefined) {
     connectProvider,
     generateReport,
     fetchDomainItems,
-    refresh: () => Promise.all([fetchStats(), fetchConnectors(), fetchReports()]),
+    refresh,
   };
 }
