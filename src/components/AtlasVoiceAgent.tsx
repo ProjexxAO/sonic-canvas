@@ -10,6 +10,7 @@ export default function AtlasVoiceAgent() {
   const [isMuted, setIsMuted] = useState(false);
 
   const conversation = useConversation({
+    micMuted: isMuted,
     onConnect: () => {
       console.log("[Atlas] Connected to voice agent");
     },
