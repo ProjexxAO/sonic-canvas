@@ -31,7 +31,8 @@ import {
   FolderOpen,
   AlertTriangle,
   Bell,
-  Target
+  Target,
+  Shield
 } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { ScrollArea } from '@/components/ui/scroll-area';
@@ -665,31 +666,61 @@ export function CSuiteDataHub({ userId, agents = [], agentsLoading = false }: CS
               <TabsContent value="library" className="h-full m-0">
                 <ScrollArea className="h-full">
                   <div className="p-2 space-y-3">
-                    {/* Domain Browser */}
+                    {/* Domain Browser - Filtered by persona permissions */}
                     <div className="p-2 rounded bg-background border border-border">
                       <div className="flex items-center gap-2 mb-2">
                         <FolderOpen size={12} className="text-primary" />
                         <span className="text-[10px] font-mono text-muted-foreground">DATA DOMAINS</span>
-                        <span className="text-[9px] text-muted-foreground ml-auto">{totalItems} total</span>
+                        {userPersona && (
+                          <Badge variant="outline" className="text-[7px] font-mono ml-1">
+                            {currentPersona?.label} VIEW
+                          </Badge>
+                        )}
+                        <span className="text-[9px] text-muted-foreground ml-auto">
+                          {DOMAIN_CONFIG.filter(d => personaPerms.canViewDomain(d.key)).reduce((sum, d) => sum + stats[d.key], 0)} accessible
+                        </span>
                       </div>
                       <div className="grid grid-cols-2 gap-2">
-                        {DOMAIN_CONFIG.map(({ key, label, icon: Icon, color }) => (
-                          <button
-                            key={key}
-                            onClick={() => handleDomainClick(key)}
-                            className="p-2 rounded bg-muted/30 hover:bg-muted/50 border border-transparent hover:border-primary/30 transition-all text-left group"
-                          >
-                            <div className="flex items-center gap-2 mb-1">
-                              <Icon size={12} style={{ color }} />
-                              <span className="text-[10px] font-mono text-muted-foreground group-hover:text-foreground transition-colors">
-                                {label}
+                        {DOMAIN_CONFIG.map(({ key, label, icon: Icon, color }) => {
+                          const canView = personaPerms.canViewDomain(key);
+                          
+                          if (!canView) {
+                            // Show restricted domains as disabled
+                            return (
+                              <div
+                                key={key}
+                                className="p-2 rounded bg-muted/10 border border-border/50 opacity-50 cursor-not-allowed"
+                              >
+                                <div className="flex items-center gap-2 mb-1">
+                                  <Icon size={12} className="text-muted-foreground" />
+                                  <span className="text-[10px] font-mono text-muted-foreground">
+                                    {label}
+                                  </span>
+                                  <Shield size={8} className="text-muted-foreground ml-auto" />
+                                </div>
+                                <span className="text-[9px] font-mono text-muted-foreground">Restricted</span>
+                              </div>
+                            );
+                          }
+                          
+                          return (
+                            <button
+                              key={key}
+                              onClick={() => handleDomainClick(key)}
+                              className="p-2 rounded bg-muted/30 hover:bg-muted/50 border border-transparent hover:border-primary/30 transition-all text-left group"
+                            >
+                              <div className="flex items-center gap-2 mb-1">
+                                <Icon size={12} style={{ color }} />
+                                <span className="text-[10px] font-mono text-muted-foreground group-hover:text-foreground transition-colors">
+                                  {label}
+                                </span>
+                              </div>
+                              <span className="text-lg font-mono text-foreground group-hover:text-primary transition-colors">
+                                {stats[key]}
                               </span>
-                            </div>
-                            <span className="text-lg font-mono text-foreground group-hover:text-primary transition-colors">
-                              {stats[key]}
-                            </span>
-                          </button>
-                        ))}
+                            </button>
+                          );
+                        })}
                       </div>
                     </div>
 
