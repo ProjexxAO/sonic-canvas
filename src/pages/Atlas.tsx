@@ -320,6 +320,28 @@ export default function Atlas() {
           l.id === logId ? { ...l, result: 'Agent not found', status: 'error' } : l
         ));
         return 'Agent not found in current search results. Please search first.';
+      },
+
+      // System instruction handler - allows Atlas to send internal system commands
+      instructSystem: (params: { instruction: string; context?: string }) => {
+        console.log("[Atlas] System instruction received:", params);
+        addLog('instructSystem', params, 'Instruction processed', 'success');
+        
+        // Process various system-level instructions from Atlas
+        const instruction = params.instruction?.toLowerCase() || '';
+        
+        if (instruction.includes('clear') || instruction.includes('reset')) {
+          setSearchResults([]);
+          setSynthesizedAgent(null);
+          return 'System state cleared';
+        }
+        
+        if (instruction.includes('status')) {
+          return `System online. User: ${user?.email || 'Unknown'}. Agents loaded: ${agents.length}. Active: ${activeAgents.length}.`;
+        }
+        
+        // Default acknowledgment for other instructions
+        return `Instruction acknowledged: ${params.instruction}`;
       }
     },
     onConnect: () => {
