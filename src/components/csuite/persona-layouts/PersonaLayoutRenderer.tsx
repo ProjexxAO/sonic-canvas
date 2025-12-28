@@ -11,6 +11,7 @@ import { CISOLayout } from './CISOLayout';
 import { CCOLayout } from './CCOLayout';
 import { ChiefOfStaffLayout } from './ChiefOfStaffLayout';
 import { ChiefPeopleLayout } from './ChiefPeopleLayout';
+import { AdminLayout } from './AdminLayout';
 
 interface PersonaLayoutRendererProps extends PersonaLayoutProps {
   personaId: string;
@@ -29,6 +30,7 @@ const PERSONA_LAYOUT_MAP: Record<string, React.ComponentType<PersonaLayoutProps>
   cco: CCOLayout,
   chief_of_staff: ChiefOfStaffLayout,
   chief_people: ChiefPeopleLayout,
+  admin: AdminLayout,
 };
 
 export function PersonaLayoutRenderer({ personaId, ...props }: PersonaLayoutRendererProps) {
