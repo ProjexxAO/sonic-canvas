@@ -6,7 +6,6 @@ import { ConnectDataStep } from './ConnectDataStep';
 import { GenerateReportStep } from './GenerateReportStep';
 import { AllocateAgentsStep } from './AllocateAgentsStep';
 import { OnboardingComplete } from './OnboardingComplete';
-
 interface OnboardingFlowProps {
   currentStep: OnboardingStep;
   onNext: () => void;
@@ -26,7 +25,6 @@ interface OnboardingFlowProps {
   onGenerateReport: (persona: string) => Promise<void>;
   isGenerating: boolean;
 }
-
 export function OnboardingFlow({
   currentStep,
   onNext,
@@ -44,7 +42,7 @@ export function OnboardingFlow({
   totalDataItems,
   onUploadFile,
   onGenerateReport,
-  isGenerating,
+  isGenerating
 }: OnboardingFlowProps) {
   // Auto-advance when data is connected
   useEffect(() => {
@@ -52,58 +50,24 @@ export function OnboardingFlow({
       onMarkDataConnected();
     }
   }, [currentStep, totalDataItems, hasConnectedData, onMarkDataConnected]);
-
   if (currentStep === 'complete') {
     return null;
   }
-
-  return (
-    <div className="fixed inset-0 z-50 bg-background/98 backdrop-blur-md">
-      {currentStep === 'welcome' && (
-        <WelcomeScreen onStart={onNext} onSkip={onSkip} />
-      )}
+  return <div className="fixed inset-0 z-50 bg-background/98 backdrop-blur-md">
+      {currentStep === 'welcome' && <WelcomeScreen onStart={onNext} onSkip={onSkip} className="border-white" />}
       
-      {currentStep === 'feature-tour' && (
-        <FeatureTour onNext={onNext} onBack={onPrev} onSkip={onSkip} />
-      )}
+      {currentStep === 'feature-tour' && <FeatureTour onNext={onNext} onBack={onPrev} onSkip={onSkip} />}
       
-      {currentStep === 'connect-data' && (
-        <ConnectDataStep
-          onNext={onNext}
-          onBack={onPrev}
-          onSkip={onSkip}
-          hasConnectedData={hasConnectedData}
-          totalDataItems={totalDataItems}
-          onUploadFile={onUploadFile}
-        />
-      )}
+      {currentStep === 'connect-data' && <ConnectDataStep onNext={onNext} onBack={onPrev} onSkip={onSkip} hasConnectedData={hasConnectedData} totalDataItems={totalDataItems} onUploadFile={onUploadFile} />}
       
-      {currentStep === 'generate-report' && (
-        <GenerateReportStep
-          onNext={(persona) => {
-            onMarkReportGenerated(persona);
-            onNext();
-          }}
-          onBack={onPrev}
-          onSkip={() => onGoToStep('allocate-agents')}
-          hasGeneratedReport={hasGeneratedReport}
-          onGenerateReport={onGenerateReport}
-          isGenerating={isGenerating}
-          hasData={totalDataItems > 0}
-        />
-      )}
+      {currentStep === 'generate-report' && <GenerateReportStep onNext={persona => {
+      onMarkReportGenerated(persona);
+      onNext();
+    }} onBack={onPrev} onSkip={() => onGoToStep('allocate-agents')} hasGeneratedReport={hasGeneratedReport} onGenerateReport={onGenerateReport} isGenerating={isGenerating} hasData={totalDataItems > 0} />}
       
-      {currentStep === 'allocate-agents' && (
-        <AllocateAgentsStep
-          onNext={() => {
-            onMarkAgentsAllocated();
-            onComplete();
-          }}
-          onBack={onPrev}
-          onSkip={onComplete}
-          selectedPersona={selectedPersona}
-        />
-      )}
-    </div>
-  );
+      {currentStep === 'allocate-agents' && <AllocateAgentsStep onNext={() => {
+      onMarkAgentsAllocated();
+      onComplete();
+    }} onBack={onPrev} onSkip={onComplete} selectedPersona={selectedPersona} />}
+    </div>;
 }
