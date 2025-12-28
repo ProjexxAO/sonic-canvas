@@ -35,7 +35,7 @@ export function AllocateAgentsStep({
 
         {/* Step indicator */}
         <div className="flex items-center justify-center gap-2">
-          {['Welcome', 'Tour', 'Data', 'Report', 'Agents'].map((step, i) => (
+          {['Welcome', 'Tour', 'Data', 'Report', 'Atlas'].map((step, i) => (
             <div key={step} className="flex items-center gap-2">
               <div className={`h-2 w-2 rounded-full ${i === 4 ? 'bg-primary' : 'bg-muted'}`} />
               {i < 4 && <div className="w-8 h-px bg-muted" />}
