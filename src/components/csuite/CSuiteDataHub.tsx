@@ -33,6 +33,7 @@ import { DomainItemDrawer } from './DomainItemDrawer';
 import { PersonaConfigPopover, PersonaConfig, ReportDepth } from './PersonaConfigPopover';
 import { ReportViewer } from './ReportViewer';
 import { ReportHistoryList } from './ReportHistoryList';
+import { AtlasSummaryTab } from './AtlasSummaryTab';
 
 interface CSuiteDataHubProps {
   userId: string | undefined;
@@ -234,6 +235,12 @@ export function CSuiteDataHub({ userId }: CSuiteDataHubProps) {
                 className="text-[10px] font-mono px-2 py-1 rounded-none data-[state=active]:border-b-2 data-[state=active]:border-primary data-[state=active]:bg-transparent"
               >
                 REPORTS
+              </TabsTrigger>
+              <TabsTrigger 
+                value="summary" 
+                className="text-[10px] font-mono px-2 py-1 rounded-none data-[state=active]:border-b-2 data-[state=active]:border-primary data-[state=active]:bg-transparent"
+              >
+                SUMMARY
               </TabsTrigger>
             </TabsList>
           )}
@@ -502,6 +509,13 @@ export function CSuiteDataHub({ userId }: CSuiteDataHubProps) {
                   onSelectReport={(report) => setSelectedReport(report)}
                   selectedReportId={selectedReport?.id}
                 />
+              </TabsContent>
+            )}
+
+            {/* Summary Tab - Atlas AI Findings */}
+            {!expandedDomain && (
+              <TabsContent value="summary" className="h-full m-0">
+                <AtlasSummaryTab userId={userId} />
               </TabsContent>
             )}
           </div>
