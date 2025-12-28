@@ -2199,6 +2199,18 @@ export type Database = {
         }
         Returns: string
       }
+      detect_document_references: {
+        Args: {
+          p_document_id: string
+          p_document_type?: string
+          p_search_text?: string
+        }
+        Returns: number
+      }
+      get_document_insights: {
+        Args: { p_document_id: string; p_document_type?: string }
+        Returns: Json
+      }
       get_governance_rules_by_level: {
         Args: {
           _level: Database["public"]["Enums"]["governance_level"]
