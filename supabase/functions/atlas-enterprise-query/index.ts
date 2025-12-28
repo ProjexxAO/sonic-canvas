@@ -11,6 +11,7 @@ interface EnterpriseQueryRequest {
   userId: string;
   query?: string;
   domains?: string[];
+  personaId?: string; // User's assigned persona for permission filtering
   agentContext?: {
     agentIds?: string[];
     sector?: string;
@@ -22,6 +23,14 @@ interface EnterpriseQueryRequest {
     includeAgents?: boolean;
     timeRange?: 'day' | 'week' | 'month' | 'all';
   };
+}
+
+interface PersonaPermission {
+  domain: string;
+  can_view: boolean;
+  can_create: boolean;
+  can_edit: boolean;
+  can_delete: boolean;
 }
 
 interface DomainData {
@@ -37,15 +46,55 @@ serve(async (req) => {
 
   try {
     const request: EnterpriseQueryRequest = await req.json();
-    const { action, userId, query, domains, agentContext, workflowId, options } = request;
+    const { action, userId, query, domains, personaId, agentContext, workflowId, options } = request;
 
-    console.log(`[Atlas Enterprise] Action: ${action}, User: ${userId}, Query: ${query}`);
+    console.log(`[Atlas Enterprise] Action: ${action}, User: ${userId}, Persona: ${personaId}, Query: ${query}`);
 
     const supabaseUrl = Deno.env.get('SUPABASE_URL')!;
     const supabaseKey = Deno.env.get('SUPABASE_SERVICE_ROLE_KEY')!;
     const lovableApiKey = Deno.env.get('LOVABLE_API_KEY')!;
     
     const supabase = createClient(supabaseUrl, supabaseKey);
+
+    // Fetch persona permissions to filter accessible domains
+    const fetchPersonaPermissions = async (): Promise<PersonaPermission[]> => {
+      if (!personaId) return [];
+      
+      const { data, error } = await supabase
+        .from('persona_permissions')
+        .select('domain, can_view, can_create, can_edit, can_delete')
+        .eq('persona_id', personaId);
+      
+      if (error) {
+        console.error('[Atlas Enterprise] Error fetching persona permissions:', error);
+        return [];
+      }
+      
+      return data || [];
+    };
+
+    // Get allowed domains based on persona permissions
+    const getAccessibleDomains = (permissions: PersonaPermission[], requestedDomains?: string[]): string[] => {
+      const allDomains = ['communications', 'documents', 'events', 'financials', 'tasks', 'knowledge'];
+      const targetDomains = requestedDomains?.length ? requestedDomains : allDomains;
+      
+      // If no persona, default to all domains (for users without persona assignment)
+      if (!personaId || permissions.length === 0) {
+        return targetDomains;
+      }
+      
+      // Filter to only domains where can_view is true, or domain has no explicit restriction
+      return targetDomains.filter(domain => {
+        const perm = permissions.find(p => p.domain === domain);
+        // If no explicit permission set, default to allowed
+        return perm ? perm.can_view : true;
+      });
+    };
+
+    // Get restricted domains for user awareness
+    const getRestrictedDomains = (permissions: PersonaPermission[]): string[] => {
+      return permissions.filter(p => !p.can_view).map(p => p.domain);
+    };
 
     // Calculate time range filter
     const getTimeFilter = () => {
@@ -114,14 +163,29 @@ serve(async (req) => {
 
     // Handle different actions
     if (action === 'query') {
-      // Natural language query across all enterprise data
+      // Fetch persona permissions first
+      const personaPermissions = await fetchPersonaPermissions();
+      const accessibleDomains = getAccessibleDomains(personaPermissions, domains);
+      const restrictedDomains = getRestrictedDomains(personaPermissions);
+      
+      console.log(`[Atlas Enterprise] Accessible domains: ${accessibleDomains.join(', ')}`);
+      if (restrictedDomains.length > 0) {
+        console.log(`[Atlas Enterprise] Restricted domains: ${restrictedDomains.join(', ')}`);
+      }
+
+      // Natural language query across accessible enterprise data only
       const [domainData, agents] = await Promise.all([
-        fetchDomainData(domains),
+        fetchDomainData(accessibleDomains),
         fetchAgentContext()
       ]);
 
       // Build comprehensive context
       const contextParts: string[] = [];
+      
+      // Add persona context for AI awareness
+      if (personaId) {
+        contextParts.push(`USER CONTEXT: This user has the "${personaId}" persona with access to: ${accessibleDomains.join(', ')}.${restrictedDomains.length > 0 ? ` Restricted from: ${restrictedDomains.join(', ')}.` : ''}`);
+      }
       
       for (const dd of domainData) {
         if (dd.items.length > 0) {
@@ -156,7 +220,11 @@ serve(async (req) => {
             { 
               role: 'system', 
               content: `You are Atlas, an enterprise AI assistant with access to organizational data and AI agents.
-              
+
+You are aware of the user's persona and their data access permissions.
+IMPORTANT: Only provide information from the domains the user has access to.
+If the user asks about data from restricted domains, politely explain they don't have access to that information based on their current persona permissions.
+
 Provide comprehensive, actionable answers based on the available data.
 Reference specific data points when relevant.
 Suggest which agents could help with follow-up actions when applicable.
@@ -183,18 +251,25 @@ Format responses clearly with sections if the answer is complex.`
         answer,
         dataContext: {
           domains: domainData.map(d => ({ domain: d.domain, count: d.count })),
+          accessibleDomains,
+          restrictedDomains,
           agentCount: agents?.length || 0,
           timeRange: options?.timeRange || 'all'
         },
-        agents: agents?.slice(0, 5) || []
+        agents: agents?.slice(0, 5) || [],
+        personaId
       }), {
         headers: { ...corsHeaders, 'Content-Type': 'application/json' }
       });
     }
 
     if (action === 'correlate') {
-      // Find correlations between domains
-      const domainData = await fetchDomainData(domains);
+      // Fetch persona permissions and filter domains
+      const personaPermissions = await fetchPersonaPermissions();
+      const accessibleDomains = getAccessibleDomains(personaPermissions, domains);
+      
+      // Find correlations between accessible domains only
+      const domainData = await fetchDomainData(accessibleDomains);
       
       const correlationContext = domainData.map(dd => ({
         domain: dd.domain,
@@ -267,9 +342,13 @@ Respond with JSON:
     }
 
     if (action === 'analyze') {
-      // Deep analysis with agent recommendations
+      // Fetch persona permissions and filter domains
+      const personaPermissions = await fetchPersonaPermissions();
+      const accessibleDomains = getAccessibleDomains(personaPermissions, domains);
+      
+      // Deep analysis with agent recommendations - only accessible domains
       const [domainData, agents] = await Promise.all([
-        fetchDomainData(domains),
+        fetchDomainData(accessibleDomains),
         fetchAgentContext()
       ]);
 
@@ -350,8 +429,12 @@ Respond with JSON:
     }
 
     if (action === 'recommend') {
-      // Get strategic recommendations
-      const domainData = await fetchDomainData();
+      // Fetch persona permissions and filter domains
+      const personaPermissions = await fetchPersonaPermissions();
+      const accessibleDomains = getAccessibleDomains(personaPermissions);
+      
+      // Get strategic recommendations from accessible domains only
+      const domainData = await fetchDomainData(accessibleDomains);
       
       const contextSummary = domainData.map(dd => ({
         domain: dd.domain,

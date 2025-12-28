@@ -123,7 +123,7 @@ interface WorkflowTriggerResult {
   result: any;
 }
 
-export function useAtlasEnterprise(userId: string | undefined) {
+export function useAtlasEnterprise(userId: string | undefined, personaId?: string | null) {
   const { toast } = useToast();
   const [isLoading, setIsLoading] = useState(false);
   const [lastQuery, setLastQuery] = useState<QueryResult | null>(null);
@@ -156,6 +156,7 @@ export function useAtlasEnterprise(userId: string | undefined) {
         body: {
           action,
           userId,
+          personaId, // Include persona for permission filtering
           ...params
         }
       });
@@ -173,7 +174,7 @@ export function useAtlasEnterprise(userId: string | undefined) {
     } finally {
       setIsLoading(false);
     }
-  }, [userId, toast]);
+  }, [userId, personaId, toast]);
 
   const queryEnterprise = useCallback(async (
     query: string,
