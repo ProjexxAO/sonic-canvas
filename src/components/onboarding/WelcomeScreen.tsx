@@ -1,4 +1,4 @@
-import { Sparkles, ArrowRight, X } from 'lucide-react';
+import { Hexagon, Radio, ArrowRight, X } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 
 interface WelcomeScreenProps {
@@ -20,10 +20,13 @@ export function WelcomeScreen({ onStart, onSkip }: WelcomeScreenProps) {
         Skip
       </Button>
 
-      {/* Logo/Icon */}
+      {/* Atlas Logo */}
       <div className="relative mb-8">
         <div className="w-24 h-24 rounded-2xl bg-gradient-to-br from-primary via-primary/80 to-secondary flex items-center justify-center shadow-lg shadow-primary/20">
-          <Sparkles size={40} className="text-primary-foreground" />
+          <div className="relative">
+            <Hexagon size={48} className="text-primary-foreground" />
+            <Radio size={20} className="absolute top-1/2 left-1/2 -translate-x-1/2 -translate-y-1/2 text-primary-foreground" />
+          </div>
         </div>
         <div className="absolute -bottom-2 -right-2 w-8 h-8 rounded-lg bg-secondary flex items-center justify-center">
           <span className="text-xs font-bold text-secondary-foreground">AI</span>
