@@ -1,4 +1,4 @@
-import { useState, useMemo } from 'react';
+import { useState, useMemo, useCallback } from 'react';
 import { format, startOfMonth, endOfMonth, eachDayOfInterval, isSameDay, isSameMonth, addMonths, subMonths, startOfWeek, endOfWeek, isToday } from 'date-fns';
 import { 
   ArrowLeft,
@@ -11,18 +11,21 @@ import {
   Plus,
   List,
   Grid3X3,
-  Filter
+  Edit2
 } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { ScrollArea } from '@/components/ui/scroll-area';
 import { Badge } from '@/components/ui/badge';
 import { EventItem } from '@/hooks/useCSuiteData';
+import { EventFormDialog } from './EventFormDialog';
+import { useAuth } from '@/hooks/useAuth';
 
 interface EventsCalendarViewProps {
   items: EventItem[];
   isLoading: boolean;
   onBack: () => void;
   onItemClick: (item: EventItem) => void;
+  onRefresh?: () => void;
 }
 
 type ViewMode = 'calendar' | 'list';
@@ -32,10 +35,37 @@ export function EventsCalendarView({
   isLoading,
   onBack,
   onItemClick,
+  onRefresh,
 }: EventsCalendarViewProps) {
+  const { user } = useAuth();
   const [currentMonth, setCurrentMonth] = useState(new Date());
   const [selectedDate, setSelectedDate] = useState<Date | null>(null);
   const [viewMode, setViewMode] = useState<ViewMode>('calendar');
+  
+  // Event form state
+  const [formOpen, setFormOpen] = useState(false);
+  const [editingEvent, setEditingEvent] = useState<EventItem | null>(null);
+  const [newEventDate, setNewEventDate] = useState<Date | null>(null);
+
+  const handleAddEvent = useCallback((date?: Date) => {
+    setEditingEvent(null);
+    setNewEventDate(date || selectedDate || new Date());
+    setFormOpen(true);
+  }, [selectedDate]);
+
+  const handleEditEvent = useCallback((event: EventItem) => {
+    setEditingEvent(event);
+    setNewEventDate(null);
+    setFormOpen(true);
+  }, []);
+
+  const handleEventSaved = useCallback(() => {
+    onRefresh?.();
+  }, [onRefresh]);
+
+  const handleEventDeleted = useCallback(() => {
+    onRefresh?.();
+  }, [onRefresh]);
 
   // Get calendar days for the current month view
   const calendarDays = useMemo(() => {
@@ -86,6 +116,19 @@ export function EventsCalendarView({
 
   return (
     <div className="h-full flex flex-col bg-background">
+      {/* Event Form Dialog */}
+      {user && (
+        <EventFormDialog
+          open={formOpen}
+          onOpenChange={setFormOpen}
+          event={editingEvent}
+          selectedDate={newEventDate}
+          userId={user.id}
+          onEventSaved={handleEventSaved}
+          onEventDeleted={handleEventDeleted}
+        />
+      )}
+
       {/* Header */}
       <div className="flex items-center gap-3 p-3 border-b border-border bg-card">
         <Button
@@ -106,6 +149,15 @@ export function EventsCalendarView({
           </p>
         </div>
         <div className="flex items-center gap-1">
+          <Button
+            variant="default"
+            size="sm"
+            className="h-7 text-xs"
+            onClick={() => handleAddEvent()}
+          >
+            <Plus size={14} className="mr-1" />
+            Add Event
+          </Button>
           <Button
             variant={viewMode === 'calendar' ? 'secondary' : 'ghost'}
             size="icon"
@@ -199,10 +251,10 @@ export function EventsCalendarView({
                       {dayEvents.slice(0, 2).map(event => (
                         <div
                           key={event.id}
-                          className={`${getEventColor(event)} text-white text-[7px] px-1 rounded truncate`}
+                          className={`${getEventColor(event)} text-white text-[7px] px-1 rounded truncate cursor-pointer hover:opacity-80`}
                           onClick={(e) => {
                             e.stopPropagation();
-                            onItemClick(event);
+                            handleEditEvent(event);
                           }}
                         >
                           {event.title}
@@ -226,24 +278,45 @@ export function EventsCalendarView({
                 <span className="text-[10px] font-mono text-muted-foreground">
                   {format(selectedDate, 'EEEE, MMMM d, yyyy')}
                 </span>
-                <Badge variant="secondary" className="text-[8px] ml-auto">
+                <Badge variant="secondary" className="text-[8px]">
                   {selectedDateEvents.length} events
                 </Badge>
+                <Button
+                  variant="outline"
+                  size="sm"
+                  className="h-5 text-[9px] ml-auto"
+                  onClick={() => handleAddEvent(selectedDate)}
+                >
+                  <Plus size={10} className="mr-0.5" />
+                  Add
+                </Button>
               </div>
               <ScrollArea className="flex-1">
                 {selectedDateEvents.length === 0 ? (
-                  <p className="text-[10px] text-muted-foreground text-center py-4">No events scheduled</p>
+                  <div className="text-center py-4">
+                    <p className="text-[10px] text-muted-foreground mb-2">No events scheduled</p>
+                    <Button
+                      variant="outline"
+                      size="sm"
+                      className="h-6 text-[10px]"
+                      onClick={() => handleAddEvent(selectedDate)}
+                    >
+                      <Plus size={12} className="mr-1" />
+                      Create Event
+                    </Button>
+                  </div>
                 ) : (
                   <div className="space-y-1">
                     {selectedDateEvents.map(event => (
                       <button
                         key={event.id}
-                        onClick={() => onItemClick(event)}
-                        className="w-full p-2 rounded bg-muted/30 hover:bg-muted/50 border border-transparent hover:border-primary/30 transition-all text-left"
+                        onClick={() => handleEditEvent(event)}
+                        className="w-full p-2 rounded bg-muted/30 hover:bg-muted/50 border border-transparent hover:border-primary/30 transition-all text-left group"
                       >
                         <div className="flex items-center gap-2">
                           <div className={`w-1.5 h-1.5 rounded-full ${getEventColor(event)}`} />
                           <span className="text-[11px] font-medium text-foreground flex-1 truncate">{event.title}</span>
+                          <Edit2 size={10} className="text-muted-foreground opacity-0 group-hover:opacity-100 transition-opacity" />
                           {event.start_at && (
                             <span className="text-[9px] text-muted-foreground flex items-center gap-1">
                               <Clock size={8} />
@@ -282,8 +355,8 @@ export function EventsCalendarView({
                   upcomingEvents.map(event => (
                     <button
                       key={event.id}
-                      onClick={() => onItemClick(event)}
-                      className="w-full p-2 rounded bg-background hover:bg-muted/30 border border-border hover:border-primary/30 transition-all text-left"
+                      onClick={() => handleEditEvent(event)}
+                      className="w-full p-2 rounded bg-background hover:bg-muted/30 border border-border hover:border-primary/30 transition-all text-left group"
                     >
                       <div className="flex items-start gap-2">
                         <div className={`w-1.5 h-8 rounded-full ${getEventColor(event)} mt-0.5`} />
@@ -316,6 +389,7 @@ export function EventsCalendarView({
                             </div>
                           )}
                         </div>
+                        <Edit2 size={12} className="text-muted-foreground opacity-0 group-hover:opacity-100 transition-opacity flex-shrink-0" />
                         <Badge variant="outline" className="text-[8px]">{event.type}</Badge>
                       </div>
                     </button>
@@ -335,12 +409,13 @@ export function EventsCalendarView({
                 {items.map(event => (
                   <button
                     key={event.id}
-                    onClick={() => onItemClick(event)}
-                    className="w-full p-2 rounded bg-background hover:bg-muted/30 border border-border hover:border-primary/30 transition-all text-left"
+                    onClick={() => handleEditEvent(event)}
+                    className="w-full p-2 rounded bg-background hover:bg-muted/30 border border-border hover:border-primary/30 transition-all text-left group"
                   >
                     <div className="flex items-center gap-2">
                       <div className={`w-1.5 h-1.5 rounded-full ${getEventColor(event)}`} />
                       <span className="text-[11px] font-medium text-foreground flex-1 truncate">{event.title}</span>
+                      <Edit2 size={10} className="text-muted-foreground opacity-0 group-hover:opacity-100 transition-opacity" />
                       <span className="text-[9px] text-muted-foreground">
                         {format(event.start_at || event.date, 'MMM d, h:mm a')}
                       </span>

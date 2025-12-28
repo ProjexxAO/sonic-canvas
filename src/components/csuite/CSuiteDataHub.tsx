@@ -386,6 +386,7 @@ export function CSuiteDataHub({ userId, agents = [], agentsLoading = false }: CS
             isLoading={loadingDomains[expandedDomain]}
             onBack={() => setExpandedDomain(null)}
             onItemClick={handleItemClick}
+            onRefresh={() => fetchDomainItems(expandedDomain)}
           />
         </div>
       )}
