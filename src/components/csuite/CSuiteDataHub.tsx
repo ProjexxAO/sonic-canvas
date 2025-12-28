@@ -39,7 +39,7 @@ import { ScrollArea } from '@/components/ui/scroll-area';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
 import { Badge } from '@/components/ui/badge';
 import { useCSuiteData, DataDomainStats, DomainKey, DomainItem, CSuiteReport } from '@/hooks/useCSuiteData';
-import { DomainDetailView } from './DomainDetailView';
+import { FullScreenDomainView } from './domain-views';
 import { DomainItemDrawer } from './DomainItemDrawer';
 import { PersonaConfigPopover, PersonaConfig } from './PersonaConfigPopover';
 import { ReportViewer } from './ReportViewer';
@@ -439,12 +439,10 @@ export function CSuiteDataHub({ userId, agents = [], agentsLoading = false }: CS
 
           {/* Content */}
           <div className="flex-1 overflow-hidden">
-            {/* Expanded Domain View */}
+            {/* Expanded Domain View - Full Screen */}
             {expandedDomain && expandedDomainConfig && (
-              <DomainDetailView
+              <FullScreenDomainView
                 domainKey={expandedDomain}
-                label={expandedDomainConfig.label}
-                color={expandedDomainConfig.color}
                 items={domainItems[expandedDomain]}
                 isLoading={loadingDomains[expandedDomain]}
                 onBack={() => setExpandedDomain(null)}
