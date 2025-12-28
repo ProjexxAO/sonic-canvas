@@ -14,7 +14,6 @@ import {
   BarChart3,
   Sparkles,
   RefreshCw,
-  ExternalLink,
   Cpu,
   Users,
   Megaphone,
@@ -25,7 +24,14 @@ import {
   Activity,
   Zap,
   Brain,
-  Workflow
+  Settings,
+  Library,
+  Command,
+  Lightbulb,
+  FolderOpen,
+  AlertTriangle,
+  Bell,
+  Target
 } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { ScrollArea } from '@/components/ui/scroll-area';
@@ -34,7 +40,7 @@ import { Badge } from '@/components/ui/badge';
 import { useCSuiteData, DataDomainStats, DomainKey, DomainItem, CSuiteReport } from '@/hooks/useCSuiteData';
 import { DomainDetailView } from './DomainDetailView';
 import { DomainItemDrawer } from './DomainItemDrawer';
-import { PersonaConfigPopover, PersonaConfig, ReportDepth } from './PersonaConfigPopover';
+import { PersonaConfigPopover, PersonaConfig } from './PersonaConfigPopover';
 import { ReportViewer } from './ReportViewer';
 import { ReportHistoryList } from './ReportHistoryList';
 import { AtlasSummaryTab } from './AtlasSummaryTab';
@@ -60,7 +66,7 @@ interface Persona {
   description: string;
   category: PersonaCategory;
   focusAreas: string[];
-  matchTitles: string[]; // Job titles that match this persona
+  matchTitles: string[];
 }
 
 const DOMAIN_CONFIG = [
@@ -73,24 +79,18 @@ const DOMAIN_CONFIG = [
 ];
 
 const PERSONAS: Persona[] = [
-  // Executive
   { id: 'ceo', label: 'CEO', icon: User, description: 'Strategic overview & key decisions', category: 'executive', focusAreas: ['strategic_overview', 'key_decisions', 'market_position', 'stakeholder_concerns'], matchTitles: ['ceo', 'chief executive', 'founder', 'president', 'managing director', 'general manager'] },
   { id: 'cfo', label: 'CFO', icon: DollarSign, description: 'Financial health & forecasts', category: 'executive', focusAreas: ['financial_health', 'cash_flow', 'forecasts', 'compliance'], matchTitles: ['cfo', 'chief financial', 'finance director', 'controller', 'treasurer', 'vp finance'] },
   { id: 'coo', label: 'COO', icon: TrendingUp, description: 'Operations & efficiency', category: 'executive', focusAreas: ['operations_efficiency', 'process_optimization', 'team_performance', 'resource_allocation'], matchTitles: ['coo', 'chief operating', 'operations director', 'vp operations', 'head of operations'] },
   { id: 'chief_of_staff', label: 'Chief of Staff', icon: Briefcase, description: 'Cross-functional insights', category: 'executive', focusAreas: ['cross_functional', 'executive_priorities', 'organizational_alignment', 'action_items'], matchTitles: ['chief of staff', 'executive assistant', 'ea to', 'office manager'] },
-  // Tech Leadership
   { id: 'cto', label: 'CTO', icon: Cpu, description: 'Technology strategy & innovation', category: 'tech', focusAreas: ['technology_strategy', 'innovation', 'technical_debt', 'infrastructure'], matchTitles: ['cto', 'chief technology', 'vp engineering', 'head of engineering', 'technical director', 'it director'] },
   { id: 'ciso', label: 'CISO', icon: Scale, description: 'Security posture & risk assessment', category: 'tech', focusAreas: ['security_posture', 'risk_assessment', 'compliance', 'incident_response'], matchTitles: ['ciso', 'chief information security', 'security director', 'head of security', 'information security'] },
-  // People & Culture
   { id: 'chro', label: 'CHRO', icon: Users, description: 'Workforce analytics & culture', category: 'people', focusAreas: ['workforce_analytics', 'culture', 'talent_acquisition', 'retention'], matchTitles: ['chro', 'chief human resources', 'hr director', 'head of hr', 'vp hr', 'people director'] },
   { id: 'chief_people', label: 'Chief People Officer', icon: Users, description: 'Employee engagement & talent', category: 'people', focusAreas: ['employee_engagement', 'talent_development', 'organizational_culture', 'wellbeing'], matchTitles: ['chief people', 'head of people', 'people operations', 'talent director'] },
-  // Growth & Marketing
   { id: 'cmo', label: 'CMO', icon: Megaphone, description: 'Marketing performance & brand', category: 'growth', focusAreas: ['marketing_performance', 'brand_health', 'customer_insights', 'campaigns'], matchTitles: ['cmo', 'chief marketing', 'marketing director', 'vp marketing', 'head of marketing', 'brand director'] },
   { id: 'cro', label: 'CRO', icon: TrendingUp, description: 'Revenue growth & pipeline', category: 'growth', focusAreas: ['revenue_growth', 'pipeline', 'sales_performance', 'customer_success'], matchTitles: ['cro', 'chief revenue', 'sales director', 'vp sales', 'head of sales', 'business development'] },
-  // Legal & Compliance
   { id: 'clo', label: 'CLO', icon: Scale, description: 'Legal matters & contracts', category: 'legal', focusAreas: ['legal_matters', 'contracts', 'intellectual_property', 'litigation'], matchTitles: ['clo', 'chief legal', 'general counsel', 'legal director', 'head of legal'] },
   { id: 'cco', label: 'CCO', icon: CheckSquare, description: 'Compliance & regulatory', category: 'legal', focusAreas: ['compliance', 'regulatory', 'ethics', 'governance'], matchTitles: ['cco', 'chief compliance', 'compliance director', 'regulatory affairs', 'governance'] },
-  // Admin
   { id: 'admin', label: 'Admin', icon: Cpu, description: 'System administration & oversight', category: 'admin', focusAreas: ['system_health', 'user_management', 'agent_oversight', 'platform_analytics', 'security_monitoring'], matchTitles: ['admin', 'administrator', 'superadmin', 'system admin'] },
 ];
 
@@ -109,21 +109,6 @@ const CONNECTOR_CONFIG: Record<string, { label: string; icon: typeof Cloud; colo
   local: { label: 'Local Upload', icon: Upload, color: 'hsl(200 60% 50%)' },
 };
 
-// Helper function to match job title to persona
-function matchTitleToPersona(jobTitle: string): string {
-  if (!jobTitle) return 'ceo'; // Default persona
-  const title = jobTitle.toLowerCase();
-  
-  for (const persona of PERSONAS) {
-    if (persona.matchTitles.some(match => title.includes(match))) {
-      return persona.id;
-    }
-  }
-  
-  // Default to CEO for general leadership or unknown titles
-  return 'ceo';
-}
-
 export function CSuiteDataHub({ userId, agents = [], agentsLoading = false }: CSuiteDataHubProps) {
   const {
     stats,
@@ -134,16 +119,14 @@ export function CSuiteDataHub({ userId, agents = [], agentsLoading = false }: CS
     domainItems,
     loadingDomains,
     uploadFile,
-    connectProvider,
     generateReport,
     fetchDomainItems,
     refresh,
   } = useCSuiteData(userId);
 
-  // Enterprise intelligence integration
   const enterprise = useAtlasEnterprise(userId);
 
-  const [activeTab, setActiveTab] = useState('data');
+  const [activeTab, setActiveTab] = useState('command');
   const [generatingPersona, setGeneratingPersona] = useState<string | null>(null);
   const [expandedDomain, setExpandedDomain] = useState<DomainKey | null>(null);
   const [selectedItem, setSelectedItem] = useState<DomainItem | null>(null);
@@ -155,10 +138,8 @@ export function CSuiteDataHub({ userId, agents = [], agentsLoading = false }: CS
   const [isSuperAdmin, setIsSuperAdmin] = useState(false);
   const fileInputRef = useRef<HTMLInputElement>(null);
 
-  // Persona permissions - must be after userPersona state declaration
   const personaPerms = usePersonaPermissions(userPersona);
 
-  // Check if user is superadmin
   useEffect(() => {
     if (!userId) return;
     
@@ -176,7 +157,6 @@ export function CSuiteDataHub({ userId, agents = [], agentsLoading = false }: CS
     checkSuperAdmin();
   }, [userId]);
 
-  // Load user's assigned persona from profile
   useEffect(() => {
     if (!userId) return;
     
@@ -189,7 +169,6 @@ export function CSuiteDataHub({ userId, agents = [], agentsLoading = false }: CS
       
       if (data?.preferred_persona) {
         setUserPersona(data.preferred_persona);
-        // Pre-select the user's persona category
         const persona = PERSONAS.find(p => p.id === data.preferred_persona);
         if (persona) {
           setSelectedCategories([persona.category]);
@@ -200,7 +179,6 @@ export function CSuiteDataHub({ userId, agents = [], agentsLoading = false }: CS
     loadUserPersona();
   }, [userId]);
 
-  // Initialize persona configs with defaults
   const [personaConfigs, setPersonaConfigs] = useState<Record<string, PersonaConfig>>(() => {
     const configs: Record<string, PersonaConfig> = {};
     PERSONAS.forEach(p => {
@@ -264,17 +242,19 @@ export function CSuiteDataHub({ userId, agents = [], agentsLoading = false }: CS
   };
 
   const totalItems = Object.values(stats).reduce((a, b) => a + b, 0);
-
-  // Check if user can manage personas (superadmin or admin persona)
   const canManagePersonas = isSuperAdmin || userPersona === 'admin';
-
-  // Personas for the manager dropdown
   const personasForManager = PERSONAS.map(p => ({ id: p.id, label: p.label, category: p.category }));
 
-  // Get expanded domain config
   const expandedDomainConfig = expandedDomain 
     ? DOMAIN_CONFIG.find(d => d.key === expandedDomain) 
     : null;
+
+  // Get current persona info
+  const currentPersona = PERSONAS.find(p => p.id === userPersona);
+
+  // Calculate quick stats for command center
+  const activeAgents = agents.filter(a => a.status === 'ACTIVE').length;
+  const processingAgents = agents.filter(a => a.status === 'PROCESSING').length;
 
   return (
     <>
@@ -285,6 +265,11 @@ export function CSuiteDataHub({ userId, agents = [], agentsLoading = false }: CS
             <div className="flex items-center gap-2">
               <BarChart3 size={14} className="text-primary" />
               <span className="text-xs font-mono text-muted-foreground">C-SUITE DATA HUB</span>
+              {currentPersona && (
+                <Badge variant="outline" className="text-[8px] font-mono">
+                  {currentPersona.label}
+                </Badge>
+              )}
             </div>
             <Button
               variant="ghost"
@@ -297,47 +282,39 @@ export function CSuiteDataHub({ userId, agents = [], agentsLoading = false }: CS
             </Button>
           </div>
 
-          {/* Tabs - Hide when domain is expanded */}
+          {/* Restructured Tabs - 4 Main Sections */}
           {!expandedDomain && (
             <TabsList className="w-full justify-start rounded-none border-b border-border bg-transparent px-1 py-0 h-8 overflow-x-auto">
               <TabsTrigger 
-                value="data" 
-                className="text-[10px] font-mono px-2 py-1 rounded-none data-[state=active]:border-b-2 data-[state=active]:border-primary data-[state=active]:bg-transparent"
+                value="command" 
+                className="text-[10px] font-mono px-2 py-1 rounded-none data-[state=active]:border-b-2 data-[state=active]:border-primary data-[state=active]:bg-transparent flex items-center gap-1"
               >
-                DASHBOARD
+                <Command size={10} />
+                COMMAND
               </TabsTrigger>
               <TabsTrigger 
-                value="intelligence" 
-                className="text-[10px] font-mono px-2 py-1 rounded-none data-[state=active]:border-b-2 data-[state=active]:border-primary data-[state=active]:bg-transparent"
+                value="insights" 
+                className="text-[10px] font-mono px-2 py-1 rounded-none data-[state=active]:border-b-2 data-[state=active]:border-primary data-[state=active]:bg-transparent flex items-center gap-1"
               >
-                INTEL
+                <Lightbulb size={10} />
+                INSIGHTS
               </TabsTrigger>
               <TabsTrigger 
-                value="overview" 
-                className="text-[10px] font-mono px-2 py-1 rounded-none data-[state=active]:border-b-2 data-[state=active]:border-primary data-[state=active]:bg-transparent"
+                value="library" 
+                className="text-[10px] font-mono px-2 py-1 rounded-none data-[state=active]:border-b-2 data-[state=active]:border-primary data-[state=active]:bg-transparent flex items-center gap-1"
               >
-                OVERVIEW
+                <Library size={10} />
+                LIBRARY
               </TabsTrigger>
-              {isSuperAdmin && (
+              {canManagePersonas && (
                 <TabsTrigger 
-                  value="personas" 
-                  className="text-[10px] font-mono px-2 py-1 rounded-none data-[state=active]:border-b-2 data-[state=active]:border-primary data-[state=active]:bg-transparent"
+                  value="admin" 
+                  className="text-[10px] font-mono px-2 py-1 rounded-none data-[state=active]:border-b-2 data-[state=active]:border-primary data-[state=active]:bg-transparent flex items-center gap-1"
                 >
-                  PERSONAS
+                  <Settings size={10} />
+                  ADMIN
                 </TabsTrigger>
               )}
-              <TabsTrigger 
-                value="reports" 
-                className="text-[10px] font-mono px-2 py-1 rounded-none data-[state=active]:border-b-2 data-[state=active]:border-primary data-[state=active]:bg-transparent"
-              >
-                REPORTS
-              </TabsTrigger>
-              <TabsTrigger 
-                value="summary" 
-                className="text-[10px] font-mono px-2 py-1 rounded-none data-[state=active]:border-b-2 data-[state=active]:border-primary data-[state=active]:bg-transparent"
-              >
-                SUMMARY
-              </TabsTrigger>
             </TabsList>
           )}
 
@@ -356,117 +333,164 @@ export function CSuiteDataHub({ userId, agents = [], agentsLoading = false }: CS
               />
             )}
 
-            {/* Data Domains Tab - Now shows persona-specific layout */}
+            {/* COMMAND CENTER TAB - Unified Dashboard */}
             {!expandedDomain && (
-              <TabsContent value="data" className="h-full m-0">
+              <TabsContent value="command" className="h-full m-0">
                 <ScrollArea className="h-full">
-                  {userPersona ? (
-                    <PersonaLayoutRenderer
-                      personaId={userPersona}
-                      stats={stats}
-                      domainItems={domainItems}
-                      loadingDomains={loadingDomains}
-                      onDomainClick={(domain) => {
-                        // Check if user has permission to view this domain
-                        if (personaPerms.canViewDomain(domain)) {
-                          handleDomainClick(domain);
-                        }
-                      }}
-                      onItemClick={handleItemClick}
-                      agents={agents}
-                      enterpriseData={{
-                        lastQuery: enterprise.lastQuery,
-                        lastAnalysis: enterprise.lastAnalysis,
-                        lastCorrelation: enterprise.lastCorrelation,
-                        lastRecommendations: enterprise.lastRecommendations,
-                      }}
-                    />
-                  ) : (
-                    <div className="space-y-2 p-2">
-                      {/* Default view when no persona is set */}
-                      <div className="p-2 rounded bg-background border border-border">
-                        <div className="flex items-center justify-between mb-2">
-                          <span className="text-[10px] font-mono text-muted-foreground">TOTAL ITEMS</span>
-                          <span className="text-sm font-mono text-primary">{totalItems}</span>
+                  <div className="p-2 space-y-3">
+                    {/* Quick Status Bar */}
+                    <div className="flex gap-2">
+                      <div className="flex-1 p-2 rounded bg-primary/10 border border-primary/30">
+                        <div className="flex items-center gap-2 mb-1">
+                          <Activity size={10} className="text-primary" />
+                          <span className="text-[9px] font-mono text-muted-foreground">AGENTS</span>
                         </div>
-                        <div className="h-1.5 bg-muted rounded-full overflow-hidden">
-                          <div 
-                            className="h-full bg-gradient-to-r from-primary to-secondary transition-all"
-                            style={{ width: `${Math.min((totalItems / 100) * 100, 100)}%` }}
-                          />
+                        <div className="flex items-baseline gap-1">
+                          <span className="text-lg font-mono text-primary">{activeAgents}</span>
+                          <span className="text-[9px] text-muted-foreground">active</span>
+                          {processingAgents > 0 && (
+                            <Badge variant="secondary" className="text-[8px] ml-1">{processingAgents} proc</Badge>
+                          )}
                         </div>
                       </div>
-
-                      {/* Domain Grid - Filtered by permissions */}
-                      <div className="grid grid-cols-2 gap-2 animate-scale-fade-in"
-                        style={{ 
-                          animationDuration: '0.3s',
-                          animationFillMode: 'both',
-                          animationTimingFunction: 'cubic-bezier(0.16, 1, 0.3, 1)'
-                        }}
-                      >
-                        {DOMAIN_CONFIG.map(({ key, label, icon: Icon, color }, index) => (
-                          <button
-                            key={key}
-                            onClick={() => handleDomainClick(key)}
-                            className="p-2 rounded bg-background border border-border hover:border-primary/40 hover:bg-muted/30 transition-all text-left group hover:scale-[1.02] active:scale-[0.98]"
-                            style={{
-                              animationName: 'stagger-fade-in',
-                              animationDuration: '0.3s',
-                              animationDelay: `${index * 50}ms`,
-                              animationFillMode: 'both',
-                              animationTimingFunction: 'cubic-bezier(0.16, 1, 0.3, 1)'
-                            }}
-                          >
-                            <div className="flex items-center gap-2 mb-1">
-                              <Icon size={12} style={{ color }} />
-                              <span className="text-[10px] font-mono text-muted-foreground group-hover:text-foreground transition-colors">
-                                {label}
-                              </span>
-                            </div>
-                            <span className="text-lg font-mono text-foreground group-hover:text-primary transition-colors">
-                              {stats[key]}
-                            </span>
-                          </button>
-                        ))}
-                      </div>
-
-                      {/* Upload Section */}
-                      <div className="p-2 rounded bg-background border border-border">
-                        <div className="flex items-center gap-2 mb-2">
-                          <Upload size={12} className="text-secondary" />
-                          <span className="text-[10px] font-mono text-muted-foreground">QUICK UPLOAD</span>
+                      <div className="flex-1 p-2 rounded bg-secondary/10 border border-secondary/30">
+                        <div className="flex items-center gap-2 mb-1">
+                          <FolderOpen size={10} className="text-secondary" />
+                          <span className="text-[9px] font-mono text-muted-foreground">DATA</span>
                         </div>
-                        <input
-                          ref={fileInputRef}
-                          type="file"
-                          multiple
-                          accept=".pdf,.doc,.docx,.xls,.xlsx,.csv,.txt,.md,.pptx"
-                          onChange={handleFileUpload}
-                          className="hidden"
-                          id="file-upload"
-                        />
-                        <Button
-                          variant="outline"
-                          size="sm"
-                          className="w-full text-[10px] font-mono"
-                          onClick={() => fileInputRef.current?.click()}
-                          disabled={isUploading || !userId}
-                        >
-                          {isUploading ? 'UPLOADING...' : 'SELECT FILES'}
-                        </Button>
+                        <div className="flex items-baseline gap-1">
+                          <span className="text-lg font-mono text-secondary">{totalItems}</span>
+                          <span className="text-[9px] text-muted-foreground">items</span>
+                        </div>
+                      </div>
+                      <div className="flex-1 p-2 rounded bg-green-500/10 border border-green-500/30">
+                        <div className="flex items-center gap-2 mb-1">
+                          <FileText size={10} className="text-green-500" />
+                          <span className="text-[9px] font-mono text-muted-foreground">REPORTS</span>
+                        </div>
+                        <div className="flex items-baseline gap-1">
+                          <span className="text-lg font-mono text-green-500">{reports.length}</span>
+                          <span className="text-[9px] text-muted-foreground">generated</span>
+                        </div>
                       </div>
                     </div>
-                  )}
+
+                    {/* Persona-Specific Layout */}
+                    {userPersona ? (
+                      <PersonaLayoutRenderer
+                        personaId={userPersona}
+                        stats={stats}
+                        domainItems={domainItems}
+                        loadingDomains={loadingDomains}
+                        onDomainClick={(domain) => {
+                          if (personaPerms.canViewDomain(domain)) {
+                            handleDomainClick(domain);
+                          }
+                        }}
+                        onItemClick={handleItemClick}
+                        agents={agents}
+                        enterpriseData={{
+                          lastQuery: enterprise.lastQuery,
+                          lastAnalysis: enterprise.lastAnalysis,
+                          lastCorrelation: enterprise.lastCorrelation,
+                          lastRecommendations: enterprise.lastRecommendations,
+                        }}
+                      />
+                    ) : (
+                      /* Default Command Center when no persona */
+                      <div className="space-y-3">
+                        {/* Alert Banner */}
+                        <div className="p-2 rounded bg-yellow-500/10 border border-yellow-500/30 flex items-center gap-2">
+                          <AlertTriangle size={12} className="text-yellow-500" />
+                          <span className="text-[10px] text-yellow-600">No persona assigned. Contact your admin to get personalized insights.</span>
+                        </div>
+
+                        {/* Domain Quick Access */}
+                        <div className="p-2 rounded bg-background border border-border">
+                          <div className="flex items-center gap-2 mb-2">
+                            <Target size={12} className="text-primary" />
+                            <span className="text-[10px] font-mono text-muted-foreground">QUICK ACCESS</span>
+                          </div>
+                          <div className="grid grid-cols-3 gap-2">
+                            {DOMAIN_CONFIG.map(({ key, label, icon: Icon, color }) => (
+                              <button
+                                key={key}
+                                onClick={() => handleDomainClick(key)}
+                                className="p-2 rounded bg-muted/30 hover:bg-muted/50 border border-transparent hover:border-primary/30 transition-all text-center"
+                              >
+                                <Icon size={14} style={{ color }} className="mx-auto mb-1" />
+                                <span className="text-[9px] font-mono text-muted-foreground block">{label}</span>
+                                <span className="text-sm font-mono text-foreground">{stats[key]}</span>
+                              </button>
+                            ))}
+                          </div>
+                        </div>
+
+                        {/* Connectors Status */}
+                        <div className="p-2 rounded bg-background border border-border">
+                          <div className="flex items-center gap-2 mb-2">
+                            <Cloud size={12} className="text-primary" />
+                            <span className="text-[10px] font-mono text-muted-foreground">CONNECTORS</span>
+                          </div>
+                          <div className="space-y-1">
+                            {connectors.map((conn) => {
+                              const config = CONNECTOR_CONFIG[conn.provider];
+                              if (!config) return null;
+                              const ConnIcon = config.icon;
+                              return (
+                                <div key={conn.provider} className="flex items-center justify-between">
+                                  <div className="flex items-center gap-2">
+                                    <ConnIcon size={10} style={{ color: config.color }} />
+                                    <span className="text-[9px] font-mono">{config.label}</span>
+                                  </div>
+                                  <span className={`text-[8px] font-mono ${
+                                    conn.status === 'connected' ? 'text-green-500' : 'text-muted-foreground'
+                                  }`}>
+                                    {conn.status.toUpperCase()}
+                                  </span>
+                                </div>
+                              );
+                            })}
+                          </div>
+                        </div>
+                      </div>
+                    )}
+
+                    {/* Upload Section */}
+                    <div className="p-2 rounded bg-background border border-border">
+                      <div className="flex items-center gap-2 mb-2">
+                        <Upload size={12} className="text-secondary" />
+                        <span className="text-[10px] font-mono text-muted-foreground">QUICK UPLOAD</span>
+                      </div>
+                      <input
+                        ref={fileInputRef}
+                        type="file"
+                        multiple
+                        accept=".pdf,.doc,.docx,.xls,.xlsx,.csv,.txt,.md,.pptx"
+                        onChange={handleFileUpload}
+                        className="hidden"
+                        id="file-upload"
+                      />
+                      <Button
+                        variant="outline"
+                        size="sm"
+                        className="w-full text-[10px] font-mono"
+                        onClick={() => fileInputRef.current?.click()}
+                        disabled={isUploading || !userId}
+                      >
+                        {isUploading ? 'UPLOADING...' : 'SELECT FILES'}
+                      </Button>
+                    </div>
+                  </div>
                 </ScrollArea>
               </TabsContent>
             )}
 
-            {/* Intelligence Tab - Enterprise Insights */}
+            {/* INSIGHTS TAB - AI Intelligence + Summary */}
             {!expandedDomain && (
-              <TabsContent value="intelligence" className="h-full m-0 p-2">
+              <TabsContent value="insights" className="h-full m-0">
                 <ScrollArea className="h-full">
-                  <div className="space-y-3">
+                  <div className="p-2 space-y-3">
                     {/* Query Input */}
                     <div className="p-2 rounded bg-background border border-border">
                       <div className="flex items-center gap-2 mb-2">
@@ -555,7 +579,7 @@ export function CSuiteDataHub({ userId, agents = [], agentsLoading = false }: CS
                           <span className="text-[9px] font-mono text-muted-foreground">CORRELATIONS</span>
                         </div>
                         <div className="space-y-1">
-                          {enterprise.lastCorrelation.correlations.slice(0, 3).map((corr, i) => (
+                          {enterprise.lastCorrelation.correlations.slice(0, 3).map((corr: any, i: number) => (
                             <div key={i} className="text-[10px] text-foreground/80 flex items-start gap-1">
                               <span className="text-primary">•</span>
                               <span>{corr.description}</span>
@@ -577,7 +601,7 @@ export function CSuiteDataHub({ userId, agents = [], agentsLoading = false }: CS
                           <div className="mt-2">
                             <span className="text-[9px] text-muted-foreground">RISKS:</span>
                             <div className="flex flex-wrap gap-1 mt-1">
-                              {enterprise.lastAnalysis.risks.slice(0, 2).map((risk, i) => (
+                              {enterprise.lastAnalysis.risks.slice(0, 2).map((risk: any, i: number) => (
                                 <Badge key={i} variant="destructive" className="text-[8px] font-mono">
                                   {risk.risk?.slice(0, 25) || 'Risk identified'}
                                 </Badge>
@@ -597,7 +621,7 @@ export function CSuiteDataHub({ userId, agents = [], agentsLoading = false }: CS
                         </div>
                         {enterprise.lastRecommendations.immediate && enterprise.lastRecommendations.immediate.length > 0 && (
                           <div className="space-y-1">
-                            {enterprise.lastRecommendations.immediate.slice(0, 3).map((rec, i) => (
+                            {enterprise.lastRecommendations.immediate.slice(0, 3).map((rec: any, i: number) => (
                               <div key={i} className="text-[10px] text-foreground/80 flex items-start gap-1">
                                 <span className="text-green-500">→</span>
                                 <span>{rec.action}</span>
@@ -607,78 +631,212 @@ export function CSuiteDataHub({ userId, agents = [], agentsLoading = false }: CS
                         )}
                       </div>
                     )}
+
+                    {/* Atlas Summary Section */}
+                    <div className="border-t border-border pt-3">
+                      <div className="flex items-center gap-2 mb-2">
+                        <Bell size={12} className="text-primary" />
+                        <span className="text-[10px] font-mono text-muted-foreground">ATLAS AI SUMMARY</span>
+                      </div>
+                      <AtlasSummaryTab userId={userId} />
+                    </div>
                   </div>
                 </ScrollArea>
               </TabsContent>
             )}
 
-            {/* Overview Tab - Executive Overview */}
+            {/* LIBRARY TAB - Data Domains + Reports */}
             {!expandedDomain && (
-              <TabsContent value="overview" className="h-full m-0 p-2">
+              <TabsContent value="library" className="h-full m-0">
                 <ScrollArea className="h-full">
-                  <div className="space-y-3">
-                    {/* Agent Overview */}
+                  <div className="p-2 space-y-3">
+                    {/* Domain Browser */}
                     <div className="p-2 rounded bg-background border border-border">
                       <div className="flex items-center gap-2 mb-2">
-                        <Activity size={12} className="text-primary" />
-                        <span className="text-[10px] font-mono text-muted-foreground">AGENT STATUS</span>
+                        <FolderOpen size={12} className="text-primary" />
+                        <span className="text-[10px] font-mono text-muted-foreground">DATA DOMAINS</span>
+                        <span className="text-[9px] text-muted-foreground ml-auto">{totalItems} total</span>
                       </div>
                       <div className="grid grid-cols-2 gap-2">
-                        <div className="text-center p-2 rounded bg-muted/30">
-                          <div className="text-lg font-mono text-primary">{agents.length}</div>
-                          <div className="text-[9px] text-muted-foreground">TOTAL</div>
-                        </div>
-                        <div className="text-center p-2 rounded bg-muted/30">
-                          <div className="text-lg font-mono text-green-500">
-                            {agents.filter(a => a.status === 'ACTIVE').length}
-                          </div>
-                          <div className="text-[9px] text-muted-foreground">ACTIVE</div>
-                        </div>
-                        <div className="text-center p-2 rounded bg-muted/30">
-                          <div className="text-lg font-mono text-yellow-500">
-                            {agents.filter(a => a.status === 'PROCESSING').length}
-                          </div>
-                          <div className="text-[9px] text-muted-foreground">PROCESSING</div>
-                        </div>
-                        <div className="text-center p-2 rounded bg-muted/30">
-                          <div className="text-lg font-mono text-muted-foreground">
-                            {agents.filter(a => a.status === 'IDLE').length}
-                          </div>
-                          <div className="text-[9px] text-muted-foreground">IDLE</div>
-                        </div>
-                      </div>
-                    </div>
-
-                    {/* Data Coverage */}
-                    <div className="p-2 rounded bg-background border border-border">
-                      <div className="flex items-center gap-2 mb-2">
-                        <BarChart3 size={12} className="text-secondary" />
-                        <span className="text-[10px] font-mono text-muted-foreground">DATA COVERAGE</span>
-                      </div>
-                      <div className="space-y-1">
                         {DOMAIN_CONFIG.map(({ key, label, icon: Icon, color }) => (
-                          <div key={key} className="flex items-center gap-2">
-                            <Icon size={10} style={{ color }} />
-                            <span className="text-[9px] font-mono flex-1">{label}</span>
-                            <span className="text-[10px] font-mono text-foreground">{stats[key]}</span>
-                          </div>
+                          <button
+                            key={key}
+                            onClick={() => handleDomainClick(key)}
+                            className="p-2 rounded bg-muted/30 hover:bg-muted/50 border border-transparent hover:border-primary/30 transition-all text-left group"
+                          >
+                            <div className="flex items-center gap-2 mb-1">
+                              <Icon size={12} style={{ color }} />
+                              <span className="text-[10px] font-mono text-muted-foreground group-hover:text-foreground transition-colors">
+                                {label}
+                              </span>
+                            </div>
+                            <span className="text-lg font-mono text-foreground group-hover:text-primary transition-colors">
+                              {stats[key]}
+                            </span>
+                          </button>
                         ))}
                       </div>
                     </div>
 
-                    {/* Reports Summary */}
+                    {/* Reports Section */}
                     <div className="p-2 rounded bg-background border border-border">
                       <div className="flex items-center gap-2 mb-2">
-                        <FileText size={12} className="text-primary" />
-                        <span className="text-[10px] font-mono text-muted-foreground">REPORTS</span>
+                        <FileText size={12} className="text-secondary" />
+                        <span className="text-[10px] font-mono text-muted-foreground">GENERATED REPORTS</span>
+                        <span className="text-[9px] text-muted-foreground ml-auto">{reports.length} reports</span>
                       </div>
-                      <div className="text-center p-2">
-                        <div className="text-2xl font-mono text-primary">{reports.length}</div>
-                        <div className="text-[9px] text-muted-foreground">TOTAL GENERATED</div>
+                      <ReportHistoryList
+                        reports={reports}
+                        onSelectReport={(report) => setSelectedReport(report)}
+                        selectedReportId={selectedReport?.id}
+                      />
+                    </div>
+
+                    {/* Generate Report Quick Actions */}
+                    <div className="p-2 rounded bg-background border border-border">
+                      <div className="flex items-center gap-2 mb-2">
+                        <Sparkles size={12} className="text-primary" />
+                        <span className="text-[10px] font-mono text-muted-foreground">QUICK GENERATE</span>
+                      </div>
+                      <div className="flex flex-wrap gap-1">
+                        {currentPersona && (
+                          <Button
+                            variant="outline"
+                            size="sm"
+                            className="h-6 text-[9px] font-mono"
+                            onClick={() => handleGenerateReport(currentPersona.id)}
+                            disabled={generatingPersona !== null || !userId || totalItems === 0}
+                          >
+                            {generatingPersona === currentPersona.id ? (
+                              <RefreshCw size={10} className="animate-spin mr-1" />
+                            ) : (
+                              <Sparkles size={10} className="mr-1" />
+                            )}
+                            {currentPersona.label} BRIEFING
+                          </Button>
+                        )}
+                      </div>
+                    </div>
+                  </div>
+                </ScrollArea>
+              </TabsContent>
+            )}
+
+            {/* ADMIN TAB - Superadmin/Admin Only */}
+            {!expandedDomain && canManagePersonas && (
+              <TabsContent value="admin" className="h-full m-0 p-2 flex flex-col">
+                <ScrollArea className="flex-1">
+                  <div className="space-y-3">
+                    {/* User Persona Manager */}
+                    <div className="p-2 rounded bg-background border border-border">
+                      <div className="flex items-center gap-2 mb-2">
+                        <Users size={12} className="text-primary" />
+                        <span className="text-[10px] font-mono text-muted-foreground">USER PERSONAS</span>
+                      </div>
+                      <UserPersonaManager 
+                        personas={personasForManager} 
+                        currentUserId={userId} 
+                      />
+                    </div>
+
+                    {/* Persona Permissions Manager */}
+                    <div className="p-2 rounded bg-background border border-border">
+                      <div className="flex items-center gap-2 mb-2">
+                        <Settings size={12} className="text-secondary" />
+                        <span className="text-[10px] font-mono text-muted-foreground">PERSONA PERMISSIONS</span>
+                      </div>
+                      <PersonaPermissionsManager personas={personasForManager} />
+                    </div>
+
+                    {/* Persona Report Generation */}
+                    <div className="p-2 rounded bg-background border border-border">
+                      <div className="flex items-center gap-2 mb-2">
+                        <Sparkles size={12} className="text-primary" />
+                        <span className="text-[10px] font-mono text-muted-foreground">PERSONA REPORT GENERATOR</span>
+                      </div>
+                      
+                      {/* Filter Bar */}
+                      <div className="flex items-center gap-1.5 pb-2 border-b border-border mb-2 flex-wrap">
+                        <Filter size={10} className="text-muted-foreground" />
+                        {PERSONA_CATEGORIES.map(({ id, label }) => (
+                          <Badge
+                            key={id}
+                            variant={selectedCategories.includes(id) ? 'default' : 'outline'}
+                            className="text-[9px] font-mono cursor-pointer hover:bg-primary/20 transition-colors px-1.5 py-0"
+                            onClick={() => toggleCategory(id)}
+                          >
+                            {label}
+                          </Badge>
+                        ))}
+                        {selectedCategories.length > 0 && (
+                          <Button
+                            variant="ghost"
+                            size="sm"
+                            className="h-4 px-1 text-[9px] text-muted-foreground hover:text-foreground"
+                            onClick={clearFilters}
+                          >
+                            <X size={8} className="mr-0.5" />
+                            Clear
+                          </Button>
+                        )}
+                      </div>
+
+                      <div className="space-y-2 max-h-64 overflow-y-auto">
+                        {filteredPersonas.map(({ id, label, icon: Icon, description, category, focusAreas }) => {
+                          const config = personaConfigs[id];
+                          const customized = config && (
+                            config.depth !== 'standard' || 
+                            config.focusAreas.length !== focusAreas.length
+                          );
+                          
+                          return (
+                            <div
+                              key={id}
+                              className="p-2 rounded bg-muted/20 border border-border"
+                            >
+                              <div className="flex items-center justify-between mb-1">
+                                <div className="flex items-center gap-2">
+                                  <Icon size={12} className="text-primary" />
+                                  <span className="text-[10px] font-mono text-foreground">{label}</span>
+                                  <Badge variant="secondary" className="text-[7px] font-mono px-1 py-0">
+                                    {category}
+                                  </Badge>
+                                  {customized && (
+                                    <Badge variant="outline" className="text-[7px] font-mono px-1 py-0 border-primary/50 text-primary">
+                                      custom
+                                    </Badge>
+                                  )}
+                                </div>
+                                <div className="flex items-center gap-1">
+                                  <PersonaConfigPopover
+                                    personaId={id}
+                                    availableFocusAreas={focusAreas}
+                                    config={config || { focusAreas: [...focusAreas], depth: 'standard' }}
+                                    onConfigChange={handleConfigChange}
+                                  />
+                                  <Button
+                                    variant="outline"
+                                    size="sm"
+                                    className="h-5 text-[9px] font-mono px-2"
+                                    onClick={() => handleGenerateReport(id)}
+                                    disabled={generatingPersona !== null || !userId || totalItems === 0}
+                                  >
+                                    {generatingPersona === id ? (
+                                      <RefreshCw size={8} className="animate-spin" />
+                                    ) : (
+                                      <Sparkles size={8} />
+                                    )}
+                                  </Button>
+                                </div>
+                              </div>
+                              <p className="text-[9px] text-muted-foreground">{description}</p>
+                            </div>
+                          );
+                        })}
                       </div>
                     </div>
 
-                    {/* Connectors Status */}
+                    {/* Connector Management */}
                     <div className="p-2 rounded bg-background border border-border">
                       <div className="flex items-center gap-2 mb-2">
                         <Cloud size={12} className="text-primary" />
@@ -688,181 +846,26 @@ export function CSuiteDataHub({ userId, agents = [], agentsLoading = false }: CS
                         {connectors.map((conn) => {
                           const config = CONNECTOR_CONFIG[conn.provider];
                           if (!config) return null;
-                          const Icon = config.icon;
+                          const ConnIcon = config.icon;
                           return (
-                            <div key={conn.provider} className="flex items-center justify-between">
+                            <div key={conn.provider} className="flex items-center justify-between p-1.5 rounded bg-muted/20">
                               <div className="flex items-center gap-2">
-                                <Icon size={10} style={{ color: config.color }} />
+                                <ConnIcon size={10} style={{ color: config.color }} />
                                 <span className="text-[9px] font-mono">{config.label}</span>
                               </div>
-                              <span className={`text-[8px] font-mono ${
-                                conn.status === 'connected' ? 'text-green-500' : 'text-muted-foreground'
-                              }`}>
+                              <Badge 
+                                variant={conn.status === 'connected' ? 'default' : 'secondary'} 
+                                className="text-[8px] font-mono"
+                              >
                                 {conn.status.toUpperCase()}
-                              </span>
+                              </Badge>
                             </div>
                           );
                         })}
                       </div>
                     </div>
-
-                    {/* User Persona */}
-                    {userPersona && (
-                      <div className="p-2 rounded bg-primary/10 border border-primary/30">
-                        <div className="flex items-center gap-2 mb-1">
-                          <User size={12} className="text-primary" />
-                          <span className="text-[10px] font-mono text-muted-foreground">YOUR PERSONA</span>
-                        </div>
-                        <div className="flex items-center gap-2">
-                          <span className="text-sm font-mono text-primary">
-                            {PERSONAS.find(p => p.id === userPersona)?.label || userPersona}
-                          </span>
-                          <Badge variant="secondary" className="text-[8px]">
-                            {PERSONAS.find(p => p.id === userPersona)?.category}
-                          </Badge>
-                        </div>
-                      </div>
-                    )}
                   </div>
                 </ScrollArea>
-              </TabsContent>
-            )}
-
-            {/* Personas Tab */}
-            {!expandedDomain && (
-              <TabsContent value="personas" className="h-full m-0 p-2 flex flex-col">
-                {/* Filter Bar */}
-                <div className="flex items-center gap-1.5 pb-2 border-b border-border mb-2 flex-wrap">
-                  <Filter size={10} className="text-muted-foreground" />
-                  {PERSONA_CATEGORIES.map(({ id, label }) => (
-                    <Badge
-                      key={id}
-                      variant={selectedCategories.includes(id) ? 'default' : 'outline'}
-                      className="text-[9px] font-mono cursor-pointer hover:bg-primary/20 transition-colors px-1.5 py-0"
-                      onClick={() => toggleCategory(id)}
-                    >
-                      {label}
-                    </Badge>
-                  ))}
-                  {selectedCategories.length > 0 && (
-                    <Button
-                      variant="ghost"
-                      size="sm"
-                      className="h-4 px-1 text-[9px] text-muted-foreground hover:text-foreground"
-                      onClick={clearFilters}
-                    >
-                      <X size={8} className="mr-0.5" />
-                      Clear
-                    </Button>
-                  )}
-                  <span className="text-[9px] text-muted-foreground ml-auto">
-                    {filteredPersonas.length} of {PERSONAS.length}
-                  </span>
-                </div>
-
-                {/* User Persona Manager - Only for superadmin or admin persona */}
-                {canManagePersonas && (
-                  <div className="mb-3">
-                    <UserPersonaManager 
-                      personas={personasForManager} 
-                      currentUserId={userId} 
-                    />
-                  </div>
-                )}
-
-                {/* Persona Permissions Manager - Only for superadmin or admin persona */}
-                {canManagePersonas && (
-                  <div className="mb-3">
-                    <PersonaPermissionsManager personas={personasForManager} />
-                  </div>
-                )}
-
-                <ScrollArea className="flex-1">
-                  <div className="space-y-2">
-                    {filteredPersonas.map(({ id, label, icon: Icon, description, category, focusAreas }) => {
-                      const config = personaConfigs[id];
-                      const customized = config && (
-                        config.depth !== 'standard' || 
-                        config.focusAreas.length !== focusAreas.length
-                      );
-                      
-                      return (
-                        <div
-                          key={id}
-                          className="p-2 rounded bg-background border border-border"
-                        >
-                          <div className="flex items-center justify-between mb-1">
-                            <div className="flex items-center gap-2">
-                              <Icon size={14} className="text-primary" />
-                              <span className="text-xs font-mono text-foreground">{label}</span>
-                              <Badge variant="secondary" className="text-[8px] font-mono px-1 py-0">
-                                {category}
-                              </Badge>
-                              {customized && (
-                                <Badge variant="outline" className="text-[8px] font-mono px-1 py-0 border-primary/50 text-primary">
-                                  custom
-                                </Badge>
-                              )}
-                            </div>
-                            <div className="flex items-center gap-1">
-                              <PersonaConfigPopover
-                                personaId={id}
-                                availableFocusAreas={focusAreas}
-                                config={config || { focusAreas: [...focusAreas], depth: 'standard' }}
-                                onConfigChange={handleConfigChange}
-                              />
-                              <Button
-                                variant="outline"
-                                size="sm"
-                                className="h-6 text-[10px] font-mono px-2"
-                                onClick={() => handleGenerateReport(id)}
-                                disabled={generatingPersona !== null || !userId || totalItems === 0}
-                              >
-                                {generatingPersona === id ? (
-                                  <>
-                                    <RefreshCw size={10} className="mr-1 animate-spin" />
-                                    GENERATING...
-                                  </>
-                                ) : (
-                                  <>
-                                    <Sparkles size={10} className="mr-1" />
-                                    GENERATE
-                                  </>
-                                )}
-                              </Button>
-                            </div>
-                          </div>
-                          <div className="flex items-center justify-between">
-                            <p className="text-[10px] text-muted-foreground">{description}</p>
-                            {config && (
-                              <span className="text-[9px] text-muted-foreground/70">
-                                {config.depth} • {config.focusAreas.length} areas
-                              </span>
-                            )}
-                          </div>
-                        </div>
-                      );
-                    })}
-                  </div>
-                </ScrollArea>
-              </TabsContent>
-            )}
-
-            {/* Reports Tab */}
-            {!expandedDomain && (
-              <TabsContent value="reports" className="h-full m-0 p-2">
-                <ReportHistoryList
-                  reports={reports}
-                  onSelectReport={(report) => setSelectedReport(report)}
-                  selectedReportId={selectedReport?.id}
-                />
-              </TabsContent>
-            )}
-
-            {/* Summary Tab - Atlas AI Findings */}
-            {!expandedDomain && (
-              <TabsContent value="summary" className="h-full m-0">
-                <AtlasSummaryTab userId={userId} />
               </TabsContent>
             )}
           </div>
