@@ -30,6 +30,7 @@ import { EventsCalendarView } from './EventsCalendarView';
 import { TasksKanbanView } from './TasksKanbanView';
 import { FinancialsFullScreenView } from './FinancialsFullScreenView';
 import { KnowledgeLibraryView } from './KnowledgeLibraryView';
+import { CommunicationsView } from './CommunicationsView';
 
 interface FullScreenDomainViewProps {
   domainKey: DomainKey;
@@ -57,6 +58,11 @@ export function FullScreenDomainView({
   onItemClick,
   onRefresh,
 }: FullScreenDomainViewProps) {
+  // Use specialized view for Communications
+  if (domainKey === 'communications') {
+    return <CommunicationsView onBack={onBack} />;
+  }
+
   // Use specialized view for Events
   if (domainKey === 'events') {
     return (
