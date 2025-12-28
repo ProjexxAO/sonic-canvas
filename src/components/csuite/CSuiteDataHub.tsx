@@ -188,9 +188,17 @@ export function CSuiteDataHub({ userId, agents = [], agentsLoading = false }: CS
       if (state.enterpriseQuery !== enterpriseQuery) {
         setEnterpriseQuery(state.enterpriseQuery);
       }
+      // Sync persona from controller (e.g., when Atlas changes it)
+      if (state.targetPersona !== null && state.targetPersona !== userPersona) {
+        setUserPersona(state.targetPersona);
+        const persona = PERSONAS.find(p => p.id === state.targetPersona);
+        if (persona) {
+          setSelectedCategories([persona.category]);
+        }
+      }
     });
     return unsubscribe;
-  }, [activeTab, expandedDomain, enterpriseQuery, domainItems, fetchDomainItems]);
+  }, [activeTab, expandedDomain, enterpriseQuery, userPersona, domainItems, fetchDomainItems]);
 
   // Handle triggered enterprise query from Atlas
   useEffect(() => {
@@ -905,7 +913,21 @@ export function CSuiteDataHub({ userId, agents = [], agentsLoading = false }: CS
                       </div>
                       <UserPersonaManager 
                         personas={personasForManager} 
-                        currentUserId={userId} 
+                        currentUserId={userId}
+                        onPersonaChange={(changedUserId, newPersonaId) => {
+                          // If the changed user is the current user, update local persona state
+                          if (changedUserId === userId) {
+                            setUserPersona(newPersonaId);
+                            dataHubController.setTargetPersona(newPersonaId);
+                            // Update category filter to match new persona
+                            if (newPersonaId) {
+                              const persona = PERSONAS.find(p => p.id === newPersonaId);
+                              if (persona) {
+                                setSelectedCategories([persona.category]);
+                              }
+                            }
+                          }
+                        }}
                       />
                     </div>
 
