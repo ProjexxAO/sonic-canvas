@@ -269,7 +269,7 @@ export function CSuiteDataHub({ userId, agents = [], agentsLoading = false }: CS
                 value="data" 
                 className="text-[10px] font-mono px-2 py-1 rounded-none data-[state=active]:border-b-2 data-[state=active]:border-primary data-[state=active]:bg-transparent"
               >
-                DATA
+                DASHBOARD
               </TabsTrigger>
               <TabsTrigger 
                 value="intelligence" 
@@ -278,10 +278,10 @@ export function CSuiteDataHub({ userId, agents = [], agentsLoading = false }: CS
                 INTEL
               </TabsTrigger>
               <TabsTrigger 
-                value="dashboard" 
+                value="overview" 
                 className="text-[10px] font-mono px-2 py-1 rounded-none data-[state=active]:border-b-2 data-[state=active]:border-primary data-[state=active]:bg-transparent"
               >
-                DASH
+                OVERVIEW
               </TabsTrigger>
               <TabsTrigger 
                 value="personas" 
@@ -552,9 +552,9 @@ export function CSuiteDataHub({ userId, agents = [], agentsLoading = false }: CS
               </TabsContent>
             )}
 
-            {/* Dashboard Tab - Executive Overview */}
+            {/* Overview Tab - Executive Overview */}
             {!expandedDomain && (
-              <TabsContent value="dashboard" className="h-full m-0 p-2">
+              <TabsContent value="overview" className="h-full m-0 p-2">
                 <ScrollArea className="h-full">
                   <div className="space-y-3">
                     {/* Agent Overview */}
