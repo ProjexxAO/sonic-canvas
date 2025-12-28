@@ -41,6 +41,98 @@ export type Database = {
         }
         Relationships: []
       }
+      atlas_workflow_runs: {
+        Row: {
+          completed_at: string | null
+          error_message: string | null
+          id: string
+          result_data: Json | null
+          started_at: string
+          status: string
+          trigger_data: Json | null
+          user_id: string
+          workflow_id: string
+        }
+        Insert: {
+          completed_at?: string | null
+          error_message?: string | null
+          id?: string
+          result_data?: Json | null
+          started_at?: string
+          status?: string
+          trigger_data?: Json | null
+          user_id: string
+          workflow_id: string
+        }
+        Update: {
+          completed_at?: string | null
+          error_message?: string | null
+          id?: string
+          result_data?: Json | null
+          started_at?: string
+          status?: string
+          trigger_data?: Json | null
+          user_id?: string
+          workflow_id?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "atlas_workflow_runs_workflow_id_fkey"
+            columns: ["workflow_id"]
+            isOneToOne: false
+            referencedRelation: "atlas_workflows"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      atlas_workflows: {
+        Row: {
+          action_config: Json | null
+          action_type: string
+          created_at: string
+          description: string | null
+          id: string
+          is_active: boolean
+          last_triggered_at: string | null
+          name: string
+          trigger_config: Json | null
+          trigger_count: number
+          trigger_type: string
+          updated_at: string
+          user_id: string
+        }
+        Insert: {
+          action_config?: Json | null
+          action_type: string
+          created_at?: string
+          description?: string | null
+          id?: string
+          is_active?: boolean
+          last_triggered_at?: string | null
+          name: string
+          trigger_config?: Json | null
+          trigger_count?: number
+          trigger_type?: string
+          updated_at?: string
+          user_id: string
+        }
+        Update: {
+          action_config?: Json | null
+          action_type?: string
+          created_at?: string
+          description?: string | null
+          id?: string
+          is_active?: boolean
+          last_triggered_at?: string | null
+          name?: string
+          trigger_config?: Json | null
+          trigger_count?: number
+          trigger_type?: string
+          updated_at?: string
+          user_id?: string
+        }
+        Relationships: []
+      }
       csuite_communications: {
         Row: {
           cc_addresses: string[] | null
