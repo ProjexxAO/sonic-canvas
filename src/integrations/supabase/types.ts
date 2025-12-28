@@ -761,10 +761,12 @@ export type Database = {
         Row: {
           content: string | null
           created_at: string
+          current_version_id: string | null
           embedding: string | null
           file_path: string | null
           file_size: number | null
           id: string
+          last_versioned_at: string | null
           metadata: Json | null
           mime_type: string | null
           source: string
@@ -773,14 +775,18 @@ export type Database = {
           type: string
           updated_at: string
           user_id: string
+          version: string | null
+          version_count: number | null
         }
         Insert: {
           content?: string | null
           created_at?: string
+          current_version_id?: string | null
           embedding?: string | null
           file_path?: string | null
           file_size?: number | null
           id?: string
+          last_versioned_at?: string | null
           metadata?: Json | null
           mime_type?: string | null
           source: string
@@ -789,14 +795,18 @@ export type Database = {
           type?: string
           updated_at?: string
           user_id: string
+          version?: string | null
+          version_count?: number | null
         }
         Update: {
           content?: string | null
           created_at?: string
+          current_version_id?: string | null
           embedding?: string | null
           file_path?: string | null
           file_size?: number | null
           id?: string
+          last_versioned_at?: string | null
           metadata?: Json | null
           mime_type?: string | null
           source?: string
@@ -805,6 +815,8 @@ export type Database = {
           type?: string
           updated_at?: string
           user_id?: string
+          version?: string | null
+          version_count?: number | null
         }
         Relationships: []
       }
@@ -930,10 +942,12 @@ export type Database = {
           category: string | null
           content: string | null
           created_at: string
+          current_version_id: string | null
           effective_date: string | null
           embedding: string | null
           expiry_date: string | null
           id: string
+          last_versioned_at: string | null
           metadata: Json | null
           source: string
           source_id: string | null
@@ -943,15 +957,18 @@ export type Database = {
           updated_at: string
           user_id: string
           version: string | null
+          version_count: number | null
         }
         Insert: {
           category?: string | null
           content?: string | null
           created_at?: string
+          current_version_id?: string | null
           effective_date?: string | null
           embedding?: string | null
           expiry_date?: string | null
           id?: string
+          last_versioned_at?: string | null
           metadata?: Json | null
           source: string
           source_id?: string | null
@@ -961,15 +978,18 @@ export type Database = {
           updated_at?: string
           user_id: string
           version?: string | null
+          version_count?: number | null
         }
         Update: {
           category?: string | null
           content?: string | null
           created_at?: string
+          current_version_id?: string | null
           effective_date?: string | null
           embedding?: string | null
           expiry_date?: string | null
           id?: string
+          last_versioned_at?: string | null
           metadata?: Json | null
           source?: string
           source_id?: string | null
@@ -979,6 +999,7 @@ export type Database = {
           updated_at?: string
           user_id?: string
           version?: string | null
+          version_count?: number | null
         }
         Relationships: []
       }
@@ -1080,6 +1101,65 @@ export type Database = {
           user_id?: string
         }
         Relationships: []
+      }
+      document_versions: {
+        Row: {
+          change_summary: string | null
+          changed_by: string | null
+          content: string | null
+          created_at: string
+          document_id: string
+          document_type: string
+          id: string
+          is_current: boolean
+          is_enhanced: boolean
+          is_summary: boolean
+          metadata: Json | null
+          parent_version_id: string | null
+          title: string
+          version_number: string
+        }
+        Insert: {
+          change_summary?: string | null
+          changed_by?: string | null
+          content?: string | null
+          created_at?: string
+          document_id: string
+          document_type?: string
+          id?: string
+          is_current?: boolean
+          is_enhanced?: boolean
+          is_summary?: boolean
+          metadata?: Json | null
+          parent_version_id?: string | null
+          title: string
+          version_number: string
+        }
+        Update: {
+          change_summary?: string | null
+          changed_by?: string | null
+          content?: string | null
+          created_at?: string
+          document_id?: string
+          document_type?: string
+          id?: string
+          is_current?: boolean
+          is_enhanced?: boolean
+          is_summary?: boolean
+          metadata?: Json | null
+          parent_version_id?: string | null
+          title?: string
+          version_number?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "document_versions_parent_version_id_fkey"
+            columns: ["parent_version_id"]
+            isOneToOne: false
+            referencedRelation: "document_versions"
+            referencedColumns: ["id"]
+          },
+        ]
       }
       financial_insights: {
         Row: {
@@ -2106,6 +2186,19 @@ export type Database = {
           tool_name: string
         }[]
       }
+      create_document_version: {
+        Args: {
+          p_change_summary?: string
+          p_content: string
+          p_document_id: string
+          p_document_type: string
+          p_is_enhanced?: boolean
+          p_is_summary?: boolean
+          p_metadata?: Json
+          p_title: string
+        }
+        Returns: string
+      }
       get_governance_rules_by_level: {
         Args: {
           _level: Database["public"]["Enums"]["governance_level"]
@@ -2139,6 +2232,10 @@ export type Database = {
       is_workspace_member: {
         Args: { _user_id: string; _workspace_id: string }
         Returns: boolean
+      }
+      restore_document_version: {
+        Args: { p_version_id: string }
+        Returns: string
       }
       search_agents_by_embedding: {
         Args: {
