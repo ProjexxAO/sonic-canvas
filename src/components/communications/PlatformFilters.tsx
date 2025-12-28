@@ -7,12 +7,14 @@ import {
   Check,
   Plus,
   Settings,
-  Trash2
+  Trash2,
+  Sliders
 } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { cn } from '@/lib/utils';
 import { CommunicationPlatform, PlatformConnection } from '@/hooks/useCommunications';
 import { ConnectPlatformDialog } from './ConnectPlatformDialog';
+import { PlatformManagementPanel, PlatformConnection as ManagedConnection } from './PlatformManagementPanel';
 import {
   DropdownMenu,
   DropdownMenuContent,
@@ -62,6 +64,7 @@ export function PlatformFilters({
   onConnectionChange,
 }: PlatformFiltersProps) {
   const [connectDialogOpen, setConnectDialogOpen] = useState(false);
+  const [managementPanelOpen, setManagementPanelOpen] = useState(false);
   const [mockConnections, setMockConnections] = useState<MockConnection[]>([]);
 
   const isConnected = (platformId: CommunicationPlatform): boolean => {
@@ -93,10 +96,43 @@ export function PlatformFilters({
     onConnectionChange?.();
   };
 
+  // Convert mock connections to managed connections format for the panel
+  const managedConnections: ManagedConnection[] = mockConnections.map(conn => ({
+    platform: conn.platform,
+    email: conn.email,
+    connectedAt: conn.connectedAt,
+    lastSyncAt: new Date(Date.now() - Math.random() * 3600000), // Random time within last hour
+    isActive: true,
+    syncStatus: 'synced' as const,
+    messageCount: Math.floor(Math.random() * 500) + 50,
+  }));
+
+  const handleSync = (platform: CommunicationPlatform) => {
+    // In a real implementation, this would trigger a sync
+    console.log('Syncing platform:', platform);
+  };
+
+  const handleToggleActive = (platform: CommunicationPlatform, active: boolean) => {
+    // In a real implementation, this would toggle the connection
+    toast.success(`${PLATFORMS.find(p => p.id === platform)?.label} ${active ? 'enabled' : 'disabled'}`);
+  };
+
   return (
     <div className="space-y-1">
-      <div className="text-[10px] font-medium text-muted-foreground uppercase tracking-wider px-2 mb-2">
-        Platforms
+      <div className="flex items-center justify-between px-2 mb-2">
+        <div className="text-[10px] font-medium text-muted-foreground uppercase tracking-wider">
+          Platforms
+        </div>
+        {mockConnections.length > 0 && (
+          <Button
+            variant="ghost"
+            size="sm"
+            className="h-5 w-5 p-0"
+            onClick={() => setManagementPanelOpen(true)}
+          >
+            <Sliders size={10} className="text-muted-foreground" />
+          </Button>
+        )}
       </div>
       
       {PLATFORMS.map((platform) => {
@@ -171,12 +207,33 @@ export function PlatformFilters({
           <Plus size={12} className="mr-2" />
           Connect Platform
         </Button>
+        
+        {mockConnections.length > 0 && (
+          <Button
+            variant="ghost"
+            size="sm"
+            className="w-full justify-start text-xs text-muted-foreground mt-1"
+            onClick={() => setManagementPanelOpen(true)}
+          >
+            <Sliders size={12} className="mr-2" />
+            Manage Connections
+          </Button>
+        )}
       </div>
 
       <ConnectPlatformDialog
         open={connectDialogOpen}
         onOpenChange={setConnectDialogOpen}
         onConnect={handleConnect}
+      />
+
+      <PlatformManagementPanel
+        open={managementPanelOpen}
+        onOpenChange={setManagementPanelOpen}
+        connections={managedConnections}
+        onDisconnect={handleDisconnect}
+        onSync={handleSync}
+        onToggleActive={handleToggleActive}
       />
     </div>
   );
