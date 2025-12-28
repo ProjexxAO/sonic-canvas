@@ -47,6 +47,7 @@ import { AtlasSummaryTab } from './AtlasSummaryTab';
 import { UserPersonaManager } from './UserPersonaManager';
 import { PersonaPermissionsManager } from './PersonaPermissionsManager';
 import { PersonaLayoutRenderer } from './persona-layouts/PersonaLayoutRenderer';
+import { QuickActionCards } from './QuickActionCards';
 import { useAtlasEnterprise } from '@/hooks/useAtlasEnterprise';
 import { usePersonaPermissions } from '@/hooks/usePersonaPermissions';
 import { supabase } from '@/integrations/supabase/client';
@@ -374,6 +375,20 @@ export function CSuiteDataHub({ userId, agents = [], agentsLoading = false }: CS
                         </div>
                       </div>
                     </div>
+
+                    {/* Quick Action Cards - Persona-specific */}
+                    <QuickActionCards 
+                      personaId={userPersona}
+                      onActionClick={(actionId) => {
+                        // Handle action clicks - for now, switch to insights tab for analysis actions
+                        if (['strategic_review', 'financial_forecast', 'threat_assessment', 'compliance_status'].includes(actionId)) {
+                          setActiveTab('insights');
+                        } else if (['browse_data', 'recent_docs', 'contract_review', 'view_tasks'].includes(actionId)) {
+                          setActiveTab('library');
+                        }
+                      }}
+                      stats={stats}
+                    />
 
                     {/* Persona-Specific Layout */}
                     {userPersona ? (
