@@ -54,7 +54,7 @@ export function OnboardingFlow({
     return null;
   }
   return <div className="fixed inset-0 z-50 bg-background/98 backdrop-blur-md">
-      {currentStep === 'welcome' && <WelcomeScreen onStart={onNext} onSkip={onSkip} className="border-white" />}
+      {currentStep === 'welcome' && <WelcomeScreen onStart={onNext} onSkip={onSkip} />}
       
       {currentStep === 'feature-tour' && <FeatureTour onNext={onNext} onBack={onPrev} onSkip={onSkip} />}
       
