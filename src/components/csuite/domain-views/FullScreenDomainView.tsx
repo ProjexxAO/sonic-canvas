@@ -27,6 +27,7 @@ import {
 } from '@/hooks/useCSuiteData';
 import { EventsCalendarView } from './EventsCalendarView';
 import { TasksKanbanView } from './TasksKanbanView';
+import { FinancialsFullScreenView } from './FinancialsFullScreenView';
 
 interface FullScreenDomainViewProps {
   domainKey: DomainKey;
@@ -72,6 +73,19 @@ export function FullScreenDomainView({
     return (
       <TasksKanbanView
         items={items as TaskItem[]}
+        isLoading={isLoading}
+        onBack={onBack}
+        onItemClick={(item) => onItemClick(item)}
+        onRefresh={onRefresh}
+      />
+    );
+  }
+
+  // Use specialized view for Financials
+  if (domainKey === 'financials') {
+    return (
+      <FinancialsFullScreenView
+        items={items as FinancialItem[]}
         isLoading={isLoading}
         onBack={onBack}
         onItemClick={(item) => onItemClick(item)}
