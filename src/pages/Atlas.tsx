@@ -1291,8 +1291,8 @@ export default function Atlas() {
 
       {/* Main Content */}
       <main className="flex-1 flex gap-4 p-4 overflow-hidden relative z-10">
-        {/* Left Panel - Visualizer & Controls */}
-        <div className="flex-1 flex flex-col items-center justify-center relative">
+        {/* Left Panel - Visualizer & Controls (Fixed/Sticky) */}
+        <div className="flex-1 flex flex-col items-center justify-center relative sticky top-0 self-start h-[calc(100vh-10rem)]">
           {/* Central Visualizer */}
           <div className="relative w-64 h-64 mb-6">
             {/* Atmospheric Background */}
@@ -1647,8 +1647,8 @@ export default function Atlas() {
 
         </div>
 
-        {/* Right Panel - Results & Logs */}
-        <div className="w-96 flex flex-col gap-4">
+        {/* Right Panel - Results & Logs (Scrollable) */}
+        <div className="w-96 flex flex-col gap-4 overflow-y-auto max-h-[calc(100vh-10rem)] pr-2 scrollbar-thin scrollbar-thumb-border scrollbar-track-transparent">
           {/* Search Results */}
           {searchResults.length > 0 && (
             <div className="bg-card/90 border border-border rounded-lg p-3 shadow-sm">
