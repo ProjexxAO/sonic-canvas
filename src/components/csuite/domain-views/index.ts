@@ -6,3 +6,4 @@ export { TaskFormDialog } from './TaskFormDialog';
 export { FinancialsFullScreenView } from './FinancialsFullScreenView';
 export { FinancialFormDialog } from './FinancialFormDialog';
 export { KnowledgeLibraryView } from './KnowledgeLibraryView';
+export { CommunicationsView } from './CommunicationsView';
