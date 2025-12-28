@@ -573,7 +573,10 @@ function AtlasPage() {
     },
   }), [navigate]); // Only recreate if navigate changes
 
-  const conversation = useConversation(conversationConfig);
+  const conversation = useConversation({
+    ...conversationConfig,
+    micMuted: isMuted,
+  });
 
   const startConversation = useCallback(async () => {
     // Guard against multiple activation attempts
