@@ -262,6 +262,7 @@ export function CSuiteDataHub({ userId, agents = [], agentsLoading = false }: CS
       
       if (data?.preferred_persona) {
         setUserPersona(data.preferred_persona);
+        dataHubController.setTargetPersona(data.preferred_persona);
         const persona = PERSONAS.find(p => p.id === data.preferred_persona);
         if (persona) {
           setSelectedCategories([persona.category]);
@@ -270,7 +271,39 @@ export function CSuiteDataHub({ userId, agents = [], agentsLoading = false }: CS
     };
     
     loadUserPersona();
-  }, [userId]);
+
+    // Real-time subscription for persona changes
+    const channel = supabase
+      .channel('profile-persona-changes')
+      .on(
+        'postgres_changes',
+        {
+          event: 'UPDATE',
+          schema: 'public',
+          table: 'profiles',
+          filter: `user_id=eq.${userId}`,
+        },
+        (payload) => {
+          const newPersona = payload.new.preferred_persona as string | null;
+          if (newPersona !== userPersona) {
+            setUserPersona(newPersona);
+            dataHubController.setTargetPersona(newPersona);
+            if (newPersona) {
+              const persona = PERSONAS.find(p => p.id === newPersona);
+              if (persona) {
+                setSelectedCategories([persona.category]);
+              }
+            }
+            toast.info('Your persona has been updated');
+          }
+        }
+      )
+      .subscribe();
+
+    return () => {
+      supabase.removeChannel(channel);
+    };
+  }, [userId, userPersona, dataHubController]);
 
 
   const handleConfigChange = useCallback((personaId: string, config: PersonaConfig) => {
