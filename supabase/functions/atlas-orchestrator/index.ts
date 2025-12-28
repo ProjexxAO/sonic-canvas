@@ -12,7 +12,8 @@ serve(async (req) => {
   }
 
   try {
-    const { query, action } = await req.json();
+    const body = await req.json();
+    const { query, action, userId, preferences, taskData, notificationId } = body;
     console.log(`Atlas orchestrator received action: ${action}, query: ${query}`);
 
     const supabaseUrl = Deno.env.get('SUPABASE_URL')!;
@@ -20,6 +21,218 @@ serve(async (req) => {
     const lovableApiKey = Deno.env.get('LOVABLE_API_KEY')!;
     
     const supabase = createClient(supabaseUrl, supabaseKey);
+
+    // =============================================
+    // UI PREFERENCES ACTIONS
+    // =============================================
+    
+    if (action === 'get_ui_preferences') {
+      const { data, error } = await supabase
+        .from('user_ui_preferences')
+        .select('*')
+        .eq('user_id', userId)
+        .maybeSingle();
+
+      if (error) throw error;
+
+      return new Response(JSON.stringify({ preferences: data }), {
+        headers: { ...corsHeaders, 'Content-Type': 'application/json' },
+      });
+    }
+
+    if (action === 'update_ui_preferences') {
+      const { data, error } = await supabase
+        .from('user_ui_preferences')
+        .upsert({
+          user_id: userId,
+          ...preferences,
+          updated_at: new Date().toISOString(),
+        }, { onConflict: 'user_id' })
+        .select()
+        .single();
+
+      if (error) throw error;
+
+      return new Response(JSON.stringify({ 
+        success: true, 
+        preferences: data,
+        message: 'UI preferences updated successfully'
+      }), {
+        headers: { ...corsHeaders, 'Content-Type': 'application/json' },
+      });
+    }
+
+    // =============================================
+    // AGENT ORCHESTRATION ACTIONS
+    // =============================================
+
+    if (action === 'create_task') {
+      const { data, error } = await supabase
+        .from('agent_task_queue')
+        .insert({
+          user_id: userId,
+          ...taskData,
+          status: 'pending',
+          progress: 0,
+        })
+        .select()
+        .single();
+
+      if (error) throw error;
+
+      return new Response(JSON.stringify({ 
+        success: true, 
+        task: data,
+        message: `Task "${taskData.task_title}" created`
+      }), {
+        headers: { ...corsHeaders, 'Content-Type': 'application/json' },
+      });
+    }
+
+    if (action === 'get_tasks') {
+      const { data, error } = await supabase
+        .from('agent_task_queue')
+        .select('*')
+        .eq('user_id', userId)
+        .order('created_at', { ascending: false })
+        .limit(20);
+
+      if (error) throw error;
+
+      return new Response(JSON.stringify({ tasks: data || [] }), {
+        headers: { ...corsHeaders, 'Content-Type': 'application/json' },
+      });
+    }
+
+    if (action === 'orchestrate_agents') {
+      // Analyze the user request and determine which agents to engage
+      const { data: agents, error: agentsError } = await supabase
+        .from('sonic_agents')
+        .select('id, name, sector, description, capabilities, status')
+        .limit(50);
+
+      if (agentsError) throw agentsError;
+
+      // Use AI to determine which agents are best suited for the task
+      const orchestrationPrompt = `You are Atlas, an AI orchestrator. Analyze the following user request and determine which agents should be engaged.
+
+User Request: ${query}
+
+Available Agents:
+${agents?.map(a => `- ${a.name} (${a.sector}): ${a.description || 'No description'}. Capabilities: ${a.capabilities?.join(', ') || 'None listed'}`).join('\n')}
+
+Respond with a JSON object:
+{
+  "recommended_agents": [
+    {
+      "agent_id": "uuid",
+      "agent_name": "name",
+      "role": "what this agent will do",
+      "confidence": 0.0-1.0,
+      "requires_approval": true/false
+    }
+  ],
+  "orchestration_plan": "brief description of how agents will work together",
+  "task_type": "automation|notification|analysis|assistance|background",
+  "estimated_duration": "time estimate"
+}`;
+
+      const aiResponse = await fetch('https://ai.gateway.lovable.dev/v1/chat/completions', {
+        method: 'POST',
+        headers: {
+          'Authorization': `Bearer ${lovableApiKey}`,
+          'Content-Type': 'application/json',
+        },
+        body: JSON.stringify({
+          model: 'google/gemini-2.5-flash',
+          messages: [
+            { role: 'system', content: 'You are Atlas, an expert AI orchestrator. Always respond with valid JSON.' },
+            { role: 'user', content: orchestrationPrompt },
+          ],
+        }),
+      });
+
+      if (!aiResponse.ok) {
+        const errorText = await aiResponse.text();
+        console.error('AI orchestration error:', errorText);
+        throw new Error('Failed to orchestrate agents');
+      }
+
+      const aiData = await aiResponse.json();
+      const orchestrationContent = aiData.choices[0].message.content;
+      
+      let orchestrationPlan;
+      try {
+        const jsonMatch = orchestrationContent.match(/\{[\s\S]*\}/);
+        orchestrationPlan = jsonMatch ? JSON.parse(jsonMatch[0]) : null;
+      } catch (e) {
+        console.error('Failed to parse orchestration plan:', e);
+        orchestrationPlan = null;
+      }
+
+      return new Response(JSON.stringify({ 
+        orchestration: orchestrationPlan,
+        availableAgents: agents?.length || 0
+      }), {
+        headers: { ...corsHeaders, 'Content-Type': 'application/json' },
+      });
+    }
+
+    if (action === 'send_notification') {
+      const { notification } = body;
+      
+      const { data, error } = await supabase
+        .from('agent_notifications')
+        .insert({
+          user_id: userId,
+          ...notification,
+        })
+        .select()
+        .single();
+
+      if (error) throw error;
+
+      return new Response(JSON.stringify({ 
+        success: true, 
+        notification: data 
+      }), {
+        headers: { ...corsHeaders, 'Content-Type': 'application/json' },
+      });
+    }
+
+    if (action === 'get_notifications') {
+      const { data, error } = await supabase
+        .from('agent_notifications')
+        .select('*')
+        .eq('user_id', userId)
+        .eq('is_dismissed', false)
+        .order('created_at', { ascending: false })
+        .limit(50);
+
+      if (error) throw error;
+
+      return new Response(JSON.stringify({ notifications: data || [] }), {
+        headers: { ...corsHeaders, 'Content-Type': 'application/json' },
+      });
+    }
+
+    if (action === 'dismiss_notification') {
+      const { error } = await supabase
+        .from('agent_notifications')
+        .update({ is_dismissed: true })
+        .eq('id', notificationId)
+        .eq('user_id', userId);
+
+      if (error) throw error;
+
+      return new Response(JSON.stringify({ success: true }), {
+        headers: { ...corsHeaders, 'Content-Type': 'application/json' },
+      });
+    }
+
+    // =============================================
+    // EXISTING SEARCH/SYNTHESIS ACTIONS
+    // =============================================
 
     if (action === 'search') {
       // Generate embedding for the query
@@ -124,7 +337,7 @@ serve(async (req) => {
     }
 
     if (action === 'synthesize') {
-      const { agentIds, requirements } = await req.json();
+      const { agentIds, requirements } = body;
       
       // Fetch the selected agents
       const { data: agents, error } = await supabase
