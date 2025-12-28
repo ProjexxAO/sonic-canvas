@@ -29,9 +29,10 @@ interface Persona {
 interface UserPersonaManagerProps {
   personas: Persona[];
   currentUserId: string | undefined;
+  onPersonaChange?: (userId: string, personaId: string | null) => void;
 }
 
-export function UserPersonaManager({ personas, currentUserId }: UserPersonaManagerProps) {
+export function UserPersonaManager({ personas, currentUserId, onPersonaChange }: UserPersonaManagerProps) {
   const [users, setUsers] = useState<UserProfile[]>([]);
   const [isLoading, setIsLoading] = useState(false);
   const [updatingUserId, setUpdatingUserId] = useState<string | null>(null);
@@ -72,6 +73,9 @@ export function UserPersonaManager({ personas, currentUserId }: UserPersonaManag
       setUsers(prev => prev.map(u => 
         u.user_id === userId ? { ...u, preferred_persona: personaId } : u
       ));
+      
+      // Notify parent of persona change
+      onPersonaChange?.(userId, personaId);
       
       toast.success(`Persona updated successfully`);
     } catch (error) {
