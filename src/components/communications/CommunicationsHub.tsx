@@ -51,6 +51,7 @@ export function CommunicationsHub({ userId }: CommunicationsHubProps) {
     toggleStar,
     requestAtlasDraft,
     fetchThreadReplies,
+    fetchPlatformConnections,
   } = useCommunications(userId);
 
   const [activeTab, setActiveTab] = useState<'inbox' | 'channels' | 'direct'>('inbox');
@@ -113,6 +114,8 @@ export function CommunicationsHub({ userId }: CommunicationsHubProps) {
                 platformFilter={platformFilter}
                 setPlatformFilter={setPlatformFilter}
                 platformConnections={platformConnections}
+                onConnectionChange={fetchPlatformConnections}
+                userId={userId}
               />
             )}
 

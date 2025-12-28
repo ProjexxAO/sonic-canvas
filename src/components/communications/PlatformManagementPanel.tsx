@@ -10,8 +10,8 @@ import {
   CheckCircle2,
   AlertCircle,
   Clock,
-  ExternalLink,
-  ChevronRight
+  ChevronRight,
+  ExternalLink
 } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { Badge } from '@/components/ui/badge';
@@ -34,28 +34,17 @@ import {
   AlertDialogTitle,
 } from '@/components/ui/alert-dialog';
 import { cn } from '@/lib/utils';
-import { CommunicationPlatform } from '@/hooks/useCommunications';
+import { CommunicationPlatform, PlatformConnection } from '@/hooks/useCommunications';
 import { toast } from 'sonner';
 import { formatDistanceToNow } from 'date-fns';
-
-interface PlatformConnection {
-  platform: CommunicationPlatform;
-  email: string;
-  connectedAt: Date;
-  lastSyncAt: Date;
-  isActive: boolean;
-  syncStatus: 'synced' | 'syncing' | 'error' | 'pending';
-  messageCount: number;
-  errorMessage?: string;
-}
 
 interface PlatformManagementPanelProps {
   open: boolean;
   onOpenChange: (open: boolean) => void;
   connections: PlatformConnection[];
-  onDisconnect: (platform: CommunicationPlatform) => void;
-  onSync: (platform: CommunicationPlatform) => void;
-  onToggleActive: (platform: CommunicationPlatform, active: boolean) => void;
+  onDisconnect: (connectionId: string) => Promise<void>;
+  onSync: (connectionId: string) => Promise<void>;
+  onToggleActive: (connectionId: string, active: boolean) => Promise<void>;
 }
 
 interface PlatformConfig {
@@ -76,7 +65,17 @@ const PLATFORM_CONFIG: Record<string, PlatformConfig> = {
   messenger: { id: 'messenger', name: 'Messenger', icon: MessageCircle, color: 'text-blue-400', bgColor: 'bg-blue-400/10' },
 };
 
-function SyncStatusBadge({ status }: { status: PlatformConnection['syncStatus'] }) {
+function getSyncStatus(connection: PlatformConnection): 'synced' | 'syncing' | 'error' | 'pending' {
+  if (!connection.is_active) return 'pending';
+  if (!connection.last_sync_at) return 'pending';
+  // Check if last sync was more than 1 hour ago
+  const lastSync = new Date(connection.last_sync_at);
+  const hourAgo = new Date(Date.now() - 60 * 60 * 1000);
+  if (lastSync < hourAgo) return 'pending';
+  return 'synced';
+}
+
+function SyncStatusBadge({ status }: { status: 'synced' | 'syncing' | 'error' | 'pending' }) {
   const config = {
     synced: { label: 'Synced', className: 'bg-green-500/10 text-green-500 border-green-500/20' },
     syncing: { label: 'Syncing...', className: 'bg-blue-500/10 text-blue-500 border-blue-500/20' },
@@ -108,7 +107,9 @@ function ConnectionCard({
 }) {
   const [showDisconnectDialog, setShowDisconnectDialog] = useState(false);
   const [isSyncing, setIsSyncing] = useState(false);
+  const [isTogglingActive, setIsTogglingActive] = useState(false);
   const config = PLATFORM_CONFIG[connection.platform];
+  const syncStatus = getSyncStatus(connection);
   
   if (!config) return null;
 
@@ -116,19 +117,30 @@ function ConnectionCard({
 
   const handleSync = async () => {
     setIsSyncing(true);
-    onSync();
-    // Simulate sync delay
-    setTimeout(() => {
-      setIsSyncing(false);
+    try {
+      await onSync();
       toast.success(`${config.name} synced successfully`);
-    }, 2000);
+    } catch (error) {
+      toast.error('Sync failed');
+    } finally {
+      setIsSyncing(false);
+    }
+  };
+
+  const handleToggleActive = async (active: boolean) => {
+    setIsTogglingActive(true);
+    try {
+      await onToggleActive(active);
+    } finally {
+      setIsTogglingActive(false);
+    }
   };
 
   return (
     <>
       <div className={cn(
         'p-4 rounded-lg border border-border',
-        !connection.isActive && 'opacity-60'
+        !connection.is_active && 'opacity-60'
       )}>
         <div className="flex items-start gap-3">
           <div className={cn('p-2.5 rounded-lg', config.bgColor)}>
@@ -137,34 +149,33 @@ function ConnectionCard({
           
           <div className="flex-1 min-w-0">
             <div className="flex items-center gap-2">
-              <span className="font-medium text-sm">{config.name}</span>
-              <SyncStatusBadge status={isSyncing ? 'syncing' : connection.syncStatus} />
+              <span className="font-medium text-sm">{connection.account_name || config.name}</span>
+              <SyncStatusBadge status={isSyncing ? 'syncing' : syncStatus} />
             </div>
             
             <p className="text-xs text-muted-foreground truncate mt-0.5">
-              {connection.email}
+              {connection.account_email || 'No email configured'}
             </p>
             
             <div className="flex items-center gap-4 mt-2 text-[11px] text-muted-foreground">
+              {connection.last_sync_at && (
+                <span className="flex items-center gap-1">
+                  <Clock size={10} />
+                  Last sync: {formatDistanceToNow(new Date(connection.last_sync_at), { addSuffix: true })}
+                </span>
+              )}
               <span className="flex items-center gap-1">
                 <Clock size={10} />
-                Last sync: {formatDistanceToNow(connection.lastSyncAt, { addSuffix: true })}
+                Connected: {formatDistanceToNow(new Date(connection.created_at), { addSuffix: true })}
               </span>
-              <span>{connection.messageCount.toLocaleString()} messages</span>
             </div>
-
-            {connection.syncStatus === 'error' && connection.errorMessage && (
-              <p className="text-[11px] text-destructive mt-2 flex items-center gap-1">
-                <AlertCircle size={10} />
-                {connection.errorMessage}
-              </p>
-            )}
           </div>
 
           <div className="flex items-center gap-2">
             <Switch
-              checked={connection.isActive}
-              onCheckedChange={onToggleActive}
+              checked={connection.is_active}
+              onCheckedChange={handleToggleActive}
+              disabled={isTogglingActive}
               className="scale-75"
             />
           </div>
@@ -176,7 +187,7 @@ function ConnectionCard({
             size="sm" 
             className="h-7 text-xs flex-1"
             onClick={handleSync}
-            disabled={isSyncing || !connection.isActive}
+            disabled={isSyncing || !connection.is_active}
           >
             <RefreshCw size={12} className={cn('mr-1.5', isSyncing && 'animate-spin')} />
             {isSyncing ? 'Syncing...' : 'Sync Now'}
@@ -206,8 +217,9 @@ function ConnectionCard({
           <AlertDialogHeader>
             <AlertDialogTitle>Disconnect {config.name}?</AlertDialogTitle>
             <AlertDialogDescription>
-              This will remove the connection to {connection.email}. Your synced messages will remain 
-              in Atlas, but no new messages will be imported. You can reconnect at any time.
+              This will remove the connection to {connection.account_email || 'this account'}. 
+              Your synced messages will remain in Atlas, but no new messages will be imported. 
+              You can reconnect at any time.
             </AlertDialogDescription>
           </AlertDialogHeader>
           <AlertDialogFooter>
@@ -236,8 +248,7 @@ export function PlatformManagementPanel({
   onSync,
   onToggleActive,
 }: PlatformManagementPanelProps) {
-  const activeConnections = connections.filter(c => c.isActive);
-  const totalMessages = connections.reduce((sum, c) => sum + c.messageCount, 0);
+  const activeConnections = connections.filter(c => c.is_active);
 
   return (
     <Sheet open={open} onOpenChange={onOpenChange}>
@@ -251,7 +262,7 @@ export function PlatformManagementPanel({
 
         <div className="mt-6 space-y-6">
           {/* Summary Stats */}
-          <div className="grid grid-cols-3 gap-3">
+          <div className="grid grid-cols-2 gap-3">
             <div className="p-3 rounded-lg bg-muted/50 text-center">
               <div className="text-2xl font-semibold">{connections.length}</div>
               <div className="text-[10px] text-muted-foreground uppercase tracking-wider">Platforms</div>
@@ -260,10 +271,6 @@ export function PlatformManagementPanel({
               <div className="text-2xl font-semibold">{activeConnections.length}</div>
               <div className="text-[10px] text-muted-foreground uppercase tracking-wider">Active</div>
             </div>
-            <div className="p-3 rounded-lg bg-muted/50 text-center">
-              <div className="text-2xl font-semibold">{totalMessages.toLocaleString()}</div>
-              <div className="text-[10px] text-muted-foreground uppercase tracking-wider">Messages</div>
-            </div>
           </div>
 
           {/* Connections List */}
@@ -271,11 +278,11 @@ export function PlatformManagementPanel({
             <div className="space-y-3">
               {connections.map((connection) => (
                 <ConnectionCard
-                  key={connection.platform}
+                  key={connection.id}
                   connection={connection}
-                  onDisconnect={() => onDisconnect(connection.platform)}
-                  onSync={() => onSync(connection.platform)}
-                  onToggleActive={(active) => onToggleActive(connection.platform, active)}
+                  onDisconnect={() => onDisconnect(connection.id)}
+                  onSync={() => onSync(connection.id)}
+                  onToggleActive={(active) => onToggleActive(connection.id, active)}
                 />
               ))}
             </div>
@@ -299,7 +306,7 @@ export function PlatformManagementPanel({
               variant="outline" 
               className="w-full"
               onClick={() => {
-                connections.forEach(c => onSync(c.platform));
+                connections.forEach(c => onSync(c.id));
                 toast.success('Syncing all platforms...');
               }}
             >
@@ -310,12 +317,15 @@ export function PlatformManagementPanel({
 
           {/* Help Link */}
           <div className="pt-4 border-t border-border">
-            <button className="w-full flex items-center justify-between p-3 rounded-lg hover:bg-muted/50 transition-colors text-left">
+            <button 
+              className="w-full flex items-center justify-between p-3 rounded-lg hover:bg-muted/50 transition-colors text-left"
+              onClick={() => window.open('https://docs.lovable.dev/features/cloud', '_blank')}
+            >
               <div>
                 <p className="text-sm font-medium">Need help connecting?</p>
                 <p className="text-xs text-muted-foreground">View our integration guide</p>
               </div>
-              <ChevronRight size={16} className="text-muted-foreground" />
+              <ExternalLink size={16} className="text-muted-foreground" />
             </button>
           </div>
         </div>
@@ -323,6 +333,3 @@ export function PlatformManagementPanel({
     </Sheet>
   );
 }
-
-// Export type for use in parent components
-export type { PlatformConnection };

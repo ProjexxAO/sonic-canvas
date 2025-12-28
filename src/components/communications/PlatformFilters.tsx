@@ -14,13 +14,14 @@ import { Button } from '@/components/ui/button';
 import { cn } from '@/lib/utils';
 import { CommunicationPlatform, PlatformConnection } from '@/hooks/useCommunications';
 import { ConnectPlatformDialog } from './ConnectPlatformDialog';
-import { PlatformManagementPanel, PlatformConnection as ManagedConnection } from './PlatformManagementPanel';
+import { PlatformManagementPanel } from './PlatformManagementPanel';
 import {
   DropdownMenu,
   DropdownMenuContent,
   DropdownMenuItem,
   DropdownMenuTrigger,
 } from '@/components/ui/dropdown-menu';
+import { supabase } from '@/integrations/supabase/client';
 import { toast } from 'sonner';
 
 interface PlatformFiltersProps {
@@ -28,6 +29,7 @@ interface PlatformFiltersProps {
   setPlatformFilter: (platform: CommunicationPlatform | 'all') => void;
   platformConnections: PlatformConnection[];
   onConnectionChange?: () => void;
+  userId?: string;
 }
 
 interface PlatformConfig {
@@ -50,71 +52,104 @@ const PLATFORMS: PlatformConfig[] = [
   { id: 'messenger', label: 'Messenger', icon: MessageCircle, color: 'text-blue-400', bgColor: 'bg-blue-400/10' },
 ];
 
-// Mock connected accounts for demo
-interface MockConnection {
-  platform: CommunicationPlatform;
-  email: string;
-  connectedAt: Date;
-}
-
 export function PlatformFilters({
   platformFilter,
   setPlatformFilter,
   platformConnections,
   onConnectionChange,
+  userId,
 }: PlatformFiltersProps) {
   const [connectDialogOpen, setConnectDialogOpen] = useState(false);
   const [managementPanelOpen, setManagementPanelOpen] = useState(false);
-  const [mockConnections, setMockConnections] = useState<MockConnection[]>([]);
 
   const isConnected = (platformId: CommunicationPlatform): boolean => {
     if (platformId === 'internal') return true;
-    // Check both real connections and mock connections
-    const hasRealConnection = platformConnections.some(c => c.platform === platformId && c.is_active);
-    const hasMockConnection = mockConnections.some(c => c.platform === platformId);
-    return hasRealConnection || hasMockConnection;
+    return platformConnections.some(c => c.platform === platformId && c.is_active);
   };
 
   const getConnectionEmail = (platformId: CommunicationPlatform): string | undefined => {
-    const mockConn = mockConnections.find(c => c.platform === platformId);
-    if (mockConn) return mockConn.email;
-    const realConn = platformConnections.find(c => c.platform === platformId && c.is_active);
-    return realConn?.account_email || undefined;
+    const conn = platformConnections.find(c => c.platform === platformId && c.is_active);
+    return conn?.account_email || undefined;
   };
 
-  const handleConnect = (platform: CommunicationPlatform, email: string) => {
-    setMockConnections(prev => [
-      ...prev,
-      { platform, email, connectedAt: new Date() }
-    ]);
-    onConnectionChange?.();
+  const handleConnect = async (platform: CommunicationPlatform, email: string, accountName?: string) => {
+    if (!userId) {
+      toast.error('You must be logged in to connect platforms');
+      return;
+    }
+
+    try {
+      const client = supabase as any;
+      const { error } = await client
+        .from('platform_connections')
+        .insert({
+          user_id: userId,
+          platform,
+          account_email: email,
+          account_name: accountName || null,
+          is_active: true,
+          settings: {},
+          metadata: {},
+        });
+
+      if (error) throw error;
+      onConnectionChange?.();
+    } catch (error) {
+      console.error('Error connecting platform:', error);
+      throw error;
+    }
   };
 
-  const handleDisconnect = (platformId: CommunicationPlatform) => {
-    setMockConnections(prev => prev.filter(c => c.platform !== platformId));
-    toast.success(`Disconnected from ${PLATFORMS.find(p => p.id === platformId)?.label}`);
-    onConnectionChange?.();
+  const handleDisconnect = async (connectionId: string) => {
+    try {
+      const client = supabase as any;
+      const { error } = await client
+        .from('platform_connections')
+        .delete()
+        .eq('id', connectionId);
+
+      if (error) throw error;
+      toast.success('Platform disconnected');
+      onConnectionChange?.();
+    } catch (error) {
+      console.error('Error disconnecting platform:', error);
+      toast.error('Failed to disconnect platform');
+    }
   };
 
-  // Convert mock connections to managed connections format for the panel
-  const managedConnections: ManagedConnection[] = mockConnections.map(conn => ({
-    platform: conn.platform,
-    email: conn.email,
-    connectedAt: conn.connectedAt,
-    lastSyncAt: new Date(Date.now() - Math.random() * 3600000), // Random time within last hour
-    isActive: true,
-    syncStatus: 'synced' as const,
-    messageCount: Math.floor(Math.random() * 500) + 50,
-  }));
+  const handleSync = async (connectionId: string) => {
+    try {
+      const client = supabase as any;
+      const { error } = await client
+        .from('platform_connections')
+        .update({ last_sync_at: new Date().toISOString() })
+        .eq('id', connectionId);
 
-  const handleSync = (platform: CommunicationPlatform) => {
-    // In a real implementation, this would trigger a sync
-    console.log('Syncing platform:', platform);
+      if (error) throw error;
+      onConnectionChange?.();
+    } catch (error) {
+      console.error('Error syncing platform:', error);
+      throw error;
+    }
   };
 
-  const handleToggleActive = (platform: CommunicationPlatform, active: boolean) => {
-    // In a real implementation, this would toggle the connection
-    toast.success(`${PLATFORMS.find(p => p.id === platform)?.label} ${active ? 'enabled' : 'disabled'}`);
+  const handleToggleActive = async (connectionId: string, active: boolean) => {
+    try {
+      const client = supabase as any;
+      const { error } = await client
+        .from('platform_connections')
+        .update({ is_active: active })
+        .eq('id', connectionId);
+
+      if (error) throw error;
+      
+      const platformName = platformConnections.find(c => c.id === connectionId)?.platform;
+      toast.success(`${PLATFORMS.find(p => p.id === platformName)?.label || 'Platform'} ${active ? 'enabled' : 'disabled'}`);
+      onConnectionChange?.();
+    } catch (error) {
+      console.error('Error toggling platform:', error);
+      toast.error('Failed to update platform');
+    }
   };
 
   return (
@@ -123,7 +158,7 @@ export function PlatformFilters({
         <div className="text-[10px] font-medium text-muted-foreground uppercase tracking-wider">
           Platforms
         </div>
-        {mockConnections.length > 0 && (
+        {platformConnections.length > 0 && (
           <Button
             variant="ghost"
             size="sm"
@@ -178,7 +213,10 @@ export function PlatformFilters({
                   <DropdownMenuContent align="end" className="w-40">
                     <DropdownMenuItem 
                       className="text-destructive focus:text-destructive"
-                      onClick={() => handleDisconnect(platform.id as CommunicationPlatform)}
+                      onClick={() => {
+                        const conn = platformConnections.find(c => c.platform === platform.id && c.is_active);
+                        if (conn) handleDisconnect(conn.id);
+                      }}
                     >
                       <Trash2 size={12} className="mr-2" />
                       Disconnect
@@ -208,7 +246,7 @@ export function PlatformFilters({
           Connect Platform
         </Button>
         
-        {mockConnections.length > 0 && (
+        {platformConnections.length > 0 && (
           <Button
             variant="ghost"
             size="sm"
@@ -230,7 +268,7 @@ export function PlatformFilters({
       <PlatformManagementPanel
         open={managementPanelOpen}
         onOpenChange={setManagementPanelOpen}
-        connections={managedConnections}
+        connections={platformConnections}
         onDisconnect={handleDisconnect}
         onSync={handleSync}
         onToggleActive={handleToggleActive}
