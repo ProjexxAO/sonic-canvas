@@ -1,5 +1,5 @@
 import { useState, useMemo, useCallback } from 'react';
-import { format, startOfMonth, endOfMonth, eachDayOfInterval, isSameDay, isSameMonth, addMonths, subMonths, startOfWeek, endOfWeek, isToday } from 'date-fns';
+import { format, startOfMonth, endOfMonth, eachDayOfInterval, isSameDay, isSameMonth, addMonths, subMonths, startOfWeek, endOfWeek, isToday, differenceInMilliseconds } from 'date-fns';
 import { 
   ArrowLeft,
   Calendar,
@@ -11,7 +11,8 @@ import {
   Plus,
   List,
   Grid3X3,
-  Edit2
+  Edit2,
+  GripVertical
 } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { ScrollArea } from '@/components/ui/scroll-area';
@@ -19,6 +20,9 @@ import { Badge } from '@/components/ui/badge';
 import { EventItem } from '@/hooks/useCSuiteData';
 import { EventFormDialog } from './EventFormDialog';
 import { useAuth } from '@/hooks/useAuth';
+import { DragDropContext, Droppable, Draggable, DropResult } from '@hello-pangea/dnd';
+import { supabase } from '@/integrations/supabase/client';
+import { toast } from 'sonner';
 
 interface EventsCalendarViewProps {
   items: EventItem[];
@@ -114,6 +118,56 @@ export function EventsCalendarView({
     return 'bg-primary';
   };
 
+  // Handle drag and drop to reschedule events
+  const handleDragEnd = async (result: DropResult) => {
+    if (!result.destination) return;
+    
+    const eventId = result.draggableId;
+    const newDateKey = result.destination.droppableId;
+    const oldDateKey = result.source.droppableId;
+    
+    if (newDateKey === oldDateKey) return;
+    
+    // Find the event
+    const event = items.find(e => e.id === eventId);
+    if (!event) return;
+
+    // Calculate the new dates
+    const newDate = new Date(newDateKey + 'T00:00:00');
+    const oldStartAt = event.start_at || event.date;
+    const oldEndAt = event.end_at;
+    
+    // Keep the same time, just change the date
+    const newStartAt = new Date(newDate);
+    newStartAt.setHours(oldStartAt.getHours(), oldStartAt.getMinutes(), oldStartAt.getSeconds());
+    
+    let newEndAt: Date | null = null;
+    if (oldEndAt) {
+      // Calculate duration and apply to new date
+      const duration = differenceInMilliseconds(oldEndAt, oldStartAt);
+      newEndAt = new Date(newStartAt.getTime() + duration);
+    }
+
+    try {
+      const { error } = await supabase
+        .from('csuite_events')
+        .update({ 
+          start_at: newStartAt.toISOString(),
+          end_at: newEndAt?.toISOString() || null,
+          updated_at: new Date().toISOString()
+        })
+        .eq('id', eventId);
+
+      if (error) throw error;
+      
+      toast.success(`Event moved to ${format(newDate, 'MMM d')}`);
+      onRefresh?.();
+    } catch (error) {
+      console.error('Error rescheduling event:', error);
+      toast.error('Failed to reschedule event');
+    }
+  };
+
   return (
     <div className="h-full flex flex-col bg-background">
       {/* Event Form Dialog */}
@@ -179,96 +233,116 @@ export function EventsCalendarView({
 
       {viewMode === 'calendar' ? (
         <div className="flex-1 flex flex-col overflow-hidden">
-          {/* Month Navigation */}
-          <div className="flex items-center justify-between px-3 py-2 border-b border-border">
-            <Button
-              variant="ghost"
-              size="icon"
-              className="h-7 w-7"
-              onClick={() => setCurrentMonth(subMonths(currentMonth, 1))}
-            >
-              <ChevronLeft size={14} />
-            </Button>
-            <span className="text-sm font-mono font-semibold">
-              {format(currentMonth, 'MMMM yyyy')}
-            </span>
-            <Button
-              variant="ghost"
-              size="icon"
-              className="h-7 w-7"
-              onClick={() => setCurrentMonth(addMonths(currentMonth, 1))}
-            >
-              <ChevronRight size={14} />
-            </Button>
-          </div>
-
-          {/* Calendar Grid */}
-          <div className="flex-1 overflow-hidden flex flex-col">
-            {/* Weekday Headers */}
-            <div className="grid grid-cols-7 border-b border-border">
-              {['Sun', 'Mon', 'Tue', 'Wed', 'Thu', 'Fri', 'Sat'].map(day => (
-                <div key={day} className="p-1 text-center">
-                  <span className="text-[9px] font-mono text-muted-foreground uppercase">{day}</span>
-                </div>
-              ))}
+          <DragDropContext onDragEnd={handleDragEnd}>
+            {/* Month Navigation */}
+            <div className="flex items-center justify-between px-3 py-2 border-b border-border">
+              <Button
+                variant="ghost"
+                size="icon"
+                className="h-7 w-7"
+                onClick={() => setCurrentMonth(subMonths(currentMonth, 1))}
+              >
+                <ChevronLeft size={14} />
+              </Button>
+              <span className="text-sm font-mono font-semibold">
+                {format(currentMonth, 'MMMM yyyy')}
+              </span>
+              <Button
+                variant="ghost"
+                size="icon"
+                className="h-7 w-7"
+                onClick={() => setCurrentMonth(addMonths(currentMonth, 1))}
+              >
+                <ChevronRight size={14} />
+              </Button>
             </div>
 
-            {/* Days Grid */}
-            <div className="flex-1 grid grid-cols-7 auto-rows-fr overflow-hidden">
-              {calendarDays.map((day, i) => {
-                const dateKey = format(day, 'yyyy-MM-dd');
-                const dayEvents = eventsByDate.get(dateKey) || [];
-                const isCurrentMonth = isSameMonth(day, currentMonth);
-                const isSelected = selectedDate && isSameDay(day, selectedDate);
-                const isTodayDate = isToday(day);
+            {/* Calendar Grid */}
+            <div className="flex-1 overflow-hidden flex flex-col">
+              {/* Weekday Headers */}
+              <div className="grid grid-cols-7 border-b border-border">
+                {['Sun', 'Mon', 'Tue', 'Wed', 'Thu', 'Fri', 'Sat'].map(day => (
+                  <div key={day} className="p-1 text-center">
+                    <span className="text-[9px] font-mono text-muted-foreground uppercase">{day}</span>
+                  </div>
+                ))}
+              </div>
 
-                return (
-                  <button
-                    key={i}
-                    onClick={() => setSelectedDate(day)}
-                    className={`
-                      p-1 border-r border-b border-border text-left transition-colors
-                      ${!isCurrentMonth ? 'bg-muted/20 opacity-50' : 'bg-background hover:bg-muted/30'}
-                      ${isSelected ? 'bg-primary/10 ring-1 ring-primary/50' : ''}
-                      ${isTodayDate ? 'bg-primary/5' : ''}
-                    `}
-                  >
-                    <div className="flex items-center justify-between mb-0.5">
-                      <span className={`
-                        text-[10px] font-mono
-                        ${isTodayDate ? 'bg-primary text-primary-foreground rounded-full w-5 h-5 flex items-center justify-center' : ''}
-                        ${!isCurrentMonth ? 'text-muted-foreground' : 'text-foreground'}
-                      `}>
-                        {format(day, 'd')}
-                      </span>
-                      {dayEvents.length > 0 && (
-                        <Badge variant="secondary" className="text-[7px] h-3 px-1">
-                          {dayEvents.length}
-                        </Badge>
-                      )}
-                    </div>
-                    <div className="space-y-0.5 overflow-hidden">
-                      {dayEvents.slice(0, 2).map(event => (
+              {/* Days Grid */}
+              <div className="flex-1 grid grid-cols-7 auto-rows-fr overflow-hidden">
+                {calendarDays.map((day) => {
+                  const dateKey = format(day, 'yyyy-MM-dd');
+                  const dayEvents = eventsByDate.get(dateKey) || [];
+                  const isCurrentMonth = isSameMonth(day, currentMonth);
+                  const isSelected = selectedDate && isSameDay(day, selectedDate);
+                  const isTodayDate = isToday(day);
+
+                  return (
+                    <Droppable key={dateKey} droppableId={dateKey}>
+                      {(provided, snapshot) => (
                         <div
-                          key={event.id}
-                          className={`${getEventColor(event)} text-white text-[7px] px-1 rounded truncate cursor-pointer hover:opacity-80`}
-                          onClick={(e) => {
-                            e.stopPropagation();
-                            handleEditEvent(event);
-                          }}
+                          ref={provided.innerRef}
+                          {...provided.droppableProps}
+                          onClick={() => setSelectedDate(day)}
+                          className={`
+                            p-1 border-r border-b border-border text-left transition-colors cursor-pointer
+                            ${!isCurrentMonth ? 'bg-muted/20 opacity-50' : 'bg-background hover:bg-muted/30'}
+                            ${isSelected ? 'bg-primary/10 ring-1 ring-primary/50' : ''}
+                            ${isTodayDate ? 'bg-primary/5' : ''}
+                            ${snapshot.isDraggingOver ? 'bg-primary/20 ring-2 ring-primary/50' : ''}
+                          `}
                         >
-                          {event.title}
+                          <div className="flex items-center justify-between mb-0.5">
+                            <span className={`
+                              text-[10px] font-mono
+                              ${isTodayDate ? 'bg-primary text-primary-foreground rounded-full w-5 h-5 flex items-center justify-center' : ''}
+                              ${!isCurrentMonth ? 'text-muted-foreground' : 'text-foreground'}
+                            `}>
+                              {format(day, 'd')}
+                            </span>
+                            {dayEvents.length > 0 && (
+                              <Badge variant="secondary" className="text-[7px] h-3 px-1">
+                                {dayEvents.length}
+                              </Badge>
+                            )}
+                          </div>
+                          <div className="space-y-0.5 overflow-hidden min-h-[20px]">
+                            {dayEvents.slice(0, 2).map((event, index) => (
+                              <Draggable key={event.id} draggableId={event.id} index={index}>
+                                {(provided, snapshot) => (
+                                  <div
+                                    ref={provided.innerRef}
+                                    {...provided.draggableProps}
+                                    {...provided.dragHandleProps}
+                                    className={`
+                                      ${getEventColor(event)} text-white text-[7px] px-1 rounded truncate 
+                                      cursor-grab hover:opacity-80 flex items-center gap-0.5
+                                      ${snapshot.isDragging ? 'shadow-lg ring-2 ring-white/50 opacity-90' : ''}
+                                    `}
+                                    onClick={(e) => {
+                                      e.stopPropagation();
+                                      handleEditEvent(event);
+                                    }}
+                                  >
+                                    <GripVertical size={8} className="opacity-50 flex-shrink-0" />
+                                    <span className="truncate">{event.title}</span>
+                                  </div>
+                                )}
+                              </Draggable>
+                            ))}
+                            {dayEvents.length > 2 && (
+                              <span className="text-[7px] text-muted-foreground">+{dayEvents.length - 2} more</span>
+                            )}
+                            {provided.placeholder}
+                          </div>
                         </div>
-                      ))}
-                      {dayEvents.length > 2 && (
-                        <span className="text-[7px] text-muted-foreground">+{dayEvents.length - 2} more</span>
                       )}
-                    </div>
-                  </button>
-                );
-              })}
+                    </Droppable>
+                  );
+                })}
+              </div>
             </div>
-          </div>
+          </DragDropContext>
 
           {/* Selected Date Events Panel */}
           {selectedDate && (
