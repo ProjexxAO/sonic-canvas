@@ -315,6 +315,209 @@ export type Database = {
         }
         Relationships: []
       }
+      channel_members: {
+        Row: {
+          channel_id: string
+          id: string
+          is_muted: boolean | null
+          joined_at: string
+          last_read_at: string | null
+          role: string | null
+          user_id: string
+        }
+        Insert: {
+          channel_id: string
+          id?: string
+          is_muted?: boolean | null
+          joined_at?: string
+          last_read_at?: string | null
+          role?: string | null
+          user_id: string
+        }
+        Update: {
+          channel_id?: string
+          id?: string
+          is_muted?: boolean | null
+          joined_at?: string
+          last_read_at?: string | null
+          role?: string | null
+          user_id?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "channel_members_channel_id_fkey"
+            columns: ["channel_id"]
+            isOneToOne: false
+            referencedRelation: "communication_channels"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      communication_channels: {
+        Row: {
+          avatar_url: string | null
+          channel_type: Database["public"]["Enums"]["channel_type"]
+          created_at: string
+          created_by: string
+          description: string | null
+          id: string
+          is_archived: boolean | null
+          metadata: Json | null
+          name: string
+          updated_at: string
+          workspace_id: string | null
+        }
+        Insert: {
+          avatar_url?: string | null
+          channel_type?: Database["public"]["Enums"]["channel_type"]
+          created_at?: string
+          created_by: string
+          description?: string | null
+          id?: string
+          is_archived?: boolean | null
+          metadata?: Json | null
+          name: string
+          updated_at?: string
+          workspace_id?: string | null
+        }
+        Update: {
+          avatar_url?: string | null
+          channel_type?: Database["public"]["Enums"]["channel_type"]
+          created_at?: string
+          created_by?: string
+          description?: string | null
+          id?: string
+          is_archived?: boolean | null
+          metadata?: Json | null
+          name?: string
+          updated_at?: string
+          workspace_id?: string | null
+        }
+        Relationships: [
+          {
+            foreignKeyName: "communication_channels_workspace_id_fkey"
+            columns: ["workspace_id"]
+            isOneToOne: false
+            referencedRelation: "workspaces"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      communication_messages: {
+        Row: {
+          approved_at: string | null
+          approved_by: string | null
+          atlas_draft_context: Json | null
+          attachments: Json | null
+          bcc_addresses: string[] | null
+          cc_addresses: string[] | null
+          channel_id: string | null
+          content: string
+          content_html: string | null
+          created_at: string
+          drafted_by_atlas: boolean | null
+          embedding: string | null
+          external_id: string | null
+          from_address: string | null
+          id: string
+          is_incoming: boolean | null
+          is_pinned: boolean | null
+          is_starred: boolean | null
+          metadata: Json | null
+          parent_message_id: string | null
+          platform: Database["public"]["Enums"]["communication_platform"]
+          sent_at: string | null
+          status: Database["public"]["Enums"]["message_status"]
+          subject: string | null
+          thread_root_id: string | null
+          to_addresses: string[] | null
+          updated_at: string
+          user_id: string
+        }
+        Insert: {
+          approved_at?: string | null
+          approved_by?: string | null
+          atlas_draft_context?: Json | null
+          attachments?: Json | null
+          bcc_addresses?: string[] | null
+          cc_addresses?: string[] | null
+          channel_id?: string | null
+          content: string
+          content_html?: string | null
+          created_at?: string
+          drafted_by_atlas?: boolean | null
+          embedding?: string | null
+          external_id?: string | null
+          from_address?: string | null
+          id?: string
+          is_incoming?: boolean | null
+          is_pinned?: boolean | null
+          is_starred?: boolean | null
+          metadata?: Json | null
+          parent_message_id?: string | null
+          platform?: Database["public"]["Enums"]["communication_platform"]
+          sent_at?: string | null
+          status?: Database["public"]["Enums"]["message_status"]
+          subject?: string | null
+          thread_root_id?: string | null
+          to_addresses?: string[] | null
+          updated_at?: string
+          user_id: string
+        }
+        Update: {
+          approved_at?: string | null
+          approved_by?: string | null
+          atlas_draft_context?: Json | null
+          attachments?: Json | null
+          bcc_addresses?: string[] | null
+          cc_addresses?: string[] | null
+          channel_id?: string | null
+          content?: string
+          content_html?: string | null
+          created_at?: string
+          drafted_by_atlas?: boolean | null
+          embedding?: string | null
+          external_id?: string | null
+          from_address?: string | null
+          id?: string
+          is_incoming?: boolean | null
+          is_pinned?: boolean | null
+          is_starred?: boolean | null
+          metadata?: Json | null
+          parent_message_id?: string | null
+          platform?: Database["public"]["Enums"]["communication_platform"]
+          sent_at?: string | null
+          status?: Database["public"]["Enums"]["message_status"]
+          subject?: string | null
+          thread_root_id?: string | null
+          to_addresses?: string[] | null
+          updated_at?: string
+          user_id?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "communication_messages_channel_id_fkey"
+            columns: ["channel_id"]
+            isOneToOne: false
+            referencedRelation: "communication_channels"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "communication_messages_parent_message_id_fkey"
+            columns: ["parent_message_id"]
+            isOneToOne: false
+            referencedRelation: "communication_messages"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "communication_messages_thread_root_id_fkey"
+            columns: ["thread_root_id"]
+            isOneToOne: false
+            referencedRelation: "communication_messages"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
       csuite_communications: {
         Row: {
           cc_addresses: string[] | null
@@ -738,6 +941,67 @@ export type Database = {
         }
         Relationships: []
       }
+      message_reactions: {
+        Row: {
+          created_at: string
+          emoji: string
+          id: string
+          message_id: string
+          user_id: string
+        }
+        Insert: {
+          created_at?: string
+          emoji: string
+          id?: string
+          message_id: string
+          user_id: string
+        }
+        Update: {
+          created_at?: string
+          emoji?: string
+          id?: string
+          message_id?: string
+          user_id?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "message_reactions_message_id_fkey"
+            columns: ["message_id"]
+            isOneToOne: false
+            referencedRelation: "communication_messages"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      message_read_receipts: {
+        Row: {
+          id: string
+          message_id: string
+          read_at: string
+          user_id: string
+        }
+        Insert: {
+          id?: string
+          message_id: string
+          read_at?: string
+          user_id: string
+        }
+        Update: {
+          id?: string
+          message_id?: string
+          read_at?: string
+          user_id?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "message_read_receipts_message_id_fkey"
+            columns: ["message_id"]
+            isOneToOne: false
+            referencedRelation: "communication_messages"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
       organization_members: {
         Row: {
           created_at: string
@@ -860,6 +1124,60 @@ export type Database = {
           id?: string
           persona_id?: string
           updated_at?: string
+        }
+        Relationships: []
+      }
+      platform_connections: {
+        Row: {
+          access_token_encrypted: string | null
+          account_email: string | null
+          account_name: string | null
+          created_at: string
+          id: string
+          is_active: boolean | null
+          last_sync_at: string | null
+          metadata: Json | null
+          platform: Database["public"]["Enums"]["communication_platform"]
+          refresh_token_encrypted: string | null
+          settings: Json | null
+          sync_cursor: string | null
+          token_expires_at: string | null
+          updated_at: string
+          user_id: string
+        }
+        Insert: {
+          access_token_encrypted?: string | null
+          account_email?: string | null
+          account_name?: string | null
+          created_at?: string
+          id?: string
+          is_active?: boolean | null
+          last_sync_at?: string | null
+          metadata?: Json | null
+          platform: Database["public"]["Enums"]["communication_platform"]
+          refresh_token_encrypted?: string | null
+          settings?: Json | null
+          sync_cursor?: string | null
+          token_expires_at?: string | null
+          updated_at?: string
+          user_id: string
+        }
+        Update: {
+          access_token_encrypted?: string | null
+          account_email?: string | null
+          account_name?: string | null
+          created_at?: string
+          id?: string
+          is_active?: boolean | null
+          last_sync_at?: string | null
+          metadata?: Json | null
+          platform?: Database["public"]["Enums"]["communication_platform"]
+          refresh_token_encrypted?: string | null
+          settings?: Json | null
+          sync_cursor?: string | null
+          token_expires_at?: string | null
+          updated_at?: string
+          user_id?: string
         }
         Relationships: []
       }
@@ -1404,9 +1722,27 @@ export type Database = {
         | "UTILITY"
       agent_status: "IDLE" | "ACTIVE" | "PROCESSING" | "ERROR" | "DORMANT"
       app_role: "superadmin" | "admin" | "user"
+      channel_type: "direct" | "private" | "public" | "announcement"
+      communication_platform:
+        | "internal"
+        | "gmail"
+        | "outlook"
+        | "slack"
+        | "teams"
+        | "whatsapp"
+        | "sms"
+        | "messenger"
+        | "other"
       compliance_mode: "standard" | "gdpr" | "hipaa" | "enterprise"
       governance_level: "persona" | "industry" | "workspace" | "user" | "agent"
       insight_cadence: "daily" | "weekly" | "monthly" | "manual"
+      message_status:
+        | "draft"
+        | "pending_approval"
+        | "sent"
+        | "delivered"
+        | "read"
+        | "failed"
       org_plan: "free" | "personal" | "pro" | "team" | "enterprise"
       tool_permission_status: "allowed" | "blocked" | "preferred"
       user_status: "active" | "invited" | "disabled"
@@ -1551,9 +1887,29 @@ export const Constants = {
       ],
       agent_status: ["IDLE", "ACTIVE", "PROCESSING", "ERROR", "DORMANT"],
       app_role: ["superadmin", "admin", "user"],
+      channel_type: ["direct", "private", "public", "announcement"],
+      communication_platform: [
+        "internal",
+        "gmail",
+        "outlook",
+        "slack",
+        "teams",
+        "whatsapp",
+        "sms",
+        "messenger",
+        "other",
+      ],
       compliance_mode: ["standard", "gdpr", "hipaa", "enterprise"],
       governance_level: ["persona", "industry", "workspace", "user", "agent"],
       insight_cadence: ["daily", "weekly", "monthly", "manual"],
+      message_status: [
+        "draft",
+        "pending_approval",
+        "sent",
+        "delivered",
+        "read",
+        "failed",
+      ],
       org_plan: ["free", "personal", "pro", "team", "enterprise"],
       tool_permission_status: ["allowed", "blocked", "preferred"],
       user_status: ["active", "invited", "disabled"],
