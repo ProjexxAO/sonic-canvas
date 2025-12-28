@@ -29,7 +29,7 @@ export function WelcomeScreen({
       </div>
 
       {/* Title */}
-      <h1 className="text-3xl font-bold mb-3 text-center text-accent-glow bg-orange-300">Welcome to Atlas</h1>
+      <h1 className="text-3xl font-bold mb-3 text-center text-accent-glow bg-accent">Welcome to Atlas</h1>
       
       {/* Subtitle */}
       <p className="text-lg text-muted-foreground text-center max-w-md mb-2">
