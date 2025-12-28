@@ -17,17 +17,13 @@ export function WelcomeScreen({
 
       {/* Atlas Logo */}
       <div className="relative mb-8">
-        {/* Pulsing glow ring */}
-        <div className="absolute inset-0 w-24 h-24 rounded-2xl bg-primary/30 animate-ping opacity-20" />
-        <div className="absolute inset-0 w-24 h-24 rounded-2xl bg-primary/20 animate-pulse" />
-        
-        <div className="relative w-24 h-24 rounded-2xl bg-gradient-to-br from-primary via-primary/80 to-secondary flex items-center justify-center shadow-lg shadow-primary/30 animate-pulse">
+        <div className="w-24 h-24 rounded-2xl bg-gradient-to-br from-primary via-primary/80 to-secondary flex items-center justify-center shadow-lg shadow-primary/20">
           <div className="relative">
-            <Hexagon size={48} className="text-primary-foreground drop-shadow-[0_0_8px_rgba(var(--primary),0.5)]" />
+            <Hexagon size={48} className="text-primary-foreground" />
             <Radio size={20} className="absolute top-1/2 left-1/2 -translate-x-1/2 -translate-y-1/2 text-primary-foreground" />
           </div>
         </div>
-        <div className="absolute -bottom-2 -right-2 w-8 h-8 rounded-lg bg-secondary flex items-center justify-center shadow-md">
+        <div className="absolute -bottom-2 -right-2 w-8 h-8 rounded-lg bg-secondary flex items-center justify-center">
           <span className="text-xs font-bold text-secondary-foreground">AI</span>
         </div>
       </div>
