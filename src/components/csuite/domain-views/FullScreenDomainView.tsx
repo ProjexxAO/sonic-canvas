@@ -33,6 +33,7 @@ interface FullScreenDomainViewProps {
   isLoading: boolean;
   onBack: () => void;
   onItemClick: (item: DomainItem) => void;
+  onRefresh?: () => void;
 }
 
 const DOMAIN_CONFIG: Record<DomainKey, { label: string; icon: typeof Mail; color: string }> = {
@@ -50,6 +51,7 @@ export function FullScreenDomainView({
   isLoading,
   onBack,
   onItemClick,
+  onRefresh,
 }: FullScreenDomainViewProps) {
   // Use specialized view for Events
   if (domainKey === 'events') {
@@ -59,6 +61,7 @@ export function FullScreenDomainView({
         isLoading={isLoading}
         onBack={onBack}
         onItemClick={(item) => onItemClick(item)}
+        onRefresh={onRefresh}
       />
     );
   }
