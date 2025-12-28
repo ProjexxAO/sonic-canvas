@@ -212,7 +212,7 @@ export function FinancialsFullScreenView({
   };
 
   return (
-    <div className="h-full flex flex-col bg-background">
+    <div className="h-full flex flex-col bg-background overflow-hidden">
       {user && (
         <FinancialFormDialog
           open={formOpen}
@@ -257,7 +257,7 @@ export function FinancialsFullScreenView({
       </div>
 
       {/* Tabs */}
-      <Tabs value={activeTab} onValueChange={(v) => setActiveTab(v as TabType)} className="flex-1 flex flex-col overflow-hidden">
+      <Tabs value={activeTab} onValueChange={(v) => setActiveTab(v as TabType)} className="flex-1 flex flex-col min-h-0">
         <TabsList className="mx-3 mt-2 justify-start bg-muted/50 h-8">
           <TabsTrigger value="overview" className="text-xs h-6">
             <BarChart3 size={12} className="mr-1" />
@@ -282,8 +282,8 @@ export function FinancialsFullScreenView({
         </TabsList>
 
         {/* Overview Tab */}
-        <TabsContent value="overview" className="flex-1 overflow-hidden m-0">
-          <ScrollArea className="h-full">
+        <TabsContent value="overview" className="flex-1 overflow-hidden m-0 p-0">
+          <ScrollArea className="h-full w-full">
             <div className="p-3 space-y-4">
               {/* Metrics Cards */}
               <div className="grid grid-cols-2 lg:grid-cols-4 gap-3">
