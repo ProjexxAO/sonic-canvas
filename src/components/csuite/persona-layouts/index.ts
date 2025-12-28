@@ -11,6 +11,7 @@ export * from './CISOLayout';
 export * from './CCOLayout';
 export * from './ChiefOfStaffLayout';
 export * from './ChiefPeopleLayout';
+export * from './AdminLayout';
 
 // Persona to Layout mapping
 export const PERSONA_LAYOUTS: Record<string, React.ComponentType<any>> = {
@@ -26,4 +27,5 @@ export const PERSONA_LAYOUTS: Record<string, React.ComponentType<any>> = {
   cco: require('./CCOLayout').CCOLayout,
   chief_of_staff: require('./ChiefOfStaffLayout').ChiefOfStaffLayout,
   chief_people: require('./ChiefPeopleLayout').ChiefPeopleLayout,
+  admin: require('./AdminLayout').AdminLayout,
 };

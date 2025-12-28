@@ -47,7 +47,7 @@ interface CSuiteDataHubProps {
   agentsLoading?: boolean;
 }
 
-type PersonaCategory = 'executive' | 'tech' | 'people' | 'growth' | 'legal';
+type PersonaCategory = 'executive' | 'tech' | 'people' | 'growth' | 'legal' | 'admin';
 
 interface Persona {
   id: string;
@@ -86,6 +86,8 @@ const PERSONAS: Persona[] = [
   // Legal & Compliance
   { id: 'clo', label: 'CLO', icon: Scale, description: 'Legal matters & contracts', category: 'legal', focusAreas: ['legal_matters', 'contracts', 'intellectual_property', 'litigation'], matchTitles: ['clo', 'chief legal', 'general counsel', 'legal director', 'head of legal'] },
   { id: 'cco', label: 'CCO', icon: CheckSquare, description: 'Compliance & regulatory', category: 'legal', focusAreas: ['compliance', 'regulatory', 'ethics', 'governance'], matchTitles: ['cco', 'chief compliance', 'compliance director', 'regulatory affairs', 'governance'] },
+  // Admin
+  { id: 'admin', label: 'Admin', icon: Cpu, description: 'System administration & oversight', category: 'admin', focusAreas: ['system_health', 'user_management', 'agent_oversight', 'platform_analytics', 'security_monitoring'], matchTitles: ['admin', 'administrator', 'superadmin', 'system admin'] },
 ];
 
 const PERSONA_CATEGORIES: { id: PersonaCategory; label: string }[] = [
@@ -94,6 +96,7 @@ const PERSONA_CATEGORIES: { id: PersonaCategory; label: string }[] = [
   { id: 'people', label: 'People' },
   { id: 'growth', label: 'Growth' },
   { id: 'legal', label: 'Legal' },
+  { id: 'admin', label: 'Admin' },
 ];
 
 const CONNECTOR_CONFIG: Record<string, { label: string; icon: typeof Cloud; color: string }> = {
@@ -145,7 +148,26 @@ export function CSuiteDataHub({ userId, agents = [], agentsLoading = false }: CS
   const [selectedReport, setSelectedReport] = useState<CSuiteReport | null>(null);
   const [userPersona, setUserPersona] = useState<string | null>(null);
   const [enterpriseQuery, setEnterpriseQuery] = useState('');
+  const [isSuperAdmin, setIsSuperAdmin] = useState(false);
   const fileInputRef = useRef<HTMLInputElement>(null);
+
+  // Check if user is superadmin
+  useEffect(() => {
+    if (!userId) return;
+    
+    const checkSuperAdmin = async () => {
+      const { data } = await supabase
+        .from('user_roles')
+        .select('role')
+        .eq('user_id', userId)
+        .eq('role', 'superadmin')
+        .maybeSingle();
+      
+      setIsSuperAdmin(!!data);
+    };
+    
+    checkSuperAdmin();
+  }, [userId]);
 
   // Load user's assigned persona from profile
   useEffect(() => {
@@ -283,12 +305,14 @@ export function CSuiteDataHub({ userId, agents = [], agentsLoading = false }: CS
               >
                 OVERVIEW
               </TabsTrigger>
-              <TabsTrigger 
-                value="personas" 
-                className="text-[10px] font-mono px-2 py-1 rounded-none data-[state=active]:border-b-2 data-[state=active]:border-primary data-[state=active]:bg-transparent"
-              >
-                PERSONAS
-              </TabsTrigger>
+              {isSuperAdmin && (
+                <TabsTrigger 
+                  value="personas" 
+                  className="text-[10px] font-mono px-2 py-1 rounded-none data-[state=active]:border-b-2 data-[state=active]:border-primary data-[state=active]:bg-transparent"
+                >
+                  PERSONAS
+                </TabsTrigger>
+              )}
               <TabsTrigger 
                 value="reports" 
                 className="text-[10px] font-mono px-2 py-1 rounded-none data-[state=active]:border-b-2 data-[state=active]:border-primary data-[state=active]:bg-transparent"
