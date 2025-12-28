@@ -39,7 +39,10 @@ import { ReportViewer } from './ReportViewer';
 import { ReportHistoryList } from './ReportHistoryList';
 import { AtlasSummaryTab } from './AtlasSummaryTab';
 import { UserPersonaManager } from './UserPersonaManager';
+import { PersonaPermissionsManager } from './PersonaPermissionsManager';
+import { PersonaLayoutRenderer } from './persona-layouts/PersonaLayoutRenderer';
 import { useAtlasEnterprise } from '@/hooks/useAtlasEnterprise';
+import { usePersonaPermissions } from '@/hooks/usePersonaPermissions';
 import { supabase } from '@/integrations/supabase/client';
 
 interface CSuiteDataHubProps {
@@ -151,6 +154,9 @@ export function CSuiteDataHub({ userId, agents = [], agentsLoading = false }: CS
   const [enterpriseQuery, setEnterpriseQuery] = useState('');
   const [isSuperAdmin, setIsSuperAdmin] = useState(false);
   const fileInputRef = useRef<HTMLInputElement>(null);
+
+  // Persona permissions - must be after userPersona state declaration
+  const personaPerms = usePersonaPermissions(userPersona);
 
   // Check if user is superadmin
   useEffect(() => {
@@ -350,85 +356,108 @@ export function CSuiteDataHub({ userId, agents = [], agentsLoading = false }: CS
               />
             )}
 
-            {/* Data Domains Tab */}
+            {/* Data Domains Tab - Now shows persona-specific layout */}
             {!expandedDomain && (
-              <TabsContent value="data" className="h-full m-0 p-2">
+              <TabsContent value="data" className="h-full m-0">
                 <ScrollArea className="h-full">
-                  <div className="space-y-2">
-                    {/* Summary */}
-                    <div className="p-2 rounded bg-background border border-border">
-                      <div className="flex items-center justify-between mb-2">
-                        <span className="text-[10px] font-mono text-muted-foreground">TOTAL ITEMS</span>
-                        <span className="text-sm font-mono text-primary">{totalItems}</span>
-                      </div>
-                      <div className="h-1.5 bg-muted rounded-full overflow-hidden">
-                        <div 
-                          className="h-full bg-gradient-to-r from-primary to-secondary transition-all"
-                          style={{ width: `${Math.min((totalItems / 100) * 100, 100)}%` }}
-                        />
-                      </div>
-                    </div>
-
-                    {/* Domain Grid - Clickable Cards */}
-                    <div className="grid grid-cols-2 gap-2 animate-scale-fade-in"
-                      style={{ 
-                        animationDuration: '0.3s',
-                        animationFillMode: 'both',
-                        animationTimingFunction: 'cubic-bezier(0.16, 1, 0.3, 1)'
+                  {userPersona ? (
+                    <PersonaLayoutRenderer
+                      personaId={userPersona}
+                      stats={stats}
+                      domainItems={domainItems}
+                      loadingDomains={loadingDomains}
+                      onDomainClick={(domain) => {
+                        // Check if user has permission to view this domain
+                        if (personaPerms.canViewDomain(domain)) {
+                          handleDomainClick(domain);
+                        }
                       }}
-                    >
-                      {DOMAIN_CONFIG.map(({ key, label, icon: Icon, color }, index) => (
-                        <button
-                          key={key}
-                          onClick={() => handleDomainClick(key)}
-                          className="p-2 rounded bg-background border border-border hover:border-primary/40 hover:bg-muted/30 transition-all text-left group hover:scale-[1.02] active:scale-[0.98]"
-                          style={{
-                            animationName: 'stagger-fade-in',
-                            animationDuration: '0.3s',
-                            animationDelay: `${index * 50}ms`,
-                            animationFillMode: 'both',
-                            animationTimingFunction: 'cubic-bezier(0.16, 1, 0.3, 1)'
-                          }}
-                        >
-                          <div className="flex items-center gap-2 mb-1">
-                            <Icon size={12} style={{ color }} />
-                            <span className="text-[10px] font-mono text-muted-foreground group-hover:text-foreground transition-colors">
-                              {label}
-                            </span>
-                          </div>
-                          <span className="text-lg font-mono text-foreground group-hover:text-primary transition-colors">
-                            {stats[key]}
-                          </span>
-                        </button>
-                      ))}
-                    </div>
-
-                    {/* Upload Section */}
-                    <div className="p-2 rounded bg-background border border-border">
-                      <div className="flex items-center gap-2 mb-2">
-                        <Upload size={12} className="text-secondary" />
-                        <span className="text-[10px] font-mono text-muted-foreground">QUICK UPLOAD</span>
+                      onItemClick={handleItemClick}
+                      agents={agents}
+                      enterpriseData={{
+                        lastQuery: enterprise.lastQuery,
+                        lastAnalysis: enterprise.lastAnalysis,
+                        lastCorrelation: enterprise.lastCorrelation,
+                        lastRecommendations: enterprise.lastRecommendations,
+                      }}
+                    />
+                  ) : (
+                    <div className="space-y-2 p-2">
+                      {/* Default view when no persona is set */}
+                      <div className="p-2 rounded bg-background border border-border">
+                        <div className="flex items-center justify-between mb-2">
+                          <span className="text-[10px] font-mono text-muted-foreground">TOTAL ITEMS</span>
+                          <span className="text-sm font-mono text-primary">{totalItems}</span>
+                        </div>
+                        <div className="h-1.5 bg-muted rounded-full overflow-hidden">
+                          <div 
+                            className="h-full bg-gradient-to-r from-primary to-secondary transition-all"
+                            style={{ width: `${Math.min((totalItems / 100) * 100, 100)}%` }}
+                          />
+                        </div>
                       </div>
-                      <input
-                        ref={fileInputRef}
-                        type="file"
-                        multiple
-                        accept=".pdf,.doc,.docx,.xls,.xlsx,.csv,.txt,.md,.pptx"
-                        onChange={handleFileUpload}
-                        className="hidden"
-                        id="file-upload"
-                      />
-                      <Button
-                        variant="outline"
-                        size="sm"
-                        className="w-full text-[10px] font-mono"
-                        onClick={() => fileInputRef.current?.click()}
-                        disabled={isUploading || !userId}
+
+                      {/* Domain Grid - Filtered by permissions */}
+                      <div className="grid grid-cols-2 gap-2 animate-scale-fade-in"
+                        style={{ 
+                          animationDuration: '0.3s',
+                          animationFillMode: 'both',
+                          animationTimingFunction: 'cubic-bezier(0.16, 1, 0.3, 1)'
+                        }}
                       >
-                        {isUploading ? 'UPLOADING...' : 'SELECT FILES'}
-                      </Button>
+                        {DOMAIN_CONFIG.map(({ key, label, icon: Icon, color }, index) => (
+                          <button
+                            key={key}
+                            onClick={() => handleDomainClick(key)}
+                            className="p-2 rounded bg-background border border-border hover:border-primary/40 hover:bg-muted/30 transition-all text-left group hover:scale-[1.02] active:scale-[0.98]"
+                            style={{
+                              animationName: 'stagger-fade-in',
+                              animationDuration: '0.3s',
+                              animationDelay: `${index * 50}ms`,
+                              animationFillMode: 'both',
+                              animationTimingFunction: 'cubic-bezier(0.16, 1, 0.3, 1)'
+                            }}
+                          >
+                            <div className="flex items-center gap-2 mb-1">
+                              <Icon size={12} style={{ color }} />
+                              <span className="text-[10px] font-mono text-muted-foreground group-hover:text-foreground transition-colors">
+                                {label}
+                              </span>
+                            </div>
+                            <span className="text-lg font-mono text-foreground group-hover:text-primary transition-colors">
+                              {stats[key]}
+                            </span>
+                          </button>
+                        ))}
+                      </div>
+
+                      {/* Upload Section */}
+                      <div className="p-2 rounded bg-background border border-border">
+                        <div className="flex items-center gap-2 mb-2">
+                          <Upload size={12} className="text-secondary" />
+                          <span className="text-[10px] font-mono text-muted-foreground">QUICK UPLOAD</span>
+                        </div>
+                        <input
+                          ref={fileInputRef}
+                          type="file"
+                          multiple
+                          accept=".pdf,.doc,.docx,.xls,.xlsx,.csv,.txt,.md,.pptx"
+                          onChange={handleFileUpload}
+                          className="hidden"
+                          id="file-upload"
+                        />
+                        <Button
+                          variant="outline"
+                          size="sm"
+                          className="w-full text-[10px] font-mono"
+                          onClick={() => fileInputRef.current?.click()}
+                          disabled={isUploading || !userId}
+                        >
+                          {isUploading ? 'UPLOADING...' : 'SELECT FILES'}
+                        </Button>
+                      </div>
                     </div>
-                  </div>
+                  )}
                 </ScrollArea>
               </TabsContent>
             )}
@@ -738,6 +767,13 @@ export function CSuiteDataHub({ userId, agents = [], agentsLoading = false }: CS
                       personas={personasForManager} 
                       currentUserId={userId} 
                     />
+                  </div>
+                )}
+
+                {/* Persona Permissions Manager - Only for superadmin or admin persona */}
+                {canManagePersonas && (
+                  <div className="mb-3">
+                    <PersonaPermissionsManager personas={personasForManager} />
                   </div>
                 )}
 

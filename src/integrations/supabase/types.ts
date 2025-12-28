@@ -642,6 +642,45 @@ export type Database = {
         }
         Relationships: []
       }
+      persona_permissions: {
+        Row: {
+          can_create: boolean
+          can_delete: boolean
+          can_edit: boolean
+          can_view: boolean
+          created_at: string
+          created_by: string | null
+          domain: string
+          id: string
+          persona_id: string
+          updated_at: string
+        }
+        Insert: {
+          can_create?: boolean
+          can_delete?: boolean
+          can_edit?: boolean
+          can_view?: boolean
+          created_at?: string
+          created_by?: string | null
+          domain: string
+          id?: string
+          persona_id: string
+          updated_at?: string
+        }
+        Update: {
+          can_create?: boolean
+          can_delete?: boolean
+          can_edit?: boolean
+          can_view?: boolean
+          created_at?: string
+          created_by?: string | null
+          domain?: string
+          id?: string
+          persona_id?: string
+          updated_at?: string
+        }
+        Relationships: []
+      }
       profiles: {
         Row: {
           atlas_agent_profile_id: string | null
