@@ -40,6 +40,7 @@ import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
 import { Badge } from '@/components/ui/badge';
 import { useCSuiteData, DataDomainStats, DomainKey, DomainItem, CSuiteReport } from '@/hooks/useCSuiteData';
 import { FullScreenDomainView } from './domain-views';
+import { FullscreenOverlay } from './FullscreenOverlay';
 import { DomainItemDrawer } from './DomainItemDrawer';
 import { PersonaConfigPopover, PersonaConfig } from './PersonaConfigPopover';
 import { ReportViewer } from './ReportViewer';
@@ -378,8 +379,8 @@ export function CSuiteDataHub({ userId, agents = [], agentsLoading = false }: CS
   return (
     <>
       {/* Full Page Domain View Overlay */}
-      {expandedDomain && (
-        <div className="fixed inset-0 z-50 bg-background animate-in fade-in-0 zoom-in-95 duration-200">
+      <FullscreenOverlay open={!!expandedDomain}>
+        {expandedDomain && (
           <FullScreenDomainView
             domainKey={expandedDomain}
             items={domainItems[expandedDomain]}
@@ -388,8 +389,8 @@ export function CSuiteDataHub({ userId, agents = [], agentsLoading = false }: CS
             onItemClick={handleItemClick}
             onRefresh={() => fetchDomainItems(expandedDomain)}
           />
-        </div>
-      )}
+        )}
+      </FullscreenOverlay>
 
       <div className="flex-1 bg-card/90 border border-border rounded-lg shadow-sm overflow-hidden flex flex-col">
         <Tabs value={activeTab} onValueChange={setActiveTab} className="flex flex-col h-full">
