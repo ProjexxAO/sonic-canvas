@@ -77,6 +77,7 @@ import { useAtlasContext } from '@/hooks/useAtlasContext';
 import { useAtlasConversations } from '@/hooks/useAtlasConversations';
 import { useOnboarding } from '@/hooks/useOnboarding';
 import { useCSuiteData } from '@/hooks/useCSuiteData';
+import { useDataHubController, getDomainKeyFromName, getTabFromName, getPersonaFromName } from '@/hooks/useDataHubController';
 import { Button } from '@/components/ui/button';
 import { ScrollArea } from '@/components/ui/scroll-area';
 import { ActionLogItem } from '@/components/atlas/ActionLogItem';
@@ -397,6 +398,98 @@ function AtlasPage() {
         
         // Default acknowledgment for other instructions
         return `Instruction acknowledged: ${params.instruction}`;
+      },
+
+      // ========== DATA HUB CONTROL TOOLS ==========
+      
+      // Switch Data Hub tab
+      switchDataHubTab: (params: { tab: string }) => {
+        const tabId = getTabFromName(params.tab);
+        if (!tabId) {
+          addLogRef.current('switchDataHubTab', params, `Unknown tab: ${params.tab}`, 'error');
+          return `Unknown tab "${params.tab}". Available tabs: command, insights, library, admin`;
+        }
+        
+        useDataHubController.getState().setActiveTab(tabId);
+        addLogRef.current('switchDataHubTab', params, `Switched to ${tabId}`, 'success');
+        toast.info(`Switched to ${tabId} tab`);
+        return `Switched Data Hub to ${tabId} tab`;
+      },
+
+      // Open a data domain
+      openDataDomain: (params: { domain: string }) => {
+        const domainKey = getDomainKeyFromName(params.domain);
+        if (!domainKey) {
+          addLogRef.current('openDataDomain', params, `Unknown domain: ${params.domain}`, 'error');
+          return `Unknown domain "${params.domain}". Available domains: communications, documents, events, financials, tasks, knowledge`;
+        }
+        
+        useDataHubController.getState().setExpandedDomain(domainKey);
+        useDataHubController.getState().setActiveTab('library');
+        addLogRef.current('openDataDomain', params, `Opened ${domainKey}`, 'success');
+        toast.info(`Opened ${domainKey} domain`);
+        return `Opened ${domainKey} domain in Data Hub`;
+      },
+
+      // Close current domain view
+      closeDataDomain: () => {
+        useDataHubController.getState().setExpandedDomain(null);
+        addLogRef.current('closeDataDomain', {}, 'Closed domain view', 'success');
+        return 'Closed domain view';
+      },
+
+      // Run enterprise query
+      runEnterpriseQuery: (params: { query: string }) => {
+        const controller = useDataHubController.getState();
+        controller.setEnterpriseQuery(params.query);
+        controller.setTriggerEnterpriseQuery(true);
+        controller.setActiveTab('insights');
+        addLogRef.current('runEnterpriseQuery', params, 'Query initiated', 'success');
+        toast.info('Running enterprise query...');
+        return `Running enterprise query: "${params.query}"`;
+      },
+
+      // Generate report for persona
+      generateDataHubReport: (params: { persona: string }) => {
+        const personaId = getPersonaFromName(params.persona);
+        if (!personaId) {
+          addLogRef.current('generateDataHubReport', params, `Unknown persona: ${params.persona}`, 'error');
+          return `Unknown persona "${params.persona}". Available personas: CEO, CFO, COO, CTO, CMO, CRO, CHRO, CLO, CCO, CISO, Chief of Staff, Chief People, Admin`;
+        }
+        
+        useDataHubController.getState().requestReportGeneration(personaId);
+        addLogRef.current('generateDataHubReport', params, `Generating ${personaId} report`, 'success');
+        toast.info(`Generating ${personaId.toUpperCase()} report...`);
+        return `Generating executive report for ${personaId.toUpperCase()} persona`;
+      },
+
+      // Refresh Data Hub data
+      refreshDataHub: () => {
+        useDataHubController.getState().requestRefresh();
+        addLogRef.current('refreshDataHub', {}, 'Refresh triggered', 'success');
+        toast.info('Refreshing Data Hub...');
+        return 'Refreshing Data Hub data';
+      },
+
+      // Get Data Hub status
+      getDataHubStatus: () => {
+        const state = useDataHubController.getState();
+        addLogRef.current('getDataHubStatus', {}, 'Status retrieved', 'success');
+        return `Data Hub Status: Tab=${state.activeTab}, Domain=${state.expandedDomain || 'none'}, Persona=${state.targetPersona || 'default'}`;
+      },
+
+      // List available domains
+      listDataDomains: () => {
+        addLogRef.current('listDataDomains', {}, 'Domains listed', 'success');
+        const domains = ['communications', 'documents', 'events', 'financials', 'tasks', 'knowledge'];
+        return `Available data domains: ${domains.join(', ')}`;
+      },
+
+      // List available personas
+      listPersonas: () => {
+        addLogRef.current('listPersonas', {}, 'Personas listed', 'success');
+        const personas = ['CEO', 'CFO', 'COO', 'CTO', 'CMO', 'CRO', 'CHRO', 'CLO', 'CCO', 'CISO', 'Chief of Staff', 'Chief People', 'Admin'];
+        return `Available personas: ${personas.join(', ')}`;
       }
     },
     onConnect: () => {
