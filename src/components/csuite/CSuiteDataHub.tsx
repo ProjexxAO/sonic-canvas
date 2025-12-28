@@ -724,15 +724,26 @@ export function CSuiteDataHub({ userId, agents = [], agentsLoading = false }: CS
                       </div>
                     </div>
 
-                    {/* Reports Section */}
+                    {/* Reports Section - Filtered by persona */}
                     <div className="p-2 rounded bg-background border border-border">
                       <div className="flex items-center gap-2 mb-2">
                         <FileText size={12} className="text-secondary" />
-                        <span className="text-[10px] font-mono text-muted-foreground">GENERATED REPORTS</span>
-                        <span className="text-[9px] text-muted-foreground ml-auto">{reports.length} reports</span>
+                        <span className="text-[10px] font-mono text-muted-foreground">
+                          {userPersona ? 'MY REPORTS' : 'ALL REPORTS'}
+                        </span>
+                        {userPersona && (
+                          <Badge variant="outline" className="text-[7px] font-mono">
+                            {currentPersona?.label}
+                          </Badge>
+                        )}
+                        <span className="text-[9px] text-muted-foreground ml-auto">
+                          {userPersona 
+                            ? reports.filter(r => r.persona === userPersona).length 
+                            : reports.length} reports
+                        </span>
                       </div>
                       <ReportHistoryList
-                        reports={reports}
+                        reports={userPersona ? reports.filter(r => r.persona === userPersona) : reports}
                         onSelectReport={(report) => setSelectedReport(report)}
                         selectedReportId={selectedReport?.id}
                       />
