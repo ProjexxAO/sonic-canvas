@@ -1,122 +1,9 @@
-import { serve } from "https://deno.land/std@0.168.0/http/server.ts";
+import { serve } from "https://deno.land/std@0.177.0/http/server.ts";
 
 const corsHeaders = {
   "Access-Control-Allow-Origin": "*",
   "Access-Control-Allow-Headers": "authorization, x-client-info, apikey, content-type",
 };
-
-interface SearchQuery {
-  query: string;
-  category?: string;
-  searchMode?: "web" | "academic" | "sec";
-  recencyFilter?: "day" | "week" | "month" | "year";
-}
-
-interface MetaSearchRequest {
-  queries: SearchQuery[];
-  aggregateResults?: boolean;
-  maxResultsPerQuery?: number;
-}
-
-interface SearchResult {
-  query: string;
-  category?: string;
-  answer: string;
-  citations: string[];
-  searchMode?: string;
-}
-
-async function performSearch(
-  query: SearchQuery,
-  apiKey: string
-): Promise<SearchResult> {
-  const body: Record<string, unknown> = {
-    model: "sonar",
-    messages: [
-      { 
-        role: "system", 
-        content: "Be precise and concise. Provide factual, up-to-date information with sources when available. Focus on actionable insights." 
-      },
-      { role: "user", content: query.query }
-    ],
-  };
-
-  if (query.searchMode === "academic") {
-    body.search_mode = "academic";
-  } else if (query.searchMode === "sec") {
-    body.search_mode = "sec";
-  }
-
-  if (query.recencyFilter) {
-    body.search_recency_filter = query.recencyFilter;
-  }
-
-  const response = await fetch("https://api.perplexity.ai/chat/completions", {
-    method: "POST",
-    headers: {
-      "Authorization": `Bearer ${apiKey}`,
-      "Content-Type": "application/json",
-    },
-    body: JSON.stringify(body),
-  });
-
-  if (!response.ok) {
-    const errorText = await response.text();
-    console.error(`[perplexity-meta-search] API error for query "${query.query}":`, response.status, errorText);
-    throw new Error(`Perplexity API error: ${response.status}`);
-  }
-
-  const data = await response.json();
-  
-  return {
-    query: query.query,
-    category: query.category,
-    answer: data.choices?.[0]?.message?.content || "No response",
-    citations: data.citations || [],
-    searchMode: query.searchMode,
-  };
-}
-
-function aggregateSearchResults(results: SearchResult[]): {
-  summary: string;
-  categorizedResults: Record<string, SearchResult[]>;
-  allCitations: string[];
-  keyInsights: string[];
-} {
-  const categorizedResults: Record<string, SearchResult[]> = {};
-  const allCitations: string[] = [];
-  const keyInsights: string[] = [];
-
-  for (const result of results) {
-    const category = result.category || "general";
-    if (!categorizedResults[category]) {
-      categorizedResults[category] = [];
-    }
-    categorizedResults[category].push(result);
-    
-    // Collect unique citations
-    for (const citation of result.citations) {
-      if (!allCitations.includes(citation)) {
-        allCitations.push(citation);
-      }
-    }
-
-    // Extract first sentence as key insight
-    const firstSentence = result.answer.split(/[.!?]/)[0];
-    if (firstSentence && firstSentence.length > 20) {
-      keyInsights.push(`[${category}] ${firstSentence.trim()}`);
-    }
-  }
-
-  const summary = `Meta-search completed across ${results.length} queries in ${Object.keys(categorizedResults).length} categories. Found ${allCitations.length} unique sources.`;
-
-  return {
-    summary,
-    categorizedResults,
-    allCitations,
-    keyInsights: keyInsights.slice(0, 10), // Top 10 insights
-  };
-}
 
 serve(async (req) => {
   if (req.method === "OPTIONS") {
@@ -124,18 +11,21 @@ serve(async (req) => {
   }
 
   try {
-    const { queries, aggregateResults = true, maxResultsPerQuery = 5 }: MetaSearchRequest = await req.json();
+    const body = await req.json();
 
-    if (!queries || !Array.isArray(queries) || queries.length === 0) {
-      return new Response(
-        JSON.stringify({ error: "At least one query is required" }),
-        { status: 400, headers: { ...corsHeaders, "Content-Type": "application/json" } }
-      );
-    }
+    const {
+      query,
+      mode = "search",
+      sources,
+      site,
+      top_k = 5,
+      json_mode = false,
+      followups = false
+    } = body;
 
-    if (queries.length > 10) {
+    if (!query) {
       return new Response(
-        JSON.stringify({ error: "Maximum 10 queries allowed per request" }),
+        JSON.stringify({ error: "Missing required field: query" }),
         { status: 400, headers: { ...corsHeaders, "Content-Type": "application/json" } }
       );
     }
@@ -149,51 +39,64 @@ serve(async (req) => {
       );
     }
 
-    console.log(`[perplexity-meta-search] Starting meta-search for ${queries.length} queries`);
+    // Build Perplexity meta-search prompt
+    const prompt: string[] = [];
+    prompt.push(`Primary query: ${query}`);
 
-    // Execute all searches in parallel
-    const searchPromises = queries.map(query => 
-      performSearch(query, PERPLEXITY_API_KEY).catch(error => ({
-        query: query.query,
-        category: query.category,
-        answer: `Error: ${error.message}`,
-        citations: [],
-        error: true,
-      } as SearchResult & { error?: boolean }))
-    );
+    if (site) prompt.push(`Restrict results to domain: ${site}`);
+    if (sources) prompt.push(`Preferred sources: ${sources}`);
 
-    const results = await Promise.all(searchPromises);
-    const successfulResults = results.filter(r => !('error' in r && r.error));
+    if (mode === "deep") prompt.push("Perform deep research with multi-hop reasoning.");
+    if (mode === "multi") prompt.push("Break the query into sub-questions and search each.");
+    if (mode === "extract") prompt.push("Return structured JSON with key insights.");
+    if (mode === "citations") prompt.push("Include citations for every claim.");
 
-    console.log(`[perplexity-meta-search] Completed ${successfulResults.length}/${queries.length} searches successfully`);
+    if (json_mode) prompt.push("Respond ONLY in valid JSON.");
+    if (followups) prompt.push("Generate 3 follow-up questions.");
 
-    if (aggregateResults) {
-      const aggregated = aggregateSearchResults(successfulResults);
+    const finalPrompt = prompt.join("\n");
+
+    console.log(`[perplexity-meta-search] Mode: ${mode}, Query: ${query.substring(0, 100)}...`);
+
+    const response = await fetch("https://api.perplexity.ai/chat/completions", {
+      method: "POST",
+      headers: {
+        "Authorization": `Bearer ${PERPLEXITY_API_KEY}`,
+        "Content-Type": "application/json"
+      },
+      body: JSON.stringify({
+        model: "sonar-pro",
+        messages: [
+          {
+            role: "user",
+            content: finalPrompt
+          }
+        ],
+        max_tokens: 4096,
+        temperature: 0.2
+      })
+    });
+
+    if (!response.ok) {
+      const errorText = await response.text();
+      console.error("[perplexity-meta-search] API error:", response.status, errorText);
       return new Response(
-        JSON.stringify({
-          success: true,
-          totalQueries: queries.length,
-          successfulQueries: successfulResults.length,
-          aggregated,
-          results,
-        }),
-        { headers: { ...corsHeaders, "Content-Type": "application/json" } }
+        JSON.stringify({ error: `Perplexity API error: ${response.status}` }),
+        { status: response.status, headers: { ...corsHeaders, "Content-Type": "application/json" } }
       );
     }
 
+    const data = await response.json();
+    console.log("[perplexity-meta-search] Search completed successfully");
+
+    return new Response(JSON.stringify(data), {
+      headers: { ...corsHeaders, "Content-Type": "application/json" }
+    });
+
+  } catch (err) {
+    console.error("[perplexity-meta-search] Error:", err);
     return new Response(
-      JSON.stringify({
-        success: true,
-        totalQueries: queries.length,
-        successfulQueries: successfulResults.length,
-        results,
-      }),
-      { headers: { ...corsHeaders, "Content-Type": "application/json" } }
-    );
-  } catch (error) {
-    console.error("[perplexity-meta-search] Error:", error);
-    return new Response(
-      JSON.stringify({ error: error instanceof Error ? error.message : "Unknown error" }),
+      JSON.stringify({ error: "Internal error", details: String(err) }),
       { status: 500, headers: { ...corsHeaders, "Content-Type": "application/json" } }
     );
   }
