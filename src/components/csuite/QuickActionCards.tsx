@@ -120,6 +120,12 @@ const PERSONA_ACTIONS: Record<string, QuickAction[]> = {
     { id: 'agent_oversight', label: 'Agent Oversight', description: 'Monitor agent activity', icon: Zap, color: 'hsl(150 70% 45%)', priority: 'medium' },
     { id: 'security_monitor', label: 'Security Monitor', description: 'Security event logs', icon: Shield, color: 'hsl(350 70% 50%)', priority: 'medium' },
   ],
+  entrepreneur: [
+    { id: 'launch_venture', label: 'Launch Venture', description: 'Start a new business initiative', icon: Target, color: 'hsl(var(--primary))', priority: 'high' },
+    { id: 'financial_autopilot', label: 'Financial Autopilot', description: 'Automated cash flow & invoicing', icon: DollarSign, color: 'hsl(150 70% 45%)', priority: 'high' },
+    { id: 'growth_optimizer', label: 'Growth Optimizer', description: 'AI-driven marketing campaigns', icon: TrendingUp, color: 'hsl(200 70% 50%)', priority: 'high' },
+    { id: 'idea_validator', label: 'Idea Validator', description: 'Validate new business ideas', icon: Zap, color: 'hsl(45 80% 50%)', priority: 'medium' },
+  ],
 };
 
 // Default actions for users without a persona
