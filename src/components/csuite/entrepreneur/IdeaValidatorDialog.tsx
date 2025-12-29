@@ -7,6 +7,8 @@ import { Label } from '@/components/ui/label';
 import { Badge } from '@/components/ui/badge';
 import { Progress } from '@/components/ui/progress';
 import { ScrollArea } from '@/components/ui/scroll-area';
+import { supabase } from '@/integrations/supabase/client';
+import { toast } from 'sonner';
 import { 
   Zap, 
   Search, 
@@ -18,10 +20,7 @@ import {
   DollarSign,
   Target,
   Sparkles,
-  BarChart3,
-  Globe,
-  Lightbulb,
-  Scale
+  Lightbulb
 } from 'lucide-react';
 
 interface IdeaValidatorDialogProps {
@@ -34,8 +33,15 @@ interface ValidationResult {
   score: number;
   status: 'strong' | 'moderate' | 'weak';
   insights: string[];
-  icon: React.ElementType;
 }
+
+const CATEGORY_ICONS: Record<string, React.ElementType> = {
+  'Market Demand': TrendingUp,
+  'Competition Analysis': Target,
+  'Revenue Potential': DollarSign,
+  'Target Audience': Users,
+  'Execution Feasibility': Zap,
+};
 
 export function IdeaValidatorDialog({ open, onOpenChange }: IdeaValidatorDialogProps) {
   const [ideaInput, setIdeaInput] = useState({
@@ -48,82 +54,40 @@ export function IdeaValidatorDialog({ open, onOpenChange }: IdeaValidatorDialogP
   const [validationComplete, setValidationComplete] = useState(false);
   const [validationResults, setValidationResults] = useState<ValidationResult[]>([]);
   const [overallScore, setOverallScore] = useState(0);
+  const [summary, setSummary] = useState('');
 
   const runValidation = async () => {
     setIsValidating(true);
     
-    // Simulate AI validation process
-    await new Promise(resolve => setTimeout(resolve, 2000));
-    
-    // Mock validation results
-    const results: ValidationResult[] = [
-      {
-        category: 'Market Demand',
-        score: 78,
-        status: 'strong',
-        insights: [
-          'Growing market with 15% YoY increase',
-          'Strong search volume for related keywords',
-          'Multiple successful competitors validate demand'
-        ],
-        icon: TrendingUp
-      },
-      {
-        category: 'Competition Analysis',
-        score: 65,
-        status: 'moderate',
-        insights: [
-          '3-5 established players in the space',
-          'Opportunity for differentiation exists',
-          'No dominant market leader yet'
-        ],
-        icon: Target
-      },
-      {
-        category: 'Revenue Potential',
-        score: 72,
-        status: 'strong',
-        insights: [
-          'Average customer LTV: $2,400/year',
-          'Subscription model is viable',
-          'Upsell opportunities identified'
-        ],
-        icon: DollarSign
-      },
-      {
-        category: 'Target Audience',
-        score: 85,
-        status: 'strong',
-        insights: [
-          'Well-defined audience segment',
-          'Reachable through digital channels',
-          'High willingness to pay for solutions'
-        ],
-        icon: Users
-      },
-      {
-        category: 'Execution Feasibility',
-        score: 58,
-        status: 'moderate',
-        insights: [
-          'Technical complexity is manageable',
-          'MVP can be built in 3-4 months',
-          'May require specialized skills'
-        ],
-        icon: Zap
-      },
-    ];
-    
-    setValidationResults(results);
-    setOverallScore(Math.round(results.reduce((sum, r) => sum + r.score, 0) / results.length));
-    setIsValidating(false);
-    setValidationComplete(true);
+    try {
+      const { data, error } = await supabase.functions.invoke('entrepreneur-validate-idea', {
+        body: ideaInput
+      });
+
+      if (error) throw error;
+      
+      if (data.error) {
+        throw new Error(data.error);
+      }
+
+      setValidationResults(data.results || []);
+      setOverallScore(data.overallScore || 0);
+      setSummary(data.summary || '');
+      setValidationComplete(true);
+      toast.success('Validation complete!');
+    } catch (error) {
+      console.error('Validation error:', error);
+      toast.error(error instanceof Error ? error.message : 'Failed to validate idea');
+    } finally {
+      setIsValidating(false);
+    }
   };
 
   const resetValidation = () => {
     setValidationComplete(false);
     setValidationResults([]);
     setOverallScore(0);
+    setSummary('');
   };
 
   const getScoreColor = (score: number) => {
@@ -217,7 +181,7 @@ export function IdeaValidatorDialog({ open, onOpenChange }: IdeaValidatorDialogP
                 {isValidating ? (
                   <>
                     <div className="animate-spin w-4 h-4 border-2 border-primary-foreground border-t-transparent rounded-full mr-2" />
-                    Analyzing...
+                    Analyzing with AI...
                   </>
                 ) : (
                   <>
@@ -253,12 +217,15 @@ export function IdeaValidatorDialog({ open, onOpenChange }: IdeaValidatorDialogP
                     </>
                   )}
                 </div>
+                {summary && (
+                  <p className="text-xs text-muted-foreground mt-2">{summary}</p>
+                )}
               </div>
 
               {/* Category Breakdown */}
               <div className="space-y-3">
                 {validationResults.map((result) => {
-                  const Icon = result.icon;
+                  const Icon = CATEGORY_ICONS[result.category] || Target;
                   return (
                     <div 
                       key={result.category}
@@ -300,9 +267,9 @@ export function IdeaValidatorDialog({ open, onOpenChange }: IdeaValidatorDialogP
                 <Button variant="outline" className="flex-1" onClick={resetValidation}>
                   Validate Another Idea
                 </Button>
-                <Button className="flex-1">
+                <Button className="flex-1" onClick={() => onOpenChange(false)}>
                   <Sparkles size={14} className="mr-2" />
-                  Refine & Improve
+                  Done
                 </Button>
               </div>
             </div>
