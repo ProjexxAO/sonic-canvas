@@ -7,6 +7,8 @@ import { Label } from '@/components/ui/label';
 import { Badge } from '@/components/ui/badge';
 import { Progress } from '@/components/ui/progress';
 import { ScrollArea } from '@/components/ui/scroll-area';
+import { supabase } from '@/integrations/supabase/client';
+import { toast } from 'sonner';
 import { 
   Rocket, 
   Target, 
@@ -18,7 +20,8 @@ import {
   Sparkles,
   FileText,
   TrendingUp,
-  Globe
+  AlertTriangle,
+  Download
 } from 'lucide-react';
 
 interface LaunchVentureDialogProps {
@@ -31,11 +34,14 @@ const STEPS = [
   { id: 'market', label: 'Target Market', icon: Users },
   { id: 'revenue', label: 'Revenue Model', icon: DollarSign },
   { id: 'roadmap', label: 'Roadmap', icon: Target },
-  { id: 'summary', label: 'Summary', icon: FileText },
+  { id: 'summary', label: 'Generate Plan', icon: FileText },
 ];
 
 export function LaunchVentureDialog({ open, onOpenChange }: LaunchVentureDialogProps) {
   const [currentStep, setCurrentStep] = useState(0);
+  const [isGenerating, setIsGenerating] = useState(false);
+  const [businessPlan, setBusinessPlan] = useState<any>(null);
+  const [planScore, setPlanScore] = useState<any>(null);
   const [ventureData, setVentureData] = useState({
     name: '',
     tagline: '',
@@ -71,10 +77,53 @@ export function LaunchVentureDialog({ open, onOpenChange }: LaunchVentureDialogP
     }
   };
 
-  const handleGeneratePlan = () => {
-    // TODO: Integrate with AI to generate full business plan
-    console.log('Generating business plan:', ventureData);
-    onOpenChange(false);
+  const handleGeneratePlan = async () => {
+    setIsGenerating(true);
+    try {
+      const { data, error } = await supabase.functions.invoke('entrepreneur-launch-venture', {
+        body: ventureData
+      });
+
+      if (error) throw error;
+      if (data.error) throw new Error(data.error);
+
+      setBusinessPlan(data.businessPlan);
+      setPlanScore(data.score);
+      toast.success('Business plan generated!');
+    } catch (error) {
+      console.error('Failed to generate plan:', error);
+      toast.error('Failed to generate business plan');
+    } finally {
+      setIsGenerating(false);
+    }
+  };
+
+  const resetDialog = () => {
+    setCurrentStep(0);
+    setBusinessPlan(null);
+    setPlanScore(null);
+    setVentureData({
+      name: '',
+      tagline: '',
+      problem: '',
+      solution: '',
+      targetAudience: '',
+      marketSize: '',
+      competitors: '',
+      uniqueValue: '',
+      revenueStreams: '',
+      pricing: '',
+      initialCosts: '',
+      milestones: '',
+      timeline: '',
+      resources: '',
+    });
+  };
+
+  const getScoreColor = (score: number) => {
+    if (score >= 70) return 'text-green-500';
+    if (score >= 50) return 'text-yellow-500';
+    return 'text-red-500';
   };
 
   const renderStepContent = () => {
@@ -278,15 +327,127 @@ export function LaunchVentureDialog({ open, onOpenChange }: LaunchVentureDialogP
         );
 
       case 'summary':
+        if (businessPlan) {
+          return (
+            <div className="space-y-4">
+              {/* Score Overview */}
+              {planScore && (
+                <div className="p-4 rounded-lg bg-gradient-to-r from-primary/10 to-purple-500/10 border border-primary/20">
+                  <div className="flex items-center justify-between mb-3">
+                    <span className="text-xs font-medium">Venture Score</span>
+                    <span className={`text-2xl font-bold ${getScoreColor(planScore.overall)}`}>
+                      {planScore.overall}/100
+                    </span>
+                  </div>
+                  <div className="grid grid-cols-3 gap-2 text-center">
+                    <div>
+                      <span className="text-[10px] text-muted-foreground">Market</span>
+                      <p className={`text-sm font-bold ${getScoreColor(planScore.market)}`}>{planScore.market}</p>
+                    </div>
+                    <div>
+                      <span className="text-[10px] text-muted-foreground">Execution</span>
+                      <p className={`text-sm font-bold ${getScoreColor(planScore.execution)}`}>{planScore.execution}</p>
+                    </div>
+                    <div>
+                      <span className="text-[10px] text-muted-foreground">Financials</span>
+                      <p className={`text-sm font-bold ${getScoreColor(planScore.financials)}`}>{planScore.financials}</p>
+                    </div>
+                  </div>
+                </div>
+              )}
+
+              <ScrollArea className="h-[250px]">
+                <div className="space-y-3 pr-4">
+                  {businessPlan.executiveSummary && (
+                    <div className="p-2 rounded bg-background border border-border">
+                      <span className="text-[10px] font-mono text-muted-foreground uppercase">Executive Summary</span>
+                      <p className="text-xs mt-1">{businessPlan.executiveSummary}</p>
+                    </div>
+                  )}
+
+                  {businessPlan.goToMarket && (
+                    <div className="p-2 rounded bg-background border border-border">
+                      <span className="text-[10px] font-mono text-muted-foreground uppercase">Go-To-Market Strategy</span>
+                      <p className="text-xs mt-1">{businessPlan.goToMarket.launchStrategy}</p>
+                      {businessPlan.goToMarket.channels && (
+                        <div className="flex flex-wrap gap-1 mt-2">
+                          {businessPlan.goToMarket.channels.map((ch: string, idx: number) => (
+                            <Badge key={idx} variant="secondary" className="text-[10px]">{ch}</Badge>
+                          ))}
+                        </div>
+                      )}
+                    </div>
+                  )}
+
+                  {businessPlan.financialProjections && (
+                    <div className="p-2 rounded bg-background border border-border">
+                      <span className="text-[10px] font-mono text-muted-foreground uppercase">Financial Projections</span>
+                      <div className="grid grid-cols-2 gap-2 mt-2">
+                        <div>
+                          <span className="text-[10px] text-muted-foreground">Year 1</span>
+                          <p className="text-xs font-medium">{businessPlan.financialProjections.year1Revenue}</p>
+                        </div>
+                        <div>
+                          <span className="text-[10px] text-muted-foreground">Year 2</span>
+                          <p className="text-xs font-medium">{businessPlan.financialProjections.year2Revenue}</p>
+                        </div>
+                        <div>
+                          <span className="text-[10px] text-muted-foreground">Breakeven</span>
+                          <p className="text-xs font-medium">{businessPlan.financialProjections.breakeven}</p>
+                        </div>
+                        <div>
+                          <span className="text-[10px] text-muted-foreground">Funding</span>
+                          <p className="text-xs font-medium">{businessPlan.financialProjections.fundingNeeded}</p>
+                        </div>
+                      </div>
+                    </div>
+                  )}
+
+                  {businessPlan.nextSteps && (
+                    <div className="p-2 rounded bg-green-500/10 border border-green-500/20">
+                      <span className="text-[10px] font-mono text-green-600 uppercase">Next Steps</span>
+                      <div className="space-y-1 mt-2">
+                        {businessPlan.nextSteps.map((step: string, idx: number) => (
+                          <div key={idx} className="flex items-start gap-2">
+                            <CheckCircle2 size={12} className="text-green-500 mt-0.5" />
+                            <span className="text-xs">{step}</span>
+                          </div>
+                        ))}
+                      </div>
+                    </div>
+                  )}
+
+                  {businessPlan.risksAndMitigation && (
+                    <div className="p-2 rounded bg-yellow-500/10 border border-yellow-500/20">
+                      <span className="text-[10px] font-mono text-yellow-600 uppercase">Risks & Mitigation</span>
+                      <div className="space-y-2 mt-2">
+                        {businessPlan.risksAndMitigation.map((item: any, idx: number) => (
+                          <div key={idx} className="text-xs">
+                            <div className="flex items-start gap-1">
+                              <AlertTriangle size={10} className="text-yellow-500 mt-0.5" />
+                              <span className="font-medium">{item.risk}</span>
+                            </div>
+                            <p className="text-muted-foreground ml-3">{item.mitigation}</p>
+                          </div>
+                        ))}
+                      </div>
+                    </div>
+                  )}
+                </div>
+              </ScrollArea>
+            </div>
+          );
+        }
+
         return (
           <div className="space-y-4">
             <div className="p-3 rounded-lg bg-primary/10 border border-primary/20">
               <div className="flex items-center gap-2 mb-2">
                 <FileText size={16} className="text-primary" />
-                <span className="text-sm font-medium">Venture Summary</span>
+                <span className="text-sm font-medium">Ready to Generate</span>
               </div>
               <p className="text-xs text-muted-foreground">
-                Review your venture details and generate your business plan.
+                Review your inputs and generate a comprehensive AI-powered business plan.
               </p>
             </div>
 
@@ -345,7 +506,10 @@ export function LaunchVentureDialog({ open, onOpenChange }: LaunchVentureDialogP
   };
 
   return (
-    <Dialog open={open} onOpenChange={onOpenChange}>
+    <Dialog open={open} onOpenChange={(open) => {
+      if (!open) resetDialog();
+      onOpenChange(open);
+    }}>
       <DialogContent className="max-w-lg">
         <DialogHeader>
           <DialogTitle className="flex items-center gap-2">
@@ -391,26 +555,57 @@ export function LaunchVentureDialog({ open, onOpenChange }: LaunchVentureDialogP
 
         {/* Navigation */}
         <div className="flex items-center justify-between pt-4 border-t border-border">
-          <Button
-            variant="outline"
-            size="sm"
-            onClick={prevStep}
-            disabled={currentStep === 0}
-          >
-            <ArrowLeft size={14} className="mr-1" />
-            Back
-          </Button>
-          
-          {currentStep === STEPS.length - 1 ? (
-            <Button size="sm" onClick={handleGeneratePlan}>
-              <Sparkles size={14} className="mr-1" />
-              Generate Business Plan
-            </Button>
+          {businessPlan ? (
+            <>
+              <Button
+                variant="outline"
+                size="sm"
+                onClick={resetDialog}
+              >
+                Start New Venture
+              </Button>
+              <Button size="sm" onClick={() => onOpenChange(false)}>
+                <CheckCircle2 size={14} className="mr-1" />
+                Done
+              </Button>
+            </>
           ) : (
-            <Button size="sm" onClick={nextStep}>
-              Next
-              <ArrowRight size={14} className="ml-1" />
-            </Button>
+            <>
+              <Button
+                variant="outline"
+                size="sm"
+                onClick={prevStep}
+                disabled={currentStep === 0}
+              >
+                <ArrowLeft size={14} className="mr-1" />
+                Back
+              </Button>
+              
+              {currentStep === STEPS.length - 1 ? (
+                <Button 
+                  size="sm" 
+                  onClick={handleGeneratePlan}
+                  disabled={isGenerating || !ventureData.name}
+                >
+                  {isGenerating ? (
+                    <>
+                      <div className="animate-spin w-4 h-4 border-2 border-primary-foreground border-t-transparent rounded-full mr-2" />
+                      Generating...
+                    </>
+                  ) : (
+                    <>
+                      <Sparkles size={14} className="mr-1" />
+                      Generate Business Plan
+                    </>
+                  )}
+                </Button>
+              ) : (
+                <Button size="sm" onClick={nextStep}>
+                  Next
+                  <ArrowRight size={14} className="ml-1" />
+                </Button>
+              )}
+            </>
           )}
         </div>
       </DialogContent>

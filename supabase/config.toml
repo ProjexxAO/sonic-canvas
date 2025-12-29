@@ -29,3 +29,12 @@ verify_jwt = false
 
 [functions.atlas-enterprise-query]
 verify_jwt = false
+
+[functions.entrepreneur-validate-idea]
+verify_jwt = false
+
+[functions.entrepreneur-growth-optimizer]
+verify_jwt = false
+
+[functions.entrepreneur-launch-venture]
+verify_jwt = false
