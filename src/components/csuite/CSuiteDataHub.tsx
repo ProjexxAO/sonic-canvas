@@ -51,6 +51,7 @@ import { UserPersonaManager } from './UserPersonaManager';
 import { PersonaPermissionsManager } from './PersonaPermissionsManager';
 import { PersonaLayoutRenderer } from './persona-layouts/PersonaLayoutRenderer';
 import { QuickActionCards } from './QuickActionCards';
+import { LaunchVentureDialog, GrowthOptimizerDialog, IdeaValidatorDialog } from './entrepreneur';
 import { useAtlasEnterprise } from '@/hooks/useAtlasEnterprise';
 import { usePersonaPermissions } from '@/hooks/usePersonaPermissions';
 import { useDataHubController } from '@/hooks/useDataHubController';
@@ -160,6 +161,11 @@ export function CSuiteDataHub({ userId, agents = [], agentsLoading = false }: CS
   const [enterpriseQuery, setEnterpriseQuery] = useState(dataHubController.enterpriseQuery);
   const [isSuperAdmin, setIsSuperAdmin] = useState(false);
   const fileInputRef = useRef<HTMLInputElement>(null);
+  
+  // Entrepreneur dialog states
+  const [launchVentureOpen, setLaunchVentureOpen] = useState(false);
+  const [growthOptimizerOpen, setGrowthOptimizerOpen] = useState(false);
+  const [ideaValidatorOpen, setIdeaValidatorOpen] = useState(false);
 
   // Sync tab state with controller
   const setActiveTab = useCallback((tab: TabId) => {
@@ -587,10 +593,10 @@ export function CSuiteDataHub({ userId, agents = [], agentsLoading = false }: CS
                           resource_allocation: () => setActiveTab('insights'),
                           system_health: () => setActiveTab('insights'),
                           
-                          // Entrepreneur-specific actions
-                          launch_venture: () => setActiveTab('insights'),
-                          growth_optimizer: () => setActiveTab('insights'),
-                          idea_validator: () => setActiveTab('insights'),
+                          // Entrepreneur-specific actions - open dedicated dialogs
+                          launch_venture: () => setLaunchVentureOpen(true),
+                          growth_optimizer: () => setGrowthOptimizerOpen(true),
+                          idea_validator: () => setIdeaValidatorOpen(true),
                           
                           // Default fallback to insights
                         };
@@ -1175,6 +1181,20 @@ export function CSuiteDataHub({ userId, agents = [], agentsLoading = false }: CS
           onNavigate={(report) => setSelectedReport(report)}
         />
       )}
+
+      {/* Entrepreneur Dialogs */}
+      <LaunchVentureDialog 
+        open={launchVentureOpen} 
+        onOpenChange={setLaunchVentureOpen} 
+      />
+      <GrowthOptimizerDialog 
+        open={growthOptimizerOpen} 
+        onOpenChange={setGrowthOptimizerOpen} 
+      />
+      <IdeaValidatorDialog 
+        open={ideaValidatorOpen} 
+        onOpenChange={setIdeaValidatorOpen} 
+      />
     </>
   );
 }
