@@ -537,11 +537,70 @@ export function CSuiteDataHub({ userId, agents = [], agentsLoading = false }: CS
                     <QuickActionCards 
                       personaId={userPersona}
                       onActionClick={(actionId) => {
-                        // Handle action clicks - for now, switch to insights tab for analysis actions
-                        if (['strategic_review', 'financial_forecast', 'threat_assessment', 'compliance_status'].includes(actionId)) {
+                        // Route quick actions to appropriate destinations
+                        const actionRoutes: Record<string, () => void> = {
+                          // Insights/Analysis actions
+                          strategic_review: () => setActiveTab('insights'),
+                          financial_forecast: () => setActiveTab('insights'),
+                          threat_assessment: () => setActiveTab('insights'),
+                          compliance_status: () => setActiveTab('insights'),
+                          risk_assessment: () => setActiveTab('insights'),
+                          kpi_dashboard: () => setActiveTab('insights'),
+                          security_posture: () => setActiveTab('insights'),
+                          innovation_radar: () => setActiveTab('insights'),
+                          
+                          // Library/Data actions
+                          browse_data: () => setActiveTab('library'),
+                          recent_docs: () => handleDomainClick('documents'),
+                          contract_review: () => handleDomainClick('documents'),
+                          view_tasks: () => handleDomainClick('tasks'),
+                          action_items: () => handleDomainClick('tasks'),
+                          
+                          // Financial domain actions
+                          cash_flow: () => handleDomainClick('financials'),
+                          expense_report: () => handleDomainClick('financials'),
+                          compliance_check: () => handleDomainClick('financials'),
+                          revenue_forecast: () => handleDomainClick('financials'),
+                          financial_autopilot: () => handleDomainClick('financials'),
+                          
+                          // Calendar/Events actions
+                          check_calendar: () => handleDomainClick('events'),
+                          meeting_prep: () => handleDomainClick('events'),
+                          content_calendar: () => handleDomainClick('events'),
+                          
+                          // Communications actions
+                          stakeholder_brief: () => handleDomainClick('communications'),
+                          customer_outreach: () => handleDomainClick('communications'),
+                          customer_insights: () => handleDomainClick('communications'),
+                          
+                          // Knowledge actions
+                          tech_roadmap: () => handleDomainClick('knowledge'),
+                          ip_portfolio: () => handleDomainClick('knowledge'),
+                          
+                          // HR/People actions
+                          workforce_analytics: () => setActiveTab('insights'),
+                          talent_pipeline: () => setActiveTab('insights'),
+                          engagement_score: () => setActiveTab('insights'),
+                          
+                          // Operations actions
+                          operations_metrics: () => setActiveTab('insights'),
+                          resource_allocation: () => setActiveTab('insights'),
+                          system_health: () => setActiveTab('insights'),
+                          
+                          // Entrepreneur-specific actions
+                          launch_venture: () => setActiveTab('insights'),
+                          growth_optimizer: () => setActiveTab('insights'),
+                          idea_validator: () => setActiveTab('insights'),
+                          
+                          // Default fallback to insights
+                        };
+                        
+                        const route = actionRoutes[actionId];
+                        if (route) {
+                          route();
+                        } else {
+                          // Default: open insights tab for unhandled actions
                           setActiveTab('insights');
-                        } else if (['browse_data', 'recent_docs', 'contract_review', 'view_tasks'].includes(actionId)) {
-                          setActiveTab('library');
                         }
                       }}
                       stats={stats}
