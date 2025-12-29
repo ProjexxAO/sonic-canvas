@@ -32,7 +32,8 @@ import {
   AlertTriangle,
   Bell,
   Target,
-  Shield
+  Shield,
+  Rocket
 } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { ScrollArea } from '@/components/ui/scroll-area';
@@ -97,6 +98,7 @@ const PERSONAS: Persona[] = [
   { id: 'clo', label: 'CLO', icon: Scale, description: 'Legal matters & contracts', category: 'legal', focusAreas: ['legal_matters', 'contracts', 'intellectual_property', 'litigation'], matchTitles: ['clo', 'chief legal', 'general counsel', 'legal director', 'head of legal'] },
   { id: 'cco', label: 'CCO', icon: CheckSquare, description: 'Compliance & regulatory', category: 'legal', focusAreas: ['compliance', 'regulatory', 'ethics', 'governance'], matchTitles: ['cco', 'chief compliance', 'compliance director', 'regulatory affairs', 'governance'] },
   { id: 'admin', label: 'Admin', icon: Cpu, description: 'System administration & oversight', category: 'admin', focusAreas: ['system_health', 'user_management', 'agent_oversight', 'platform_analytics', 'security_monitoring'], matchTitles: ['admin', 'administrator', 'superadmin', 'system admin'] },
+  { id: 'entrepreneur', label: 'Entrepreneur', icon: Rocket, description: 'Business growth & automation', category: 'executive', focusAreas: ['revenue_growth', 'cash_flow', 'customer_acquisition', 'automation', 'opportunity_radar', 'idea_validation'], matchTitles: ['entrepreneur', 'founder', 'owner', 'solopreneur', 'business owner', 'small business', 'startup founder'] },
 ];
 
 const PERSONA_CATEGORIES: { id: PersonaCategory; label: string }[] = [
