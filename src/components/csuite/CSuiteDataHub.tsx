@@ -380,9 +380,34 @@ export function CSuiteDataHub({ userId, agents = [], agentsLoading = false }: CS
   // Get current persona info
   const currentPersona = PERSONAS.find(p => p.id === userPersona);
 
-  // Calculate quick stats for command center
-  const activeAgents = agents.filter(a => a.status === 'ACTIVE').length;
-  const processingAgents = agents.filter(a => a.status === 'PROCESSING').length;
+  // Map personas to relevant agent sectors
+  const PERSONA_SECTORS: Record<string, string[]> = {
+    cfo: ['FINANCE'],
+    ceo: ['FINANCE', 'DATA', 'UTILITY'],
+    coo: ['UTILITY', 'DATA'],
+    cto: ['DATA', 'SECURITY', 'UTILITY'],
+    ciso: ['SECURITY', 'DATA'],
+    cmo: ['CREATIVE', 'DATA'],
+    cro: ['FINANCE', 'DATA'],
+    chro: ['DATA', 'UTILITY'],
+    chief_people: ['DATA', 'UTILITY'],
+    chief_of_staff: ['FINANCE', 'DATA', 'UTILITY'],
+    clo: ['DATA', 'UTILITY'],
+    cco: ['DATA', 'SECURITY'],
+    admin: ['FINANCE', 'BIOTECH', 'SECURITY', 'DATA', 'CREATIVE', 'UTILITY'],
+    entrepreneur: ['FINANCE', 'DATA', 'CREATIVE', 'UTILITY'],
+  };
+
+  // Calculate quick stats for command center - filtered by persona's relevant sectors
+  const relevantSectors = userPersona ? PERSONA_SECTORS[userPersona] || [] : [];
+  const activeAgents = agents.filter(a => 
+    a.status === 'ACTIVE' && 
+    (relevantSectors.length === 0 || relevantSectors.includes(a.sector))
+  ).length;
+  const processingAgents = agents.filter(a => 
+    a.status === 'PROCESSING' && 
+    (relevantSectors.length === 0 || relevantSectors.includes(a.sector))
+  ).length;
 
   return (
     <>
