@@ -474,7 +474,7 @@ export function CSuiteDataHub({ userId, agents = [], agentsLoading = false }: CS
                         </div>
                         <div className="flex items-baseline gap-1">
                           <span className="text-lg font-mono text-primary">{activeAgents}</span>
-                          <span className="text-[9px] text-muted-foreground">active</span>
+                          <span className="text-[9px] text-muted-foreground">available</span>
                           {processingAgents > 0 && (
                             <Badge variant="secondary" className="text-[8px] ml-1">{processingAgents} proc</Badge>
                           )}
