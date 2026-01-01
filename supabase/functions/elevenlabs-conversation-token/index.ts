@@ -23,9 +23,9 @@ serve(async (req) => {
       );
     }
 
-    console.log("[elevenlabs-conversation-token] Fetching conversation token for agent:", ELEVENLABS_AGENT_ID);
+    console.log("[elevenlabs-conversation-token] Fetching signed URL for agent:", ELEVENLABS_AGENT_ID);
 
-    // Use the token endpoint for WebRTC connections (more stable than signed_url)
+    // Use the signed URL endpoint for WebSocket connections
     const response = await fetch(
       `https://api.elevenlabs.io/v1/convai/conversation/get_signed_url?agent_id=${ELEVENLABS_AGENT_ID}`,
       {
@@ -48,7 +48,8 @@ serve(async (req) => {
     const data = await response.json();
     console.log("[elevenlabs-conversation-token] Successfully obtained signed URL");
 
-    return new Response(JSON.stringify(data), {
+    // Return with signed_url property to match what the frontend expects
+    return new Response(JSON.stringify({ signed_url: data.signed_url }), {
       headers: { ...corsHeaders, "Content-Type": "application/json" },
     });
   } catch (error) {
