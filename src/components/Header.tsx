@@ -18,7 +18,8 @@ import {
   Download,
   MessageCircle,
   Wrench,
-  Shield
+  Shield,
+  Plug
 } from 'lucide-react';
 
 interface HeaderProps {
@@ -108,6 +109,13 @@ export default function Header({ onToggleAudio, audioEnabled, user, onSignOut }:
         
         {user && (
           <>
+            <button
+              onClick={() => navigate('/integrations')}
+              className="p-2 text-muted-foreground hover:text-foreground transition-colors"
+              title="Integrations"
+            >
+              <Plug size={18} />
+            </button>
             <button
               onClick={() => navigate('/governance')}
               className="p-2 text-muted-foreground hover:text-foreground transition-colors"
