@@ -33,8 +33,10 @@ import {
   Bell,
   Target,
   Shield,
-  Rocket
+  Rocket,
+  Plug
 } from 'lucide-react';
+import { useNavigate } from 'react-router-dom';
 import { Button } from '@/components/ui/button';
 import { ScrollArea } from '@/components/ui/scroll-area';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
@@ -118,6 +120,7 @@ const CONNECTOR_CONFIG: Record<string, { label: string; icon: typeof Cloud; colo
 };
 
 export function CSuiteDataHub({ userId, agents = [], agentsLoading = false }: CSuiteDataHubProps) {
+  const navigate = useNavigate();
   const {
     stats,
     connectors,
@@ -450,39 +453,51 @@ export function CSuiteDataHub({ userId, agents = [], agentsLoading = false }: CS
             </Button>
           </div>
 
-          {/* Restructured Tabs - 4 Main Sections */}
-          <TabsList className="w-full justify-start rounded-none border-b border-border bg-transparent px-1 py-0 h-8 overflow-x-auto">
-            <TabsTrigger 
-              value="command" 
-              className="text-[10px] font-mono px-2 py-1 rounded-none data-[state=active]:border-b-2 data-[state=active]:border-primary data-[state=active]:bg-transparent flex items-center gap-1"
-            >
-              <Command size={10} />
-              COMMAND
-            </TabsTrigger>
-            <TabsTrigger 
-              value="insights" 
-              className="text-[10px] font-mono px-2 py-1 rounded-none data-[state=active]:border-b-2 data-[state=active]:border-primary data-[state=active]:bg-transparent flex items-center gap-1"
-            >
-              <Lightbulb size={10} />
-              INSIGHTS
-            </TabsTrigger>
-            <TabsTrigger 
-              value="library" 
-              className="text-[10px] font-mono px-2 py-1 rounded-none data-[state=active]:border-b-2 data-[state=active]:border-primary data-[state=active]:bg-transparent flex items-center gap-1"
-            >
-              <Library size={10} />
-              LIBRARY
-            </TabsTrigger>
-            {canManagePersonas && (
+          {/* Restructured Tabs - 4 Main Sections + Marketplace Shortcut */}
+          <div className="flex items-center border-b border-border">
+            <TabsList className="flex-1 justify-start rounded-none bg-transparent px-1 py-0 h-8 overflow-x-auto border-none">
               <TabsTrigger 
-                value="admin" 
+                value="command" 
                 className="text-[10px] font-mono px-2 py-1 rounded-none data-[state=active]:border-b-2 data-[state=active]:border-primary data-[state=active]:bg-transparent flex items-center gap-1"
               >
-                <Settings size={10} />
-                ADMIN
+                <Command size={10} />
+                COMMAND
               </TabsTrigger>
-            )}
-          </TabsList>
+              <TabsTrigger 
+                value="insights" 
+                className="text-[10px] font-mono px-2 py-1 rounded-none data-[state=active]:border-b-2 data-[state=active]:border-primary data-[state=active]:bg-transparent flex items-center gap-1"
+              >
+                <Lightbulb size={10} />
+                INSIGHTS
+              </TabsTrigger>
+              <TabsTrigger 
+                value="library" 
+                className="text-[10px] font-mono px-2 py-1 rounded-none data-[state=active]:border-b-2 data-[state=active]:border-primary data-[state=active]:bg-transparent flex items-center gap-1"
+              >
+                <Library size={10} />
+                LIBRARY
+              </TabsTrigger>
+              {canManagePersonas && (
+                <TabsTrigger 
+                  value="admin" 
+                  className="text-[10px] font-mono px-2 py-1 rounded-none data-[state=active]:border-b-2 data-[state=active]:border-primary data-[state=active]:bg-transparent flex items-center gap-1"
+                >
+                  <Settings size={10} />
+                  ADMIN
+                </TabsTrigger>
+              )}
+            </TabsList>
+            {/* Marketplace Shortcut */}
+            <Button
+              variant="ghost"
+              size="sm"
+              className="h-7 px-2 text-[10px] font-mono flex items-center gap-1 text-muted-foreground hover:text-primary mr-1"
+              onClick={() => navigate('/integrations')}
+            >
+              <Plug size={10} />
+              MARKETPLACE
+            </Button>
+          </div>
 
           {/* Content */}
           <div className="flex-1 overflow-hidden">
