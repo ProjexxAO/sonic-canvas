@@ -129,6 +129,7 @@ export function CSuiteDataHub({ userId, agents = [], agentsLoading = false }: CS
     uploadFile,
     generateReport,
     fetchDomainItems,
+    deleteItem,
     refresh,
   } = useCSuiteData(userId);
 
@@ -1195,6 +1196,7 @@ export function CSuiteDataHub({ userId, agents = [], agentsLoading = false }: CS
         domain={expandedDomain}
         open={drawerOpen}
         onOpenChange={setDrawerOpen}
+        onDelete={deleteItem}
       />
 
       {/* Report Viewer */}

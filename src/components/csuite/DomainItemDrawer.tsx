@@ -1,3 +1,4 @@
+import { useState } from 'react';
 import { format } from 'date-fns';
 import { 
   Mail, 
@@ -11,7 +12,8 @@ import {
   MapPin,
   Users,
   Tag,
-  AlertCircle
+  AlertCircle,
+  Trash2
 } from 'lucide-react';
 import {
   Drawer,
@@ -22,6 +24,16 @@ import {
   DrawerHeader,
   DrawerTitle,
 } from '@/components/ui/drawer';
+import {
+  AlertDialog,
+  AlertDialogAction,
+  AlertDialogCancel,
+  AlertDialogContent,
+  AlertDialogDescription,
+  AlertDialogFooter,
+  AlertDialogHeader,
+  AlertDialogTitle,
+} from '@/components/ui/alert-dialog';
 import { Button } from '@/components/ui/button';
 import { Badge } from '@/components/ui/badge';
 import { ScrollArea } from '@/components/ui/scroll-area';
@@ -42,6 +54,7 @@ interface DomainItemDrawerProps {
   domain: DomainKey | null;
   open: boolean;
   onOpenChange: (open: boolean) => void;
+  onDelete?: (domain: DomainKey, itemId: string, filePath?: string) => Promise<boolean>;
 }
 
 const DOMAIN_ICONS: Record<DomainKey, typeof Mail> = {
@@ -62,11 +75,28 @@ const DOMAIN_COLORS: Record<DomainKey, string> = {
   knowledge: 'hsl(220 70% 55%)',
 };
 
-export function DomainItemDrawer({ item, domain, open, onOpenChange }: DomainItemDrawerProps) {
+export function DomainItemDrawer({ item, domain, open, onOpenChange, onDelete }: DomainItemDrawerProps) {
+  const [showDeleteConfirm, setShowDeleteConfirm] = useState(false);
+  const [isDeleting, setIsDeleting] = useState(false);
+
   if (!item || !domain) return null;
 
   const Icon = DOMAIN_ICONS[domain];
   const color = DOMAIN_COLORS[domain];
+
+  const handleDelete = async () => {
+    if (!onDelete) return;
+    
+    setIsDeleting(true);
+    const filePath = domain === 'documents' ? (item as DocumentItem).file_path : undefined;
+    const success = await onDelete(domain, item.id, filePath);
+    setIsDeleting(false);
+    
+    if (success) {
+      setShowDeleteConfirm(false);
+      onOpenChange(false);
+    }
+  };
 
   const renderDomainSpecificContent = () => {
     switch (domain) {
@@ -298,14 +328,48 @@ export function DomainItemDrawer({ item, domain, open, onOpenChange }: DomainIte
         </ScrollArea>
 
         <DrawerFooter className="border-t border-border">
-          <DrawerClose asChild>
-            <Button variant="outline" size="sm" className="text-xs font-mono">
-              <X size={12} className="mr-1" />
-              CLOSE
-            </Button>
-          </DrawerClose>
+          <div className="flex gap-2 w-full">
+            {onDelete && (
+              <Button 
+                variant="destructive" 
+                size="sm" 
+                className="text-xs font-mono"
+                onClick={() => setShowDeleteConfirm(true)}
+              >
+                <Trash2 size={12} className="mr-1" />
+                DELETE
+              </Button>
+            )}
+            <DrawerClose asChild>
+              <Button variant="outline" size="sm" className="text-xs font-mono flex-1">
+                <X size={12} className="mr-1" />
+                CLOSE
+              </Button>
+            </DrawerClose>
+          </div>
         </DrawerFooter>
       </DrawerContent>
+
+      <AlertDialog open={showDeleteConfirm} onOpenChange={setShowDeleteConfirm}>
+        <AlertDialogContent>
+          <AlertDialogHeader>
+            <AlertDialogTitle>Delete {domain.slice(0, -1)}?</AlertDialogTitle>
+            <AlertDialogDescription>
+              This will permanently delete "{item.title}". This action cannot be undone.
+            </AlertDialogDescription>
+          </AlertDialogHeader>
+          <AlertDialogFooter>
+            <AlertDialogCancel disabled={isDeleting}>Cancel</AlertDialogCancel>
+            <AlertDialogAction 
+              onClick={handleDelete} 
+              disabled={isDeleting}
+              className="bg-destructive text-destructive-foreground hover:bg-destructive/90"
+            >
+              {isDeleting ? 'Deleting...' : 'Delete'}
+            </AlertDialogAction>
+          </AlertDialogFooter>
+        </AlertDialogContent>
+      </AlertDialog>
     </Drawer>
   );
 }
