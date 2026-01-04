@@ -393,6 +393,53 @@ export function useCSuiteData(userId: string | undefined) {
     }
   }, [userId, fetchReports]);
 
+  // Delete domain item
+  const deleteItem = useCallback(async (domain: DomainKey, itemId: string, filePath?: string) => {
+    if (!userId) {
+      toast.error('Please sign in to delete items');
+      return false;
+    }
+
+    try {
+      const client = supabase as any;
+      const tableName = DOMAIN_TABLE_MAP[domain];
+
+      // If it's a document with a file, delete from storage first
+      if (domain === 'documents' && filePath) {
+        const { error: storageError } = await supabase.storage
+          .from('csuite-documents')
+          .remove([filePath]);
+        
+        if (storageError) {
+          console.warn('Storage delete warning:', storageError);
+        }
+      }
+
+      // Delete the database record
+      const { error } = await client
+        .from(tableName)
+        .delete()
+        .eq('id', itemId)
+        .eq('user_id', userId);
+
+      if (error) throw error;
+
+      // Update local state
+      setDomainItems(prev => ({
+        ...prev,
+        [domain]: prev[domain].filter(item => item.id !== itemId)
+      }));
+
+      toast.success('Item deleted');
+      fetchStats();
+      return true;
+    } catch (error) {
+      console.error('Delete error:', error);
+      toast.error('Failed to delete item');
+      return false;
+    }
+  }, [userId, fetchStats]);
+
   // Initial fetch
   useEffect(() => {
     if (userId) {
@@ -429,6 +476,7 @@ export function useCSuiteData(userId: string | undefined) {
     connectProvider,
     generateReport,
     fetchDomainItems,
+    deleteItem,
     refresh,
   };
 }
