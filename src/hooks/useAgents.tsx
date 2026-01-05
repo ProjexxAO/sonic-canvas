@@ -141,19 +141,25 @@ export function useAgents() {
     const waveforms: WaveformType[] = ['sine', 'square', 'sawtooth', 'triangle'];
     const sectorColors: Record<AgentSector, string> = {
       FINANCE: '#00ffd5',
-      BIOTECH: '#00ff88',
+      OPERATIONS: '#00ff88',
+      ANALYTICS: '#9945ff',
       SECURITY: '#ff3366',
-      DATA: '#9945ff',
       CREATIVE: '#ffaa00',
-      UTILITY: '#4488ff',
+      RESEARCH: '#4488ff',
+      INFRASTRUCTURE: '#888888',
+      COMMUNICATIONS: '#ff9900',
+      STRATEGY: '#00ccff',
     };
     const sectorFrequencies: Record<AgentSector, number> = {
       FINANCE: 440,
-      BIOTECH: 523.25,
+      OPERATIONS: 523.25,
+      ANALYTICS: 392,
       SECURITY: 329.63,
-      DATA: 392,
       CREATIVE: 493.88,
-      UTILITY: 369.99,
+      RESEARCH: 369.99,
+      INFRASTRUCTURE: 349.23,
+      COMMUNICATIONS: 415.30,
+      STRATEGY: 466.16,
     };
 
     const newAgent = {
@@ -178,7 +184,7 @@ export function useAgents() {
     try {
       const { data, error } = await supabase
         .from('sonic_agents')
-        .insert(newAgent)
+        .insert([newAgent])
         .select()
         .single();
 
