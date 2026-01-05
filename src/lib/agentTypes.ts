@@ -1,8 +1,9 @@
 // Atlas Sonic OS - Agent Types
 
 import { WaveformType, SonicSignature } from './audioEngine';
+import { getAgentEnhancement, getCapabilitiesForSector } from './aiCapabilities';
 
-export type AgentSector = 'FINANCE' | 'BIOTECH' | 'SECURITY' | 'DATA' | 'CREATIVE' | 'UTILITY';
+export type AgentSector = 'FINANCE' | 'OPERATIONS' | 'ANALYTICS' | 'SECURITY' | 'CREATIVE' | 'RESEARCH' | 'INFRASTRUCTURE' | 'COMMUNICATIONS' | 'STRATEGY';
 export type AgentStatus = 'IDLE' | 'ACTIVE' | 'PROCESSING' | 'ERROR' | 'DORMANT';
 export type AgentClass = 'BASIC' | 'ADVANCED' | 'ELITE' | 'SINGULARITY';
 
@@ -52,20 +53,26 @@ export const generateSonicDNA = (sector: AgentSector): SonicSignature => {
   const waveforms: WaveformType[] = ['sine', 'square', 'sawtooth', 'triangle'];
   const sectorColors: Record<AgentSector, string> = {
     FINANCE: '#00ffd5',
-    BIOTECH: '#00ff88',
+    OPERATIONS: '#00ff88',
+    ANALYTICS: '#9945ff',
     SECURITY: '#ff3366',
-    DATA: '#9945ff',
     CREATIVE: '#ffaa00',
-    UTILITY: '#4488ff',
+    RESEARCH: '#4488ff',
+    INFRASTRUCTURE: '#888888',
+    COMMUNICATIONS: '#ff9900',
+    STRATEGY: '#00ccff',
   };
   
   const sectorFrequencies: Record<AgentSector, number> = {
     FINANCE: 440,
-    BIOTECH: 523.25,
+    OPERATIONS: 523.25,
+    ANALYTICS: 392,
     SECURITY: 329.63,
-    DATA: 392,
     CREATIVE: 493.88,
-    UTILITY: 369.99,
+    RESEARCH: 369.99,
+    INFRASTRUCTURE: 349.23,
+    COMMUNICATIONS: 415.30,
+    STRATEGY: 466.16,
   };
 
   return {
@@ -77,72 +84,165 @@ export const generateSonicDNA = (sector: AgentSector): SonicSignature => {
   };
 };
 
-// Generate code artifact based on sector
+// Generate code artifact based on sector with AI capability enhancement
 export const generateCodeArtifact = (name: string, sector: AgentSector): string => {
+  const capabilities = getCapabilitiesForSector(sector);
+  const capabilityNames = capabilities.slice(0, 3).map(c => c.name).join(', ');
+  
   const templates: Record<AgentSector, string> = {
-    FINANCE: `// ${name} - Financial Agent
-async function analyzeMarket(data) {
-  const patterns = await detectPatterns(data);
-  const signals = calculateSignals(patterns);
+    FINANCE: `// ${name} - Financial Intelligence Agent
+// Capabilities: ${capabilityNames}
+async function analyzeFinancials(data, context) {
+  // RAG-powered financial forecasting
+  const marketData = await retrieveMarketContext(data.symbols);
+  const patterns = await detectPatterns(marketData);
+  const compliance = await checkCompliance(patterns, context.regulations);
+  
   return {
-    recommendation: signals.primary,
-    confidence: signals.confidence,
-    timestamp: Date.now()
+    forecast: patterns.prediction,
+    riskScore: patterns.volatility,
+    compliance: compliance.status,
+    recommendations: await generateRecommendations(patterns),
+    confidence: patterns.confidence,
+    auditTrail: compliance.audit
   };
 }`,
-    BIOTECH: `// ${name} - BioTech Agent
-async function processGenome(sequence) {
-  const markers = identifyMarkers(sequence);
-  const analysis = runMLPipeline(markers);
+    OPERATIONS: `// ${name} - Operations Intelligence Agent
+// Capabilities: ${capabilityNames}
+async function optimizeOperations(workflow, constraints) {
+  // Agentic workflow automation
+  const supplyChainState = await getSupplyChainStatus();
+  const maintenanceSchedule = await predictMaintenance(workflow.assets);
+  const optimizedPlan = await orchestrateAgents(workflow, constraints);
+  
   return {
-    findings: analysis.results,
-    mutations: analysis.variants,
-    confidence: analysis.score
+    optimizedWorkflow: optimizedPlan,
+    bottlenecks: optimizedPlan.identified_issues,
+    maintenanceAlerts: maintenanceSchedule.upcoming,
+    efficiencyGain: optimizedPlan.efficiency_delta,
+    autonomousActions: optimizedPlan.automated_tasks
   };
 }`,
-    SECURITY: `// ${name} - Security Agent
-async function scanNetwork(target) {
-  const vulnerabilities = await deepScan(target);
-  const threats = classifyThreats(vulnerabilities);
+    ANALYTICS: `// ${name} - Analytics Intelligence Agent
+// Capabilities: ${capabilityNames}
+async function analyzeData(query, dataSources) {
+  // GraphRAG-powered multi-hop reasoning
+  const entityGraph = await buildKnowledgeGraph(dataSources);
+  const queryPlan = await adaptiveRetrieval(query, entityGraph);
+  const insights = await executeMultiHopQuery(queryPlan);
+  
   return {
-    status: threats.length ? 'ALERT' : 'CLEAR',
-    threats: threats,
-    patches: generatePatches(threats)
+    findings: insights.results,
+    relationships: insights.entityLinks,
+    confidence: insights.scores,
+    visualization: await generateVisualization(insights),
+    recommendations: insights.actionableItems
   };
 }`,
-    DATA: `// ${name} - Data Agent
-async function processStream(input) {
-  const parsed = await parseDataStream(input);
-  const enriched = enrichWithMetadata(parsed);
+    SECURITY: `// ${name} - Security Intelligence Agent
+// Capabilities: ${capabilityNames}
+async function assessSecurity(target, scope) {
+  // Predictive cybersecurity with access control
+  const threatIntel = await retrieveThreatIntelligence();
+  const vulnerabilities = await predictVulnerabilities(target, threatIntel);
+  const accessAudit = await auditAccessControls(target);
+  
   return {
-    records: enriched.length,
-    schema: inferSchema(enriched),
-    output: enriched
+    threatLevel: vulnerabilities.riskScore,
+    predictions: vulnerabilities.emergingThreats,
+    accessIssues: accessAudit.violations,
+    remediations: await generateRemediations(vulnerabilities),
+    complianceStatus: accessAudit.compliance
   };
 }`,
-    CREATIVE: `// ${name} - Creative Agent
-async function generateContent(prompt) {
-  const concepts = expandConcepts(prompt);
-  const variations = await createVariations(concepts);
+    CREATIVE: `// ${name} - Creative Intelligence Agent
+// Capabilities: ${capabilityNames}
+async function createContent(brief, context) {
+  // RAG-powered content optimization
+  const marketResearch = await retrieveMarketContext(brief.audience);
+  const contentPlan = await generateContentStrategy(brief, marketResearch);
+  const optimizedContent = await optimizeForEngagement(contentPlan);
+  
   return {
-    primary: variations[0],
-    alternatives: variations.slice(1),
-    style: analyzeStyle(variations)
+    content: optimizedContent.primary,
+    variations: optimizedContent.alternatives,
+    seoScore: optimizedContent.optimization,
+    personalization: optimizedContent.audienceMatch,
+    performance_prediction: optimizedContent.expectedEngagement
   };
 }`,
-    UTILITY: `// ${name} - Utility Agent
-async function executeTask(params) {
-  const validated = validateParams(params);
-  const result = await runTask(validated);
+    RESEARCH: `// ${name} - Research Intelligence Agent
+// Capabilities: ${capabilityNames}
+async function conductResearch(query, sources) {
+  // Self-reflective RAG with knowledge synthesis
+  const relevantDocs = await semanticSearch(query, sources);
+  const validatedInfo = await selfReflectiveValidation(relevantDocs);
+  const synthesis = await synthesizeFindings(validatedInfo);
+  
   return {
-    success: result.status === 'OK',
-    output: result.data,
-    metrics: result.performance
+    findings: synthesis.keyInsights,
+    sources: synthesis.citations,
+    confidence: validatedInfo.reliabilityScores,
+    gaps: synthesis.knowledgeGaps,
+    recommendations: synthesis.furtherResearch
+  };
+}`,
+    INFRASTRUCTURE: `// ${name} - Infrastructure Intelligence Agent
+// Capabilities: ${capabilityNames}
+async function manageInfrastructure(systems, metrics) {
+  // Predictive maintenance with adaptive systems
+  const healthStatus = await monitorSystemHealth(systems);
+  const predictions = await predictFailures(healthStatus, metrics);
+  const optimizations = await generateOptimizations(healthStatus);
+  
+  return {
+    systemHealth: healthStatus.overall,
+    predictions: predictions.upcomingIssues,
+    automatedFixes: optimizations.autoRemediations,
+    capacityPlanning: optimizations.scaling,
+    codeIntelligence: await analyzeCodeQuality(systems)
+  };
+}`,
+    COMMUNICATIONS: `// ${name} - Communications Intelligence Agent
+// Capabilities: ${capabilityNames}
+async function manageCommunications(channels, context) {
+  // Customer intelligence with sales enablement
+  const sentimentData = await analyzeSentiment(channels);
+  const customerProfiles = await enrichCustomerData(context);
+  const recommendations = await generateOutreach(customerProfiles);
+  
+  return {
+    sentiment: sentimentData.overall,
+    insights: customerProfiles.keyFindings,
+    draftResponses: recommendations.suggested,
+    personalization: recommendations.tailoring,
+    leadScores: customerProfiles.prioritization
+  };
+}`,
+    STRATEGY: `// ${name} - Strategy Intelligence Agent
+// Capabilities: ${capabilityNames}
+async function analyzeStrategy(objectives, context) {
+  // Executive decision intelligence with self-reflection
+  const marketAnalysis = await conductMarketAnalysis(context);
+  const scenarioModels = await buildScenarios(objectives, marketAnalysis);
+  const validatedStrategy = await selfReflectiveValidation(scenarioModels);
+  
+  return {
+    strategicOptions: validatedStrategy.recommendations,
+    riskAssessment: validatedStrategy.risks,
+    scenarios: scenarioModels.projections,
+    executiveSummary: await generateBriefing(validatedStrategy),
+    confidence: validatedStrategy.auditedConfidence
   };
 }`,
   };
 
   return templates[sector];
+};
+
+// Get enhanced description for an agent based on sector capabilities
+export const getEnhancedAgentDescription = (sector: AgentSector): string => {
+  return getAgentEnhancement(sector);
 };
 
 // Create a new agent

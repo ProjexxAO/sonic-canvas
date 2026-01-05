@@ -20,11 +20,14 @@ import {
 
 const sectorIcons: Record<AgentSector, typeof Cpu> = {
   FINANCE: Zap,
-  BIOTECH: Activity,
+  OPERATIONS: Activity,
+  ANALYTICS: Database,
   SECURITY: Shield,
-  DATA: Database,
   CREATIVE: Sparkles,
-  UTILITY: Wrench,
+  RESEARCH: Database,
+  INFRASTRUCTURE: Wrench,
+  COMMUNICATIONS: Activity,
+  STRATEGY: Zap,
 };
 
 const statusColors: Record<string, string> = {
@@ -37,22 +40,28 @@ const statusColors: Record<string, string> = {
 
 // Distinctive colors for each sector
 const sectorColors: Record<AgentSector, string> = {
-  FINANCE: '#00ff88',      // Bright green
-  BIOTECH: '#ff6b9d',      // Pink
-  SECURITY: '#ff4444',     // Red
-  DATA: '#00d4ff',         // Cyan
-  CREATIVE: '#a855f7',     // Purple
-  UTILITY: '#ffa500',      // Orange
+  FINANCE: '#00ffd5',
+  OPERATIONS: '#00ff88',
+  ANALYTICS: '#9945ff',
+  SECURITY: '#ff3366',
+  CREATIVE: '#ffaa00',
+  RESEARCH: '#4488ff',
+  INFRASTRUCTURE: '#888888',
+  COMMUNICATIONS: '#ff9900',
+  STRATEGY: '#00ccff',
 };
 
 // Card shape styles per sector
 const sectorStyles: Record<AgentSector, string> = {
-  FINANCE: 'rounded-none border-l-4',           // Sharp, angular
-  BIOTECH: 'rounded-2xl',                       // Organic, rounded
-  SECURITY: 'rounded clip-corner',              // Military style
-  DATA: 'rounded-lg border-t-4',                // Database style
-  CREATIVE: 'rounded-xl skew-effect',           // Creative flair
-  UTILITY: 'rounded border-dashed border-2',    // Utility/tool style
+  FINANCE: 'rounded-none border-l-4',
+  OPERATIONS: 'rounded-2xl',
+  ANALYTICS: 'rounded-lg border-t-4',
+  SECURITY: 'rounded clip-corner',
+  CREATIVE: 'rounded-xl skew-effect',
+  RESEARCH: 'rounded-lg',
+  INFRASTRUCTURE: 'rounded border-dashed border-2',
+  COMMUNICATIONS: 'rounded-xl',
+  STRATEGY: 'rounded-none border-r-4',
 };
 
 interface AgentCardProps {
