@@ -19,10 +19,10 @@ export default function SynthesisConsole({
   isProcessing 
 }: SynthesisConsoleProps) {
   const [input, setInput] = useState('');
-  const [selectedSector, setSelectedSector] = useState<AgentSector>('ANALYTICS');
+  const [selectedSector, setSelectedSector] = useState<AgentSector>('DATA');
   const outputRef = useRef<HTMLDivElement>(null);
 
-  const sectors: AgentSector[] = ['FINANCE', 'OPERATIONS', 'ANALYTICS', 'SECURITY', 'CREATIVE', 'RESEARCH', 'INFRASTRUCTURE', 'COMMUNICATIONS', 'STRATEGY'];
+  const sectors: AgentSector[] = ['FINANCE', 'DATA', 'SECURITY', 'CREATIVE', 'BIOTECH', 'UTILITY'];
 
   useEffect(() => {
     if (outputRef.current) {
