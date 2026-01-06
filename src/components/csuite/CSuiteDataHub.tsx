@@ -543,42 +543,7 @@ export function CSuiteDataHub({ userId, agents = [], agentsLoading = false }: CS
                       </div>
                     </div>
 
-                    {/* Domain Access Permissions - Visual indicator */}
-                    {userPersona && (
-                      <div className="p-2 rounded bg-background border border-border">
-                        <div className="flex items-center gap-2 mb-2">
-                          <Shield size={10} className="text-primary" />
-                          <span className="text-[9px] font-mono text-muted-foreground">DOMAIN ACCESS</span>
-                          <Badge variant="outline" className="text-[7px] font-mono ml-auto">
-                            {currentPersona?.label}
-                          </Badge>
-                        </div>
-                        <div className="flex flex-wrap gap-1">
-                          {DOMAIN_CONFIG.map(({ key, label, icon: Icon, color }) => {
-                            const canView = personaPerms.canViewDomain(key);
-                            return (
-                              <Badge 
-                                key={key}
-                                variant={canView ? 'default' : 'outline'}
-                                className={`text-[8px] font-mono flex items-center gap-1 ${
-                                  canView 
-                                    ? 'bg-primary/20 text-primary border-primary/30' 
-                                    : 'opacity-50 text-muted-foreground'
-                                }`}
-                              >
-                                <Icon size={8} style={{ color: canView ? color : undefined }} />
-                                {label}
-                                {canView ? (
-                                  <Eye size={6} className="ml-0.5" />
-                                ) : (
-                                  <X size={6} className="ml-0.5" />
-                                )}
-                              </Badge>
-                            );
-                          })}
-                        </div>
-                      </div>
-                    )}
+                    {/* Removed Domain Access Permissions section - users see accessible domains in Library */}
 
                     {/* Quick Action Cards - Persona-specific */}
                     <QuickActionCards 
@@ -703,62 +668,10 @@ export function CSuiteDataHub({ userId, agents = [], agentsLoading = false }: CS
                             ))}
                           </div>
                         </div>
-
-                        {/* Connectors Status */}
-                        <div className="p-2 rounded bg-background border border-border">
-                          <div className="flex items-center gap-2 mb-2">
-                            <Cloud size={12} className="text-primary" />
-                            <span className="text-[10px] font-mono text-muted-foreground">CONNECTORS</span>
-                          </div>
-                          <div className="space-y-1">
-                            {connectors.map((conn) => {
-                              const config = CONNECTOR_CONFIG[conn.provider];
-                              if (!config) return null;
-                              const ConnIcon = config.icon;
-                              return (
-                                <div key={conn.provider} className="flex items-center justify-between">
-                                  <div className="flex items-center gap-2">
-                                    <ConnIcon size={10} style={{ color: config.color }} />
-                                    <span className="text-[9px] font-mono">{config.label}</span>
-                                  </div>
-                                  <span className={`text-[8px] font-mono ${
-                                    conn.status === 'connected' ? 'text-green-500' : 'text-muted-foreground'
-                                  }`}>
-                                    {conn.status.toUpperCase()}
-                                  </span>
-                                </div>
-                              );
-                            })}
-                          </div>
-                        </div>
                       </div>
                     )}
 
-                    {/* Upload Section */}
-                    <div className="p-2 rounded bg-background border border-border">
-                      <div className="flex items-center gap-2 mb-2">
-                        <Upload size={12} className="text-secondary" />
-                        <span className="text-[10px] font-mono text-muted-foreground">QUICK UPLOAD</span>
-                      </div>
-                      <input
-                        ref={fileInputRef}
-                        type="file"
-                        multiple
-                        accept=".pdf,.doc,.docx,.xls,.xlsx,.csv,.txt,.md,.pptx"
-                        onChange={handleFileUpload}
-                        className="hidden"
-                        id="file-upload"
-                      />
-                      <Button
-                        variant="outline"
-                        size="sm"
-                        className="w-full text-[10px] font-mono"
-                        onClick={() => fileInputRef.current?.click()}
-                        disabled={isUploading || !userId}
-                      >
-                        {isUploading ? 'UPLOADING...' : 'SELECT FILES'}
-                      </Button>
-                    </div>
+                    {/* Upload moved to Library tab */}
                   </div>
                 </ScrollArea>
               </TabsContent>
@@ -795,39 +708,7 @@ export function CSuiteDataHub({ userId, agents = [], agentsLoading = false }: CS
                       </div>
                     </div>
 
-                    {/* Quick Actions */}
-                    <div className="flex gap-2">
-                      <Button
-                        variant="outline"
-                        size="sm"
-                        className="flex-1 h-7 text-[9px] font-mono"
-                        onClick={() => enterprise.findCorrelations()}
-                        disabled={enterprise.isLoading}
-                      >
-                        {enterprise.isLoading ? <RefreshCw size={10} className="animate-spin mr-1" /> : <Activity size={10} className="mr-1" />}
-                        CORRELATE
-                      </Button>
-                      <Button
-                        variant="outline"
-                        size="sm"
-                        className="flex-1 h-7 text-[9px] font-mono"
-                        onClick={() => enterprise.analyzeEnterprise()}
-                        disabled={enterprise.isLoading}
-                      >
-                        {enterprise.isLoading ? <RefreshCw size={10} className="animate-spin mr-1" /> : <Zap size={10} className="mr-1" />}
-                        ANALYZE
-                      </Button>
-                      <Button
-                        variant="outline"
-                        size="sm"
-                        className="flex-1 h-7 text-[9px] font-mono"
-                        onClick={() => enterprise.getRecommendations()}
-                        disabled={enterprise.isLoading}
-                      >
-                        {enterprise.isLoading ? <RefreshCw size={10} className="animate-spin mr-1" /> : <Sparkles size={10} className="mr-1" />}
-                        RECOMMEND
-                      </Button>
-                    </div>
+                    {/* Removed manual CORRELATE/ANALYZE/RECOMMEND buttons - Atlas handles this automatically */}
 
                     {/* Query Results */}
                     {enterprise.lastQuery && (
@@ -928,61 +809,56 @@ export function CSuiteDataHub({ userId, agents = [], agentsLoading = false }: CS
               <TabsContent value="library" className="h-full m-0">
                 <ScrollArea className="h-full">
                   <div className="p-2 space-y-3">
-                    {/* Domain Browser - Filtered by persona permissions */}
+                    {/* Upload Section */}
+                    <div className="p-2 rounded bg-background border border-border">
+                      <div className="flex items-center gap-2 mb-2">
+                        <Upload size={12} className="text-secondary" />
+                        <span className="text-[10px] font-mono text-muted-foreground">UPLOAD</span>
+                      </div>
+                      <input
+                        ref={fileInputRef}
+                        type="file"
+                        multiple
+                        accept=".pdf,.doc,.docx,.xls,.xlsx,.csv,.txt,.md,.pptx"
+                        onChange={handleFileUpload}
+                        className="hidden"
+                        id="file-upload"
+                      />
+                      <Button
+                        variant="outline"
+                        size="sm"
+                        className="w-full text-[10px] font-mono"
+                        onClick={() => fileInputRef.current?.click()}
+                        disabled={isUploading || !userId}
+                      >
+                        {isUploading ? 'UPLOADING...' : 'SELECT FILES'}
+                      </Button>
+                    </div>
+
+                    {/* Domain Browser - Only show accessible domains */}
                     <div className="p-2 rounded bg-background border border-border">
                       <div className="flex items-center gap-2 mb-2">
                         <FolderOpen size={12} className="text-primary" />
                         <span className="text-[10px] font-mono text-muted-foreground">DATA DOMAINS</span>
-                        {userPersona && (
-                          <Badge variant="outline" className="text-[7px] font-mono ml-1">
-                            {currentPersona?.label} VIEW
-                          </Badge>
-                        )}
-                        <span className="text-[9px] text-muted-foreground ml-auto">
-                          {DOMAIN_CONFIG.filter(d => personaPerms.canViewDomain(d.key)).reduce((sum, d) => sum + stats[d.key], 0)} accessible
-                        </span>
                       </div>
                       <div className="grid grid-cols-2 gap-2">
-                        {DOMAIN_CONFIG.map(({ key, label, icon: Icon, color }) => {
-                          const canView = personaPerms.canViewDomain(key);
-                          
-                          if (!canView) {
-                            // Show restricted domains as disabled
-                            return (
-                              <div
-                                key={key}
-                                className="p-2 rounded bg-muted/10 border border-border/50 opacity-50 cursor-not-allowed"
-                              >
-                                <div className="flex items-center gap-2 mb-1">
-                                  <Icon size={12} className="text-muted-foreground" />
-                                  <span className="text-[10px] font-mono text-muted-foreground">
-                                    {label}
-                                  </span>
-                                  <Shield size={8} className="text-muted-foreground ml-auto" />
-                                </div>
-                                <span className="text-[9px] font-mono text-muted-foreground">Restricted</span>
-                              </div>
-                            );
-                          }
-                          
-                          return (
-                            <button
-                              key={key}
-                              onClick={() => handleDomainClick(key)}
-                              className="p-2 rounded bg-muted/30 hover:bg-muted/50 border border-transparent hover:border-primary/30 transition-all text-left group"
-                            >
-                              <div className="flex items-center gap-2 mb-1">
-                                <Icon size={12} style={{ color }} />
-                                <span className="text-[10px] font-mono text-muted-foreground group-hover:text-foreground transition-colors">
-                                  {label}
-                                </span>
-                              </div>
-                              <span className="text-lg font-mono text-foreground group-hover:text-primary transition-colors">
-                                {stats[key]}
+                        {DOMAIN_CONFIG.filter(({ key }) => personaPerms.canViewDomain(key)).map(({ key, label, icon: Icon, color }) => (
+                          <button
+                            key={key}
+                            onClick={() => handleDomainClick(key)}
+                            className="p-2 rounded bg-muted/30 hover:bg-muted/50 border border-transparent hover:border-primary/30 transition-all text-left group"
+                          >
+                            <div className="flex items-center gap-2 mb-1">
+                              <Icon size={12} style={{ color }} />
+                              <span className="text-[10px] font-mono text-muted-foreground group-hover:text-foreground transition-colors">
+                                {label}
                               </span>
-                            </button>
-                          );
-                        })}
+                            </div>
+                            <span className="text-lg font-mono text-foreground group-hover:text-primary transition-colors">
+                              {stats[key]}
+                            </span>
+                          </button>
+                        ))}
                       </div>
                     </div>
 
