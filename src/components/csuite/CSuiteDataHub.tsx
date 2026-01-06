@@ -402,16 +402,8 @@ export function CSuiteDataHub({ userId, agents = [], agentsLoading = false }: CS
     entrepreneur: ['FINANCE', 'DATA', 'CREATIVE', 'UTILITY'],
   };
 
-  // Calculate quick stats for command center - filtered by persona's relevant sectors
+  // Relevant sectors used for persona-specific agent filtering (passed to layouts)
   const relevantSectors = userPersona ? PERSONA_SECTORS[userPersona] || [] : [];
-  const activeAgents = agents.filter(a => 
-    a.status === 'ACTIVE' && 
-    (relevantSectors.length === 0 || relevantSectors.includes(a.sector))
-  ).length;
-  const processingAgents = agents.filter(a => 
-    a.status === 'PROCESSING' && 
-    (relevantSectors.length === 0 || relevantSectors.includes(a.sector))
-  ).length;
 
   return (
     <>
@@ -506,42 +498,6 @@ export function CSuiteDataHub({ userId, agents = [], agentsLoading = false }: CS
               <TabsContent value="command" className="h-full m-0">
                 <ScrollArea className="h-full">
                   <div className="p-2 space-y-3">
-                    {/* Quick Status Bar */}
-                    <div className="flex gap-2">
-                      <div className="flex-1 p-2 rounded bg-primary/10 border border-primary/30">
-                        <div className="flex items-center gap-2 mb-1">
-                          <Activity size={10} className="text-primary" />
-                          <span className="text-[9px] font-mono text-muted-foreground">AGENTS</span>
-                        </div>
-                        <div className="flex items-baseline gap-1">
-                          <span className="text-lg font-mono text-primary">{activeAgents}</span>
-                          <span className="text-[9px] text-muted-foreground">available</span>
-                          {processingAgents > 0 && (
-                            <Badge variant="secondary" className="text-[8px] ml-1">{processingAgents} proc</Badge>
-                          )}
-                        </div>
-                      </div>
-                      <div className="flex-1 p-2 rounded bg-secondary/10 border border-secondary/30">
-                        <div className="flex items-center gap-2 mb-1">
-                          <FolderOpen size={10} className="text-secondary" />
-                          <span className="text-[9px] font-mono text-muted-foreground">DATA</span>
-                        </div>
-                        <div className="flex items-baseline gap-1">
-                          <span className="text-lg font-mono text-secondary">{totalItems}</span>
-                          <span className="text-[9px] text-muted-foreground">items</span>
-                        </div>
-                      </div>
-                      <div className="flex-1 p-2 rounded bg-green-500/10 border border-green-500/30">
-                        <div className="flex items-center gap-2 mb-1">
-                          <FileText size={10} className="text-green-500" />
-                          <span className="text-[9px] font-mono text-muted-foreground">REPORTS</span>
-                        </div>
-                        <div className="flex items-baseline gap-1">
-                          <span className="text-lg font-mono text-green-500">{reports.length}</span>
-                          <span className="text-[9px] text-muted-foreground">generated</span>
-                        </div>
-                      </div>
-                    </div>
 
                     {/* Removed Domain Access Permissions section - users see accessible domains in Library */}
 
