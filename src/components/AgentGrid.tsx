@@ -20,14 +20,11 @@ import {
 
 const sectorIcons: Record<AgentSector, typeof Cpu> = {
   FINANCE: Zap,
-  OPERATIONS: Activity,
-  ANALYTICS: Database,
+  DATA: Database,
   SECURITY: Shield,
   CREATIVE: Sparkles,
-  RESEARCH: Database,
-  INFRASTRUCTURE: Wrench,
-  COMMUNICATIONS: Activity,
-  STRATEGY: Zap,
+  BIOTECH: Activity,
+  UTILITY: Wrench,
 };
 
 const statusColors: Record<string, string> = {
@@ -41,27 +38,21 @@ const statusColors: Record<string, string> = {
 // Distinctive colors for each sector
 const sectorColors: Record<AgentSector, string> = {
   FINANCE: '#00ffd5',
-  OPERATIONS: '#00ff88',
-  ANALYTICS: '#9945ff',
+  DATA: '#00ff88',
   SECURITY: '#ff3366',
   CREATIVE: '#ffaa00',
-  RESEARCH: '#4488ff',
-  INFRASTRUCTURE: '#888888',
-  COMMUNICATIONS: '#ff9900',
-  STRATEGY: '#00ccff',
+  BIOTECH: '#4488ff',
+  UTILITY: '#888888',
 };
 
 // Card shape styles per sector
 const sectorStyles: Record<AgentSector, string> = {
   FINANCE: 'rounded-none border-l-4',
-  OPERATIONS: 'rounded-2xl',
-  ANALYTICS: 'rounded-lg border-t-4',
+  DATA: 'rounded-2xl',
   SECURITY: 'rounded clip-corner',
   CREATIVE: 'rounded-xl skew-effect',
-  RESEARCH: 'rounded-lg',
-  INFRASTRUCTURE: 'rounded border-dashed border-2',
-  COMMUNICATIONS: 'rounded-xl',
-  STRATEGY: 'rounded-none border-r-4',
+  BIOTECH: 'rounded-lg',
+  UTILITY: 'rounded border-dashed border-2',
 };
 
 interface AgentCardProps {

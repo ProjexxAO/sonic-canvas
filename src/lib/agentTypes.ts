@@ -3,7 +3,7 @@
 import { WaveformType, SonicSignature } from './audioEngine';
 import { getAgentEnhancement, getCapabilitiesForSector } from './aiCapabilities';
 
-export type AgentSector = 'FINANCE' | 'OPERATIONS' | 'ANALYTICS' | 'SECURITY' | 'CREATIVE' | 'RESEARCH' | 'INFRASTRUCTURE' | 'COMMUNICATIONS' | 'STRATEGY';
+export type AgentSector = 'FINANCE' | 'SECURITY' | 'CREATIVE' | 'DATA' | 'BIOTECH' | 'UTILITY';
 export type AgentStatus = 'IDLE' | 'ACTIVE' | 'PROCESSING' | 'ERROR' | 'DORMANT';
 export type AgentClass = 'BASIC' | 'ADVANCED' | 'ELITE' | 'SINGULARITY';
 
@@ -53,26 +53,20 @@ export const generateSonicDNA = (sector: AgentSector): SonicSignature => {
   const waveforms: WaveformType[] = ['sine', 'square', 'sawtooth', 'triangle'];
   const sectorColors: Record<AgentSector, string> = {
     FINANCE: '#00ffd5',
-    OPERATIONS: '#00ff88',
-    ANALYTICS: '#9945ff',
+    DATA: '#00ff88',
     SECURITY: '#ff3366',
     CREATIVE: '#ffaa00',
-    RESEARCH: '#4488ff',
-    INFRASTRUCTURE: '#888888',
-    COMMUNICATIONS: '#ff9900',
-    STRATEGY: '#00ccff',
+    BIOTECH: '#4488ff',
+    UTILITY: '#888888',
   };
   
   const sectorFrequencies: Record<AgentSector, number> = {
     FINANCE: 440,
-    OPERATIONS: 523.25,
-    ANALYTICS: 392,
+    DATA: 523.25,
     SECURITY: 329.63,
     CREATIVE: 493.88,
-    RESEARCH: 369.99,
-    INFRASTRUCTURE: 349.23,
-    COMMUNICATIONS: 415.30,
-    STRATEGY: 466.16,
+    BIOTECH: 369.99,
+    UTILITY: 349.23,
   };
 
   return {
@@ -107,23 +101,7 @@ async function analyzeFinancials(data, context) {
     auditTrail: compliance.audit
   };
 }`,
-    OPERATIONS: `// ${name} - Operations Intelligence Agent
-// Capabilities: ${capabilityNames}
-async function optimizeOperations(workflow, constraints) {
-  // Agentic workflow automation
-  const supplyChainState = await getSupplyChainStatus();
-  const maintenanceSchedule = await predictMaintenance(workflow.assets);
-  const optimizedPlan = await orchestrateAgents(workflow, constraints);
-  
-  return {
-    optimizedWorkflow: optimizedPlan,
-    bottlenecks: optimizedPlan.identified_issues,
-    maintenanceAlerts: maintenanceSchedule.upcoming,
-    efficiencyGain: optimizedPlan.efficiency_delta,
-    autonomousActions: optimizedPlan.automated_tasks
-  };
-}`,
-    ANALYTICS: `// ${name} - Analytics Intelligence Agent
+    DATA: `// ${name} - Data Intelligence Agent
 // Capabilities: ${capabilityNames}
 async function analyzeData(query, dataSources) {
   // GraphRAG-powered multi-hop reasoning
@@ -171,7 +149,7 @@ async function createContent(brief, context) {
     performance_prediction: optimizedContent.expectedEngagement
   };
 }`,
-    RESEARCH: `// ${name} - Research Intelligence Agent
+    BIOTECH: `// ${name} - Biotech Intelligence Agent
 // Capabilities: ${capabilityNames}
 async function conductResearch(query, sources) {
   // Self-reflective RAG with knowledge synthesis
@@ -187,7 +165,7 @@ async function conductResearch(query, sources) {
     recommendations: synthesis.furtherResearch
   };
 }`,
-    INFRASTRUCTURE: `// ${name} - Infrastructure Intelligence Agent
+    UTILITY: `// ${name} - Utility Intelligence Agent
 // Capabilities: ${capabilityNames}
 async function manageInfrastructure(systems, metrics) {
   // Predictive maintenance with adaptive systems
@@ -201,38 +179,6 @@ async function manageInfrastructure(systems, metrics) {
     automatedFixes: optimizations.autoRemediations,
     capacityPlanning: optimizations.scaling,
     codeIntelligence: await analyzeCodeQuality(systems)
-  };
-}`,
-    COMMUNICATIONS: `// ${name} - Communications Intelligence Agent
-// Capabilities: ${capabilityNames}
-async function manageCommunications(channels, context) {
-  // Customer intelligence with sales enablement
-  const sentimentData = await analyzeSentiment(channels);
-  const customerProfiles = await enrichCustomerData(context);
-  const recommendations = await generateOutreach(customerProfiles);
-  
-  return {
-    sentiment: sentimentData.overall,
-    insights: customerProfiles.keyFindings,
-    draftResponses: recommendations.suggested,
-    personalization: recommendations.tailoring,
-    leadScores: customerProfiles.prioritization
-  };
-}`,
-    STRATEGY: `// ${name} - Strategy Intelligence Agent
-// Capabilities: ${capabilityNames}
-async function analyzeStrategy(objectives, context) {
-  // Executive decision intelligence with self-reflection
-  const marketAnalysis = await conductMarketAnalysis(context);
-  const scenarioModels = await buildScenarios(objectives, marketAnalysis);
-  const validatedStrategy = await selfReflectiveValidation(scenarioModels);
-  
-  return {
-    strategicOptions: validatedStrategy.recommendations,
-    riskAssessment: validatedStrategy.risks,
-    scenarios: scenarioModels.projections,
-    executiveSummary: await generateBriefing(validatedStrategy),
-    confidence: validatedStrategy.auditedConfidence
   };
 }`,
   };

@@ -141,25 +141,19 @@ export function useAgents() {
     const waveforms: WaveformType[] = ['sine', 'square', 'sawtooth', 'triangle'];
     const sectorColors: Record<AgentSector, string> = {
       FINANCE: '#00ffd5',
-      OPERATIONS: '#00ff88',
-      ANALYTICS: '#9945ff',
+      DATA: '#00ff88',
       SECURITY: '#ff3366',
       CREATIVE: '#ffaa00',
-      RESEARCH: '#4488ff',
-      INFRASTRUCTURE: '#888888',
-      COMMUNICATIONS: '#ff9900',
-      STRATEGY: '#00ccff',
+      BIOTECH: '#4488ff',
+      UTILITY: '#888888',
     };
     const sectorFrequencies: Record<AgentSector, number> = {
       FINANCE: 440,
-      OPERATIONS: 523.25,
-      ANALYTICS: 392,
+      DATA: 523.25,
       SECURITY: 329.63,
       CREATIVE: 493.88,
-      RESEARCH: 369.99,
-      INFRASTRUCTURE: 349.23,
-      COMMUNICATIONS: 415.30,
-      STRATEGY: 466.16,
+      BIOTECH: 369.99,
+      UTILITY: 349.23,
     };
 
     const newAgent = {

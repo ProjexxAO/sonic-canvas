@@ -14,20 +14,17 @@ import { Button } from '@/components/ui/button';
 import { toast } from 'sonner';
 import { supabase } from '@/integrations/supabase/client';
 
-const SECTORS: AgentSector[] = ['FINANCE', 'OPERATIONS', 'ANALYTICS', 'SECURITY', 'CREATIVE', 'RESEARCH', 'INFRASTRUCTURE', 'COMMUNICATIONS', 'STRATEGY'];
+const SECTORS: AgentSector[] = ['FINANCE', 'DATA', 'SECURITY', 'CREATIVE', 'BIOTECH', 'UTILITY'];
 const STATUSES: AgentStatus[] = ['IDLE', 'ACTIVE', 'PROCESSING', 'ERROR', 'DORMANT'];
 const CLASSES: AgentClass[] = ['BASIC', 'ADVANCED', 'ELITE', 'SINGULARITY'];
 
 const sectorColors: Record<AgentSector, string> = {
   FINANCE: '#00ffd5',
-  OPERATIONS: '#00ff88',
-  ANALYTICS: '#9945ff',
+  DATA: '#00ff88',
   SECURITY: '#ff3366',
   CREATIVE: '#ffaa00',
-  RESEARCH: '#4488ff',
-  INFRASTRUCTURE: '#888888',
-  COMMUNICATIONS: '#ff9900',
-  STRATEGY: '#00ccff',
+  BIOTECH: '#4488ff',
+  UTILITY: '#888888',
 };
 
 export interface AgentFiltersState {
