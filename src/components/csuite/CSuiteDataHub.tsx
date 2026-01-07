@@ -154,7 +154,7 @@ export function CSuiteDataHub({ userId, agents = [], agentsLoading = false }: CS
   });
   
   // Sync local state with controller state
-  type TabId = 'command' | 'insights' | 'library' | 'admin';
+  type TabId = 'command' | 'insights' | 'admin';
   const [activeTab, setActiveTabLocal] = useState<TabId>(dataHubController.activeTab);
   const [generatingPersona, setGeneratingPersona] = useState<string | null>(null);
   const [expandedDomain, setExpandedDomainLocal] = useState<DomainKey | null>(dataHubController.expandedDomain);
@@ -462,13 +462,6 @@ export function CSuiteDataHub({ userId, agents = [], agentsLoading = false }: CS
                 <Lightbulb size={10} />
                 INSIGHTS
               </TabsTrigger>
-              <TabsTrigger 
-                value="library" 
-                className="text-[10px] font-mono px-2 py-1 rounded-none data-[state=active]:border-b-2 data-[state=active]:border-primary data-[state=active]:bg-transparent flex items-center gap-1"
-              >
-                <Library size={10} />
-                LIBRARY
-              </TabsTrigger>
               {canManagePersonas && (
                 <TabsTrigger 
                   value="admin" 
@@ -517,8 +510,8 @@ export function CSuiteDataHub({ userId, agents = [], agentsLoading = false }: CS
                           security_posture: () => setActiveTab('insights'),
                           innovation_radar: () => setActiveTab('insights'),
                           
-                          // Library/Data actions
-                          browse_data: () => setActiveTab('library'),
+                          // Data actions - now in command tab
+                          browse_data: () => {}, // Data is now in Command tab
                           recent_docs: () => handleDomainClick('documents'),
                           contract_review: () => handleDomainClick('documents'),
                           view_tasks: () => handleDomainClick('tasks'),
@@ -627,7 +620,99 @@ export function CSuiteDataHub({ userId, agents = [], agentsLoading = false }: CS
                       </div>
                     )}
 
-                    {/* Upload moved to Library tab */}
+                    {/* Data & Reports Section */}
+                    <div className="border-t border-border pt-3 space-y-3">
+                      {/* Upload Section */}
+                      <div className="p-2 rounded bg-background border border-border">
+                        <div className="flex items-center gap-2 mb-2">
+                          <Upload size={12} className="text-secondary" />
+                          <span className="text-[10px] font-mono text-muted-foreground">UPLOAD</span>
+                        </div>
+                        <input
+                          ref={fileInputRef}
+                          type="file"
+                          multiple
+                          accept=".pdf,.doc,.docx,.xls,.xlsx,.csv,.txt,.md,.pptx"
+                          onChange={handleFileUpload}
+                          className="hidden"
+                          id="file-upload"
+                        />
+                        <Button
+                          variant="outline"
+                          size="sm"
+                          className="w-full text-[10px] font-mono"
+                          onClick={() => fileInputRef.current?.click()}
+                          disabled={isUploading || !userId}
+                        >
+                          {isUploading ? 'UPLOADING...' : 'SELECT FILES'}
+                        </Button>
+                      </div>
+
+                      {/* Domain Browser - Only show accessible domains */}
+                      <div className="p-2 rounded bg-background border border-border">
+                        <div className="flex items-center gap-2 mb-2">
+                          <FolderOpen size={12} className="text-primary" />
+                          <span className="text-[10px] font-mono text-muted-foreground">DATA DOMAINS</span>
+                        </div>
+                        <div className="grid grid-cols-2 gap-2">
+                          {DOMAIN_CONFIG.filter(({ key }) => personaPerms.canViewDomain(key)).map(({ key, label, icon: Icon, color }) => (
+                            <button
+                              key={key}
+                              onClick={() => handleDomainClick(key)}
+                              className="p-2 rounded bg-muted/30 hover:bg-muted/50 border border-transparent hover:border-primary/30 transition-all text-left group"
+                            >
+                              <div className="flex items-center gap-2 mb-1">
+                                <Icon size={12} style={{ color }} />
+                                <span className="text-[10px] font-mono text-muted-foreground group-hover:text-foreground transition-colors">
+                                  {label}
+                                </span>
+                              </div>
+                              <span className="text-lg font-mono text-foreground group-hover:text-primary transition-colors">
+                                {stats[key]}
+                              </span>
+                            </button>
+                          ))}
+                        </div>
+                      </div>
+
+                      {/* Reports Section */}
+                      <div className="p-2 rounded bg-background border border-border">
+                        <div className="flex items-center justify-between mb-2">
+                          <div className="flex items-center gap-2">
+                            <FileText size={12} className="text-secondary" />
+                            <span className="text-[10px] font-mono text-muted-foreground">
+                              {userPersona ? 'MY REPORTS' : 'ALL REPORTS'}
+                            </span>
+                            {userPersona && currentPersona && (
+                              <Badge variant="outline" className="text-[7px] font-mono">
+                                {currentPersona.label}
+                              </Badge>
+                            )}
+                          </div>
+                          {currentPersona && (
+                            <Button
+                              variant="outline"
+                              size="sm"
+                              className="h-5 text-[8px] font-mono px-2"
+                              onClick={() => handleGenerateReport(currentPersona.id)}
+                              disabled={generatingPersona !== null || !userId || totalItems === 0}
+                            >
+                              {generatingPersona === currentPersona.id ? (
+                                <RefreshCw size={8} className="animate-spin mr-1" />
+                              ) : (
+                                <Sparkles size={8} className="mr-1" />
+                              )}
+                              GENERATE
+                            </Button>
+                          )}
+                        </div>
+                        <ReportHistoryList
+                          reports={userPersona ? reports.filter(r => r.persona === userPersona) : reports}
+                          onSelectReport={(report) => setSelectedReport(report)}
+                          selectedReportId={selectedReport?.id}
+                        />
+                      </div>
+                    </div>
                   </div>
                 </ScrollArea>
               </TabsContent>
@@ -754,119 +839,6 @@ export function CSuiteDataHub({ userId, agents = [], agentsLoading = false }: CS
                         <span className="text-[10px] font-mono text-muted-foreground">ATLAS AI SUMMARY</span>
                       </div>
                       <AtlasSummaryTab userId={userId} />
-                    </div>
-                  </div>
-                </ScrollArea>
-              </TabsContent>
-            )}
-
-            {/* LIBRARY TAB - Data Domains + Reports */}
-            {(
-              <TabsContent value="library" className="h-full m-0">
-                <ScrollArea className="h-full">
-                  <div className="p-2 space-y-3">
-                    {/* Upload Section */}
-                    <div className="p-2 rounded bg-background border border-border">
-                      <div className="flex items-center gap-2 mb-2">
-                        <Upload size={12} className="text-secondary" />
-                        <span className="text-[10px] font-mono text-muted-foreground">UPLOAD</span>
-                      </div>
-                      <input
-                        ref={fileInputRef}
-                        type="file"
-                        multiple
-                        accept=".pdf,.doc,.docx,.xls,.xlsx,.csv,.txt,.md,.pptx"
-                        onChange={handleFileUpload}
-                        className="hidden"
-                        id="file-upload"
-                      />
-                      <Button
-                        variant="outline"
-                        size="sm"
-                        className="w-full text-[10px] font-mono"
-                        onClick={() => fileInputRef.current?.click()}
-                        disabled={isUploading || !userId}
-                      >
-                        {isUploading ? 'UPLOADING...' : 'SELECT FILES'}
-                      </Button>
-                    </div>
-
-                    {/* Domain Browser - Only show accessible domains */}
-                    <div className="p-2 rounded bg-background border border-border">
-                      <div className="flex items-center gap-2 mb-2">
-                        <FolderOpen size={12} className="text-primary" />
-                        <span className="text-[10px] font-mono text-muted-foreground">DATA DOMAINS</span>
-                      </div>
-                      <div className="grid grid-cols-2 gap-2">
-                        {DOMAIN_CONFIG.filter(({ key }) => personaPerms.canViewDomain(key)).map(({ key, label, icon: Icon, color }) => (
-                          <button
-                            key={key}
-                            onClick={() => handleDomainClick(key)}
-                            className="p-2 rounded bg-muted/30 hover:bg-muted/50 border border-transparent hover:border-primary/30 transition-all text-left group"
-                          >
-                            <div className="flex items-center gap-2 mb-1">
-                              <Icon size={12} style={{ color }} />
-                              <span className="text-[10px] font-mono text-muted-foreground group-hover:text-foreground transition-colors">
-                                {label}
-                              </span>
-                            </div>
-                            <span className="text-lg font-mono text-foreground group-hover:text-primary transition-colors">
-                              {stats[key]}
-                            </span>
-                          </button>
-                        ))}
-                      </div>
-                    </div>
-
-                    {/* Reports Section - Filtered by persona */}
-                    <div className="p-2 rounded bg-background border border-border">
-                      <div className="flex items-center gap-2 mb-2">
-                        <FileText size={12} className="text-secondary" />
-                        <span className="text-[10px] font-mono text-muted-foreground">
-                          {userPersona ? 'MY REPORTS' : 'ALL REPORTS'}
-                        </span>
-                        {userPersona && (
-                          <Badge variant="outline" className="text-[7px] font-mono">
-                            {currentPersona?.label}
-                          </Badge>
-                        )}
-                        <span className="text-[9px] text-muted-foreground ml-auto">
-                          {userPersona 
-                            ? reports.filter(r => r.persona === userPersona).length 
-                            : reports.length} reports
-                        </span>
-                      </div>
-                      <ReportHistoryList
-                        reports={userPersona ? reports.filter(r => r.persona === userPersona) : reports}
-                        onSelectReport={(report) => setSelectedReport(report)}
-                        selectedReportId={selectedReport?.id}
-                      />
-                    </div>
-
-                    {/* Generate Report Quick Actions */}
-                    <div className="p-2 rounded bg-background border border-border">
-                      <div className="flex items-center gap-2 mb-2">
-                        <Sparkles size={12} className="text-primary" />
-                        <span className="text-[10px] font-mono text-muted-foreground">QUICK GENERATE</span>
-                      </div>
-                      <div className="flex flex-wrap gap-1">
-                        {currentPersona && (
-                          <Button
-                            variant="outline"
-                            size="sm"
-                            className="h-6 text-[9px] font-mono"
-                            onClick={() => handleGenerateReport(currentPersona.id)}
-                            disabled={generatingPersona !== null || !userId || totalItems === 0}
-                          >
-                            {generatingPersona === currentPersona.id ? (
-                              <RefreshCw size={10} className="animate-spin mr-1" />
-                            ) : (
-                              <Sparkles size={10} className="mr-1" />
-                            )}
-                            {currentPersona.label} BRIEFING
-                          </Button>
-                        )}
-                      </div>
                     </div>
                   </div>
                 </ScrollArea>
