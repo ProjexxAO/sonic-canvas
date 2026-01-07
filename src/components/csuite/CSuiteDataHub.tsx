@@ -25,10 +25,8 @@ import {
   Zap,
   Brain,
   Settings,
-  Library,
   Command,
   Lightbulb,
-  FolderOpen,
   AlertTriangle,
   Bell,
   Target,
@@ -500,60 +498,95 @@ export function CSuiteDataHub({ userId, agents = [], agentsLoading = false }: CS
                       onActionClick={(actionId) => {
                         // Route quick actions to appropriate destinations
                         const actionRoutes: Record<string, () => void> = {
-                          // Insights/Analysis actions
+                          // CEO actions
                           strategic_review: () => setActiveTab('insights'),
-                          financial_forecast: () => setActiveTab('insights'),
-                          threat_assessment: () => setActiveTab('insights'),
-                          compliance_status: () => setActiveTab('insights'),
-                          risk_assessment: () => setActiveTab('insights'),
-                          kpi_dashboard: () => setActiveTab('insights'),
-                          security_posture: () => setActiveTab('insights'),
-                          innovation_radar: () => setActiveTab('insights'),
-                          
-                          // Data actions - now in command tab
-                          browse_data: () => {}, // Data is now in Command tab
-                          recent_docs: () => handleDomainClick('documents'),
-                          contract_review: () => handleDomainClick('documents'),
-                          view_tasks: () => handleDomainClick('tasks'),
-                          action_items: () => handleDomainClick('tasks'),
-                          
-                          // Financial domain actions
-                          cash_flow: () => handleDomainClick('financials'),
-                          expense_report: () => handleDomainClick('financials'),
-                          compliance_check: () => handleDomainClick('financials'),
-                          revenue_forecast: () => handleDomainClick('financials'),
-                          financial_autopilot: () => handleDomainClick('financials'),
-                          
-                          // Calendar/Events actions
-                          check_calendar: () => handleDomainClick('events'),
-                          meeting_prep: () => handleDomainClick('events'),
-                          content_calendar: () => handleDomainClick('events'),
-                          
-                          // Communications actions
                           stakeholder_brief: () => handleDomainClick('communications'),
-                          customer_outreach: () => handleDomainClick('communications'),
-                          customer_insights: () => handleDomainClick('communications'),
+                          kpi_dashboard: () => setActiveTab('insights'),
+                          risk_assessment: () => setActiveTab('insights'),
                           
-                          // Knowledge actions
-                          tech_roadmap: () => handleDomainClick('knowledge'),
-                          ip_portfolio: () => handleDomainClick('knowledge'),
+                          // CFO actions
+                          cash_flow: () => handleDomainClick('financials'),
+                          financial_forecast: () => setActiveTab('insights'),
+                          compliance_check: () => handleDomainClick('financials'),
+                          expense_report: () => handleDomainClick('financials'),
                           
-                          // HR/People actions
-                          workforce_analytics: () => setActiveTab('insights'),
-                          talent_pipeline: () => setActiveTab('insights'),
-                          engagement_score: () => setActiveTab('insights'),
-                          
-                          // Operations actions
+                          // COO actions
                           operations_metrics: () => setActiveTab('insights'),
                           resource_allocation: () => setActiveTab('insights'),
+                          process_optimization: () => setActiveTab('insights'),
+                          team_performance: () => setActiveTab('insights'),
+                          
+                          // Chief of Staff actions
+                          executive_priorities: () => handleDomainClick('tasks'),
+                          cross_functional: () => setActiveTab('insights'),
+                          meeting_prep: () => handleDomainClick('events'),
+                          action_items: () => handleDomainClick('tasks'),
+                          
+                          // CTO actions
+                          tech_roadmap: () => handleDomainClick('knowledge'),
+                          innovation_radar: () => setActiveTab('insights'),
+                          tech_debt: () => setActiveTab('insights'),
+                          infrastructure: () => setActiveTab('insights'),
+                          
+                          // CISO actions
+                          security_posture: () => setActiveTab('insights'),
+                          threat_assessment: () => setActiveTab('insights'),
+                          compliance_audit: () => setActiveTab('insights'),
+                          incident_review: () => setActiveTab('insights'),
+                          
+                          // CHRO actions
+                          workforce_analytics: () => setActiveTab('insights'),
+                          talent_pipeline: () => setActiveTab('insights'),
+                          retention_analysis: () => setActiveTab('insights'),
+                          culture_pulse: () => setActiveTab('insights'),
+                          
+                          // Chief People actions
+                          engagement_score: () => setActiveTab('insights'),
+                          talent_development: () => setActiveTab('insights'),
+                          wellbeing_check: () => setActiveTab('insights'),
+                          org_culture: () => setActiveTab('insights'),
+                          
+                          // CMO actions
+                          campaign_performance: () => setActiveTab('insights'),
+                          brand_health: () => setActiveTab('insights'),
+                          customer_insights: () => handleDomainClick('communications'),
+                          content_calendar: () => handleDomainClick('events'),
+                          
+                          // CRO actions
+                          revenue_forecast: () => handleDomainClick('financials'),
+                          pipeline_review: () => setActiveTab('insights'),
+                          sales_performance: () => setActiveTab('insights'),
+                          customer_success: () => setActiveTab('insights'),
+                          
+                          // CLO actions
+                          contract_review: () => handleDomainClick('documents'),
+                          legal_matters: () => handleDomainClick('documents'),
+                          ip_portfolio: () => handleDomainClick('knowledge'),
+                          litigation_tracker: () => handleDomainClick('documents'),
+                          
+                          // CCO actions
+                          compliance_status: () => setActiveTab('insights'),
+                          regulatory_updates: () => handleDomainClick('documents'),
+                          ethics_review: () => setActiveTab('insights'),
+                          governance_check: () => setActiveTab('insights'),
+                          
+                          // Admin actions
                           system_health: () => setActiveTab('insights'),
+                          user_management: () => setActiveTab('admin'),
+                          agent_oversight: () => setActiveTab('insights'),
+                          security_monitor: () => setActiveTab('insights'),
                           
                           // Entrepreneur-specific actions - open dedicated dialogs
                           launch_venture: () => setLaunchVentureOpen(true),
+                          financial_autopilot: () => handleDomainClick('financials'),
                           growth_optimizer: () => setGrowthOptimizerOpen(true),
                           idea_validator: () => setIdeaValidatorOpen(true),
                           
-                          // Default fallback to insights
+                          // Default actions (no persona)
+                          browse_data: () => {}, // User scrolls to data section
+                          view_tasks: () => handleDomainClick('tasks'),
+                          recent_docs: () => handleDomainClick('documents'),
+                          check_calendar: () => handleDomainClick('events'),
                         };
                         
                         const route = actionRoutes[actionId];
@@ -620,90 +653,63 @@ export function CSuiteDataHub({ userId, agents = [], agentsLoading = false }: CS
                       </div>
                     )}
 
-                    {/* Data & Reports Section */}
+                    {/* Upload & Reports Section */}
                     <div className="border-t border-border pt-3 space-y-3">
-                      {/* Upload Section */}
-                      <div className="p-2 rounded bg-background border border-border">
-                        <div className="flex items-center gap-2 mb-2">
-                          <Upload size={12} className="text-secondary" />
-                          <span className="text-[10px] font-mono text-muted-foreground">UPLOAD</span>
+                      {/* Compact Upload + Reports Row */}
+                      <div className="flex gap-2">
+                        {/* Upload Button */}
+                        <div className="flex-shrink-0">
+                          <input
+                            ref={fileInputRef}
+                            type="file"
+                            multiple
+                            accept=".pdf,.doc,.docx,.xls,.xlsx,.csv,.txt,.md,.pptx"
+                            onChange={handleFileUpload}
+                            className="hidden"
+                            id="file-upload"
+                          />
+                          <Button
+                            variant="outline"
+                            size="sm"
+                            className="h-8 text-[10px] font-mono px-3"
+                            onClick={() => fileInputRef.current?.click()}
+                            disabled={isUploading || !userId}
+                          >
+                            <Upload size={10} className="mr-1" />
+                            {isUploading ? 'UPLOADING...' : 'UPLOAD'}
+                          </Button>
                         </div>
-                        <input
-                          ref={fileInputRef}
-                          type="file"
-                          multiple
-                          accept=".pdf,.doc,.docx,.xls,.xlsx,.csv,.txt,.md,.pptx"
-                          onChange={handleFileUpload}
-                          className="hidden"
-                          id="file-upload"
-                        />
-                        <Button
-                          variant="outline"
-                          size="sm"
-                          className="w-full text-[10px] font-mono"
-                          onClick={() => fileInputRef.current?.click()}
-                          disabled={isUploading || !userId}
-                        >
-                          {isUploading ? 'UPLOADING...' : 'SELECT FILES'}
-                        </Button>
-                      </div>
-
-                      {/* Domain Browser - Only show accessible domains */}
-                      <div className="p-2 rounded bg-background border border-border">
-                        <div className="flex items-center gap-2 mb-2">
-                          <FolderOpen size={12} className="text-primary" />
-                          <span className="text-[10px] font-mono text-muted-foreground">DATA DOMAINS</span>
-                        </div>
-                        <div className="grid grid-cols-2 gap-2">
-                          {DOMAIN_CONFIG.filter(({ key }) => personaPerms.canViewDomain(key)).map(({ key, label, icon: Icon, color }) => (
-                            <button
-                              key={key}
-                              onClick={() => handleDomainClick(key)}
-                              className="p-2 rounded bg-muted/30 hover:bg-muted/50 border border-transparent hover:border-primary/30 transition-all text-left group"
-                            >
-                              <div className="flex items-center gap-2 mb-1">
-                                <Icon size={12} style={{ color }} />
-                                <span className="text-[10px] font-mono text-muted-foreground group-hover:text-foreground transition-colors">
-                                  {label}
-                                </span>
-                              </div>
-                              <span className="text-lg font-mono text-foreground group-hover:text-primary transition-colors">
-                                {stats[key]}
-                              </span>
-                            </button>
-                          ))}
-                        </div>
-                      </div>
-
-                      {/* Reports Section */}
-                      <div className="p-2 rounded bg-background border border-border">
-                        <div className="flex items-center justify-between mb-2">
-                          <div className="flex items-center gap-2">
-                            <FileText size={12} className="text-secondary" />
-                            <span className="text-[10px] font-mono text-muted-foreground">
-                              {userPersona ? 'MY REPORTS' : 'ALL REPORTS'}
-                            </span>
-                            {userPersona && currentPersona && (
-                              <Badge variant="outline" className="text-[7px] font-mono">
-                                {currentPersona.label}
-                              </Badge>
+                        
+                        {/* Generate Report Button */}
+                        {currentPersona && (
+                          <Button
+                            variant="outline"
+                            size="sm"
+                            className="h-8 text-[10px] font-mono px-3"
+                            onClick={() => handleGenerateReport(currentPersona.id)}
+                            disabled={generatingPersona !== null || !userId || totalItems === 0}
+                          >
+                            {generatingPersona === currentPersona.id ? (
+                              <RefreshCw size={10} className="animate-spin mr-1" />
+                            ) : (
+                              <Sparkles size={10} className="mr-1" />
                             )}
-                          </div>
-                          {currentPersona && (
-                            <Button
-                              variant="outline"
-                              size="sm"
-                              className="h-5 text-[8px] font-mono px-2"
-                              onClick={() => handleGenerateReport(currentPersona.id)}
-                              disabled={generatingPersona !== null || !userId || totalItems === 0}
-                            >
-                              {generatingPersona === currentPersona.id ? (
-                                <RefreshCw size={8} className="animate-spin mr-1" />
-                              ) : (
-                                <Sparkles size={8} className="mr-1" />
-                              )}
-                              GENERATE
-                            </Button>
+                            GENERATE REPORT
+                          </Button>
+                        )}
+                      </div>
+
+                      {/* Reports List */}
+                      <div className="p-2 rounded bg-background border border-border">
+                        <div className="flex items-center gap-2 mb-2">
+                          <FileText size={12} className="text-secondary" />
+                          <span className="text-[10px] font-mono text-muted-foreground">
+                            {userPersona ? 'MY REPORTS' : 'ALL REPORTS'}
+                          </span>
+                          {userPersona && currentPersona && (
+                            <Badge variant="outline" className="text-[7px] font-mono">
+                              {currentPersona.label}
+                            </Badge>
                           )}
                         </div>
                         <ReportHistoryList
