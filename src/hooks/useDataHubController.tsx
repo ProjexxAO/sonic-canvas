@@ -1,7 +1,7 @@
 import { create } from 'zustand';
 import { DomainKey } from './useCSuiteData';
 
-type TabId = 'command' | 'insights' | 'library' | 'admin';
+type TabId = 'command' | 'insights' | 'admin';
 
 interface DataHubState {
   // Tab control
@@ -127,14 +127,14 @@ export function getTabFromName(name: string): TabId | null {
     'command center': 'command',
     'dashboard': 'command',
     'home': 'command',
+    'library': 'command',
+    'data': 'command',
+    'domains': 'command',
+    'reports': 'command',
     'insights': 'insights',
     'insight': 'insights',
     'ai': 'insights',
     'analysis': 'insights',
-    'library': 'library',
-    'data': 'library',
-    'domains': 'library',
-    'reports': 'library',
     'admin': 'admin',
     'settings': 'admin',
     'administration': 'admin',

@@ -425,7 +425,7 @@ function AtlasPage() {
         }
         
         useDataHubController.getState().setExpandedDomain(domainKey);
-        useDataHubController.getState().setActiveTab('library');
+        useDataHubController.getState().setActiveTab('command');
         addLogRef.current('openDataDomain', params, `Opened ${domainKey}`, 'success');
         toast.info(`Opened ${domainKey} domain`);
         return `Opened ${domainKey} domain in Data Hub`;
