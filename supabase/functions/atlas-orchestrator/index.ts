@@ -6,6 +6,45 @@ const corsHeaders = {
   'Access-Control-Allow-Headers': 'authorization, x-client-info, apikey, content-type',
 };
 
+// Helper function to get conversation context for AI prompts
+async function getConversationContext(
+  supabase: any, 
+  userId: string, 
+  sessionId?: string,
+  limit: number = 20
+): Promise<string> {
+  try {
+    let query = supabase
+      .from('atlas_conversations')
+      .select('role, content, created_at')
+      .eq('user_id', userId)
+      .order('created_at', { ascending: false })
+      .limit(limit);
+    
+    // Optionally filter by session
+    if (sessionId) {
+      query = query.eq('session_id', sessionId);
+    }
+    
+    const { data: history, error } = await query;
+    
+    if (error || !history || history.length === 0) {
+      return '';
+    }
+    
+    // Reverse to chronological order and format
+    const formattedHistory = history
+      .reverse()
+      .map((m: any) => `${m.role === 'user' ? 'User' : 'Atlas'}: ${m.content}`)
+      .join('\n');
+    
+    return `\n\n=== Recent Conversation History ===\n${formattedHistory}\n=== End History ===\n`;
+  } catch (e) {
+    console.error('Error fetching conversation context:', e);
+    return '';
+  }
+}
+
 serve(async (req) => {
   if (req.method === 'OPTIONS') {
     return new Response(null, { headers: corsHeaders });
@@ -13,7 +52,7 @@ serve(async (req) => {
 
   try {
     const body = await req.json();
-    const { query, action, userId, preferences, taskData, notificationId } = body;
+    const { query, action, userId, preferences, taskData, notificationId, sessionId } = body;
     console.log(`Atlas orchestrator received action: ${action}, query: ${query}`);
 
     const supabaseUrl = Deno.env.get('SUPABASE_URL')!;
@@ -104,7 +143,94 @@ serve(async (req) => {
       });
     }
 
+    // =============================================
+    // CONVERSATION MEMORY ACTIONS
+    // =============================================
+
+    if (action === 'get_conversation_history') {
+      const { limit = 50 } = body;
+      
+      let query = supabase
+        .from('atlas_conversations')
+        .select('id, role, content, created_at, session_id')
+        .eq('user_id', userId)
+        .order('created_at', { ascending: false })
+        .limit(limit);
+      
+      if (sessionId) {
+        query = query.eq('session_id', sessionId);
+      }
+      
+      const { data, error } = await query;
+
+      if (error) throw error;
+
+      return new Response(JSON.stringify({ history: data || [] }), {
+        headers: { ...corsHeaders, 'Content-Type': 'application/json' },
+      });
+    }
+
+    if (action === 'chat') {
+      // Context-aware chat with conversation memory
+      const conversationContext = await getConversationContext(supabase, userId, sessionId, 30);
+      
+      const chatPrompt = `You are Atlas, an intelligent AI orchestrator and assistant. You help users manage their agents, search for information, analyze data, and automate tasks.
+
+Use the conversation history below to maintain context and provide helpful, personalized responses. Reference past conversations when relevant to show continuity.
+${conversationContext}
+
+Current user message: ${query}
+
+Respond naturally and helpfully. If the user references something from a previous conversation, acknowledge it. Be concise but thorough.`;
+
+      const aiResponse = await fetch('https://ai.gateway.lovable.dev/v1/chat/completions', {
+        method: 'POST',
+        headers: {
+          'Authorization': `Bearer ${lovableApiKey}`,
+          'Content-Type': 'application/json',
+        },
+        body: JSON.stringify({
+          model: 'google/gemini-2.5-flash',
+          messages: [
+            { role: 'system', content: 'You are Atlas, an expert AI assistant with memory of past conversations. Be helpful, concise, and personalized.' },
+            { role: 'user', content: chatPrompt },
+          ],
+        }),
+      });
+
+      if (!aiResponse.ok) {
+        if (aiResponse.status === 429) {
+          return new Response(JSON.stringify({ error: 'Rate limit exceeded. Please try again later.' }), {
+            status: 429,
+            headers: { ...corsHeaders, 'Content-Type': 'application/json' },
+          });
+        }
+        if (aiResponse.status === 402) {
+          return new Response(JSON.stringify({ error: 'Usage credits exhausted. Please add credits.' }), {
+            status: 402,
+            headers: { ...corsHeaders, 'Content-Type': 'application/json' },
+          });
+        }
+        const errorText = await aiResponse.text();
+        console.error('AI chat error:', errorText);
+        throw new Error('Failed to generate response');
+      }
+
+      const aiData = await aiResponse.json();
+      const response = aiData.choices[0].message.content;
+
+      return new Response(JSON.stringify({ 
+        response,
+        hasContext: conversationContext.length > 0
+      }), {
+        headers: { ...corsHeaders, 'Content-Type': 'application/json' },
+      });
+    }
+
     if (action === 'orchestrate_agents') {
+      // Get conversation context for better understanding
+      const conversationContext = await getConversationContext(supabase, userId, sessionId, 15);
+      
       // Analyze the user request and determine which agents to engage
       const { data: agents, error: agentsError } = await supabase
         .from('sonic_agents')
@@ -116,7 +242,9 @@ serve(async (req) => {
       // Use AI to determine which agents are best suited for the task
       const orchestrationPrompt = `You are Atlas, an AI orchestrator. Analyze the following user request and determine which agents should be engaged.
 
-User Request: ${query}
+${conversationContext ? `Use this conversation history for context:${conversationContext}` : ''}
+
+Current User Request: ${query}
 
 Available Agents:
 ${agents?.map(a => `- ${a.name} (${a.sector}): ${a.description || 'No description'}. Capabilities: ${a.capabilities?.join(', ') || 'None listed'}`).join('\n')}
@@ -339,6 +467,9 @@ Respond with a JSON object:
     if (action === 'synthesize') {
       const { agentIds, requirements } = body;
       
+      // Get conversation context for better synthesis
+      const conversationContext = await getConversationContext(supabase, userId, sessionId, 10);
+      
       // Validate agentIds - must be an array of valid UUIDs
       const validAgentIds = Array.isArray(agentIds) 
         ? agentIds.filter(id => typeof id === 'string' && id.match(/^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i))
@@ -362,6 +493,8 @@ Respond with a JSON object:
         : 'No existing agents specified. Create a new agent from scratch based on the requirements.';
       
       const synthesisPrompt = `You are Atlas, an AI agent synthesizer. Create a new synthesized agent based on the requirements.
+
+${conversationContext ? `Use this conversation context to better understand user needs:${conversationContext}` : ''}
 
 ${agentsList}
 
