@@ -339,21 +339,33 @@ Respond with a JSON object:
     if (action === 'synthesize') {
       const { agentIds, requirements } = body;
       
-      // Fetch the selected agents
-      const { data: agents, error } = await supabase
-        .from('sonic_agents')
-        .select('*')
-        .in('id', agentIds);
+      // Validate agentIds - must be an array of valid UUIDs
+      const validAgentIds = Array.isArray(agentIds) 
+        ? agentIds.filter(id => typeof id === 'string' && id.match(/^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i))
+        : [];
+      
+      // If no valid agent IDs, synthesize from requirements alone
+      let agents: any[] = [];
+      if (validAgentIds.length > 0) {
+        const { data, error } = await supabase
+          .from('sonic_agents')
+          .select('*')
+          .in('id', validAgentIds);
 
-      if (error) throw error;
+        if (error) throw error;
+        agents = data || [];
+      }
 
       // Use Lovable AI to synthesize a new agent
-      const synthesisPrompt = `You are Atlas, an AI agent synthesizer. Based on the following agents and requirements, create a new synthesized agent.
+      const agentsList = agents.length > 0 
+        ? `Existing Agents to merge:\n${agents.map(a => `- ${a.name} (${a.sector}): ${a.description || 'No description'}`).join('\n')}`
+        : 'No existing agents specified. Create a new agent from scratch based on the requirements.';
+      
+      const synthesisPrompt = `You are Atlas, an AI agent synthesizer. Create a new synthesized agent based on the requirements.
 
-Existing Agents:
-${agents?.map(a => `- ${a.name} (${a.sector}): ${a.description || 'No description'}`).join('\n')}
+${agentsList}
 
-User Requirements: ${requirements}
+User Requirements: ${requirements || 'Create a general-purpose task management agent'}
 
 Generate a JSON response with:
 {
