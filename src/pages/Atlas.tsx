@@ -211,7 +211,7 @@ function AtlasPage() {
   const agentsRef = useRef(agents);
   const activeAgentsRef = useRef(activeAgents);
   const userRef = useRef(user);
-  const memoryManagerRef = useRef(memoryManager);
+  const memoryManagerRef = useRef<MemoryManager | null>(null);
   
   // Keep memoryManagerRef updated
   useEffect(() => {
