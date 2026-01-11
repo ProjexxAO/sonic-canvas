@@ -3,6 +3,7 @@
 import React, { useState, useCallback, useEffect, useRef, useMemo } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { useConversation } from "@elevenlabs/react";
+import { createMemoryManager, MemoryManager } from '@/lib/memory-manager';
 
 // Error boundary to handle ElevenLabs SDK internal React errors during HMR
 class AtlasErrorBoundary extends React.Component<
@@ -128,6 +129,7 @@ function AtlasPage() {
   const animationRef = useRef<number>();
   const fileInputRef = useRef<HTMLInputElement>(null);
   const [generatingPersona, setGeneratingPersona] = useState<string | null>(null);
+  const [memoryManager, setMemoryManager] = useState<MemoryManager | null>(null);
 
   // Onboarding
   const onboarding = useOnboarding(user?.id);
@@ -209,6 +211,12 @@ function AtlasPage() {
   const agentsRef = useRef(agents);
   const activeAgentsRef = useRef(activeAgents);
   const userRef = useRef(user);
+  const memoryManagerRef = useRef(memoryManager);
+  
+  // Keep memoryManagerRef updated
+  useEffect(() => {
+    memoryManagerRef.current = memoryManager;
+  }, [memoryManager]);
   
   // Keep refs updated
   useEffect(() => {
@@ -218,6 +226,13 @@ function AtlasPage() {
     activeAgentsRef.current = activeAgents;
     userRef.current = user;
   }, [addLog, saveMessage, agents, activeAgents, user]);
+
+  // Initialize memory manager when user is available
+  useEffect(() => {
+    if (user?.id) {
+      setMemoryManager(createMemoryManager(user.id));
+    }
+  }, [user?.id]);
 
   // Memoize the conversation config to prevent React hook queue errors
   const conversationConfig = useMemo(() => ({
@@ -521,6 +536,14 @@ function AtlasPage() {
           lastSavedMessageRef.current = content;
           const role = message.role === "agent" ? 'assistant' : 'user';
           saveMessageRef.current(role, content);
+          
+          // Store in persistent memory
+          if (memoryManagerRef.current) {
+            memoryManagerRef.current.storeMessage(role, content, {
+              timestamp: new Date().toISOString(),
+              source: 'voice'
+            });
+          }
         }
         return;
       }
@@ -536,6 +559,14 @@ function AtlasPage() {
           if (userText !== lastSavedMessageRef.current) {
             lastSavedMessageRef.current = userText;
             saveMessageRef.current('user', userText);
+            
+            // Store in persistent memory
+            if (memoryManagerRef.current) {
+              memoryManagerRef.current.storeMessage('user', userText, {
+                timestamp: new Date().toISOString(),
+                source: 'voice'
+              });
+            }
           }
         }
         return;
@@ -551,6 +582,14 @@ function AtlasPage() {
           if (agentText !== lastSavedMessageRef.current) {
             lastSavedMessageRef.current = agentText;
             saveMessageRef.current('assistant', agentText);
+            
+            // Store in persistent memory
+            if (memoryManagerRef.current) {
+              memoryManagerRef.current.storeMessage('assistant', agentText, {
+                timestamp: new Date().toISOString(),
+                source: 'voice'
+              });
+            }
           }
         }
         return;
@@ -607,13 +646,31 @@ function AtlasPage() {
         user?.email?.split("@")[0] ||
         "Operator";
 
-      await conversation.startSession({
+      // Load memory context before starting
+      let memoryContext: string | undefined;
+      if (memoryManager) {
+        try {
+          const context = await memoryManager.buildContext();
+          if (context) {
+            memoryContext = context;
+            console.log("[Atlas] Loaded memory context:", context.substring(0, 100) + "...");
+          }
+        } catch (e) {
+          console.warn("[Atlas] Failed to load memory context:", e);
+        }
+      }
+
+      // Build session config with optional memory override
+      const sessionConfig: any = {
         signedUrl: data.signed_url,
         userId: user?.id,
         dynamicVariables: {
           _userDisplayName_: userDisplayName,
+          _memoryContext_: memoryContext || "",
         },
-      });
+      };
+
+      await conversation.startSession(sessionConfig);
       console.log("[Atlas] Session started successfully");
     } catch (error) {
       console.error("[Atlas] Failed to start:", error);
@@ -622,7 +679,7 @@ function AtlasPage() {
     } finally {
       setIsConnecting(false);
     }
-  }, [conversation, isConnecting, user?.id, user?.email, user?.user_metadata]);
+  }, [conversation, isConnecting, user?.id, user?.email, user?.user_metadata, memoryManager]);
 
   const stopConversation = useCallback(async () => {
     await conversation.endSession();

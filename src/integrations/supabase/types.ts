@@ -1897,6 +1897,66 @@ export type Database = {
           },
         ]
       }
+      user_memory_messages: {
+        Row: {
+          agent_id: string
+          content: string
+          created_at: string
+          id: string
+          metadata: Json | null
+          role: string
+          user_id: string
+        }
+        Insert: {
+          agent_id?: string
+          content: string
+          created_at?: string
+          id?: string
+          metadata?: Json | null
+          role: string
+          user_id: string
+        }
+        Update: {
+          agent_id?: string
+          content?: string
+          created_at?: string
+          id?: string
+          metadata?: Json | null
+          role?: string
+          user_id?: string
+        }
+        Relationships: []
+      }
+      user_memory_summaries: {
+        Row: {
+          agent_id: string
+          created_at: string
+          id: string
+          message_count: number | null
+          summary: string
+          updated_at: string
+          user_id: string
+        }
+        Insert: {
+          agent_id?: string
+          created_at?: string
+          id?: string
+          message_count?: number | null
+          summary: string
+          updated_at?: string
+          user_id: string
+        }
+        Update: {
+          agent_id?: string
+          created_at?: string
+          id?: string
+          message_count?: number | null
+          summary?: string
+          updated_at?: string
+          user_id?: string
+        }
+        Relationships: []
+      }
       user_roles: {
         Row: {
           created_at: string
