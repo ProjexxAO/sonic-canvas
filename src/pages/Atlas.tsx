@@ -4,6 +4,8 @@ import React, { useState, useCallback, useEffect, useRef, useMemo } from 'react'
 import { useNavigate } from 'react-router-dom';
 import { useConversation } from "@elevenlabs/react";
 import { createMemoryManager, MemoryManager } from '@/lib/memory-manager';
+import { voiceIntentParser } from '@/lib/voice-intent-parser';
+import { useVoiceCommandBus } from '@/lib/voice-command-bus';
 
 // Error boundary to handle ElevenLabs SDK internal React errors during HMR
 class AtlasErrorBoundary extends React.Component<
@@ -566,6 +568,13 @@ function AtlasPage() {
                 timestamp: new Date().toISOString(),
                 source: 'voice'
               });
+            }
+            
+            // Parse for UI commands
+            const intent = voiceIntentParser.parse(userText);
+            if (intent) {
+              console.log('🎯 Voice command detected:', intent);
+              useVoiceCommandBus.getState().sendCommand(intent.command);
             }
           }
         }

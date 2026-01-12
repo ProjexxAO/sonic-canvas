@@ -6,6 +6,7 @@ import { BrowserRouter, Routes, Route } from "react-router-dom";
 import { ThemeProvider } from "next-themes";
 import { AuthProvider } from "@/hooks/useAuth";
 import { WorkspacesProvider } from "@/hooks/useWorkspaces";
+import { useVoiceCommandExecutor } from "@/hooks/useVoiceCommandExecutor";
 import Index from "./pages/Index";
 import Auth from "./pages/Auth";
 import Atlas from "./pages/Atlas";
@@ -16,6 +17,12 @@ import Integrations from "./pages/Integrations";
 import NotFound from "./pages/NotFound";
 
 const queryClient = new QueryClient();
+
+// Component that uses the voice command executor hook
+function VoiceCommandHandler() {
+  useVoiceCommandExecutor();
+  return null;
+}
 
 const App = () => (
   <ThemeProvider
@@ -31,6 +38,7 @@ const App = () => (
             <Toaster />
             <Sonner />
             <BrowserRouter>
+              <VoiceCommandHandler />
               <Routes>
                 <Route path="/" element={<Index />} />
                 <Route path="/auth" element={<Auth />} />
