@@ -340,7 +340,10 @@ function AtlasPage() {
           'agents': '/',
           'import': '/import',
           'auth': '/auth',
-          'login': '/auth'
+          'login': '/auth',
+          'marketplace': '/',
+          'integrations': '/integrations',
+          'governance': '/governance',
         };
         
         const route = routes[params.page.toLowerCase()] || '/';
@@ -348,6 +351,30 @@ function AtlasPage() {
         
         setTimeout(() => navigate(route), 500);
         return `Navigating to ${params.page}`;
+      },
+
+      // Alias for ElevenLabs agent tool name
+      navigateToPage: (params: { page: string }) => {
+        addLogRef.current('navigateToPage', params, `Navigating to ${params.page}`, 'success');
+        
+        const routes: Record<string, string> = {
+          'home': '/',
+          'main': '/',
+          'dashboard': '/',
+          'agents': '/',
+          'import': '/import',
+          'auth': '/auth',
+          'login': '/auth',
+          'marketplace': '/',
+          'integrations': '/integrations',
+          'governance': '/governance',
+        };
+        
+        const route = routes[params.page.toLowerCase()] || '/';
+        toast.info(`Navigating to ${params.page}`);
+        
+        setTimeout(() => navigate(route), 500);
+        return `Navigated to ${params.page}`;
       },
 
       showNotification: (params: { title: string; message: string; type?: string }) => {
