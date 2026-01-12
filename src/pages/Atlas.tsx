@@ -660,18 +660,28 @@ function AtlasPage() {
         }
       }
 
-      // Build session config with optional memory override
+      // Build session config
       const sessionConfig: any = {
         signedUrl: data.signed_url,
         userId: user?.id,
         dynamicVariables: {
           _userDisplayName_: userDisplayName,
-          _memoryContext_: memoryContext || "",
         },
       };
 
       await conversation.startSession(sessionConfig);
       console.log("[Atlas] Session started successfully");
+
+      // Inject memory context AFTER connection using sendContextualUpdate
+      // This sends context to the AI without triggering a response
+      if (memoryContext) {
+        setTimeout(() => {
+          conversation.sendContextualUpdate(
+            `[MEMORY CONTEXT - Remember this about this user]: ${memoryContext}`
+          );
+          console.log("[Atlas] Injected memory context via sendContextualUpdate");
+        }, 500); // Small delay to ensure connection is stable
+      }
     } catch (error) {
       console.error("[Atlas] Failed to start:", error);
       const errMsg = error instanceof Error ? error.message : 'Unknown error';
