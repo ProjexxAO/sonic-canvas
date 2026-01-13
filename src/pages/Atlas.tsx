@@ -341,7 +341,7 @@ function AtlasPage() {
           'import': '/import',
           'auth': '/auth',
           'login': '/auth',
-          'marketplace': '/',
+          'marketplace': '/integrations',
           'integrations': '/integrations',
           'governance': '/governance',
         };
@@ -365,7 +365,7 @@ function AtlasPage() {
           'import': '/import',
           'auth': '/auth',
           'login': '/auth',
-          'marketplace': '/',
+          'marketplace': '/integrations',
           'integrations': '/integrations',
           'governance': '/governance',
         };
