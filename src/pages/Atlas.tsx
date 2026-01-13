@@ -329,7 +329,7 @@ function AtlasPage() {
         }
       },
 
-      // Navigate to different pages
+      // Navigate to different pages - comprehensive route map
       navigateTo: (params: { page: string }) => {
         addLogRef.current('navigateTo', params, `Navigating to ${params.page}`, 'success');
         
@@ -338,15 +338,25 @@ function AtlasPage() {
           'main': '/',
           'dashboard': '/',
           'agents': '/',
+          'sonic nodes': '/',
           'import': '/import',
+          'import agents': '/import',
           'auth': '/auth',
           'login': '/auth',
+          'sign in': '/auth',
           'marketplace': '/integrations',
           'integrations': '/integrations',
-          'governance': '/governance',
+          'governance': '/tool-governance',
+          'tool governance': '/tool-governance',
+          'permissions': '/user-tool-permissions',
+          'user permissions': '/user-tool-permissions',
+          'atlas': '/atlas',
+          'command center': '/atlas',
+          'voice': '/atlas',
         };
         
-        const route = routes[params.page.toLowerCase()] || '/';
+        const pageLower = params.page.toLowerCase();
+        const route = routes[pageLower] || Object.entries(routes).find(([k]) => pageLower.includes(k))?.[1] || '/';
         toast.info(`Navigating to ${params.page}`);
         
         setTimeout(() => navigate(route), 500);
@@ -362,19 +372,82 @@ function AtlasPage() {
           'main': '/',
           'dashboard': '/',
           'agents': '/',
+          'sonic nodes': '/',
           'import': '/import',
+          'import agents': '/import',
           'auth': '/auth',
           'login': '/auth',
+          'sign in': '/auth',
           'marketplace': '/integrations',
           'integrations': '/integrations',
-          'governance': '/governance',
+          'governance': '/tool-governance',
+          'tool governance': '/tool-governance',
+          'permissions': '/user-tool-permissions',
+          'user permissions': '/user-tool-permissions',
+          'atlas': '/atlas',
+          'command center': '/atlas',
+          'voice': '/atlas',
         };
         
-        const route = routes[params.page.toLowerCase()] || '/';
+        const pageLower = params.page.toLowerCase();
+        const route = routes[pageLower] || Object.entries(routes).find(([k]) => pageLower.includes(k))?.[1] || '/';
         toast.info(`Navigating to ${params.page}`);
         
         setTimeout(() => navigate(route), 500);
         return `Navigated to ${params.page}`;
+      },
+
+      // Theme control
+      toggleTheme: () => {
+        addLogRef.current('toggleTheme', {}, 'Theme toggled', 'success');
+        useVoiceCommandBus.getState().sendCommand({ type: 'toggle_theme' });
+        return 'Theme toggled';
+      },
+
+      setTheme: (params: { theme: 'light' | 'dark' }) => {
+        addLogRef.current('setTheme', params, `Theme set to ${params.theme}`, 'success');
+        useVoiceCommandBus.getState().sendCommand({ type: 'set_theme', theme: params.theme });
+        return `Theme set to ${params.theme} mode`;
+      },
+
+      // Switch persona
+      switchPersona: (params: { persona: string }) => {
+        const personaId = getPersonaFromName(params.persona);
+        if (!personaId) {
+          addLogRef.current('switchPersona', params, `Unknown persona: ${params.persona}`, 'error');
+          return `Unknown persona "${params.persona}". Try: CEO, CFO, COO, CTO, CMO, etc.`;
+        }
+        
+        useDataHubController.getState().setTargetPersona(personaId);
+        addLogRef.current('switchPersona', params, `Switched to ${personaId}`, 'success');
+        toast.info(`Switched to ${personaId.toUpperCase()} persona`);
+        return `Switched to ${personaId.toUpperCase()} persona view`;
+      },
+
+      // Filter agents by sector or status
+      filterAgents: (params: { sector?: string; status?: string }) => {
+        addLogRef.current('filterAgents', params, 'Filtering agents', 'success');
+        
+        const sectorMap: Record<string, string> = {
+          'finance': 'FINANCE', 'financial': 'FINANCE',
+          'legal': 'LEGAL',
+          'operations': 'OPERATIONS', 'ops': 'OPERATIONS',
+          'technology': 'TECHNOLOGY', 'tech': 'TECHNOLOGY',
+          'analytics': 'ANALYTICS', 'data': 'ANALYTICS',
+          'research': 'RESEARCH',
+          'communications': 'COMMUNICATIONS', 'comms': 'COMMUNICATIONS',
+        };
+        
+        const sector = params.sector ? sectorMap[params.sector.toLowerCase()] : undefined;
+        const status = params.status?.toUpperCase();
+        
+        window.dispatchEvent(new CustomEvent('voice-filter-agents', {
+          detail: { sector, status }
+        }));
+        
+        const filterDesc = [sector, status].filter(Boolean).join(' ');
+        toast.info(`Filtering agents: ${filterDesc || 'all'}`);
+        return `Filtering agents by ${filterDesc || 'default criteria'}`;
       },
 
       showNotification: (params: { title: string; message: string; type?: string }) => {
@@ -572,6 +645,15 @@ function AtlasPage() {
               timestamp: new Date().toISOString(),
               source: 'voice'
             });
+          }
+          
+          // Parse user messages for UI commands
+          if (message.role !== "agent") {
+            const intent = voiceIntentParser.parse(content);
+            if (intent) {
+              console.log('🎯 Voice command detected (chat):', intent);
+              useVoiceCommandBus.getState().sendCommand(intent.command);
+            }
           }
         }
         return;
