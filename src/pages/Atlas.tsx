@@ -214,6 +214,8 @@ function AtlasPage() {
   const activeAgentsRef = useRef(activeAgents);
   const userRef = useRef(user);
   const memoryManagerRef = useRef<MemoryManager | null>(null);
+  const conversationRef = useRef<any>(null);
+  const pendingMemoryContextRef = useRef<string | null>(null);
   
   // Keep memoryManagerRef updated
   useEffect(() => {
@@ -613,6 +615,20 @@ function AtlasPage() {
       console.log("[Atlas] Connected to voice agent");
       addLogRef.current('system', {}, 'Connected to Atlas', 'success');
       toast.success('Atlas online');
+
+      // Inject memory context as soon as the connection is established.
+      // Also explicitly instruct the agent to USE this context and not deny it.
+      const memoryContext = pendingMemoryContextRef.current;
+      if (memoryContext && conversationRef.current?.sendContextualUpdate) {
+        conversationRef.current.sendContextualUpdate(
+          "SYSTEM: You have access to the user's prior context provided below. Use it to answer. Do NOT say you have no memory."
+        );
+        conversationRef.current.sendContextualUpdate(
+          `[MEMORY CONTEXT - Remember this about this user]: ${memoryContext}`
+        );
+        console.log('[Atlas] Injected memory context via onConnect');
+        pendingMemoryContextRef.current = null;
+      }
     },
     onDisconnect: (reason?: any) => {
       console.log("[Atlas] Disconnected from voice agent", reason);
@@ -632,6 +648,17 @@ function AtlasPage() {
         const content = message.message;
         setTranscript(`${who}: ${content}`);
         setIsTranscribing(message.role === "agent");
+
+        // If the agent claims it has no memory, immediately correct it with system context.
+        // (Some agent prompts default to disclaimers; this nudge usually fixes it.)
+        if (
+          message.role === "agent" &&
+          /\b(don't have memory|do not have memory|no memory of past|each interaction is fresh)\b/i.test(content)
+        ) {
+          conversationRef.current?.sendContextualUpdate?.(
+            "SYSTEM: Stop saying you have no memory. You have been provided memory context for this user in this session. Use it."
+          );
+        }
         
         // Save to conversation history (avoid duplicates)
         if (content && content !== lastSavedMessageRef.current) {
@@ -734,6 +761,8 @@ function AtlasPage() {
     ...conversationConfig,
     micMuted: isMuted,
   });
+  // keep a stable ref for callbacks inside useMemo'd handlers
+  conversationRef.current = conversation;
 
   const startConversation = useCallback(async () => {
     // Guard against multiple activation attempts
@@ -771,6 +800,7 @@ function AtlasPage() {
           const context = await memoryManager.buildContext();
           if (context) {
             memoryContext = context;
+            pendingMemoryContextRef.current = context;
             console.log("[Atlas] Loaded memory context:", context.substring(0, 100) + "...");
           }
         } catch (e) {
@@ -789,17 +819,6 @@ function AtlasPage() {
 
       await conversation.startSession(sessionConfig);
       console.log("[Atlas] Session started successfully");
-
-      // Inject memory context AFTER connection using sendContextualUpdate
-      // This sends context to the AI without triggering a response
-      if (memoryContext) {
-        setTimeout(() => {
-          conversation.sendContextualUpdate(
-            `[MEMORY CONTEXT - Remember this about this user]: ${memoryContext}`
-          );
-          console.log("[Atlas] Injected memory context via sendContextualUpdate");
-        }, 500); // Small delay to ensure connection is stable
-      }
     } catch (error) {
       console.error("[Atlas] Failed to start:", error);
       const errMsg = error instanceof Error ? error.message : 'Unknown error';
