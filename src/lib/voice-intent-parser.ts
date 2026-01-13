@@ -20,6 +20,7 @@ export class VoiceIntentParser {
     'settings': '/settings',
     'profile': '/profile',
     'integrations': '/integrations',
+    'marketplace': '/integrations',
     'tool governance': '/tool-governance',
     'governance': '/tool-governance',
     'permissions': '/user-tool-permissions',
