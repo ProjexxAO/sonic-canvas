@@ -780,8 +780,9 @@ function AtlasPage() {
       console.log("[Atlas] Microphone permission granted, fetching signed URL...");
 
       // Fetch signed URL from backend (use fetch instead of supabase.functions.invoke to avoid hanging requests)
+      // NOTE: Some browsers/extensions can delay function calls; allow a generous timeout.
       const controller = new AbortController();
-      const t = window.setTimeout(() => controller.abort(), 12000);
+      const t = window.setTimeout(() => controller.abort(), 30000);
       let signedUrlResp: any;
       try {
         const res = await fetch(`${import.meta.env.VITE_SUPABASE_URL}/functions/v1/elevenlabs-conversation-token`, {
@@ -793,10 +794,17 @@ function AtlasPage() {
           },
           signal: controller.signal,
         });
+
         signedUrlResp = await res.json().catch(() => ({}));
         if (!res.ok) {
           throw new Error(signedUrlResp?.error || `Token request failed (${res.status})`);
         }
+      } catch (e: any) {
+        // AbortError => our timeout fired
+        if (e?.name === "AbortError") {
+          throw new Error("Token request timed out (30s). Check network/adblock and try again.");
+        }
+        throw e;
       } finally {
         window.clearTimeout(t);
       }
