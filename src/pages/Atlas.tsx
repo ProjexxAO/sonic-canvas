@@ -811,15 +811,27 @@ function AtlasPage() {
       }
 
       // Build session config
+      // NOTE: When using a signedUrl, we must explicitly use the WebSocket connection type.
+      // Otherwise the SDK may default to WebRTC and sit in "connecting".
       const sessionConfig: any = {
         signedUrl: data.signed_url,
+        connectionType: "websocket",
         userId: user?.id,
         dynamicVariables: {
           _userDisplayName_: userDisplayName,
         },
       };
 
+      // Failsafe: if we never connect, surface a useful error
+      const connectTimeout = window.setTimeout(() => {
+        if (conversation.status !== "connected") {
+          console.error("[Atlas] Connection timed out");
+          toast.error("Atlas connection timed out. Please try again.");
+        }
+      }, 15000);
+
       await conversation.startSession(sessionConfig);
+      window.clearTimeout(connectTimeout);
       console.log("[Atlas] Session started successfully");
     } catch (error) {
       console.error("[Atlas] Failed to start:", error);
