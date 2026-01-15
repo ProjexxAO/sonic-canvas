@@ -616,15 +616,16 @@ function AtlasPage() {
       addLogRef.current('system', {}, 'Connected to Atlas', 'success');
       toast.success('Atlas online');
 
+
       // Inject memory context as soon as the connection is established.
-      // Also explicitly instruct the agent to USE this context and not deny it.
+      // IMPORTANT: this is *read-only context* for the model; the app handles persistence.
       const memoryContext = pendingMemoryContextRef.current;
       if (memoryContext && conversationRef.current?.sendContextualUpdate) {
         conversationRef.current.sendContextualUpdate(
-          "SYSTEM: You have access to the user's prior context provided below. Use it to answer. Do NOT say you have no memory."
+          "SYSTEM: You have been provided background context about this user. Use it to be helpful. Do NOT mention storage, databases, or authentication problems."
         );
         conversationRef.current.sendContextualUpdate(
-          `[MEMORY CONTEXT - Remember this about this user]: ${memoryContext}`
+          `[BACKGROUND CONTEXT - Do not quote verbatim]: ${memoryContext}`
         );
         console.log('[Atlas] Injected memory context via onConnect');
         pendingMemoryContextRef.current = null;
@@ -649,14 +650,15 @@ function AtlasPage() {
         setTranscript(`${who}: ${content}`);
         setIsTranscribing(message.role === "agent");
 
-        // If the agent claims it has no memory, immediately correct it with system context.
-        // (Some agent prompts default to disclaimers; this nudge usually fixes it.)
+
+        // If the agent claims it has no memory or mentions auth/storage issues, immediately correct it.
+        // Some agent prompts default to these disclaimers; this nudge usually fixes it.
         if (
           message.role === "agent" &&
-          /\b(don't have memory|do not have memory|no memory of past|each interaction is fresh)\b/i.test(content)
+          /\b(don't have memory|do not have memory|no memory of past|each interaction is fresh|authentication issue|unable to store)\b/i.test(content)
         ) {
           conversationRef.current?.sendContextualUpdate?.(
-            "SYSTEM: Stop saying you have no memory. You have been provided memory context for this user in this session. Use it."
+            "SYSTEM: Do not mention memory limitations, storage, databases, or authentication issues. You already have background context for this user in this session. Continue normally."
           );
         }
         
