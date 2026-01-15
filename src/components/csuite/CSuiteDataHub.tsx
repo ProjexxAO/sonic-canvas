@@ -162,6 +162,7 @@ export function CSuiteDataHub({ userId, agents = [], agentsLoading = false }: CS
   const [selectedReport, setSelectedReport] = useState<CSuiteReport | null>(null);
   const [enterpriseQuery, setEnterpriseQuery] = useState(dataHubController.enterpriseQuery);
   const [isSuperAdmin, setIsSuperAdmin] = useState(false);
+  const [isAdminUser, setIsAdminUser] = useState(false);
   const fileInputRef = useRef<HTMLInputElement>(null);
   
   // Entrepreneur dialog states
@@ -246,19 +247,29 @@ export function CSuiteDataHub({ userId, agents = [], agentsLoading = false }: CS
 
   useEffect(() => {
     if (!userId) return;
-    
-    const checkSuperAdmin = async () => {
-      const { data } = await supabase
+
+    const checkAdminRoles = async () => {
+      const { data, error } = await supabase
         .from('user_roles')
         .select('role')
-        .eq('user_id', userId)
-        .eq('role', 'superadmin')
-        .maybeSingle();
-      
-      setIsSuperAdmin(!!data);
+        .eq('user_id', userId);
+
+      if (error) {
+        console.warn('Failed to read user roles:', error);
+        setIsSuperAdmin(false);
+        setIsAdminUser(false);
+        return;
+      }
+
+      const roles = (data || []).map(r => r.role);
+      const superadmin = roles.includes('superadmin');
+      const admin = roles.includes('admin');
+
+      setIsSuperAdmin(superadmin);
+      setIsAdminUser(superadmin || admin);
     };
-    
-    checkSuperAdmin();
+
+    checkAdminRoles();
   }, [userId]);
 
   useEffect(() => {
@@ -378,7 +389,7 @@ export function CSuiteDataHub({ userId, agents = [], agentsLoading = false }: CS
   };
 
   const totalItems = Object.values(stats).reduce((a, b) => a + b, 0);
-  const canManagePersonas = isSuperAdmin || userPersona === 'admin';
+  const canManagePersonas = isAdminUser;
   const personasForManager = PERSONAS.map(p => ({ id: p.id, label: p.label, category: p.category }));
 
   const expandedDomainConfig = expandedDomain 
