@@ -38,3 +38,6 @@ verify_jwt = false
 
 [functions.entrepreneur-launch-venture]
 verify_jwt = false
+
+[functions.agent-memory]
+verify_jwt = false
