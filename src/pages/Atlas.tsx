@@ -778,13 +778,32 @@ function AtlasPage() {
       console.log("[Atlas] Requesting microphone permission...");
       await navigator.mediaDevices.getUserMedia({ audio: true });
       console.log("[Atlas] Microphone permission granted, fetching signed URL...");
-      
-      // Fetch signed URL from our edge function for authenticated session
-      const { data, error } = await supabase.functions.invoke('elevenlabs-conversation-token');
-      
-      if (error || !data?.signed_url) {
-        console.error("[Atlas] Failed to get signed URL:", error || 'No signed_url in response');
-        throw new Error(error?.message || 'Failed to authenticate with voice service');
+
+      // Fetch signed URL from backend (use fetch instead of supabase.functions.invoke to avoid hanging requests)
+      const controller = new AbortController();
+      const t = window.setTimeout(() => controller.abort(), 12000);
+      let signedUrlResp: any;
+      try {
+        const res = await fetch(`${import.meta.env.VITE_SUPABASE_URL}/functions/v1/elevenlabs-conversation-token`, {
+          method: "POST",
+          headers: {
+            "Content-Type": "application/json",
+            apikey: import.meta.env.VITE_SUPABASE_PUBLISHABLE_KEY,
+            Authorization: `Bearer ${import.meta.env.VITE_SUPABASE_PUBLISHABLE_KEY}`,
+          },
+          signal: controller.signal,
+        });
+        signedUrlResp = await res.json().catch(() => ({}));
+        if (!res.ok) {
+          throw new Error(signedUrlResp?.error || `Token request failed (${res.status})`);
+        }
+      } finally {
+        window.clearTimeout(t);
+      }
+
+      if (!signedUrlResp?.signed_url) {
+        console.error("[Atlas] Failed to get signed URL:", signedUrlResp);
+        throw new Error(signedUrlResp?.error || "Failed to authenticate with voice service");
       }
       
       console.log("[Atlas] Got signed URL, starting session...");
@@ -814,7 +833,7 @@ function AtlasPage() {
       // NOTE: When using a signedUrl, we must explicitly use the WebSocket connection type.
       // Otherwise the SDK may default to WebRTC and sit in "connecting".
       const sessionConfig: any = {
-        signedUrl: data.signed_url,
+        signedUrl: signedUrlResp.signed_url,
         connectionType: "websocket",
         userId: user?.id,
         dynamicVariables: {
