@@ -263,24 +263,38 @@ export function CSuiteDataHub({ userId, agents = [], agentsLoading = false }: CS
 
   useEffect(() => {
     if (!userId) return;
-    
+
+    const DEFAULT_PERSONA = 'ceo';
+
+    const applyPersona = (personaId: string | null, showToast = false) => {
+      const nextPersona = personaId || DEFAULT_PERSONA;
+      setUserPersona(nextPersona);
+      dataHubController.setTargetPersona(nextPersona);
+
+      const persona = PERSONAS.find(p => p.id === nextPersona);
+      if (persona) setSelectedCategories([persona.category]);
+
+      if (showToast) {
+        toast.info(personaId ? 'Your persona has been updated' : 'Default persona applied');
+      }
+    };
+
     const loadUserPersona = async () => {
-      const { data } = await supabase
+      const { data, error } = await supabase
         .from('profiles')
         .select('preferred_persona')
         .eq('user_id', userId)
-        .single();
-      
-      if (data?.preferred_persona) {
-        setUserPersona(data.preferred_persona);
-        dataHubController.setTargetPersona(data.preferred_persona);
-        const persona = PERSONAS.find(p => p.id === data.preferred_persona);
-        if (persona) {
-          setSelectedCategories([persona.category]);
-        }
+        .maybeSingle();
+
+      if (error) {
+        console.warn('Failed to load preferred persona, falling back to default:', error);
+        applyPersona(null);
+        return;
       }
+
+      applyPersona(data?.preferred_persona ?? null);
     };
-    
+
     loadUserPersona();
 
     // Real-time subscription for persona changes
@@ -295,17 +309,9 @@ export function CSuiteDataHub({ userId, agents = [], agentsLoading = false }: CS
           filter: `user_id=eq.${userId}`,
         },
         (payload) => {
-          const newPersona = payload.new.preferred_persona as string | null;
+          const newPersona = (payload.new as any)?.preferred_persona as string | null;
           if (newPersona !== userPersona) {
-            setUserPersona(newPersona);
-            dataHubController.setTargetPersona(newPersona);
-            if (newPersona) {
-              const persona = PERSONAS.find(p => p.id === newPersona);
-              if (persona) {
-                setSelectedCategories([persona.category]);
-              }
-            }
-            toast.info('Your persona has been updated');
+            applyPersona(newPersona, true);
           }
         }
       )
