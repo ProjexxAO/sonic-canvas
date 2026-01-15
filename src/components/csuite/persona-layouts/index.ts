@@ -13,21 +13,4 @@ export * from './ChiefOfStaffLayout';
 export * from './ChiefPeopleLayout';
 export * from './AdminLayout';
 export * from './EntrepreneurLayout';
-
-// Persona to Layout mapping
-export const PERSONA_LAYOUTS: Record<string, React.ComponentType<any>> = {
-  ceo: require('./CEOLayout').CEOLayout,
-  cfo: require('./CFOLayout').CFOLayout,
-  cmo: require('./CMOLayout').CMOLayout,
-  cto: require('./CTOLayout').CTOLayout,
-  coo: require('./COOLayout').COOLayout,
-  chro: require('./CHROLayout').CHROLayout,
-  cro: require('./CROLayout').CROLayout,
-  clo: require('./CLOLayout').CLOLayout,
-  ciso: require('./CISOLayout').CISOLayout,
-  cco: require('./CCOLayout').CCOLayout,
-  chief_of_staff: require('./ChiefOfStaffLayout').ChiefOfStaffLayout,
-  chief_people: require('./ChiefPeopleLayout').ChiefPeopleLayout,
-  admin: require('./AdminLayout').AdminLayout,
-  entrepreneur: require('./EntrepreneurLayout').EntrepreneurLayout,
-};
+export * from './PersonaLayoutRenderer';
