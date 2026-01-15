@@ -46,7 +46,15 @@ serve(async (req) => {
     }
 
     const data = await response.json();
-    console.log("[elevenlabs-conversation-token] Successfully obtained signed URL");
+    console.log("[elevenlabs-conversation-token] Successfully obtained signed URL:", data.signed_url ? "present" : "missing");
+
+    if (!data.signed_url) {
+      console.error("[elevenlabs-conversation-token] No signed_url in response:", JSON.stringify(data));
+      return new Response(
+        JSON.stringify({ error: "No signed URL returned from ElevenLabs" }),
+        { status: 500, headers: { ...corsHeaders, "Content-Type": "application/json" } }
+      );
+    }
 
     // Return with signed_url property to match what the frontend expects
     return new Response(JSON.stringify({ signed_url: data.signed_url }), {
