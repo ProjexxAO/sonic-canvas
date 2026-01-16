@@ -7,6 +7,8 @@ import { ThemeProvider } from "next-themes";
 import { AuthProvider } from "@/hooks/useAuth";
 import { WorkspacesProvider } from "@/hooks/useWorkspaces";
 import { useVoiceCommandExecutor } from "@/hooks/useVoiceCommandExecutor";
+import { AtlasProvider } from "@/contexts/AtlasContext";
+import { GlobalAtlasOrb } from "@/components/atlas/GlobalAtlasOrb";
 import Index from "./pages/Index";
 import Auth from "./pages/Auth";
 import Atlas from "./pages/Atlas";
@@ -38,18 +40,21 @@ const App = () => (
             <Toaster />
             <Sonner />
             <BrowserRouter>
-              <VoiceCommandHandler />
-              <Routes>
-                <Route path="/" element={<Index />} />
-                <Route path="/auth" element={<Auth />} />
-                <Route path="/atlas" element={<Atlas />} />
-                <Route path="/import" element={<ImportAgents />} />
-                <Route path="/workspace/tools/:userId?" element={<UserToolPermissions />} />
-                <Route path="/governance" element={<ToolGovernance />} />
-                <Route path="/integrations" element={<Integrations />} />
-                {/* ADD ALL CUSTOM ROUTES ABOVE THE CATCH-ALL "*" ROUTE */}
-                <Route path="*" element={<NotFound />} />
-              </Routes>
+              <AtlasProvider>
+                <VoiceCommandHandler />
+                <Routes>
+                  <Route path="/" element={<Index />} />
+                  <Route path="/auth" element={<Auth />} />
+                  <Route path="/atlas" element={<Atlas />} />
+                  <Route path="/import" element={<ImportAgents />} />
+                  <Route path="/workspace/tools/:userId?" element={<UserToolPermissions />} />
+                  <Route path="/governance" element={<ToolGovernance />} />
+                  <Route path="/integrations" element={<Integrations />} />
+                  {/* ADD ALL CUSTOM ROUTES ABOVE THE CATCH-ALL "*" ROUTE */}
+                  <Route path="*" element={<NotFound />} />
+                </Routes>
+                <GlobalAtlasOrb />
+              </AtlasProvider>
             </BrowserRouter>
           </TooltipProvider>
         </WorkspacesProvider>
