@@ -124,15 +124,21 @@ export function AtlasProvider({ children }: AtlasProviderProps) {
   }, [user, agents]);
   
   // Track navigation history
+  const historyIndexRef = useRef(historyIndex);
+  useEffect(() => { historyIndexRef.current = historyIndex; }, [historyIndex]);
+  
   useEffect(() => {
     const currentPath = location.pathname;
+    const currentIndex = historyIndexRef.current;
+    
     setHistoryStack(prev => {
       // If navigating via browser buttons, don't add to stack
-      if (prev[historyIndex] === currentPath) return prev;
+      if (prev[currentIndex] === currentPath) return prev;
       
       // Add new path, truncate forward history
-      const newStack = [...prev.slice(0, historyIndex + 1), currentPath];
-      setHistoryIndex(newStack.length - 1);
+      const newStack = [...prev.slice(0, currentIndex + 1), currentPath];
+      // Update index to point to new end
+      setTimeout(() => setHistoryIndex(newStack.length - 1), 0);
       return newStack;
     });
   }, [location.pathname]);
