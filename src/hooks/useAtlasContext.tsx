@@ -31,10 +31,11 @@ export function useAtlasContext({
   const lastSentAtRef = useRef<number>(0);
   const connectedAtRef = useRef<number>(0);
 
-  // Add activity to the log
-  const logActivity = useCallback((activity: string) => {
+  // Add activity to the log - stable reference
+  const logActivityRef = useRef((activity: string) => {
     activityLogRef.current = [activity, ...activityLogRef.current].slice(0, 10);
-  }, []);
+  });
+  const logActivity = logActivityRef.current;
 
   // Track connection time (to avoid spamming DataChannel during the first seconds)
   useEffect(() => {

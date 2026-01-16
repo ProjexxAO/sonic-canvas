@@ -232,13 +232,15 @@ function AtlasPage() {
   }, [addLog, saveMessage, agents, activeAgents, user]);
 
   // Memory context is now loaded instantly via useAtlasMemory hook
-  // Set pending context when memory is loaded
+  // Set pending context when memory is loaded (only run once when loaded)
+  const memoryLoadedRef = useRef(false);
   useEffect(() => {
-    if (atlasMemory.isLoaded && atlasMemory.contextString) {
+    if (atlasMemory.isLoaded && atlasMemory.contextString && !memoryLoadedRef.current) {
+      memoryLoadedRef.current = true;
       pendingMemoryContextRef.current = atlasMemory.contextString;
       console.log("[Atlas] Memory pre-loaded:", atlasMemory.messages.length, "messages");
     }
-  }, [atlasMemory.isLoaded, atlasMemory.contextString, atlasMemory.messages.length]);
+  }, [atlasMemory.isLoaded, atlasMemory.contextString]);
 
   // Memoize the conversation config to prevent React hook queue errors
   const conversationConfig = useMemo(() => ({

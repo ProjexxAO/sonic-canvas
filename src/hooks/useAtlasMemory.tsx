@@ -205,17 +205,21 @@ export function useAtlasMemory({
   }, []);
 
   // Auto-load on mount or when userId changes
+  const hasLoadedRef = useRef(false);
   useEffect(() => {
     if (!autoLoad || !userId) return;
 
-    // Only reload if userId changed
+    // Only load once per userId
     if (userIdRef.current !== userId) {
       userIdRef.current = userId;
-      loadMemory();
-    } else if (!state.isLoaded && !state.isLoading) {
+      hasLoadedRef.current = false;
+    }
+    
+    if (!hasLoadedRef.current) {
+      hasLoadedRef.current = true;
       loadMemory();
     }
-  }, [userId, autoLoad, loadMemory, state.isLoaded, state.isLoading]);
+  }, [userId, autoLoad, loadMemory]);
 
   // Subscribe to real-time message updates
   useEffect(() => {
