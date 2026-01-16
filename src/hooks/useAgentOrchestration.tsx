@@ -142,6 +142,63 @@ export function useAgentOrchestration(userId: string | undefined) {
     }
   }, [userId, fetchTasks, fetchNotifications]);
 
+  // Real-time subscription for tasks
+  useEffect(() => {
+    if (!userId) return;
+
+    const channel = supabase
+      .channel('agent-tasks')
+      .on(
+        'postgres_changes',
+        {
+          event: '*', // Listen to INSERT, UPDATE, DELETE
+          schema: 'public',
+          table: 'agent_task_queue',
+          filter: `user_id=eq.${userId}`,
+        },
+        (payload) => {
+          if (payload.eventType === 'INSERT') {
+            const newTask = {
+              ...payload.new,
+              scheduled_at: payload.new.scheduled_at ? new Date(payload.new.scheduled_at) : undefined,
+              started_at: payload.new.started_at ? new Date(payload.new.started_at) : undefined,
+              completed_at: payload.new.completed_at ? new Date(payload.new.completed_at) : undefined,
+              created_at: new Date(payload.new.created_at),
+            } as AgentTask;
+            
+            setTasks(prev => [newTask, ...prev]);
+            toast.info(`New task: ${newTask.task_title}`, {
+              description: `Status: ${newTask.status}`,
+            });
+          } else if (payload.eventType === 'UPDATE') {
+            const updatedTask = {
+              ...payload.new,
+              scheduled_at: payload.new.scheduled_at ? new Date(payload.new.scheduled_at) : undefined,
+              started_at: payload.new.started_at ? new Date(payload.new.started_at) : undefined,
+              completed_at: payload.new.completed_at ? new Date(payload.new.completed_at) : undefined,
+              created_at: new Date(payload.new.created_at),
+            } as AgentTask;
+            
+            setTasks(prev => prev.map(t => t.id === updatedTask.id ? updatedTask : t));
+            
+            // Notify on completion or failure
+            if (updatedTask.status === 'completed') {
+              toast.success(`Task completed: ${updatedTask.task_title}`);
+            } else if (updatedTask.status === 'failed') {
+              toast.error(`Task failed: ${updatedTask.task_title}`);
+            }
+          } else if (payload.eventType === 'DELETE') {
+            setTasks(prev => prev.filter(t => t.id !== payload.old.id));
+          }
+        }
+      )
+      .subscribe();
+
+    return () => {
+      supabase.removeChannel(channel);
+    };
+  }, [userId]);
+
   // Real-time subscription for notifications
   useEffect(() => {
     if (!userId) return;
@@ -257,6 +314,36 @@ export function useAgentOrchestration(userId: string | undefined) {
     }
   }, [userId, fetchTasks]);
 
+  // Update task progress
+  const updateTaskProgress = useCallback(async (taskId: string, progress: number, status?: AgentTask['status']) => {
+    if (!userId) return;
+
+    try {
+      const updates: Record<string, any> = { progress };
+      if (status) {
+        updates.status = status;
+        if (status === 'in_progress' && !tasks.find(t => t.id === taskId)?.started_at) {
+          updates.started_at = new Date().toISOString();
+        }
+        if (status === 'completed' || status === 'failed') {
+          updates.completed_at = new Date().toISOString();
+        }
+      }
+
+      const { error } = await (supabase as any)
+        .from('agent_task_queue')
+        .update(updates)
+        .eq('id', taskId)
+        .eq('user_id', userId);
+
+      if (error) throw error;
+      // Real-time subscription will handle the UI update
+    } catch (error) {
+      console.error('Error updating task progress:', error);
+      toast.error('Failed to update task');
+    }
+  }, [userId, tasks]);
+
   // Mark notification as read
   const markNotificationRead = useCallback(async (notificationId: string) => {
     if (!userId) return;
@@ -366,6 +453,7 @@ export function useAgentOrchestration(userId: string | undefined) {
     unreadCount,
     isLoading,
     createTask,
+    updateTaskProgress,
     approveTaskSuggestion,
     cancelTask,
     markNotificationRead,
