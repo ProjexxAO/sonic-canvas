@@ -88,6 +88,7 @@ import { AtlasTaskProgress } from '@/components/atlas/AtlasTaskProgress';
 import { CSuiteDataHub } from '@/components/csuite/CSuiteDataHub';
 import { OnboardingFlow } from '@/components/onboarding';
 import { useAgentOrchestration } from '@/hooks/useAgentOrchestration';
+import { useAtlasSafe } from '@/contexts/AtlasContext';
 // Executive, Workflow, and Enterprise features now integrated into CSuiteDataHub
 
 const ATLAS_AGENT_ID = "agent_7501kbh21cg1eht9xtjw6kvkpm4m";
@@ -135,6 +136,10 @@ function AtlasPage() {
   const [generatingPersona, setGeneratingPersona] = useState<string | null>(null);
   // Instant memory retrieval - loads on Atlas initialization
   const atlasMemory = useAtlasMemory({ userId: user?.id, autoLoad: true, messageLimit: 20 });
+
+  // Global Atlas context - check if Atlas is active from another page
+  const globalAtlas = useAtlasSafe();
+  const isGloballyActive = globalAtlas?.isConnected ?? false;
 
   // Onboarding
   const onboarding = useOnboarding(user?.id);
@@ -1800,9 +1805,19 @@ function AtlasPage() {
             </div>
           )}
           
+          {/* Global Session Indicator */}
+          {isGloballyActive && !isConnected && (
+            <div className="flex items-center gap-2 px-2 py-1 rounded bg-success/10 border border-success/30">
+              <Radio size={12} className="text-success animate-pulse" />
+              <span className="text-[10px] font-mono text-success">GLOBAL SESSION ACTIVE</span>
+            </div>
+          )}
+          
           <div className="flex items-center gap-2">
             {isConnected ? (
               <Wifi size={14} className="text-success" />
+            ) : isGloballyActive ? (
+              <Radio size={14} className="text-success animate-pulse" />
             ) : (
               <WifiOff size={14} className="text-muted-foreground" />
             )}
@@ -2121,11 +2136,23 @@ function AtlasPage() {
                 </div>
                 
                 {/* Activation hint when not connected */}
-                {!isConnected && !isConnecting && (
+                {!isConnected && !isConnecting && !isGloballyActive && (
                   <div className="absolute inset-0 flex items-center justify-center">
                     <span className="text-[10px] font-mono text-primary/60 animate-pulse">
                       TAP TO ACTIVATE
                     </span>
+                  </div>
+                )}
+                
+                {/* Global session active indicator */}
+                {!isConnected && !isConnecting && isGloballyActive && (
+                  <div className="absolute inset-0 flex items-center justify-center">
+                    <div className="text-center">
+                      <Radio size={20} className="text-success animate-pulse mx-auto mb-1" />
+                      <span className="text-[10px] font-mono text-success">
+                        GLOBAL SESSION
+                      </span>
+                    </div>
                   </div>
                 )}
                 
@@ -2144,6 +2171,28 @@ function AtlasPage() {
 
           {/* Controls */}
           <div className="flex flex-col items-center gap-4 mt-8">
+            {/* Global session active notice */}
+            {isGloballyActive && !isConnected && (
+              <div className="text-center mb-2">
+                <div className="flex items-center justify-center gap-2 text-success mb-1">
+                  <Radio size={14} className="animate-pulse" />
+                  <span className="text-xs font-mono">ATLAS SESSION ACTIVE</span>
+                </div>
+                <p className="text-[10px] text-muted-foreground max-w-[200px]">
+                  Atlas is running from another page. Use the global orb to continue your conversation.
+                </p>
+                <Button
+                  onClick={() => globalAtlas?.stopConversation()}
+                  variant="outline"
+                  size="sm"
+                  className="mt-2 gap-2 font-mono text-xs"
+                >
+                  <MicOff className="w-3 h-3" />
+                  END GLOBAL SESSION
+                </Button>
+              </div>
+            )}
+            
             {/* Main controls */}
             <div className="flex justify-center gap-3">
               {isConnected && (
