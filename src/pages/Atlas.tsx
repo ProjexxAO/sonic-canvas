@@ -3,9 +3,9 @@
 import React, { useState, useCallback, useEffect, useRef, useMemo } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { useConversation } from "@elevenlabs/react";
-import { createMemoryManager, MemoryManager } from '@/lib/memory-manager';
 import { voiceIntentParser } from '@/lib/voice-intent-parser';
 import { useVoiceCommandBus } from '@/lib/voice-command-bus';
+import { useAtlasMemory } from '@/hooks/useAtlasMemory';
 
 // Error boundary to handle ElevenLabs SDK internal React errors during HMR
 class AtlasErrorBoundary extends React.Component<
@@ -133,7 +133,8 @@ function AtlasPage() {
   const animationRef = useRef<number>();
   const fileInputRef = useRef<HTMLInputElement>(null);
   const [generatingPersona, setGeneratingPersona] = useState<string | null>(null);
-  const [memoryManager, setMemoryManager] = useState<MemoryManager | null>(null);
+  // Instant memory retrieval - loads on Atlas initialization
+  const atlasMemory = useAtlasMemory({ userId: user?.id, autoLoad: true, messageLimit: 20 });
 
   // Onboarding
   const onboarding = useOnboarding(user?.id);
@@ -218,14 +219,8 @@ function AtlasPage() {
   const agentsRef = useRef(agents);
   const activeAgentsRef = useRef(activeAgents);
   const userRef = useRef(user);
-  const memoryManagerRef = useRef<MemoryManager | null>(null);
   const conversationRef = useRef<any>(null);
   const pendingMemoryContextRef = useRef<string | null>(null);
-  
-  // Keep memoryManagerRef updated
-  useEffect(() => {
-    memoryManagerRef.current = memoryManager;
-  }, [memoryManager]);
   
   // Keep refs updated
   useEffect(() => {
@@ -236,12 +231,14 @@ function AtlasPage() {
     userRef.current = user;
   }, [addLog, saveMessage, agents, activeAgents, user]);
 
-  // Initialize memory manager when user is available
+  // Memory context is now loaded instantly via useAtlasMemory hook
+  // Set pending context when memory is loaded
   useEffect(() => {
-    if (user?.id) {
-      setMemoryManager(createMemoryManager(user.id));
+    if (atlasMemory.isLoaded && atlasMemory.contextString) {
+      pendingMemoryContextRef.current = atlasMemory.contextString;
+      console.log("[Atlas] Memory pre-loaded:", atlasMemory.messages.length, "messages");
     }
-  }, [user?.id]);
+  }, [atlasMemory.isLoaded, atlasMemory.contextString, atlasMemory.messages.length]);
 
   // Memoize the conversation config to prevent React hook queue errors
   const conversationConfig = useMemo(() => ({
@@ -786,13 +783,11 @@ function AtlasPage() {
           const role = message.role === "agent" ? 'assistant' : 'user';
           saveMessageRef.current(role, content);
           
-          // Store in persistent memory
-          if (memoryManagerRef.current) {
-            memoryManagerRef.current.storeMessage(role, content, {
-              timestamp: new Date().toISOString(),
-              source: 'voice'
-            });
-          }
+          // Store in persistent memory via hook
+          atlasMemory.storeMessage(role, content, {
+            timestamp: new Date().toISOString(),
+            source: 'voice'
+          });
           
           // Parse user messages for UI commands
           if (message.role !== "agent") {
@@ -818,13 +813,11 @@ function AtlasPage() {
             lastSavedMessageRef.current = userText;
             saveMessageRef.current('user', userText);
             
-            // Store in persistent memory
-            if (memoryManagerRef.current) {
-              memoryManagerRef.current.storeMessage('user', userText, {
-                timestamp: new Date().toISOString(),
-                source: 'voice'
-              });
-            }
+            // Store in persistent memory via hook
+            atlasMemory.storeMessage('user', userText, {
+              timestamp: new Date().toISOString(),
+              source: 'voice'
+            });
             
             // Parse for UI commands
             const intent = voiceIntentParser.parse(userText);
@@ -848,13 +841,11 @@ function AtlasPage() {
             lastSavedMessageRef.current = agentText;
             saveMessageRef.current('assistant', agentText);
             
-            // Store in persistent memory
-            if (memoryManagerRef.current) {
-              memoryManagerRef.current.storeMessage('assistant', agentText, {
-                timestamp: new Date().toISOString(),
-                source: 'voice'
-              });
-            }
+            // Store in persistent memory via hook
+            atlasMemory.storeMessage('assistant', agentText, {
+              timestamp: new Date().toISOString(),
+              source: 'voice'
+            });
           }
         }
         return;
@@ -940,19 +931,11 @@ function AtlasPage() {
         user?.email?.split("@")[0] ||
         "Operator";
 
-      // Load memory context before starting
-      let memoryContext: string | undefined;
-      if (memoryManager) {
-        try {
-          const context = await memoryManager.buildContext();
-          if (context) {
-            memoryContext = context;
-            pendingMemoryContextRef.current = context;
-            console.log("[Atlas] Loaded memory context:", context.substring(0, 100) + "...");
-          }
-        } catch (e) {
-          console.warn("[Atlas] Failed to load memory context:", e);
-        }
+      // Memory context is already pre-loaded via useAtlasMemory hook
+      // Ensure latest context is set for injection on connect
+      if (atlasMemory.contextString) {
+        pendingMemoryContextRef.current = atlasMemory.contextString;
+        console.log("[Atlas] Using pre-loaded memory context:", atlasMemory.contextString.substring(0, 100) + "...");
       }
 
       // Build session config
@@ -985,7 +968,7 @@ function AtlasPage() {
     } finally {
       setIsConnecting(false);
     }
-  }, [conversation, isConnecting, user?.id, user?.email, user?.user_metadata, memoryManager]);
+  }, [conversation, isConnecting, user?.id, user?.email, user?.user_metadata, atlasMemory.contextString]);
 
   const stopConversation = useCallback(async () => {
     await conversation.endSession();
