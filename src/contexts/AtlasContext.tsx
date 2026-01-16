@@ -46,6 +46,7 @@ interface AtlasContextValue {
   stopConversation: () => Promise<void>;
   toggleMute: () => Promise<void>;
   sendTextMessage: (text: string) => void;
+  sendContextualUpdate: (text: string) => void;
   
   // Navigation
   goBack: () => void;
@@ -62,6 +63,9 @@ interface AtlasContextValue {
   
   // Logs
   actionLogs: ActionLog[];
+  
+  // Direct conversation access for Atlas page
+  conversation: ReturnType<typeof useConversation>;
 }
 
 const AtlasContext = createContext<AtlasContextValue | null>(null);
@@ -754,6 +758,14 @@ export function AtlasProvider({ children }: AtlasProviderProps) {
     }
   }, []);
 
+  // Send contextual update to Atlas
+  const sendContextualUpdate = useCallback((text: string) => {
+    if (isConnected && conversation) {
+      conversation.sendContextualUpdate(text);
+    }
+  }, [isConnected, conversation]);
+
+
   // Audio visualization
   useEffect(() => {
     if (!isConnected) {
@@ -824,6 +836,7 @@ export function AtlasProvider({ children }: AtlasProviderProps) {
     stopConversation,
     toggleMute,
     sendTextMessage,
+    sendContextualUpdate,
     goBack,
     goForward,
     canGoBack,
@@ -834,6 +847,7 @@ export function AtlasProvider({ children }: AtlasProviderProps) {
     isMinimized,
     setIsMinimized,
     actionLogs,
+    conversation,
   };
 
   return (
