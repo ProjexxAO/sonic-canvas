@@ -128,6 +128,31 @@ serve(async (req) => {
       });
     }
 
+    if (action === 'update_task') {
+      const { taskId, updates } = body;
+      
+      const { data, error } = await supabase
+        .from('agent_task_queue')
+        .update({
+          ...updates,
+          updated_at: new Date().toISOString(),
+        })
+        .eq('id', taskId)
+        .eq('user_id', userId)
+        .select()
+        .single();
+
+      if (error) throw error;
+
+      return new Response(JSON.stringify({ 
+        success: true, 
+        task: data,
+        message: `Task updated`
+      }), {
+        headers: { ...corsHeaders, 'Content-Type': 'application/json' },
+      });
+    }
+
     if (action === 'get_tasks') {
       const { data, error } = await supabase
         .from('agent_task_queue')
