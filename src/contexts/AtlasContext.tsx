@@ -216,14 +216,20 @@ export function AtlasProvider({ children }: AtlasProviderProps) {
       getCurrentLocation: () => {
         addLogRef.current('getCurrentLocation', {}, location.pathname, 'success');
         const pageNames: Record<string, string> = {
-          '/': 'Home Dashboard',
-          '/atlas': 'Atlas Command Center',
-          '/import': 'Import Agents',
+          '/': 'Home Dashboard - Agent Management',
+          '/atlas': 'Atlas Command Center - C-Suite Data Hub',
+          '/import': 'Import Agents - Bulk Upload',
           '/integrations': 'Integrations Marketplace',
-          '/governance': 'Tool Governance',
-          '/auth': 'Authentication',
+          '/governance': 'Tool Governance - Agent Permissions',
+          '/workspace/tools': 'User Tool Permissions',
+          '/auth': 'Authentication - Login/Sign Up',
         };
-        const pageName = pageNames[location.pathname] || location.pathname;
+        // Handle dynamic routes
+        let pageName = pageNames[location.pathname];
+        if (!pageName && location.pathname.startsWith('/workspace/tools')) {
+          pageName = 'User Tool Permissions';
+        }
+        pageName = pageName || location.pathname;
         return `You are currently on: ${pageName}`;
       },
 
@@ -397,36 +403,86 @@ export function AtlasProvider({ children }: AtlasProviderProps) {
         }
       },
 
-      // Navigate to page
+      // Navigate to page - comprehensive route support
       navigateTo: (params: { page: string }) => {
         addLogRef.current('navigateTo', params, `Navigating to ${params.page}`, 'success');
         
+        // All app routes with natural language aliases
         const routes: Record<string, string> = {
+          // Main pages
           'home': '/',
           'main': '/',
           'dashboard': '/',
+          'index': '/',
           'agents': '/',
           'sonic nodes': '/',
-          'import': '/import',
-          'import agents': '/import',
-          'auth': '/auth',
-          'login': '/auth',
-          'sign in': '/auth',
-          'marketplace': '/integrations',
-          'integrations': '/integrations',
-          'governance': '/governance',
-          'tool governance': '/governance',
-          'permissions': '/workspace/tools',
-          'user permissions': '/workspace/tools',
+          'agent dashboard': '/',
+          
+          // Atlas / Command Center
           'atlas': '/atlas',
           'command center': '/atlas',
           'voice': '/atlas',
+          'voice control': '/atlas',
+          'ai assistant': '/atlas',
+          'data hub': '/atlas',
+          'c-suite': '/atlas',
+          'csuite': '/atlas',
+          'executive dashboard': '/atlas',
+          
+          // Import
+          'import': '/import',
+          'import agents': '/import',
+          'bulk import': '/import',
+          'upload agents': '/import',
+          
+          // Governance
+          'governance': '/governance',
+          'tool governance': '/governance',
+          'agent governance': '/governance',
+          
+          // Permissions
+          'permissions': '/workspace/tools',
+          'user permissions': '/workspace/tools',
+          'tool permissions': '/workspace/tools',
+          'workspace tools': '/workspace/tools',
+          
+          // Integrations / Marketplace
+          'integrations': '/integrations',
+          'marketplace': '/integrations',
+          'connect': '/integrations',
+          'connections': '/integrations',
+          'apps': '/integrations',
+          
+          // Auth
+          'auth': '/auth',
+          'login': '/auth',
+          'sign in': '/auth',
+          'sign up': '/auth',
+          'register': '/auth',
+          'authentication': '/auth',
         };
         
-        const pageLower = params.page.toLowerCase();
-        const route = routes[pageLower] || Object.entries(routes).find(([k]) => pageLower.includes(k))?.[1] || '/';
-        toast.info(`Navigating to ${params.page}`);
+        const pageLower = params.page.toLowerCase().trim();
         
+        // Check if it's a direct path (starts with /)
+        if (pageLower.startsWith('/')) {
+          toast.info(`Navigating to ${params.page}`);
+          setTimeout(() => navigate(pageLower), 500);
+          return `Navigating to ${params.page}`;
+        }
+        
+        // Try exact match first
+        let route = routes[pageLower];
+        
+        // If no exact match, try partial match
+        if (!route) {
+          const partialMatch = Object.entries(routes).find(([k]) => 
+            pageLower.includes(k) || k.includes(pageLower)
+          );
+          route = partialMatch?.[1] || '/';
+        }
+        
+        toast.info(`Navigating to ${params.page}`);
         setTimeout(() => navigate(route), 500);
         return `Navigating to ${params.page}`;
       },
