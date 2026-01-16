@@ -84,8 +84,10 @@ import { useDataHubController, getDomainKeyFromName, getTabFromName, getPersonaF
 import { Button } from '@/components/ui/button';
 import { ScrollArea } from '@/components/ui/scroll-area';
 import { ActionLogItem } from '@/components/atlas/ActionLogItem';
+import { AtlasTaskProgress } from '@/components/atlas/AtlasTaskProgress';
 import { CSuiteDataHub } from '@/components/csuite/CSuiteDataHub';
 import { OnboardingFlow } from '@/components/onboarding';
+import { useAgentOrchestration } from '@/hooks/useAgentOrchestration';
 // Executive, Workflow, and Enterprise features now integrated into CSuiteDataHub
 
 const ATLAS_AGENT_ID = "agent_7501kbh21cg1eht9xtjw6kvkpm4m";
@@ -139,6 +141,9 @@ function AtlasPage() {
   // C-Suite data for onboarding
   const csuiteData = useCSuiteData(user?.id);
   const totalDataItems = Object.values(csuiteData.stats).reduce((a, b) => a + b, 0);
+
+  // Agent orchestration for task tracking
+  const orchestration = useAgentOrchestration(user?.id);
 
   // Get active agents (those with ACTIVE or PROCESSING status)
   const activeAgents = agents.filter(a => a.status === 'ACTIVE' || a.status === 'PROCESSING').slice(0, 6);
@@ -2070,6 +2075,9 @@ function AtlasPage() {
 
         {/* Right Panel - Results & Logs (Scrollable) */}
         <div className="w-96 flex-shrink-0 flex flex-col gap-4 overflow-y-auto max-h-[calc(100vh-10rem)] pr-2 scrollbar-thin scrollbar-thumb-border scrollbar-track-transparent pb-4">
+          {/* Atlas Task Progress */}
+          <AtlasTaskProgress tasks={orchestration.tasks} isLoading={orchestration.isLoading} />
+
           {/* Search Results */}
           {searchResults.length > 0 && (
             <div className="bg-card/90 border border-border rounded-lg p-3 shadow-sm">
