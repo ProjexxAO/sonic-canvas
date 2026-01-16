@@ -336,6 +336,119 @@ function AtlasPage() {
         }
       },
 
+      // Create a task for Atlas to track
+      createTask: async (params: { title: string; description?: string; priority?: string; taskType?: string }) => {
+        const logId = addLogRef.current('createTask', params, 'Creating task...', 'pending');
+        try {
+          const response = await supabase.functions.invoke('atlas-orchestrator', {
+            body: { 
+              action: 'create_task', 
+              userId: userRef.current?.id,
+              taskData: {
+                task_title: params.title,
+                task_description: params.description || '',
+                task_priority: params.priority || 'medium',
+                task_type: params.taskType || 'assistance',
+                orchestration_mode: 'hybrid',
+                assigned_agents: [],
+                input_data: {},
+                agent_suggestions: [],
+              }
+            }
+          });
+          
+          if (response.error) throw response.error;
+          
+          const task = response.data?.task;
+          
+          setActionLogs(prev => prev.map(l => 
+            l.id === logId ? { ...l, result: `Created: ${task?.task_title || params.title}`, status: 'success' } : l
+          ));
+          
+          toast.success(`Task created: ${params.title}`);
+          return `Task "${params.title}" has been created and is now being tracked. Priority: ${params.priority || 'medium'}`;
+        } catch (error) {
+          const msg = error instanceof Error ? error.message : 'Task creation failed';
+          setActionLogs(prev => prev.map(l => 
+            l.id === logId ? { ...l, result: msg, status: 'error' } : l
+          ));
+          toast.error('Failed to create task');
+          return `Error: ${msg}`;
+        }
+      },
+
+      // Update task progress
+      updateTaskProgress: async (params: { taskId: string; progress: number; status?: string }) => {
+        const logId = addLogRef.current('updateTaskProgress', params, 'Updating task...', 'pending');
+        try {
+          const response = await supabase.functions.invoke('atlas-orchestrator', {
+            body: { 
+              action: 'update_task', 
+              userId: userRef.current?.id,
+              taskId: params.taskId,
+              updates: {
+                progress: Math.min(100, Math.max(0, params.progress)),
+                status: params.status,
+              }
+            }
+          });
+          
+          if (response.error) throw response.error;
+          
+          setActionLogs(prev => prev.map(l => 
+            l.id === logId ? { ...l, result: `Progress: ${params.progress}%`, status: 'success' } : l
+          ));
+          
+          return `Task updated to ${params.progress}% complete`;
+        } catch (error) {
+          const msg = error instanceof Error ? error.message : 'Update failed';
+          setActionLogs(prev => prev.map(l => 
+            l.id === logId ? { ...l, result: msg, status: 'error' } : l
+          ));
+          return `Error: ${msg}`;
+        }
+      },
+
+      // Get current tasks
+      getMyTasks: async () => {
+        const logId = addLogRef.current('getMyTasks', {}, 'Fetching tasks...', 'pending');
+        try {
+          const response = await supabase.functions.invoke('atlas-orchestrator', {
+            body: { 
+              action: 'get_tasks', 
+              userId: userRef.current?.id,
+            }
+          });
+          
+          if (response.error) throw response.error;
+          
+          const tasks = response.data?.tasks || [];
+          const activeTasks = tasks.filter((t: any) => 
+            t.status === 'pending' || t.status === 'in_progress' || t.status === 'awaiting_approval'
+          );
+          
+          setActionLogs(prev => prev.map(l => 
+            l.id === logId ? { ...l, result: `Found ${activeTasks.length} active tasks`, status: 'success' } : l
+          ));
+          
+          if (activeTasks.length === 0) {
+            return "You have no active tasks at the moment.";
+          }
+          
+          const taskSummary = activeTasks.slice(0, 5).map((t: any) => 
+            `• ${t.task_title} (${t.progress}% - ${t.status})`
+          ).join('\n');
+          
+          return `You have ${activeTasks.length} active tasks:\n${taskSummary}`;
+        } catch (error) {
+          const msg = error instanceof Error ? error.message : 'Failed to fetch tasks';
+          setActionLogs(prev => prev.map(l => 
+            l.id === logId ? { ...l, result: msg, status: 'error' } : l
+          ));
+          return `Error: ${msg}`;
+        }
+      },
+
       // Navigate to different pages - comprehensive route map
       navigateTo: (params: { page: string }) => {
         addLogRef.current('navigateTo', params, `Navigating to ${params.page}`, 'success');
