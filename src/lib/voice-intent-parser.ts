@@ -9,29 +9,57 @@ interface ParsedIntent {
 
 export class VoiceIntentParser {
   
-  // Comprehensive route mapping
+  // Comprehensive route mapping for all app pages
   private routeMap: Record<string, string> = {
+    // Main pages
     'dashboard': '/',
     'home': '/',
     'main': '/',
+    'index': '/',
+    'agents': '/',
+    'sonic nodes': '/',
+    'agent dashboard': '/',
+    
+    // Atlas / Command Center
     'atlas': '/atlas',
     'command center': '/atlas',
     'voice': '/atlas',
-    'agents': '/',
-    'sonic nodes': '/',
+    'voice control': '/atlas',
+    'ai assistant': '/atlas',
+    'data hub': '/atlas',
+    'c-suite': '/atlas',
+    'csuite': '/atlas',
+    'executive dashboard': '/atlas',
+    
+    // Import
     'import': '/import',
     'import agents': '/import',
-    'settings': '/settings',
-    'profile': '/profile',
+    'bulk import': '/import',
+    'upload agents': '/import',
+    
+    // Governance & Permissions
+    'governance': '/governance',
+    'tool governance': '/governance',
+    'agent governance': '/governance',
+    'permissions': '/workspace/tools',
+    'user permissions': '/workspace/tools',
+    'tool permissions': '/workspace/tools',
+    'workspace tools': '/workspace/tools',
+    
+    // Integrations / Marketplace
     'integrations': '/integrations',
     'marketplace': '/integrations',
-    'tool governance': '/tool-governance',
-    'governance': '/tool-governance',
-    'permissions': '/user-tool-permissions',
-    'user permissions': '/user-tool-permissions',
+    'connect': '/integrations',
+    'connections': '/integrations',
+    'apps': '/integrations',
+    
+    // Auth
     'auth': '/auth',
     'login': '/auth',
     'sign in': '/auth',
+    'sign up': '/auth',
+    'register': '/auth',
+    'authentication': '/auth',
   };
 
   // Sector keywords for agent filtering
