@@ -725,22 +725,42 @@ export function AtlasProvider({ children }: AtlasProviderProps) {
     try {
       await navigator.mediaDevices.getUserMedia({ audio: true });
 
-      const controller = new AbortController();
-      const t = window.setTimeout(() => controller.abort(), 30000);
-      
-      const res = await fetch(`${import.meta.env.VITE_SUPABASE_URL}/functions/v1/elevenlabs-conversation-token`, {
-        method: "POST",
-        headers: {
-          "Content-Type": "application/json",
-          apikey: import.meta.env.VITE_SUPABASE_PUBLISHABLE_KEY,
-          Authorization: `Bearer ${import.meta.env.VITE_SUPABASE_PUBLISHABLE_KEY}`,
-        },
-        signal: controller.signal,
-      });
-      
-      window.clearTimeout(t);
-      const signedUrlResp = await res.json().catch(() => ({}));
-      
+      const fetchSignedUrl = async () => {
+        const controller = new AbortController();
+        const t = window.setTimeout(() => controller.abort(), 60000);
+
+        try {
+          const res = await fetch(`${import.meta.env.VITE_SUPABASE_URL}/functions/v1/elevenlabs-conversation-token`, {
+            method: "POST",
+            headers: {
+              "Content-Type": "application/json",
+              apikey: import.meta.env.VITE_SUPABASE_PUBLISHABLE_KEY,
+              Authorization: `Bearer ${import.meta.env.VITE_SUPABASE_PUBLISHABLE_KEY}`,
+            },
+            signal: controller.signal,
+          });
+
+          const signedUrlResp = await res.json().catch(() => ({}));
+          return { res, signedUrlResp };
+        } finally {
+          window.clearTimeout(t);
+        }
+      };
+
+      // Retry once on timeout/AbortError (common with extensions/network hiccups)
+      let res: Response;
+      let signedUrlResp: any;
+
+      try {
+        ({ res, signedUrlResp } = await fetchSignedUrl());
+      } catch (e) {
+        if (e instanceof DOMException && e.name === "AbortError") {
+          ({ res, signedUrlResp } = await fetchSignedUrl());
+        } else {
+          throw e;
+        }
+      }
+
       if (!res.ok || !signedUrlResp?.signed_url) {
         throw new Error(signedUrlResp?.error || "Failed to authenticate with voice service");
       }
