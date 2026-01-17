@@ -1400,8 +1400,14 @@ function AtlasPage() {
             value={textInput}
             onChange={(e) => setTextInput(e.target.value)}
             onPaste={(e) => {
-              // Explicitly handle paste to ensure it works
-              e.stopPropagation();
+              // Explicitly handle paste to ensure it works with controlled input
+              e.preventDefault();
+              const pastedText = e.clipboardData.getData('text');
+              const input = e.currentTarget;
+              const start = input.selectionStart || 0;
+              const end = input.selectionEnd || 0;
+              const newValue = textInput.slice(0, start) + pastedText + textInput.slice(end);
+              setTextInput(newValue);
             }}
             placeholder={isConnected ? "Type a message to Atlas..." : "Connect to Atlas to send messages..."}
             disabled={!isConnected}
