@@ -49,7 +49,7 @@ const App = () => (
                   <Route path="/import" element={<ImportAgents />} />
                   <Route path="/workspace/tools/:userId?" element={<UserToolPermissions />} />
                   <Route path="/governance" element={<ToolGovernance />} />
-                  <Route path="/integrations" element={<Integrations />} />
+                  <Route path="/marketplace" element={<Integrations />} />
                   {/* ADD ALL CUSTOM ROUTES ABOVE THE CATCH-ALL "*" ROUTE */}
                   <Route path="*" element={<NotFound />} />
                 </Routes>

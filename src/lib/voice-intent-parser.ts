@@ -47,11 +47,11 @@ export class VoiceIntentParser {
     'workspace tools': '/workspace/tools',
     
     // Integrations / Marketplace
-    'integrations': '/integrations',
-    'marketplace': '/integrations',
-    'connect': '/integrations',
-    'connections': '/integrations',
-    'apps': '/integrations',
+    'integrations': '/marketplace',
+    'marketplace': '/marketplace',
+    'connect': '/marketplace',
+    'connections': '/marketplace',
+    'apps': '/marketplace',
     
     // Auth
     'auth': '/auth',
