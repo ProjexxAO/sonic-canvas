@@ -1,5 +1,5 @@
 // Global Floating Atlas Orb - Present on every page
-// Matches the main Atlas page cosmic orb visualizer
+// Minimal orb on non-dashboard pages that expands to full interface
 
 import { useState, useRef, useEffect, KeyboardEvent } from 'react';
 import { useAtlasSafe } from '@/contexts/AtlasContext';
@@ -10,6 +10,7 @@ import {
   VolumeX, 
   ChevronLeft, 
   ChevronRight,
+  ChevronUp,
   Minus,
   Maximize2,
   Sparkles,
@@ -137,102 +138,194 @@ export function GlobalAtlasOrb() {
   // Calculate orb intensity based on audio
   const intensity = isConnected ? (isSpeaking ? outputVolume : inputVolume) : 0;
 
-  // Minimized state - cosmic mini orb
+  // Minimized state - ultra-minimal orb with expand affordance
   if (isMinimized) {
     return (
-      <button
-        onClick={() => setIsMinimized(false)}
-        className="fixed bottom-6 right-6 z-50 w-16 h-16 rounded-full overflow-hidden transition-all duration-300 hover:scale-110 active:scale-95"
-        style={{
-          boxShadow: isConnected 
-            ? theme === 'dark'
-              ? `0 0 20px hsl(270 100% 50% / 0.5), 0 0 40px hsl(200 100% 50% / 0.3)`
-              : `0 0 15px hsl(222 70% 45% / 0.4), 0 0 30px hsl(201 80% 50% / 0.25)`
-            : theme === 'dark'
-              ? `0 0 10px hsl(var(--primary) / 0.3)`
-              : `0 4px 12px hsl(220 20% 20% / 0.15)`
-        }}
-      >
-        {/* Cosmic orb background */}
-        <div className="absolute inset-0 rounded-full overflow-hidden">
-          <div 
-            className="absolute inset-0"
-            style={{
-              background: theme === 'dark'
-                ? `radial-gradient(circle at 30% 30%,
-                    hsl(270 100% ${isConnected ? 50 + intensity * 20 : 40}%) 0%,
-                    hsl(220 100% ${isConnected ? 40 + intensity * 15 : 30}%) 40%,
-                    hsl(280 100% ${isConnected ? 25 + intensity * 10 : 20}%) 100%)`
-                : `radial-gradient(circle at 30% 30%,
-                    hsl(222 70% ${isConnected ? 45 + intensity * 15 : 40}%) 0%,
-                    hsl(201 75% ${isConnected ? 38 + intensity * 12 : 35}%) 40%,
-                    hsl(173 70% ${isConnected ? 32 + intensity * 10 : 30}%) 100%)`
-            }}
-          />
-          {/* Swirl effect */}
+      <div className="fixed bottom-6 right-6 z-50 flex flex-col items-center gap-1">
+        {/* Expand indicator - small line/arrow above orb */}
+        <button
+          onClick={() => setIsMinimized(false)}
+          className={cn(
+            "group flex flex-col items-center gap-0.5 transition-all duration-300",
+            "hover:gap-1"
+          )}
+        >
+          {/* Chevron indicator */}
+          <div className={cn(
+            "flex items-center justify-center w-6 h-4 rounded-full transition-all duration-300",
+            "bg-background/80 backdrop-blur-sm border border-border/30",
+            "group-hover:bg-background group-hover:border-primary/30",
+            "opacity-60 group-hover:opacity-100"
+          )}>
+            <ChevronUp className="w-3 h-3 text-muted-foreground group-hover:text-primary transition-colors" />
+          </div>
+          
+          {/* Connecting line */}
+          <div className={cn(
+            "w-px h-2 transition-all duration-300",
+            isConnected 
+              ? isSpeaking 
+                ? "bg-gradient-to-b from-secondary/60 to-transparent" 
+                : "bg-gradient-to-b from-primary/60 to-transparent"
+              : "bg-gradient-to-b from-muted-foreground/30 to-transparent",
+            "group-hover:h-3"
+          )} />
+        </button>
+
+        {/* The orb itself */}
+        <button
+          onClick={() => {
+            if (!isConnected && !isConnecting) {
+              startConversation();
+            } else {
+              setIsMinimized(false);
+            }
+          }}
+          className="relative w-14 h-14 rounded-full overflow-hidden transition-all duration-300 hover:scale-105 active:scale-95"
+          style={{
+            boxShadow: isConnected 
+              ? theme === 'dark'
+                ? `0 0 ${15 + intensity * 25}px hsl(${isSpeaking ? '45' : '270'} 100% 50% / ${0.4 + intensity * 0.3}), 0 0 ${30 + intensity * 20}px hsl(200 100% 50% / ${0.2 + intensity * 0.2})`
+                : `0 0 ${10 + intensity * 15}px hsl(222 70% 45% / ${0.3 + intensity * 0.2}), 0 0 ${20 + intensity * 15}px hsl(201 80% 50% / ${0.2 + intensity * 0.15})`
+              : theme === 'dark'
+                ? `0 0 10px hsl(var(--primary) / 0.3)`
+                : `0 4px 12px hsl(220 20% 20% / 0.15)`
+          }}
+        >
+          {/* Base nebula */}
           <div 
             className="absolute inset-0 rounded-full"
             style={{
               background: theme === 'dark'
+                ? `radial-gradient(ellipse at ${30 + (frequencyBands?.bass || 0) * 20}% ${40 + (frequencyBands?.mid || 0) * 20}%,
+                    hsl(270 100% ${isConnected ? 50 + intensity * 30 : 40}%) 0%,
+                    hsl(220 100% ${isConnected ? 40 + intensity * 20 : 30}%) 40%,
+                    hsl(280 100% ${isConnected ? 25 + intensity * 15 : 20}%) 100%)`
+                : `radial-gradient(ellipse at ${30 + (frequencyBands?.bass || 0) * 20}% ${40 + (frequencyBands?.mid || 0) * 20}%,
+                    hsl(222 70% ${isConnected ? 45 + intensity * 15 : 40}%) 0%,
+                    hsl(201 75% ${isConnected ? 38 + intensity * 12 : 35}%) 40%,
+                    hsl(173 70% ${isConnected ? 32 + intensity * 10 : 30}%) 100%)`,
+              transform: `scale(${1 + intensity * 0.08})`,
+              transition: 'transform 0.1s ease-out',
+            }}
+          />
+          
+          {/* Swirl effect - responds to audio */}
+          <div 
+            className={cn(
+              "absolute inset-0 rounded-full",
+              theme === 'dark' ? "mix-blend-screen" : "mix-blend-soft-light"
+            )}
+            style={{
+              background: theme === 'dark'
                 ? `conic-gradient(from 0deg at 50% 50%,
                     transparent 0deg,
-                    hsl(280 100% 60% / 0.5) 60deg,
+                    hsl(280 100% ${60 + (frequencyBands?.bass || 0) * 30}% / ${0.5 + intensity * 0.4}) 60deg,
                     transparent 120deg,
-                    hsl(200 100% 70% / 0.4) 180deg,
+                    hsl(200 100% ${70 + (frequencyBands?.mid || 0) * 25}% / ${0.45 + intensity * 0.4}) 180deg,
                     transparent 240deg,
-                    hsl(320 100% 65% / 0.4) 300deg,
+                    hsl(320 100% ${65 + (frequencyBands?.treble || 0) * 30}% / ${0.4 + intensity * 0.4}) 300deg,
                     transparent 360deg)`
                 : `conic-gradient(from 0deg at 50% 50%,
                     transparent 0deg,
-                    hsl(222 75% 40% / 0.5) 60deg,
+                    hsl(222 75% ${38 + (frequencyBands?.bass || 0) * 18}% / ${0.55 + intensity * 0.35}) 60deg,
                     transparent 120deg,
-                    hsl(201 80% 45% / 0.45) 180deg,
+                    hsl(201 80% ${42 + (frequencyBands?.mid || 0) * 15}% / ${0.5 + intensity * 0.35}) 180deg,
                     transparent 240deg,
-                    hsl(173 75% 38% / 0.45) 300deg,
+                    hsl(173 75% ${36 + (frequencyBands?.treble || 0) * 18}% / ${0.5 + intensity * 0.35}) 300deg,
                     transparent 360deg)`,
-              animation: isConnected ? 'spin 3s linear infinite' : 'spin 8s linear infinite',
-              filter: 'blur(3px)',
+              animation: isConnected && isSpeaking 
+                ? `spin ${2 - intensity}s linear infinite` 
+                : isConnected 
+                  ? 'spin 5s linear infinite' 
+                  : 'spin 8s linear infinite',
+              filter: `blur(${4 - intensity * 2}px)`,
             }}
           />
+          
+          {/* Energy core - pulses with audio */}
+          <div 
+            className="absolute inset-0 m-auto rounded-full transition-all duration-100"
+            style={{
+              width: `${28 + (frequencyBands?.bass || 0) * 35}%`,
+              height: `${28 + (frequencyBands?.bass || 0) * 35}%`,
+              background: theme === 'dark'
+                ? `radial-gradient(circle,
+                    hsl(${isSpeaking ? '45 100%' : '190 100%'} ${80 + intensity * 20}% / ${0.7 + intensity * 0.3}) 0%,
+                    hsl(${isSpeaking ? '320 100%' : '210 100%'} 70% / ${0.4 + intensity * 0.4}) 50%,
+                    transparent 70%)`
+                : `radial-gradient(circle,
+                    hsl(${isSpeaking ? '36 85%' : '173 80%'} ${52 + intensity * 15}% / ${0.75 + intensity * 0.2}) 0%,
+                    hsl(${isSpeaking ? '222 70%' : '201 75%'} ${42 + intensity * 12}% / ${0.45 + intensity * 0.35}) 50%,
+                    transparent 70%)`,
+              filter: `blur(${2 - intensity}px)`,
+            }}
+          />
+          
           {/* Stars/sparkles */}
           <div 
             className="absolute inset-0 rounded-full"
             style={{
               backgroundImage: theme === 'dark'
-                ? `radial-gradient(1px 1px at 20% 30%, white 100%, transparent),
-                   radial-gradient(1px 1px at 60% 20%, white 100%, transparent),
-                   radial-gradient(1px 1px at 80% 50%, hsl(180 100% 80%) 100%, transparent),
-                   radial-gradient(1px 1px at 30% 70%, hsl(280 100% 80%) 100%, transparent)`
-                : `radial-gradient(1.5px 1.5px at 20% 30%, hsl(222 70% 35%) 100%, transparent),
-                   radial-gradient(1.5px 1.5px at 60% 20%, hsl(201 75% 38%) 100%, transparent),
-                   radial-gradient(1.5px 1.5px at 80% 50%, hsl(36 80% 45%) 100%, transparent),
-                   radial-gradient(1.5px 1.5px at 30% 70%, hsl(173 70% 35%) 100%, transparent)`,
+                ? `radial-gradient(1px 1px at 20% 30%, white ${0.6 + intensity * 0.4}, transparent),
+                   radial-gradient(1px 1px at 60% 20%, white ${0.55 + intensity * 0.4}, transparent),
+                   radial-gradient(1.5px 1.5px at 80% 50%, hsl(180 100% 80% / ${0.6 + intensity * 0.4}) 0%, transparent 100%),
+                   radial-gradient(1.5px 1.5px at 30% 70%, hsl(280 100% 80% / ${0.55 + intensity * 0.4}) 0%, transparent 100%)`
+                : `radial-gradient(1.5px 1.5px at 20% 30%, hsl(222 70% 35% / ${0.6 + intensity * 0.3}), transparent),
+                   radial-gradient(1.5px 1.5px at 60% 20%, hsl(201 75% 38% / ${0.55 + intensity * 0.3}), transparent),
+                   radial-gradient(2px 2px at 80% 50%, hsl(36 80% 45% / ${0.6 + intensity * 0.3}) 0%, transparent 100%),
+                   radial-gradient(2px 2px at 30% 70%, hsl(222 75% 40% / ${0.55 + intensity * 0.3}) 0%, transparent 100%)`,
             }}
           />
-        </div>
-        {/* Center icon */}
-        <div className="absolute inset-0 flex items-center justify-center">
-          <div className="relative">
-            <Hexagon 
-              className={cn(
-                "w-6 h-6",
-                theme === 'dark' ? "text-white/80" : "text-white/90",
-                isConnected && "animate-pulse"
-              )} 
-            />
-            <Radio 
-              className={cn(
-                "absolute inset-0 m-auto w-3 h-3",
-                theme === 'dark' ? "text-white" : "text-white"
-              )} 
-            />
-          </div>
-        </div>
-        {/* Connection indicator */}
+          
+          {/* Center icon - only when not connected */}
+          {!isConnected && !isConnecting && (
+            <div className="absolute inset-0 flex items-center justify-center">
+              <div className="relative">
+                <Hexagon className={cn(
+                  "w-5 h-5",
+                  theme === 'dark' ? "text-white/70" : "text-white/85"
+                )} />
+                <Radio className={cn(
+                  "absolute inset-0 m-auto w-2.5 h-2.5",
+                  theme === 'dark' ? "text-white/90" : "text-white"
+                )} />
+              </div>
+            </div>
+          )}
+          
+          {/* Speaking indicator */}
+          {isSpeaking && (
+            <div className="absolute inset-0 flex items-center justify-center">
+              <Sparkles className={cn(
+                "w-4 h-4 animate-pulse",
+                theme === 'dark' ? "text-white/90" : "text-white"
+              )} />
+            </div>
+          )}
+          
+          {/* Connecting state */}
+          {isConnecting && (
+            <div className="absolute inset-0 flex items-center justify-center">
+              <div className={cn(
+                "w-3 h-3 rounded-full animate-ping",
+                "bg-white/60"
+              )} />
+            </div>
+          )}
+        </button>
+        
+        {/* Connection indicator dot */}
         {isConnected && (
-          <span className="absolute -top-0.5 -right-0.5 w-3.5 h-3.5 bg-green-500 rounded-full border-2 border-background animate-pulse" />
+          <span 
+            className={cn(
+              "absolute -top-1 right-0 w-2.5 h-2.5 rounded-full border-2 border-background",
+              isSpeaking ? "bg-secondary animate-pulse" : "bg-green-500"
+            )} 
+            style={{ top: '2rem' }}
+          />
         )}
-      </button>
+      </div>
     );
   }
 
