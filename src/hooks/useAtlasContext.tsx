@@ -136,8 +136,8 @@ export function useAtlasContext({
 
 function getPageName(pathname: string): string {
   const routes: Record<string, string> = {
-    '/': 'Main Dashboard - Agent Grid View',
-    '/atlas': 'Atlas Command Center',
+    '/': 'Agent Grid - Atlas Sonic OS',
+    '/atlas': 'Dashboard - Atlas Command Center',
     '/import': 'Agent Import Interface',
     '/auth': 'Authentication'
   };

@@ -232,8 +232,8 @@ export function AtlasProvider({ children }: AtlasProviderProps) {
       getCurrentLocation: () => {
         addLogRef.current('getCurrentLocation', {}, location.pathname, 'success');
         const pageNames: Record<string, string> = {
-          '/': 'Home Dashboard - Agent Management',
-          '/atlas': 'Atlas Command Center - C-Suite Data Hub',
+          '/': 'Agent Grid - Atlas Sonic OS',
+          '/atlas': 'Dashboard - Atlas Command Center',
           '/import': 'Import Agents - Bulk Upload',
           '/marketplace': 'Integrations Marketplace',
           '/governance': 'Tool Governance - Agent Permissions',
@@ -434,7 +434,7 @@ export function AtlasProvider({ children }: AtlasProviderProps) {
           'index': '/',
           'agents': '/',
           'sonic nodes': '/',
-          'agent dashboard': '/',
+          'agent dashboard': '/atlas',
           
           // Atlas / Command Center
           'atlas': '/atlas',
