@@ -284,8 +284,11 @@ export class VoiceIntentParser {
       if (match) {
         const target = match[1].trim();
         
+        // Sort routes by key length descending to prioritize more specific matches
+        const sortedRoutes = Object.entries(this.routeMap).sort((a, b) => b[0].length - a[0].length);
+        
         // Find matching route
-        for (const [key, path] of Object.entries(this.routeMap)) {
+        for (const [key, path] of sortedRoutes) {
           if (target.includes(key) || key.includes(target)) {
             return {
               command: { type: 'navigate', path },
