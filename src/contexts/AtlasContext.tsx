@@ -819,16 +819,18 @@ export function AtlasProvider({ children }: AtlasProviderProps) {
   }, [conversation, isMuted]);
 
   const sendTextMessage = useCallback((text: string) => {
-    if (text.trim() && conversationRef.current) {
-      conversationRef.current.sendUserActivity?.();
+    const conv = conversationRef.current;
+    if (text.trim() && conv && conv.status === 'connected') {
+      conv.sendUserActivity?.();
+      conv.sendUserMessage?.(text);
       setTranscript(`You: ${text}`);
-      
+
       // Store to memory for Atlas context
       atlasMemory.storeMessage('user', text, {
         timestamp: new Date().toISOString(),
         source: 'text'
       });
-      
+
       // Parse for voice commands
       const intent = voiceIntentParser.parse(text);
       if (intent) {
