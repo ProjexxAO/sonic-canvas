@@ -823,13 +823,19 @@ export function AtlasProvider({ children }: AtlasProviderProps) {
       conversationRef.current.sendUserActivity?.();
       setTranscript(`You: ${text}`);
       
+      // Store to memory for Atlas context
+      atlasMemory.storeMessage('user', text, {
+        timestamp: new Date().toISOString(),
+        source: 'text'
+      });
+      
       // Parse for voice commands
       const intent = voiceIntentParser.parse(text);
       if (intent) {
         useVoiceCommandBus.getState().sendCommand(intent.command);
       }
     }
-  }, []);
+  }, [atlasMemory]);
 
   // Send contextual update to Atlas
   const sendContextualUpdate = useCallback((text: string) => {

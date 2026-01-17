@@ -1399,6 +1399,10 @@ function AtlasPage() {
           <Input
             value={textInput}
             onChange={(e) => setTextInput(e.target.value)}
+            onPaste={(e) => {
+              // Explicitly handle paste to ensure it works
+              e.stopPropagation();
+            }}
             placeholder={isConnected ? "Type a message to Atlas..." : "Connect to Atlas to send messages..."}
             disabled={!isConnected}
             className="flex-1 font-mono text-sm bg-background border-border focus:border-primary"
