@@ -16,9 +16,12 @@ export default defineConfig(({ mode }) => ({
       // Ensure all packages use the same React instance to prevent duplicate React errors
       "react": path.resolve(__dirname, "./node_modules/react"),
       "react-dom": path.resolve(__dirname, "./node_modules/react-dom"),
+      "react/jsx-runtime": path.resolve(__dirname, "./node_modules/react/jsx-runtime"),
+      "react/jsx-dev-runtime": path.resolve(__dirname, "./node_modules/react/jsx-dev-runtime"),
     },
   },
   optimizeDeps: {
-    include: ['react', 'react-dom'],
+    include: ['react', 'react-dom', 'react/jsx-runtime', 'react/jsx-dev-runtime'],
+    force: true,
   },
 }));
