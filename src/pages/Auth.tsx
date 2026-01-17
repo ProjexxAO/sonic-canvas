@@ -27,7 +27,7 @@ export default function Auth() {
   // Redirect if already logged in
   useEffect(() => {
     if (user && !authLoading) {
-      navigate('/');
+      navigate('/atlas');
     }
   }, [user, authLoading, navigate]);
 
@@ -73,7 +73,7 @@ export default function Auth() {
         } else {
           audioEngine.playSuccess();
           toast.success('Access granted');
-          navigate('/');
+          navigate('/atlas');
         }
       } else {
         const { error } = await signUp(email, password, displayName);
@@ -87,7 +87,7 @@ export default function Auth() {
         } else {
           audioEngine.playSuccess();
           toast.success('Operator registered successfully');
-          navigate('/');
+          navigate('/atlas');
         }
       }
     } finally {
