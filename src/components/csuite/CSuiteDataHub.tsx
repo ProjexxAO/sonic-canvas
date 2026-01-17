@@ -492,7 +492,7 @@ export function CSuiteDataHub({ userId, agents = [], agentsLoading = false }: CS
               variant="ghost"
               size="sm"
               className="h-7 px-2 text-[10px] font-mono flex items-center gap-1 text-muted-foreground hover:text-primary mr-1"
-              onClick={() => navigate('/integrations')}
+              onClick={() => navigate('/marketplace')}
             >
               <Plug size={10} />
               MARKETPLACE

@@ -110,7 +110,7 @@ export default function Header({ onToggleAudio, audioEnabled, user, onSignOut }:
         {user && (
           <>
             <button
-              onClick={() => navigate('/integrations')}
+              onClick={() => navigate('/marketplace')}
               className="p-2 text-muted-foreground hover:text-foreground transition-colors"
               title="Integrations"
             >

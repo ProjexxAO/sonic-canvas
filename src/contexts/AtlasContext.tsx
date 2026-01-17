@@ -223,7 +223,7 @@ export function AtlasProvider({ children }: AtlasProviderProps) {
           '/': 'Home Dashboard - Agent Management',
           '/atlas': 'Atlas Command Center - C-Suite Data Hub',
           '/import': 'Import Agents - Bulk Upload',
-          '/integrations': 'Integrations Marketplace',
+          '/marketplace': 'Integrations Marketplace',
           '/governance': 'Tool Governance - Agent Permissions',
           '/workspace/tools': 'User Tool Permissions',
           '/auth': 'Authentication - Login/Sign Up',
@@ -451,11 +451,11 @@ export function AtlasProvider({ children }: AtlasProviderProps) {
           'workspace tools': '/workspace/tools',
           
           // Integrations / Marketplace
-          'integrations': '/integrations',
-          'marketplace': '/integrations',
-          'connect': '/integrations',
-          'connections': '/integrations',
-          'apps': '/integrations',
+          'integrations': '/marketplace',
+          'marketplace': '/marketplace',
+          'connect': '/marketplace',
+          'connections': '/marketplace',
+          'apps': '/marketplace',
           
           // Auth
           'auth': '/auth',
