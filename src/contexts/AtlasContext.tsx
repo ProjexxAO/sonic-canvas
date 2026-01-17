@@ -121,6 +121,8 @@ export function AtlasProvider({ children }: AtlasProviderProps) {
   // Navigation history tracking
   const [historyStack, setHistoryStack] = useState<string[]>([location.pathname]);
   const [historyIndex, setHistoryIndex] = useState(0);
+  const historyStackRef = useRef<string[]>([location.pathname]);
+  const historyIndexRef = useRef(0);
   
   // Memory
   const atlasMemory = useAtlasMemory({ userId: user?.id, autoLoad: true, messageLimit: 20 });
@@ -139,24 +141,26 @@ export function AtlasProvider({ children }: AtlasProviderProps) {
     agentsRef.current = agents;
   }, [user, agents]);
   
-  // Track navigation history
-  const historyIndexRef = useRef(historyIndex);
-  useEffect(() => { historyIndexRef.current = historyIndex; }, [historyIndex]);
-  
+  // Track navigation history - using refs to avoid infinite loops
   useEffect(() => {
     const currentPath = location.pathname;
     const currentIndex = historyIndexRef.current;
+    const currentStack = historyStackRef.current;
     
-    setHistoryStack(prev => {
-      // If navigating via browser buttons, don't add to stack
-      if (prev[currentIndex] === currentPath) return prev;
-      
-      // Add new path, truncate forward history
-      const newStack = [...prev.slice(0, currentIndex + 1), currentPath];
-      // Update index to point to new end
-      setTimeout(() => setHistoryIndex(newStack.length - 1), 0);
-      return newStack;
-    });
+    // If navigating via browser buttons, don't add to stack
+    if (currentStack[currentIndex] === currentPath) return;
+    
+    // Add new path, truncate forward history
+    const newStack = [...currentStack.slice(0, currentIndex + 1), currentPath];
+    const newIndex = newStack.length - 1;
+    
+    // Update refs first (sync)
+    historyStackRef.current = newStack;
+    historyIndexRef.current = newIndex;
+    
+    // Then update state (async, batched)
+    setHistoryStack(newStack);
+    setHistoryIndex(newIndex);
   }, [location.pathname]);
   
   // Memory context setup
