@@ -714,16 +714,7 @@ export function AtlasProvider({ children }: AtlasProviderProps) {
 
   const isConnected = conversation.status === "connected";
 
-  // Wake word detection - only active when not connected
-  const { status: wakeWordStatus } = useWakeWordDetection({
-    enabled: wakeWordEnabled && !isConnected && !isConnecting,
-    wakeWord,
-    onWakeWordDetected: () => {
-      toast.info(`"${wakeWord}" detected! Starting Atlas...`);
-      startConversationRef.current?.();
-    },
-  });
-  
+  // Ref to hold the latest startConversation function for wake word callback
   const startConversationRef = useRef<(() => Promise<void>) | null>(null);
 
   // Start conversation
@@ -776,10 +767,18 @@ export function AtlasProvider({ children }: AtlasProviderProps) {
     }
   }, [conversation, isConnecting, user, atlasMemory.contextString]);
 
-  // Keep startConversationRef updated for wake word callback
-  useEffect(() => {
-    startConversationRef.current = startConversation;
-  }, [startConversation]);
+  // Keep ref updated (no deps to avoid loop)
+  startConversationRef.current = startConversation;
+
+  // Wake word detection - only active when not connected
+  const { status: wakeWordStatus } = useWakeWordDetection({
+    enabled: wakeWordEnabled && !isConnected && !isConnecting,
+    wakeWord,
+    onWakeWordDetected: () => {
+      toast.info(`"${wakeWord}" detected! Starting Atlas...`);
+      startConversationRef.current?.();
+    },
+  });
 
   const stopConversation = useCallback(async () => {
     await conversation.endSession();
