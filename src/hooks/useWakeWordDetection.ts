@@ -50,6 +50,10 @@ export function useWakeWordDetection(options: UseWakeWordDetectionOptions = {}) 
   const mediaStreamRef = useRef<MediaStream | null>(null);
   const processorRef = useRef<ScriptProcessorNode | null>(null);
   const isCleaningUpRef = useRef(false);
+  
+  // Use ref for callback to avoid re-creating Porcupine on callback changes
+  const onWakeWordDetectedRef = useRef(onWakeWordDetected);
+  onWakeWordDetectedRef.current = onWakeWordDetected;
 
   const cleanup = useCallback(async () => {
     if (isCleaningUpRef.current) return;
@@ -106,7 +110,7 @@ export function useWakeWordDetection(options: UseWakeWordDetectionOptions = {}) 
         (detection) => {
           console.log("[WakeWord] Detected:", detection.label);
           setStatus("detected");
-          onWakeWordDetected?.();
+          onWakeWordDetectedRef.current?.();
           // Reset to listening after detection
           setTimeout(() => setStatus("listening"), 1000);
         },
@@ -161,7 +165,7 @@ export function useWakeWordDetection(options: UseWakeWordDetectionOptions = {}) 
       setStatus("error");
       cleanup();
     }
-  }, [status, wakeWord, sensitivity, onWakeWordDetected, cleanup]);
+  }, [status, wakeWord, sensitivity, cleanup]);
 
   const stopListening = useCallback(() => {
     cleanup();
