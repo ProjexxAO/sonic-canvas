@@ -143,6 +143,7 @@ export function AtlasProvider({ children }: AtlasProviderProps) {
   const lastSavedMessageRef = useRef<string>('');
   const animationRef = useRef<number>();
   const conversationRef = useRef<any>(null);
+  const startConversationLockRef = useRef(false);
   const pendingMemoryContextRef = useRef<string | null>(null);
   const userRef = useRef(user);
   const agentsRef = useRef(agents);
@@ -719,8 +720,11 @@ export function AtlasProvider({ children }: AtlasProviderProps) {
 
   // Start conversation
   const startConversation = useCallback(async () => {
+    // Prevent multiple concurrent start attempts (can cause AbortError/timeouts)
+    if (startConversationLockRef.current) return;
     if (isConnecting || conversation.status === 'connected') return;
-    
+
+    startConversationLockRef.current = true;
     setIsConnecting(true);
     try {
       await navigator.mediaDevices.getUserMedia({ audio: true });
@@ -783,6 +787,7 @@ export function AtlasProvider({ children }: AtlasProviderProps) {
       console.error("[Atlas Global] Failed to start:", error);
       toast.error(`Failed to start Atlas: ${error instanceof Error ? error.message : 'Unknown error'}`);
     } finally {
+      startConversationLockRef.current = false;
       setIsConnecting(false);
     }
   }, [conversation, isConnecting, user, atlasMemory.contextString]);
