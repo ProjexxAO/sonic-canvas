@@ -478,9 +478,11 @@ export function AtlasProvider({ children }: AtlasProviderProps) {
         // Try exact match first
         let route = routes[pageLower];
         
-        // If no exact match, try partial match
+        // If no exact match, try partial match - prioritize longer key matches
         if (!route) {
-          const partialMatch = Object.entries(routes).find(([k]) => 
+          // Sort by key length descending to prioritize more specific matches
+          const sortedRoutes = Object.entries(routes).sort((a, b) => b[0].length - a[0].length);
+          const partialMatch = sortedRoutes.find(([k]) => 
             pageLower.includes(k) || k.includes(pageLower)
           );
           route = partialMatch?.[1] || '/';
