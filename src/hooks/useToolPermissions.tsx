@@ -66,16 +66,19 @@ const defaultSections: ToolSection[] = [
   }
 ];
 
-export function useToolPermissions() {
+export function useToolPermissions(targetUserId?: string) {
   const { user } = useAuth();
   const { currentWorkspace } = useWorkspaces();
   const [sections, setSections] = useState<ToolSection[]>(defaultSections);
   const [loading, setLoading] = useState(true);
   const [saving, setSaving] = useState(false);
 
+  // Use targetUserId if provided, otherwise use current user
+  const effectiveUserId = targetUserId || user?.id;
+
   // Fetch tool catalog and permissions
   const fetchPermissions = useCallback(async () => {
-    if (!user || !currentWorkspace) {
+    if (!effectiveUserId || !currentWorkspace) {
       setLoading(false);
       return;
     }
@@ -95,7 +98,7 @@ export function useToolPermissions() {
         .from('workspace_tool_permissions')
         .select('*')
         .eq('workspace_id', currentWorkspace.id)
-        .eq('user_id', user.id);
+        .eq('user_id', effectiveUserId);
 
       if (permError) throw permError;
 
@@ -138,7 +141,7 @@ export function useToolPermissions() {
     } finally {
       setLoading(false);
     }
-  }, [user, currentWorkspace]);
+  }, [effectiveUserId, currentWorkspace]);
 
   useEffect(() => {
     fetchPermissions();
@@ -146,7 +149,7 @@ export function useToolPermissions() {
 
   // Save permissions to database
   const savePermissions = useCallback(async (newSections: ToolSection[]) => {
-    if (!user || !currentWorkspace) return;
+    if (!effectiveUserId || !currentWorkspace) return;
 
     try {
       setSaving(true);
@@ -164,7 +167,7 @@ export function useToolPermissions() {
         section.items.forEach(item => {
           upsertData.push({
             workspace_id: currentWorkspace.id,
-            user_id: user.id,
+            user_id: effectiveUserId,
             tool_id: item.tool,
             section: section.id,
             metadata: {
@@ -180,7 +183,7 @@ export function useToolPermissions() {
         .from('workspace_tool_permissions')
         .delete()
         .eq('workspace_id', currentWorkspace.id)
-        .eq('user_id', user.id);
+        .eq('user_id', effectiveUserId);
 
       if (deleteError) throw deleteError;
 
@@ -201,7 +204,7 @@ export function useToolPermissions() {
     } finally {
       setSaving(false);
     }
-  }, [user, currentWorkspace]);
+  }, [effectiveUserId, currentWorkspace]);
 
   return {
     sections,

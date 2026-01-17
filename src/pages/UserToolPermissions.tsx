@@ -13,7 +13,7 @@ import type { ToolSection, ToolItem } from '@/types/toolPermissions';
 export default function UserToolPermissions() {
   const { userId } = useParams<{ userId: string }>();
   const navigate = useNavigate();
-  const { sections, loading, saving, savePermissions, refreshPermissions } = useToolPermissions();
+  const { sections, loading, saving, savePermissions, refreshPermissions } = useToolPermissions(userId);
   
   const [localSections, setLocalSections] = useState<ToolSection[]>([]);
   const [selectedTool, setSelectedTool] = useState<ToolItem | null>(null);
