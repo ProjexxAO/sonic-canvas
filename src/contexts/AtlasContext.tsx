@@ -23,6 +23,14 @@ interface ActionLog {
   status: 'success' | 'error' | 'pending';
 }
 
+interface SearchResult {
+  id: string;
+  name: string;
+  sector: string;
+  description?: string;
+  similarity?: number;
+}
+
 interface AtlasContextValue {
   // Connection state
   isConnected: boolean;
@@ -61,8 +69,10 @@ interface AtlasContextValue {
   isMinimized: boolean;
   setIsMinimized: (minimized: boolean) => void;
   
-  // Logs
+  // Logs and results
   actionLogs: ActionLog[];
+  searchResults: SearchResult[];
+  synthesizedAgent: any | null;
   
   // Direct conversation access for Atlas page
   conversation: ReturnType<typeof useConversation>;
@@ -105,6 +115,8 @@ export function AtlasProvider({ children }: AtlasProviderProps) {
   const [frequencyBands, setFrequencyBands] = useState({ bass: 0, mid: 0, treble: 0 });
   const [isExpanded, setIsExpanded] = useState(false);
   const [isMinimized, setIsMinimized] = useState(false);
+  const [searchResults, setSearchResults] = useState<SearchResult[]>([]);
+  const [synthesizedAgent, setSynthesizedAgent] = useState<any | null>(null);
   
   // Navigation history tracking
   const [historyStack, setHistoryStack] = useState<string[]>([location.pathname]);
@@ -277,6 +289,7 @@ export function AtlasProvider({ children }: AtlasProviderProps) {
           if (response.error) throw response.error;
           
           const agents = response.data?.agents || [];
+          setSearchResults(agents);
           
           setActionLogs(prev => prev.map(l => 
             l.id === logId ? { ...l, result: `Found ${agents.length} agents`, status: 'success' } : l
@@ -309,6 +322,7 @@ export function AtlasProvider({ children }: AtlasProviderProps) {
           if (response.error) throw response.error;
           
           const newAgent = response.data?.synthesizedAgent;
+          setSynthesizedAgent(newAgent);
           
           setActionLogs(prev => prev.map(l => 
             l.id === logId ? { ...l, result: `Synthesized: ${newAgent?.name || 'New Agent'}`, status: 'success' } : l
@@ -849,6 +863,8 @@ export function AtlasProvider({ children }: AtlasProviderProps) {
     isMinimized,
     setIsMinimized,
     actionLogs,
+    searchResults,
+    synthesizedAgent,
     conversation,
   };
 

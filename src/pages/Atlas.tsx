@@ -2,10 +2,9 @@
 
 import React, { useState, useCallback, useEffect, useRef, useMemo } from 'react';
 import { useNavigate } from 'react-router-dom';
-import { useConversation } from "@elevenlabs/react";
 import { voiceIntentParser } from '@/lib/voice-intent-parser';
 import { useVoiceCommandBus } from '@/lib/voice-command-bus';
-import { useAtlasMemory } from '@/hooks/useAtlasMemory';
+import { useAtlas } from '@/contexts/AtlasContext';
 
 // Error boundary to handle ElevenLabs SDK internal React errors during HMR
 class AtlasErrorBoundary extends React.Component<
@@ -50,21 +49,14 @@ class AtlasErrorBoundary extends React.Component<
 import { supabase } from '@/integrations/supabase/client';
 import { toast } from 'sonner';
 import {
-  Mic,
   MicOff,
   Volume2,
   VolumeX,
   ArrowLeft,
   Radio,
   Hexagon,
-  Waves,
-  Activity,
-  Zap,
   Search,
-  Bot,
   Sparkles,
-  Database,
-  Users,
   Eye,
   Wifi,
   WifiOff,
@@ -76,22 +68,15 @@ import { Input } from '@/components/ui/input';
 import { useTheme } from 'next-themes';
 import { useAuth } from '@/hooks/useAuth';
 import { useDashboardAgents } from '@/hooks/useDashboardAgents';
-import { useAtlasContext } from '@/hooks/useAtlasContext';
 import { useAtlasConversations } from '@/hooks/useAtlasConversations';
 import { useOnboarding } from '@/hooks/useOnboarding';
 import { useCSuiteData } from '@/hooks/useCSuiteData';
-import { useDataHubController, getDomainKeyFromName, getTabFromName, getPersonaFromName } from '@/hooks/useDataHubController';
 import { Button } from '@/components/ui/button';
 import { ScrollArea } from '@/components/ui/scroll-area';
-import { ActionLogItem } from '@/components/atlas/ActionLogItem';
 import { AtlasTaskProgress } from '@/components/atlas/AtlasTaskProgress';
 import { CSuiteDataHub } from '@/components/csuite/CSuiteDataHub';
 import { OnboardingFlow } from '@/components/onboarding';
 import { useAgentOrchestration } from '@/hooks/useAgentOrchestration';
-import { useAtlasSafe } from '@/contexts/AtlasContext';
-// Executive, Workflow, and Enterprise features now integrated into CSuiteDataHub
-
-const ATLAS_AGENT_ID = "agent_7501kbh21cg1eht9xtjw6kvkpm4m";
 
 interface ActionLog {
   id: string;
@@ -117,29 +102,34 @@ function AtlasPage() {
   const theme = resolvedTheme ?? "dark";
   const { agents, loading: agentsLoading } = useDashboardAgents({ limit: 200 });
   const { messages: conversationHistory, saveMessage, startNewSession } = useAtlasConversations({ userId: user?.id });
-  const [isConnecting, setIsConnecting] = useState(false);
-  const [isMuted, setIsMuted] = useState(false);
-  const [actionLogs, setActionLogs] = useState<ActionLog[]>([]);
-  const [searchResults, setSearchResults] = useState<SearchResult[]>([]);
-  const [synthesizedAgent, setSynthesizedAgent] = useState<any>(null);
   
-  const [audioLevels, setAudioLevels] = useState<number[]>(new Array(20).fill(0));
-  const [transcript, setTranscript] = useState<string>('');
-  const [isTranscribing, setIsTranscribing] = useState(false);
-  const [inputVolume, setInputVolume] = useState(0);
-  const [outputVolume, setOutputVolume] = useState(0);
-  const [frequencyBands, setFrequencyBands] = useState({ bass: 0, mid: 0, treble: 0 });
+  // Use the global Atlas context - SINGLE SOURCE OF TRUTH for connection
+  const atlas = useAtlas();
+  const {
+    isConnected,
+    isConnecting,
+    isMuted,
+    isSpeaking,
+    audioLevels,
+    inputVolume,
+    outputVolume,
+    frequencyBands,
+    transcript,
+    isTranscribing,
+    startConversation,
+    stopConversation,
+    toggleMute,
+    sendTextMessage,
+    sendContextualUpdate,
+    actionLogs,
+    searchResults,
+    synthesizedAgent,
+    conversation,
+  } = atlas;
+  
   const [textInput, setTextInput] = useState('');
-  const lastSavedMessageRef = useRef<string>('');
-  const animationRef = useRef<number>();
   const fileInputRef = useRef<HTMLInputElement>(null);
   const [generatingPersona, setGeneratingPersona] = useState<string | null>(null);
-  // Instant memory retrieval - loads on Atlas initialization
-  const atlasMemory = useAtlasMemory({ userId: user?.id, autoLoad: true, messageLimit: 20 });
-
-  // Global Atlas context - check if Atlas is active from another page
-  const globalAtlas = useAtlasSafe();
-  const isGloballyActive = globalAtlas?.isConnected ?? false;
 
   // Onboarding
   const onboarding = useOnboarding(user?.id);
@@ -204,898 +194,19 @@ function AtlasPage() {
     ];
   }, []);
 
-  // Memoize addLog to prevent recreation on every render
-  const addLog = useCallback((action: string, params: Record<string, unknown>, result: string, status: 'success' | 'error' | 'pending') => {
-    const log: ActionLog = {
-      id: crypto.randomUUID(),
-      timestamp: new Date(),
-      action,
-      params,
-      result,
-      status
-    };
-    setActionLogs(prev => [log, ...prev].slice(0, 50));
-    return log.id;
-  }, []);
-
-  // Refs to stabilize callbacks used in useConversation
-  const addLogRef = useRef(addLog);
+  // Refs for callbacks
   const saveMessageRef = useRef(saveMessage);
   const agentsRef = useRef(agents);
   const activeAgentsRef = useRef(activeAgents);
   const userRef = useRef(user);
-  const conversationRef = useRef<any>(null);
-  const pendingMemoryContextRef = useRef<string | null>(null);
   
   // Keep refs updated
   useEffect(() => {
-    addLogRef.current = addLog;
     saveMessageRef.current = saveMessage;
     agentsRef.current = agents;
     activeAgentsRef.current = activeAgents;
     userRef.current = user;
-  }, [addLog, saveMessage, agents, activeAgents, user]);
-
-  // Memory context is now loaded instantly via useAtlasMemory hook
-  // Set pending context when memory is loaded (only run once when loaded)
-  const memoryLoadedRef = useRef(false);
-  useEffect(() => {
-    if (atlasMemory.isLoaded && atlasMemory.contextString && !memoryLoadedRef.current) {
-      memoryLoadedRef.current = true;
-      pendingMemoryContextRef.current = atlasMemory.contextString;
-      console.log("[Atlas] Memory pre-loaded:", atlasMemory.messages.length, "messages");
-    }
-  }, [atlasMemory.isLoaded, atlasMemory.contextString]);
-
-  // Memoize the conversation config to prevent React hook queue errors
-  const conversationConfig = useMemo(() => ({
-    clientTools: {
-      // Web search using Perplexity
-      webSearch: async (params: { query: string }) => {
-        const logId = addLogRef.current('webSearch', params, 'Searching the web...', 'pending');
-        try {
-          const response = await supabase.functions.invoke('atlas-orchestrator', {
-            body: { action: 'web_search', query: params.query }
-          });
-          
-          if (response.error) throw response.error;
-          
-          const answer = response.data?.answer || 'No results found';
-          const citations = response.data?.citations || [];
-          
-          setActionLogs(prev => prev.map(l => 
-            l.id === logId ? { ...l, result: `Web search complete`, status: 'success' } : l
-          ));
-          
-          toast.success(`Web search complete for "${params.query}"`);
-          return `${answer}${citations.length > 0 ? `\n\nSources: ${citations.join(', ')}` : ''}`;
-        } catch (error) {
-          const msg = error instanceof Error ? error.message : 'Web search failed';
-          setActionLogs(prev => prev.map(l => 
-            l.id === logId ? { ...l, result: msg, status: 'error' } : l
-          ));
-          toast.error('Web search failed');
-          return `Error: ${msg}`;
-        }
-      },
-
-      // Search agents by query
-      searchAgents: async (params: { query: string }) => {
-        const logId = addLogRef.current('searchAgents', params, 'Searching...', 'pending');
-        try {
-          const response = await supabase.functions.invoke('atlas-orchestrator', {
-            body: { action: 'search', query: params.query }
-          });
-          
-          if (response.error) throw response.error;
-          
-          const agents = response.data?.agents || [];
-          setSearchResults(agents);
-          
-          setActionLogs(prev => prev.map(l => 
-            l.id === logId ? { ...l, result: `Found ${agents.length} agents`, status: 'success' } : l
-          ));
-          
-          toast.success(`Found ${agents.length} agents matching "${params.query}"`);
-          return `Found ${agents.length} agents: ${agents.map((a: any) => a.name).join(', ')}`;
-        } catch (error) {
-          const msg = error instanceof Error ? error.message : 'Search failed';
-          setActionLogs(prev => prev.map(l => 
-            l.id === logId ? { ...l, result: msg, status: 'error' } : l
-          ));
-          toast.error('Search failed');
-          return `Error: ${msg}`;
-        }
-      },
-
-      synthesizeAgent: async (params: { agentIds: string[]; requirements: string }) => {
-        const logId = addLogRef.current('synthesizeAgent', params, 'Synthesizing...', 'pending');
-        try {
-          const response = await supabase.functions.invoke('atlas-orchestrator', {
-            body: { 
-              action: 'synthesize', 
-              agentIds: params.agentIds,
-              requirements: params.requirements
-            }
-          });
-          
-          if (response.error) throw response.error;
-          
-          const newAgent = response.data?.synthesizedAgent;
-          setSynthesizedAgent(newAgent);
-          
-          setActionLogs(prev => prev.map(l => 
-            l.id === logId ? { ...l, result: `Synthesized: ${newAgent?.name || 'New Agent'}`, status: 'success' } : l
-          ));
-          
-          toast.success(`Synthesized new agent: ${newAgent?.name}`);
-          return `Successfully synthesized agent: ${newAgent?.name}. Description: ${newAgent?.description}`;
-        } catch (error) {
-          const msg = error instanceof Error ? error.message : 'Synthesis failed';
-          setActionLogs(prev => prev.map(l => 
-            l.id === logId ? { ...l, result: msg, status: 'error' } : l
-          ));
-          toast.error('Synthesis failed');
-          return `Error: ${msg}`;
-        }
-      },
-
-      // Create a task for Atlas to track
-      createTask: async (params: { title: string; description?: string; priority?: string; taskType?: string }) => {
-        const logId = addLogRef.current('createTask', params, 'Creating task...', 'pending');
-        try {
-          const response = await supabase.functions.invoke('atlas-orchestrator', {
-            body: { 
-              action: 'create_task', 
-              userId: userRef.current?.id,
-              taskData: {
-                task_title: params.title,
-                task_description: params.description || '',
-                task_priority: params.priority || 'medium',
-                task_type: params.taskType || 'assistance',
-                orchestration_mode: 'hybrid',
-                assigned_agents: [],
-                input_data: {},
-                agent_suggestions: [],
-              }
-            }
-          });
-          
-          if (response.error) throw response.error;
-          
-          const task = response.data?.task;
-          
-          setActionLogs(prev => prev.map(l => 
-            l.id === logId ? { ...l, result: `Created: ${task?.task_title || params.title}`, status: 'success' } : l
-          ));
-          
-          toast.success(`Task created: ${params.title}`);
-          return `Task "${params.title}" has been created and is now being tracked. Priority: ${params.priority || 'medium'}`;
-        } catch (error) {
-          const msg = error instanceof Error ? error.message : 'Task creation failed';
-          setActionLogs(prev => prev.map(l => 
-            l.id === logId ? { ...l, result: msg, status: 'error' } : l
-          ));
-          toast.error('Failed to create task');
-          return `Error: ${msg}`;
-        }
-      },
-
-      // Update task progress
-      updateTaskProgress: async (params: { taskId: string; progress: number; status?: string }) => {
-        const logId = addLogRef.current('updateTaskProgress', params, 'Updating task...', 'pending');
-        try {
-          const response = await supabase.functions.invoke('atlas-orchestrator', {
-            body: { 
-              action: 'update_task', 
-              userId: userRef.current?.id,
-              taskId: params.taskId,
-              updates: {
-                progress: Math.min(100, Math.max(0, params.progress)),
-                status: params.status,
-              }
-            }
-          });
-          
-          if (response.error) throw response.error;
-          
-          setActionLogs(prev => prev.map(l => 
-            l.id === logId ? { ...l, result: `Progress: ${params.progress}%`, status: 'success' } : l
-          ));
-          
-          return `Task updated to ${params.progress}% complete`;
-        } catch (error) {
-          const msg = error instanceof Error ? error.message : 'Update failed';
-          setActionLogs(prev => prev.map(l => 
-            l.id === logId ? { ...l, result: msg, status: 'error' } : l
-          ));
-          return `Error: ${msg}`;
-        }
-      },
-
-      // Get current tasks
-      getMyTasks: async () => {
-        const logId = addLogRef.current('getMyTasks', {}, 'Fetching tasks...', 'pending');
-        try {
-          const response = await supabase.functions.invoke('atlas-orchestrator', {
-            body: { 
-              action: 'get_tasks', 
-              userId: userRef.current?.id,
-            }
-          });
-          
-          if (response.error) throw response.error;
-          
-          const tasks = response.data?.tasks || [];
-          const activeTasks = tasks.filter((t: any) => 
-            t.status === 'pending' || t.status === 'in_progress' || t.status === 'awaiting_approval'
-          );
-          
-          setActionLogs(prev => prev.map(l => 
-            l.id === logId ? { ...l, result: `Found ${activeTasks.length} active tasks`, status: 'success' } : l
-          ));
-          
-          if (activeTasks.length === 0) {
-            return "You have no active tasks at the moment.";
-          }
-          
-          const taskSummary = activeTasks.slice(0, 5).map((t: any) => 
-            `• ${t.task_title} (${t.progress}% - ${t.status})`
-          ).join('\n');
-          
-          return `You have ${activeTasks.length} active tasks:\n${taskSummary}`;
-        } catch (error) {
-          const msg = error instanceof Error ? error.message : 'Failed to fetch tasks';
-          setActionLogs(prev => prev.map(l => 
-            l.id === logId ? { ...l, result: msg, status: 'error' } : l
-          ));
-          return `Error: ${msg}`;
-        }
-      },
-
-      // Navigate to different pages - comprehensive route map
-      navigateTo: (params: { page: string }) => {
-        addLogRef.current('navigateTo', params, `Navigating to ${params.page}`, 'success');
-        
-        const routes: Record<string, string> = {
-          'home': '/',
-          'main': '/',
-          'dashboard': '/',
-          'agents': '/',
-          'sonic nodes': '/',
-          'import': '/import',
-          'import agents': '/import',
-          'auth': '/auth',
-          'login': '/auth',
-          'sign in': '/auth',
-          'marketplace': '/marketplace',
-          'integrations': '/marketplace',
-          'governance': '/tool-governance',
-          'tool governance': '/tool-governance',
-          'permissions': '/user-tool-permissions',
-          'user permissions': '/user-tool-permissions',
-          'atlas': '/atlas',
-          'command center': '/atlas',
-          'voice': '/atlas',
-        };
-        
-        const pageLower = params.page.toLowerCase();
-        const route = routes[pageLower] || Object.entries(routes).find(([k]) => pageLower.includes(k))?.[1] || '/';
-        toast.info(`Navigating to ${params.page}`);
-        
-        setTimeout(() => navigate(route), 500);
-        return `Navigating to ${params.page}`;
-      },
-
-      // Alias for ElevenLabs agent tool name
-      navigateToPage: (params: { page: string }) => {
-        addLogRef.current('navigateToPage', params, `Navigating to ${params.page}`, 'success');
-        
-        const routes: Record<string, string> = {
-          'home': '/',
-          'main': '/',
-          'dashboard': '/',
-          'agents': '/',
-          'sonic nodes': '/',
-          'import': '/import',
-          'import agents': '/import',
-          'auth': '/auth',
-          'login': '/auth',
-          'sign in': '/auth',
-          'marketplace': '/marketplace',
-          'integrations': '/marketplace',
-          'governance': '/tool-governance',
-          'tool governance': '/tool-governance',
-          'permissions': '/user-tool-permissions',
-          'user permissions': '/user-tool-permissions',
-          'atlas': '/atlas',
-          'command center': '/atlas',
-          'voice': '/atlas',
-        };
-        
-        const pageLower = params.page.toLowerCase();
-        const route = routes[pageLower] || Object.entries(routes).find(([k]) => pageLower.includes(k))?.[1] || '/';
-        toast.info(`Navigating to ${params.page}`);
-        
-        setTimeout(() => navigate(route), 500);
-        return `Navigated to ${params.page}`;
-      },
-
-      // Theme control
-      toggleTheme: () => {
-        addLogRef.current('toggleTheme', {}, 'Theme toggled', 'success');
-        useVoiceCommandBus.getState().sendCommand({ type: 'toggle_theme' });
-        return 'Theme toggled';
-      },
-
-      setTheme: (params: { theme: 'light' | 'dark' }) => {
-        addLogRef.current('setTheme', params, `Theme set to ${params.theme}`, 'success');
-        useVoiceCommandBus.getState().sendCommand({ type: 'set_theme', theme: params.theme });
-        return `Theme set to ${params.theme} mode`;
-      },
-
-      // Switch persona
-      switchPersona: (params: { persona: string }) => {
-        const personaId = getPersonaFromName(params.persona);
-        if (!personaId) {
-          addLogRef.current('switchPersona', params, `Unknown persona: ${params.persona}`, 'error');
-          return `Unknown persona "${params.persona}". Try: CEO, CFO, COO, CTO, CMO, etc.`;
-        }
-        
-        useDataHubController.getState().setTargetPersona(personaId);
-        addLogRef.current('switchPersona', params, `Switched to ${personaId}`, 'success');
-        toast.info(`Switched to ${personaId.toUpperCase()} persona`);
-        return `Switched to ${personaId.toUpperCase()} persona view`;
-      },
-
-      // Filter agents by sector or status
-      filterAgents: (params: { sector?: string; status?: string }) => {
-        addLogRef.current('filterAgents', params, 'Filtering agents', 'success');
-        
-        const sectorMap: Record<string, string> = {
-          'finance': 'FINANCE', 'financial': 'FINANCE',
-          'legal': 'LEGAL',
-          'operations': 'OPERATIONS', 'ops': 'OPERATIONS',
-          'technology': 'TECHNOLOGY', 'tech': 'TECHNOLOGY',
-          'analytics': 'ANALYTICS', 'data': 'ANALYTICS',
-          'research': 'RESEARCH',
-          'communications': 'COMMUNICATIONS', 'comms': 'COMMUNICATIONS',
-        };
-        
-        const sector = params.sector ? sectorMap[params.sector.toLowerCase()] : undefined;
-        const status = params.status?.toUpperCase();
-        
-        window.dispatchEvent(new CustomEvent('voice-filter-agents', {
-          detail: { sector, status }
-        }));
-        
-        const filterDesc = [sector, status].filter(Boolean).join(' ');
-        toast.info(`Filtering agents: ${filterDesc || 'all'}`);
-        return `Filtering agents by ${filterDesc || 'default criteria'}`;
-      },
-
-      showNotification: (params: { title: string; message: string; type?: string }) => {
-        addLogRef.current('showNotification', params, 'Notification shown', 'success');
-        
-        const toastType = params.type || 'info';
-        if (toastType === 'success') toast.success(params.message);
-        else if (toastType === 'error') toast.error(params.message);
-        else if (toastType === 'warning') toast.warning(params.message);
-        else toast.info(params.message);
-        
-        return `Displayed ${toastType} notification: ${params.title}`;
-      },
-
-      getSystemStatus: () => {
-        addLogRef.current('getSystemStatus', {}, 'Status retrieved', 'success');
-        // Use refs for current values
-        return `System online. Agents loaded. Actions logged.`;
-      },
-
-      clearResults: () => {
-        addLogRef.current('clearResults', {}, 'Results cleared', 'success');
-        setSearchResults([]);
-        setSynthesizedAgent(null);
-        toast.info('Results cleared');
-        return 'Search results and synthesis data cleared';
-      },
-
-      listSectors: () => {
-        addLogRef.current('listSectors', {}, 'Sectors listed', 'success');
-        const sectors = ['FINANCE', 'BIOTECH', 'SECURITY', 'DATA', 'CREATIVE', 'UTILITY'];
-        return `Available sectors: ${sectors.join(', ')}`;
-      },
-
-      getAgentDetails: (params: { agentId: string }) => {
-        const logId = addLogRef.current('getAgentDetails', params, 'Fetching details...', 'pending');
-        
-        // We can't access searchResults here directly, return generic response
-        setActionLogs(prev => prev.map(l => 
-          l.id === logId ? { ...l, result: 'Details requested', status: 'success' } : l
-        ));
-        return 'Please search for agents first, then I can provide details.';
-      },
-
-      // System instruction handler - allows Atlas to send internal system commands
-      instructSystem: (params: { instruction: string; context?: string }) => {
-        console.log("[Atlas] System instruction received:", params);
-        addLogRef.current('instructSystem', params, 'Instruction processed', 'success');
-        
-        // Process various system-level instructions from Atlas
-        const instruction = params.instruction?.toLowerCase() || '';
-        
-        if (instruction.includes('clear') || instruction.includes('reset')) {
-          setSearchResults([]);
-          setSynthesizedAgent(null);
-          return 'System state cleared';
-        }
-        
-        if (instruction.includes('status')) {
-          const user = userRef.current;
-          const agents = agentsRef.current;
-          const activeAgents = activeAgentsRef.current;
-          return `System online. User: ${user?.email || 'Unknown'}. Agents loaded: ${agents.length}. Active: ${activeAgents.length}.`;
-        }
-        
-        // Default acknowledgment for other instructions
-        return `Instruction acknowledged: ${params.instruction}`;
-      },
-
-      // ========== DATA HUB CONTROL TOOLS ==========
-      
-      // Switch Data Hub tab
-      switchDataHubTab: (params: { tab: string }) => {
-        const tabId = getTabFromName(params.tab);
-        if (!tabId) {
-          addLogRef.current('switchDataHubTab', params, `Unknown tab: ${params.tab}`, 'error');
-          return `Unknown tab "${params.tab}". Available tabs: command, insights, library, admin`;
-        }
-        
-        useDataHubController.getState().setActiveTab(tabId);
-        addLogRef.current('switchDataHubTab', params, `Switched to ${tabId}`, 'success');
-        toast.info(`Switched to ${tabId} tab`);
-        return `Switched Data Hub to ${tabId} tab`;
-      },
-
-      // Open a data domain
-      openDataDomain: (params: { domain: string }) => {
-        const domainKey = getDomainKeyFromName(params.domain);
-        if (!domainKey) {
-          addLogRef.current('openDataDomain', params, `Unknown domain: ${params.domain}`, 'error');
-          return `Unknown domain "${params.domain}". Available domains: communications, documents, events, financials, tasks, knowledge`;
-        }
-        
-        useDataHubController.getState().setExpandedDomain(domainKey);
-        useDataHubController.getState().setActiveTab('command');
-        addLogRef.current('openDataDomain', params, `Opened ${domainKey}`, 'success');
-        toast.info(`Opened ${domainKey} domain`);
-        return `Opened ${domainKey} domain in Data Hub`;
-      },
-
-      // Close current domain view
-      closeDataDomain: () => {
-        useDataHubController.getState().setExpandedDomain(null);
-        addLogRef.current('closeDataDomain', {}, 'Closed domain view', 'success');
-        return 'Closed domain view';
-      },
-
-      // Run enterprise query
-      runEnterpriseQuery: (params: { query: string }) => {
-        const controller = useDataHubController.getState();
-        controller.setEnterpriseQuery(params.query);
-        controller.setTriggerEnterpriseQuery(true);
-        controller.setActiveTab('insights');
-        addLogRef.current('runEnterpriseQuery', params, 'Query initiated', 'success');
-        toast.info('Running enterprise query...');
-        return `Running enterprise query: "${params.query}"`;
-      },
-
-      // Generate report for persona
-      generateDataHubReport: (params: { persona: string }) => {
-        const personaId = getPersonaFromName(params.persona);
-        if (!personaId) {
-          addLogRef.current('generateDataHubReport', params, `Unknown persona: ${params.persona}`, 'error');
-          return `Unknown persona "${params.persona}". Available personas: CEO, CFO, COO, CTO, CMO, CRO, CHRO, CLO, CCO, CISO, Chief of Staff, Chief People, Admin`;
-        }
-        
-        useDataHubController.getState().requestReportGeneration(personaId);
-        addLogRef.current('generateDataHubReport', params, `Generating ${personaId} report`, 'success');
-        toast.info(`Generating ${personaId.toUpperCase()} report...`);
-        return `Generating executive report for ${personaId.toUpperCase()} persona`;
-      },
-
-      // Refresh Data Hub data
-      refreshDataHub: () => {
-        useDataHubController.getState().requestRefresh();
-        addLogRef.current('refreshDataHub', {}, 'Refresh triggered', 'success');
-        toast.info('Refreshing Data Hub...');
-        return 'Refreshing Data Hub data';
-      },
-
-      // Get Data Hub status
-      getDataHubStatus: () => {
-        const state = useDataHubController.getState();
-        addLogRef.current('getDataHubStatus', {}, 'Status retrieved', 'success');
-        return `Data Hub Status: Tab=${state.activeTab}, Domain=${state.expandedDomain || 'none'}, Persona=${state.targetPersona || 'default'}`;
-      },
-
-      // List available domains
-      listDataDomains: () => {
-        addLogRef.current('listDataDomains', {}, 'Domains listed', 'success');
-        const domains = ['communications', 'documents', 'events', 'financials', 'tasks', 'knowledge'];
-        return `Available data domains: ${domains.join(', ')}`;
-      },
-
-      // List available personas
-      listPersonas: () => {
-        addLogRef.current('listPersonas', {}, 'Personas listed', 'success');
-        const personas = ['CEO', 'CFO', 'COO', 'CTO', 'CMO', 'CRO', 'CHRO', 'CLO', 'CCO', 'CISO', 'Chief of Staff', 'Chief People', 'Admin'];
-        return `Available personas: ${personas.join(', ')}`;
-      }
-    },
-    onConnect: () => {
-      console.log("[Atlas] Connected to voice agent");
-      addLogRef.current('system', {}, 'Connected to Atlas', 'success');
-      toast.success('Atlas online');
-
-
-      // Inject memory context as soon as the connection is established.
-      // IMPORTANT: this is *read-only context* for the model; the app handles persistence.
-      const memoryContext = pendingMemoryContextRef.current;
-      if (memoryContext && conversationRef.current?.sendContextualUpdate) {
-        conversationRef.current.sendContextualUpdate(
-          "SYSTEM: You have been provided background context about this user. Use it to be helpful. Do NOT mention storage, databases, or authentication problems."
-        );
-        conversationRef.current.sendContextualUpdate(
-          `[BACKGROUND CONTEXT - Do not quote verbatim]: ${memoryContext}`
-        );
-        console.log('[Atlas] Injected memory context via onConnect');
-        pendingMemoryContextRef.current = null;
-      }
-    },
-    onDisconnect: (reason?: any) => {
-      console.log("[Atlas] Disconnected from voice agent", reason);
-      addLogRef.current('system', { reason }, 'Disconnected from Atlas', 'success');
-    },
-    onMessage: (message: any) => {
-      console.log("[Atlas] Message:", message);
-
-      // The ElevenLabs React SDK can emit different message shapes depending on
-      // enabled events + connection type. Support both:
-      // 1) "event" style: message.type === 'user_transcript' | 'agent_response' ...
-      // 2) "chat" style: { source, role, message }
-
-      // --- Chat-style fallback (what you currently receive)
-      if (typeof message?.message === "string") {
-        const who = message.role === "agent" ? "Atlas" : "You";
-        const content = message.message;
-        setTranscript(`${who}: ${content}`);
-        setIsTranscribing(message.role === "agent");
-
-
-        // If the agent claims it has no memory or mentions auth/storage issues, immediately correct it.
-        // Some agent prompts default to these disclaimers; this nudge usually fixes it.
-        if (
-          message.role === "agent" &&
-          /\b(don't have memory|do not have memory|no memory of past|each interaction is fresh|authentication issue|unable to store)\b/i.test(content)
-        ) {
-          conversationRef.current?.sendContextualUpdate?.(
-            "SYSTEM: Do not mention memory limitations, storage, databases, or authentication issues. You already have background context for this user in this session. Continue normally."
-          );
-        }
-        
-        // Save to conversation history (avoid duplicates)
-        if (content && content !== lastSavedMessageRef.current) {
-          lastSavedMessageRef.current = content;
-          const role = message.role === "agent" ? 'assistant' : 'user';
-          saveMessageRef.current(role, content);
-          
-          // Store in persistent memory via hook
-          atlasMemory.storeMessage(role, content, {
-            timestamp: new Date().toISOString(),
-            source: 'voice'
-          });
-          
-          // Parse user messages for UI commands
-          if (message.role !== "agent") {
-            const intent = voiceIntentParser.parse(content);
-            if (intent) {
-              console.log('🎯 Voice command detected (chat):', intent);
-              useVoiceCommandBus.getState().sendCommand(intent.command);
-            }
-          }
-        }
-        return;
-      }
-
-      // --- Event-style (requires enabling transcript/response events in ElevenLabs)
-      if (message?.type === "user_transcript") {
-        const userText = message.user_transcription_event?.user_transcript;
-        if (userText) {
-          setTranscript(`You: ${userText}`);
-          setIsTranscribing(false);
-          
-          // Save user message
-          if (userText !== lastSavedMessageRef.current) {
-            lastSavedMessageRef.current = userText;
-            saveMessageRef.current('user', userText);
-            
-            // Store in persistent memory via hook
-            atlasMemory.storeMessage('user', userText, {
-              timestamp: new Date().toISOString(),
-              source: 'voice'
-            });
-            
-            // Parse for UI commands
-            const intent = voiceIntentParser.parse(userText);
-            if (intent) {
-              console.log('🎯 Voice command detected:', intent);
-              useVoiceCommandBus.getState().sendCommand(intent.command);
-            }
-          }
-        }
-        return;
-      }
-
-      if (message?.type === "agent_response") {
-        const agentText = message.agent_response_event?.agent_response;
-        if (agentText) {
-          setTranscript(`Atlas: ${agentText}`);
-          setIsTranscribing(true);
-          
-          // Save agent response
-          if (agentText !== lastSavedMessageRef.current) {
-            lastSavedMessageRef.current = agentText;
-            saveMessageRef.current('assistant', agentText);
-            
-            // Store in persistent memory via hook
-            atlasMemory.storeMessage('assistant', agentText, {
-              timestamp: new Date().toISOString(),
-              source: 'voice'
-            });
-          }
-        }
-        return;
-      }
-
-      if (message?.type === "agent_response_correction") {
-        const correctedText = message.agent_response_correction_event?.corrected_agent_response;
-        if (correctedText) setTranscript(`Atlas: ${correctedText}`);
-        return;
-      }
-
-      if (message?.type === "response.done") {
-        setIsTranscribing(false);
-      }
-    },
-    onError: (error: any) => {
-      console.error("[Atlas] Error:", error);
-      addLogRef.current('system', { error }, 'Connection error', 'error');
-      toast.error('Atlas connection error');
-    },
-  }), [navigate]); // Only recreate if navigate changes
-
-  const conversation = useConversation({
-    ...conversationConfig,
-    micMuted: isMuted,
-  });
-  // keep a stable ref for callbacks inside useMemo'd handlers
-  conversationRef.current = conversation;
-
-  const startConversation = useCallback(async () => {
-    // Guard against multiple activation attempts
-    if (isConnecting || conversation.status === 'connected') {
-      console.log("[Atlas] Already connecting or connected, ignoring");
-      return;
-    }
-    
-    setIsConnecting(true);
-    try {
-      console.log("[Atlas] Requesting microphone permission...");
-      await navigator.mediaDevices.getUserMedia({ audio: true });
-      console.log("[Atlas] Microphone permission granted, fetching signed URL...");
-
-      // Fetch signed URL from backend (use fetch instead of supabase.functions.invoke to avoid hanging requests)
-      // NOTE: Some browsers/extensions can delay function calls; allow a generous timeout.
-      const controller = new AbortController();
-      const t = window.setTimeout(() => controller.abort(), 30000);
-      let signedUrlResp: any;
-      try {
-        const res = await fetch(`${import.meta.env.VITE_SUPABASE_URL}/functions/v1/elevenlabs-conversation-token`, {
-          method: "POST",
-          headers: {
-            "Content-Type": "application/json",
-            apikey: import.meta.env.VITE_SUPABASE_PUBLISHABLE_KEY,
-            Authorization: `Bearer ${import.meta.env.VITE_SUPABASE_PUBLISHABLE_KEY}`,
-          },
-          signal: controller.signal,
-        });
-
-        signedUrlResp = await res.json().catch(() => ({}));
-        if (!res.ok) {
-          throw new Error(signedUrlResp?.error || `Token request failed (${res.status})`);
-        }
-      } catch (e: any) {
-        // AbortError => our timeout fired
-        if (e?.name === "AbortError") {
-          throw new Error("Token request timed out (30s). Check network/adblock and try again.");
-        }
-        throw e;
-      } finally {
-        window.clearTimeout(t);
-      }
-
-      if (!signedUrlResp?.signed_url) {
-        console.error("[Atlas] Failed to get signed URL:", signedUrlResp);
-        throw new Error(signedUrlResp?.error || "Failed to authenticate with voice service");
-      }
-      
-      console.log("[Atlas] Got signed URL, starting session...");
-
-      const userDisplayName =
-        (user?.user_metadata as any)?.display_name ||
-        (user?.user_metadata as any)?.full_name ||
-        user?.email?.split("@")[0] ||
-        "Operator";
-
-      // Memory context is already pre-loaded via useAtlasMemory hook
-      // Ensure latest context is set for injection on connect
-      if (atlasMemory.contextString) {
-        pendingMemoryContextRef.current = atlasMemory.contextString;
-        console.log("[Atlas] Using pre-loaded memory context:", atlasMemory.contextString.substring(0, 100) + "...");
-      }
-
-      // Build session config
-      // NOTE: When using a signedUrl, we must explicitly use the WebSocket connection type.
-      // Otherwise the SDK may default to WebRTC and sit in "connecting".
-      const sessionConfig: any = {
-        signedUrl: signedUrlResp.signed_url,
-        connectionType: "websocket",
-        userId: user?.id,
-        dynamicVariables: {
-          _userDisplayName_: userDisplayName,
-        },
-      };
-
-      // Failsafe: if we never connect, surface a useful error
-      const connectTimeout = window.setTimeout(() => {
-        if (conversation.status !== "connected") {
-          console.error("[Atlas] Connection timed out");
-          toast.error("Atlas connection timed out. Please try again.");
-        }
-      }, 15000);
-
-      await conversation.startSession(sessionConfig);
-      window.clearTimeout(connectTimeout);
-      console.log("[Atlas] Session started successfully");
-    } catch (error) {
-      console.error("[Atlas] Failed to start:", error);
-      const errMsg = error instanceof Error ? error.message : 'Unknown error';
-      toast.error(`Failed to start Atlas: ${errMsg}`);
-    } finally {
-      setIsConnecting(false);
-    }
-  }, [conversation, isConnecting, user?.id, user?.email, user?.user_metadata, atlasMemory.contextString]);
-
-  const stopConversation = useCallback(async () => {
-    await conversation.endSession();
-  }, [conversation]);
-
-  const toggleMute = useCallback(async () => {
-    if (isMuted) {
-      await conversation.setVolume({ volume: 1 });
-    } else {
-      await conversation.setVolume({ volume: 0 });
-    }
-    setIsMuted(!isMuted);
-  }, [conversation, isMuted]);
-
-  const isConnected = conversation.status === "connected";
-
-
-  // Real-time state streaming to Atlas
-  const sendContextualUpdate = useCallback((text: string) => {
-    if (isConnected) {
-      conversation.sendContextualUpdate(text);
-    }
-  }, [isConnected, conversation]);
-
-  const { logActivity } = useAtlasContext({
-    agents,
-    isConnected,
-    sendContextualUpdate,
-    searchResults,
-    synthesizedAgent
-  });
-
-  // Log significant activities
-  useEffect(() => {
-    if (searchResults.length > 0) {
-      logActivity(`Search: found ${searchResults.length} agents`);
-    }
-  }, [searchResults, logActivity]);
-
-  useEffect(() => {
-    if (synthesizedAgent) {
-      logActivity(`Synthesized: ${synthesizedAgent.name}`);
-    }
-  }, [synthesizedAgent, logActivity]);
-
-  // Keepalive: send user activity ping every 25 seconds to prevent WebSocket timeout
-  useEffect(() => {
-    if (!isConnected) return;
-    
-    const interval = setInterval(() => {
-      try {
-        // sendUserActivity keeps the connection alive without interrupting the agent
-        (conversation as any).sendUserActivity?.();
-      } catch (e) {
-        console.log("[Atlas] Keepalive ping failed (may not be supported):", e);
-      }
-    }, 25000);
-    
-    return () => clearInterval(interval);
-  }, [isConnected, conversation]);
-  // Sync audio visualization to actual voice output using ElevenLabs APIs
-  useEffect(() => {
-    if (!isConnected) {
-      setAudioLevels(new Array(20).fill(0));
-      setInputVolume(0);
-      setOutputVolume(0);
-      setFrequencyBands({ bass: 0, mid: 0, treble: 0 });
-      return;
-    }
-
-    const updateAudioLevels = () => {
-      // Get real-time volume levels from ElevenLabs
-      const inVol = conversation.getInputVolume();
-      const outVol = conversation.getOutputVolume();
-      setInputVolume(inVol);
-      setOutputVolume(outVol);
-      
-      // Get frequency data for advanced visualization
-      const outputFreq = conversation.getOutputByteFrequencyData();
-      const inputFreq = conversation.getInputByteFrequencyData();
-      
-      // Use output frequency when speaking, input when listening
-      const frequencyData = conversation.isSpeaking ? outputFreq : inputFreq;
-      
-      if (frequencyData && frequencyData.length > 0) {
-        // Calculate frequency bands (bass, mid, treble)
-        const third = Math.floor(frequencyData.length / 3);
-        const bassSum = frequencyData.slice(0, third).reduce((a, b) => a + b, 0) / third / 255;
-        const midSum = frequencyData.slice(third, third * 2).reduce((a, b) => a + b, 0) / third / 255;
-        const trebleSum = frequencyData.slice(third * 2).reduce((a, b) => a + b, 0) / third / 255;
-        setFrequencyBands({ bass: bassSum, mid: midSum, treble: trebleSum });
-        
-        // Sample 20 points from the frequency data
-        const newLevels = Array.from({ length: 20 }, (_, i) => {
-          const index = Math.floor((i / 20) * frequencyData.length);
-          return frequencyData[index] / 255;
-        });
-        setAudioLevels(newLevels);
-      } else {
-        // Subtle idle animation when not speaking - use stable timestamp
-        const now = performance.now();
-        setAudioLevels(
-          Array.from({ length: 20 }, (_, i) => 
-            0.1 + Math.sin(now / 500 + i * 0.3) * 0.05
-          )
-        );
-        setFrequencyBands({ bass: 0.1, mid: 0.1, treble: 0.1 });
-      }
-      
-      animationRef.current = requestAnimationFrame(updateAudioLevels);
-    };
-
-    animationRef.current = requestAnimationFrame(updateAudioLevels);
-
-    return () => {
-      if (animationRef.current) {
-        cancelAnimationFrame(animationRef.current);
-      }
-    };
-  }, [isConnected, conversation]);
+  }, [saveMessage, agents, activeAgents, user]);
 
   // Onboarding handlers
   const handleOnboardingUpload = useCallback(() => {
@@ -1805,19 +916,9 @@ function AtlasPage() {
             </div>
           )}
           
-          {/* Global Session Indicator */}
-          {isGloballyActive && !isConnected && (
-            <div className="flex items-center gap-2 px-2 py-1 rounded bg-success/10 border border-success/30">
-              <Radio size={12} className="text-success animate-pulse" />
-              <span className="text-[10px] font-mono text-success">GLOBAL SESSION ACTIVE</span>
-            </div>
-          )}
-          
           <div className="flex items-center gap-2">
             {isConnected ? (
               <Wifi size={14} className="text-success" />
-            ) : isGloballyActive ? (
-              <Radio size={14} className="text-success animate-pulse" />
             ) : (
               <WifiOff size={14} className="text-muted-foreground" />
             )}
@@ -2136,23 +1237,11 @@ function AtlasPage() {
                 </div>
                 
                 {/* Activation hint when not connected */}
-                {!isConnected && !isConnecting && !isGloballyActive && (
+                {!isConnected && !isConnecting && (
                   <div className="absolute inset-0 flex items-center justify-center">
                     <span className="text-[10px] font-mono text-primary/60 animate-pulse">
                       TAP TO ACTIVATE
                     </span>
-                  </div>
-                )}
-                
-                {/* Global session active indicator */}
-                {!isConnected && !isConnecting && isGloballyActive && (
-                  <div className="absolute inset-0 flex items-center justify-center">
-                    <div className="text-center">
-                      <Radio size={20} className="text-success animate-pulse mx-auto mb-1" />
-                      <span className="text-[10px] font-mono text-success">
-                        GLOBAL SESSION
-                      </span>
-                    </div>
                   </div>
                 )}
                 
@@ -2171,27 +1260,6 @@ function AtlasPage() {
 
           {/* Controls */}
           <div className="flex flex-col items-center gap-4 mt-8">
-            {/* Global session active notice */}
-            {isGloballyActive && !isConnected && (
-              <div className="text-center mb-2">
-                <div className="flex items-center justify-center gap-2 text-success mb-1">
-                  <Radio size={14} className="animate-pulse" />
-                  <span className="text-xs font-mono">ATLAS SESSION ACTIVE</span>
-                </div>
-                <p className="text-[10px] text-muted-foreground max-w-[200px]">
-                  Atlas is running from another page. Use the global orb to continue your conversation.
-                </p>
-                <Button
-                  onClick={() => globalAtlas?.stopConversation()}
-                  variant="outline"
-                  size="sm"
-                  className="mt-2 gap-2 font-mono text-xs"
-                >
-                  <MicOff className="w-3 h-3" />
-                  END GLOBAL SESSION
-                </Button>
-              </div>
-            )}
             
             {/* Main controls */}
             <div className="flex justify-center gap-3">
@@ -2303,8 +1371,7 @@ function AtlasPage() {
             e.preventDefault();
             if (textInput.trim() && isConnected) {
               const msg = textInput.trim();
-              conversation.sendUserMessage(msg);
-              setTranscript(`You: ${msg}`);
+              sendTextMessage(msg);
               saveMessage('user', msg);
               setTextInput('');
             }
