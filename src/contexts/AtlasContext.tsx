@@ -9,6 +9,7 @@ import { useAtlasMemory } from '@/hooks/useAtlasMemory';
 import { useAuth } from '@/hooks/useAuth';
 import { useDashboardAgents } from '@/hooks/useDashboardAgents';
 import { useDataHubController, getDomainKeyFromName, getTabFromName, getPersonaFromName } from '@/hooks/useDataHubController';
+import { useWakeWordDetection, WakeWordStatus, WakeWordName } from '@/hooks/useWakeWordDetection';
 import { supabase } from '@/integrations/supabase/client';
 import { toast } from 'sonner';
 
@@ -74,6 +75,13 @@ interface AtlasContextValue {
   searchResults: SearchResult[];
   synthesizedAgent: any | null;
   
+  // Wake word detection
+  wakeWordStatus: WakeWordStatus;
+  wakeWordEnabled: boolean;
+  setWakeWordEnabled: (enabled: boolean) => void;
+  wakeWord: WakeWordName;
+  setWakeWord: (word: WakeWordName) => void;
+  
   // Direct conversation access for Atlas page
   conversation: ReturnType<typeof useConversation>;
 }
@@ -117,6 +125,10 @@ export function AtlasProvider({ children }: AtlasProviderProps) {
   const [isMinimized, setIsMinimized] = useState(false);
   const [searchResults, setSearchResults] = useState<SearchResult[]>([]);
   const [synthesizedAgent, setSynthesizedAgent] = useState<any | null>(null);
+  
+  // Wake word settings
+  const [wakeWordEnabled, setWakeWordEnabled] = useState(false);
+  const [wakeWord, setWakeWord] = useState<WakeWordName>("jarvis");
   
   // Navigation history tracking
   const [historyStack, setHistoryStack] = useState<string[]>([location.pathname]);
@@ -702,6 +714,18 @@ export function AtlasProvider({ children }: AtlasProviderProps) {
 
   const isConnected = conversation.status === "connected";
 
+  // Wake word detection - only active when not connected
+  const { status: wakeWordStatus } = useWakeWordDetection({
+    enabled: wakeWordEnabled && !isConnected && !isConnecting,
+    wakeWord,
+    onWakeWordDetected: () => {
+      toast.info(`"${wakeWord}" detected! Starting Atlas...`);
+      startConversationRef.current?.();
+    },
+  });
+  
+  const startConversationRef = useRef<(() => Promise<void>) | null>(null);
+
   // Start conversation
   const startConversation = useCallback(async () => {
     if (isConnecting || conversation.status === 'connected') return;
@@ -751,6 +775,11 @@ export function AtlasProvider({ children }: AtlasProviderProps) {
       setIsConnecting(false);
     }
   }, [conversation, isConnecting, user, atlasMemory.contextString]);
+
+  // Keep startConversationRef updated for wake word callback
+  useEffect(() => {
+    startConversationRef.current = startConversation;
+  }, [startConversation]);
 
   const stopConversation = useCallback(async () => {
     await conversation.endSession();
@@ -869,6 +898,11 @@ export function AtlasProvider({ children }: AtlasProviderProps) {
     actionLogs,
     searchResults,
     synthesizedAgent,
+    wakeWordStatus,
+    wakeWordEnabled,
+    setWakeWordEnabled,
+    wakeWord,
+    setWakeWord,
     conversation,
   };
 
