@@ -45,36 +45,29 @@ export function GlobalAtlasOrb() {
   const [chatMessages, setChatMessages] = useState<ChatMessage[]>([]);
   const scrollRef = useRef<HTMLDivElement>(null);
   const inputRef = useRef<HTMLInputElement>(null);
-  
-  // Don't render on the Atlas page itself - it has its own full interface
-  if (location.pathname === '/atlas') return null;
-  
-  // Don't render if context is not available
-  if (!atlas) return null;
 
-  const {
-    isConnected,
-    isConnecting,
-    isMuted,
-    isSpeaking,
-    audioLevels,
-    inputVolume,
-    outputVolume,
-    frequencyBands,
-    transcript,
-    startConversation,
-    stopConversation,
-    toggleMute,
-    sendTextMessage,
-    goBack,
-    goForward,
-    canGoBack,
-    canGoForward,
-    isExpanded,
-    setIsExpanded,
-    isMinimized,
-    setIsMinimized,
-  } = atlas;
+  // Extract values from atlas context (with safe defaults for when atlas is null)
+  const isConnected = atlas?.isConnected ?? false;
+  const isConnecting = atlas?.isConnecting ?? false;
+  const isMuted = atlas?.isMuted ?? false;
+  const isSpeaking = atlas?.isSpeaking ?? false;
+  const audioLevels = atlas?.audioLevels ?? 0;
+  const inputVolume = atlas?.inputVolume ?? 0;
+  const outputVolume = atlas?.outputVolume ?? 0;
+  const frequencyBands = atlas?.frequencyBands ?? { bass: 0, mid: 0, treble: 0 };
+  const transcript = atlas?.transcript ?? '';
+  const startConversation = atlas?.startConversation ?? (() => Promise.resolve());
+  const stopConversation = atlas?.stopConversation ?? (() => {});
+  const toggleMute = atlas?.toggleMute ?? (() => {});
+  const sendTextMessage = atlas?.sendTextMessage ?? (() => {});
+  const goBack = atlas?.goBack ?? (() => {});
+  const goForward = atlas?.goForward ?? (() => {});
+  const canGoBack = atlas?.canGoBack ?? false;
+  const canGoForward = atlas?.canGoForward ?? false;
+  const isExpanded = atlas?.isExpanded ?? false;
+  const setIsExpanded = atlas?.setIsExpanded ?? (() => {});
+  const isMinimized = atlas?.isMinimized ?? true;
+  const setIsMinimized = atlas?.setIsMinimized ?? (() => {});
 
   // Auto-scroll chat to bottom
   useEffect(() => {
@@ -101,6 +94,12 @@ export function GlobalAtlasOrb() {
       });
     }
   }, [transcript, isSpeaking]);
+
+  // Don't render on the Atlas page itself - it has its own full interface
+  if (location.pathname === '/atlas') return null;
+  
+  // Don't render if context is not available
+  if (!atlas) return null;
 
   const handleSendMessage = async () => {
     if (!textInput.trim()) return;
