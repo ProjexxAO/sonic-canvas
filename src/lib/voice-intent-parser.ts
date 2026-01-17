@@ -18,7 +18,7 @@ export class VoiceIntentParser {
     'index': '/',
     'agents': '/',
     'sonic nodes': '/',
-    'agent dashboard': '/',
+    'agent dashboard': '/atlas',
     // Atlas / Command Center
     'atlas': '/atlas',
     'command center': '/atlas',
