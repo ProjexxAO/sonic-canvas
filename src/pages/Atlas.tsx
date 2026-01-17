@@ -62,7 +62,9 @@ import {
   WifiOff,
   Sun,
   Moon,
-  Send
+  Send,
+  Ear,
+  EarOff
 } from 'lucide-react';
 import { Input } from '@/components/ui/input';
 import { useTheme } from 'next-themes';
@@ -125,6 +127,9 @@ function AtlasPage() {
     searchResults,
     synthesizedAgent,
     conversation,
+    wakeWordEnabled,
+    setWakeWordEnabled,
+    wakeWordStatus,
   } = atlas;
   
   const [textInput, setTextInput] = useState('');
@@ -1260,6 +1265,19 @@ function AtlasPage() {
 
           {/* Controls */}
           <div className="flex flex-col items-center gap-4 mt-8">
+            
+            {/* Wake Word Toggle */}
+            <Button
+              onClick={() => setWakeWordEnabled(!wakeWordEnabled)}
+              variant={wakeWordEnabled ? "default" : "outline"}
+              className="gap-2 font-mono text-xs"
+              title={wakeWordEnabled ? `Listening for "Jarvis" wake word` : 'Enable wake word detection'}
+            >
+              {wakeWordEnabled ? <Ear className="w-4 h-4" /> : <EarOff className="w-4 h-4" />}
+              {wakeWordEnabled 
+                ? wakeWordStatus === 'listening' ? 'LISTENING...' : 'WAKE WORD ON'
+                : 'WAKE WORD OFF'}
+            </Button>
             
             {/* Main controls */}
             <div className="flex justify-center gap-3">
