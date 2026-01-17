@@ -12,14 +12,13 @@ export class VoiceIntentParser {
   // Comprehensive route mapping for all app pages
   private routeMap: Record<string, string> = {
     // Main pages
-    'dashboard': '/',
-    'home': '/',
-    'main': '/',
+    'dashboard': '/atlas',
+    'home': '/atlas',
+    'main': '/atlas',
     'index': '/',
     'agents': '/',
     'sonic nodes': '/',
     'agent dashboard': '/',
-    
     // Atlas / Command Center
     'atlas': '/atlas',
     'command center': '/atlas',

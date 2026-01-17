@@ -428,9 +428,9 @@ export function AtlasProvider({ children }: AtlasProviderProps) {
         // All app routes with natural language aliases
         const routes: Record<string, string> = {
           // Main pages
-          'home': '/',
-          'main': '/',
-          'dashboard': '/',
+          'home': '/atlas',
+          'main': '/atlas',
+          'dashboard': '/atlas',
           'index': '/',
           'agents': '/',
           'sonic nodes': '/',
