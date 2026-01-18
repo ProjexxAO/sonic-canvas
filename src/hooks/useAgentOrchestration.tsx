@@ -197,13 +197,59 @@ export function useAgentOrchestration(userId: string | undefined) {
     }
   }, [userId]);
 
-  // Initial fetch
+  // Resume stale in-progress tasks (tasks that were in_progress but Atlas was inactive)
+  const resumeStaleTasks = useCallback(async () => {
+    if (!userId) return;
+
+    try {
+      // Find tasks that are in_progress but haven't been updated in the last 5 minutes
+      const staleThreshold = new Date(Date.now() - 5 * 60 * 1000).toISOString();
+      
+      const { data: staleTasks, error } = await (supabase as any)
+        .from('agent_task_queue')
+        .select('*')
+        .eq('user_id', userId)
+        .eq('status', 'in_progress')
+        .lt('updated_at', staleThreshold);
+
+      if (error) throw error;
+
+      if (staleTasks && staleTasks.length > 0) {
+        console.log(`Found ${staleTasks.length} stale in-progress tasks, marking as resumable`);
+        
+        // Update the tasks to indicate they're being resumed
+        for (const task of staleTasks) {
+          await (supabase as any)
+            .from('agent_task_queue')
+            .update({ 
+              updated_at: new Date().toISOString(),
+              input_data: { 
+                ...task.input_data, 
+                resumed_at: new Date().toISOString(),
+                resume_count: (task.input_data?.resume_count || 0) + 1
+              }
+            })
+            .eq('id', task.id)
+            .eq('user_id', userId);
+        }
+
+        toast.info(`Resuming ${staleTasks.length} paused task(s)`, {
+          description: 'Tasks will continue from where they left off'
+        });
+      }
+    } catch (error) {
+      console.error('Error resuming stale tasks:', error);
+    }
+  }, [userId]);
+
+  // Initial fetch and resume stale tasks
   useEffect(() => {
     if (userId) {
       setIsLoading(true);
-      Promise.all([fetchTasks(), fetchNotifications()]).finally(() => setIsLoading(false));
+      Promise.all([fetchTasks(), fetchNotifications(), resumeStaleTasks()])
+        .finally(() => setIsLoading(false));
     }
-  }, [userId, fetchTasks, fetchNotifications]);
+  }, [userId, fetchTasks, fetchNotifications, resumeStaleTasks]);
 
   // Real-time subscription for orchestration tasks
   useEffect(() => {
@@ -586,6 +632,35 @@ export function useAgentOrchestration(userId: string | undefined) {
     }
   }, [userId, fetchTasks]);
 
+  // Pause all in-progress tasks (call when Atlas becomes inactive)
+  const pauseAllTasks = useCallback(async () => {
+    if (!userId) return;
+
+    try {
+      const inProgressTasks = tasks.filter(t => t.status === 'in_progress' && !t.id.startsWith('csuite:'));
+      
+      for (const task of inProgressTasks) {
+        await (supabase as any)
+          .from('agent_task_queue')
+          .update({ 
+            input_data: { 
+              ...task.input_data, 
+              paused_at: new Date().toISOString(),
+              paused_progress: task.progress
+            }
+          })
+          .eq('id', task.id)
+          .eq('user_id', userId);
+      }
+
+      if (inProgressTasks.length > 0) {
+        console.log(`Paused ${inProgressTasks.length} in-progress tasks`);
+      }
+    } catch (error) {
+      console.error('Error pausing tasks:', error);
+    }
+  }, [userId, tasks]);
+
   return {
     tasks,
     notifications,
@@ -602,5 +677,7 @@ export function useAgentOrchestration(userId: string | undefined) {
     refreshTasks: fetchTasks,
     refreshNotifications: fetchNotifications,
     syncMemoryTasks,
+    resumeStaleTasks,
+    pauseAllTasks,
   };
 }
