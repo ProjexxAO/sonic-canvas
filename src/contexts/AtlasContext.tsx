@@ -7,6 +7,7 @@ import { voiceIntentParser } from '@/lib/voice-intent-parser';
 import { useVoiceCommandBus } from '@/lib/voice-command-bus';
 import { useAtlasMemory } from '@/hooks/useAtlasMemory';
 import { useAuth } from '@/hooks/useAuth';
+import { useAgentOrchestration } from '@/hooks/useAgentOrchestration';
 import { useDashboardAgents } from '@/hooks/useDashboardAgents';
 import { useDataHubController, getDomainKeyFromName, getTabFromName, getPersonaFromName } from '@/hooks/useDataHubController';
 import { useWakeWordDetection, WakeWordStatus, WakeWordName } from '@/hooks/useWakeWordDetection';
@@ -110,6 +111,8 @@ export function AtlasProvider({ children }: AtlasProviderProps) {
   const location = useLocation();
   const { user } = useAuth();
   const { agents } = useDashboardAgents({ limit: 200 });
+  const orchestration = useAgentOrchestration(user?.id);
+  const orchestrationRef = useRef(orchestration);
   
   // State
   const [isConnecting, setIsConnecting] = useState(false);
@@ -152,7 +155,8 @@ export function AtlasProvider({ children }: AtlasProviderProps) {
   useEffect(() => {
     userRef.current = user;
     agentsRef.current = agents;
-  }, [user, agents]);
+    orchestrationRef.current = orchestration;
+  }, [user, agents, orchestration]);
   
   // Track navigation history - using refs to avoid infinite loops
   useEffect(() => {
@@ -434,6 +438,75 @@ export function AtlasProvider({ children }: AtlasProviderProps) {
           setActionLogs(prev => prev.map(l => 
             l.id === logId ? { ...l, result: msg, status: 'error' } : l
           ));
+          return `Error: ${msg}`;
+        }
+      },
+
+      // Update task progress
+      updateTaskProgress: async (params: { taskId: string; progress: number; status?: string }) => {
+        const logId = addLogRef.current('updateTaskProgress', params, 'Updating task...', 'pending');
+        try {
+          const response = await supabase.functions.invoke('atlas-orchestrator', {
+            body: { 
+              action: 'update_task', 
+              userId: userRef.current?.id,
+              taskId: params.taskId,
+              updates: {
+                progress: params.progress,
+                status: params.status
+              }
+            }
+          });
+          
+          if (response.error) throw response.error;
+          
+          setActionLogs(prev => prev.map(l => 
+            l.id === logId ? { ...l, result: `Updated task progress to ${params.progress}%`, status: 'success' } : l
+          ));
+          
+          toast.success(`Task progress updated to ${params.progress}%`);
+          return `Task progress updated to ${params.progress}%${params.status ? `. Status: ${params.status}` : ''}`;
+        } catch (error) {
+          const msg = error instanceof Error ? error.message : 'Task update failed';
+          setActionLogs(prev => prev.map(l => 
+            l.id === logId ? { ...l, result: msg, status: 'error' } : l
+          ));
+          toast.error('Failed to update task');
+          return `Error: ${msg}`;
+        }
+      },
+
+      // Complete a task
+      completeTask: async (params: { taskId: string; summary?: string }) => {
+        const logId = addLogRef.current('completeTask', params, 'Completing task...', 'pending');
+        try {
+          const response = await supabase.functions.invoke('atlas-orchestrator', {
+            body: { 
+              action: 'update_task', 
+              userId: userRef.current?.id,
+              taskId: params.taskId,
+              updates: {
+                progress: 100,
+                status: 'completed',
+                output_data: params.summary ? { summary: params.summary } : undefined
+              }
+            }
+          });
+          
+          if (response.error) throw response.error;
+          
+          setActionLogs(prev => prev.map(l => 
+            l.id === logId ? { ...l, result: 'Task completed', status: 'success' } : l
+          ));
+          
+          toast.success('Task completed successfully!');
+          return `Task has been marked as completed.${params.summary ? ` Summary: ${params.summary}` : ''}`;
+        } catch (error) {
+          const msg = error instanceof Error ? error.message : 'Task completion failed';
+          setActionLogs(prev => prev.map(l => 
+            l.id === logId ? { ...l, result: msg, status: 'error' } : l
+          ));
+          toast.error('Failed to complete task');
           return `Error: ${msg}`;
         }
       },
@@ -806,8 +879,17 @@ export function AtlasProvider({ children }: AtlasProviderProps) {
   });
 
   const stopConversation = useCallback(async () => {
+    // Pause all in-progress tasks when Atlas goes inactive
+    await orchestrationRef.current?.pauseAllTasks?.();
     await conversation.endSession();
   }, [conversation]);
+
+  // Resume stale tasks when Atlas becomes active
+  useEffect(() => {
+    if (isConnected && orchestrationRef.current?.resumeStaleTasks) {
+      orchestrationRef.current.resumeStaleTasks();
+    }
+  }, [isConnected]);
 
   const toggleMute = useCallback(async () => {
     if (isMuted) {
