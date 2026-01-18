@@ -168,6 +168,144 @@ serve(async (req) => {
       });
     }
 
+    // Sync tasks from long-term memory using AI extraction
+    if (action === 'sync_memory_tasks') {
+      // Fetch recent memory messages
+      const { data: memoryMessages, error: memError } = await supabase
+        .from('user_memory_messages')
+        .select('id, content, role, created_at, metadata')
+        .eq('user_id', userId)
+        .order('created_at', { ascending: false })
+        .limit(50);
+
+      if (memError) throw memError;
+
+      if (!memoryMessages || memoryMessages.length === 0) {
+        return new Response(JSON.stringify({ tasks: [], message: 'No memory to extract tasks from' }), {
+          headers: { ...corsHeaders, 'Content-Type': 'application/json' },
+        });
+      }
+
+      // Build conversation text for AI analysis
+      const conversationText = memoryMessages
+        .reverse()
+        .map((m: any) => `${m.role === 'user' ? 'User' : 'Atlas'}: ${m.content}`)
+        .join('\n');
+
+      // Use AI to extract tasks from memory
+      const extractionPrompt = `Analyze the following conversation between a user and Atlas (an AI assistant). Extract any tasks, action items, or commitments that were discussed or assigned.
+
+For each task found, provide:
+- title: A concise task title (max 100 chars)
+- description: Brief description of what needs to be done
+- priority: "low", "medium", "high", or "critical"
+- status: "pending" if not started, "in_progress" if work has begun
+
+Only extract tasks that are actionable and specific. Do not include vague mentions or completed tasks.
+
+Return a JSON array of tasks, or an empty array if no tasks are found.
+
+Conversation:
+${conversationText}
+
+Return ONLY valid JSON in this format:
+[{"title": "...", "description": "...", "priority": "medium", "status": "pending"}]`;
+
+      const aiResponse = await fetch('https://ai.gateway.lovable.dev/v1/chat/completions', {
+        method: 'POST',
+        headers: {
+          'Authorization': `Bearer ${lovableApiKey}`,
+          'Content-Type': 'application/json',
+        },
+        body: JSON.stringify({
+          model: 'google/gemini-2.5-flash',
+          messages: [
+            { role: 'system', content: 'You are a task extraction assistant. Extract actionable tasks from conversations and return them as JSON.' },
+            { role: 'user', content: extractionPrompt },
+          ],
+        }),
+      });
+
+      if (!aiResponse.ok) {
+        console.error('AI extraction failed:', await aiResponse.text());
+        throw new Error('Failed to extract tasks from memory');
+      }
+
+      const aiData = await aiResponse.json();
+      const extractedContent = aiData.choices[0].message.content;
+
+      // Parse extracted tasks
+      let extractedTasks = [];
+      try {
+        const jsonMatch = extractedContent.match(/\[[\s\S]*\]/);
+        extractedTasks = jsonMatch ? JSON.parse(jsonMatch[0]) : [];
+      } catch (e) {
+        console.error('Failed to parse extracted tasks:', e);
+        extractedTasks = [];
+      }
+
+      if (extractedTasks.length === 0) {
+        return new Response(JSON.stringify({ tasks: [], message: 'No actionable tasks found in memory' }), {
+          headers: { ...corsHeaders, 'Content-Type': 'application/json' },
+        });
+      }
+
+      // Check for existing tasks to avoid duplicates
+      const { data: existingTasks } = await supabase
+        .from('agent_task_queue')
+        .select('task_title')
+        .eq('user_id', userId)
+        .in('status', ['pending', 'in_progress', 'awaiting_approval']);
+
+      const existingTitles = new Set((existingTasks || []).map((t: any) => t.task_title.toLowerCase()));
+
+      // Filter out duplicates and insert new tasks
+      const newTasks = extractedTasks.filter(
+        (t: any) => !existingTitles.has(t.title.toLowerCase())
+      );
+
+      if (newTasks.length > 0) {
+        const tasksToInsert = newTasks.map((t: any) => ({
+          user_id: userId,
+          task_title: t.title,
+          task_description: t.description || '',
+          task_priority: t.priority || 'medium',
+          task_type: 'assistance',
+          orchestration_mode: 'hybrid',
+          status: t.status || 'pending',
+          progress: t.status === 'in_progress' ? 25 : 0,
+          input_data: { source: 'memory_extraction' },
+          output_data: {},
+          agent_suggestions: [],
+        }));
+
+        const { data: insertedTasks, error: insertError } = await supabase
+          .from('agent_task_queue')
+          .insert(tasksToInsert)
+          .select();
+
+        if (insertError) throw insertError;
+
+        return new Response(JSON.stringify({ 
+          tasks: insertedTasks,
+          extracted: extractedTasks.length,
+          inserted: newTasks.length,
+          message: `Extracted ${extractedTasks.length} tasks, inserted ${newTasks.length} new tasks`
+        }), {
+          headers: { ...corsHeaders, 'Content-Type': 'application/json' },
+        });
+      }
+
+      return new Response(JSON.stringify({ 
+        tasks: [],
+        extracted: extractedTasks.length,
+        inserted: 0,
+        message: `Found ${extractedTasks.length} tasks but all already exist`
+      }), {
+        headers: { ...corsHeaders, 'Content-Type': 'application/json' },
+      });
+    }
+
     // =============================================
     // CONVERSATION MEMORY ACTIONS
     // =============================================

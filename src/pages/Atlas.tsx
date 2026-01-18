@@ -1309,7 +1309,11 @@ function AtlasPage() {
         {/* Right Panel - Results & Logs (Scrollable) */}
         <div className="w-96 flex-shrink-0 flex flex-col gap-4 overflow-y-auto max-h-[calc(100vh-10rem)] pr-2 scrollbar-thin scrollbar-thumb-border scrollbar-track-transparent pb-4">
           {/* Atlas Task Progress */}
-          <AtlasTaskProgress tasks={orchestration.tasks} isLoading={orchestration.isLoading} />
+          <AtlasTaskProgress 
+            tasks={orchestration.tasks} 
+            isLoading={orchestration.isLoading} 
+            onSyncMemory={orchestration.syncMemoryTasks}
+          />
 
           {/* Search Results */}
           {searchResults.length > 0 && (
