@@ -94,36 +94,38 @@ export function AtlasTaskProgress({ tasks, isLoading }: AtlasTaskProgressProps) 
 
       {/* Task List */}
       {isExpanded && (
-        <ScrollArea className="max-h-[200px]">
+        <ScrollArea
+          className="h-64"
+          onWheelCapture={(e) => e.stopPropagation()}
+          onTouchMoveCapture={(e) => e.stopPropagation()}
+        >
           <div className="px-3 pb-3 space-y-2">
             {activeTasks.map((task) => {
               const config = statusConfig[task.status] || statusConfig.pending;
               const StatusIcon = config.icon;
-              
+
               return (
                 <div
                   key={task.id}
                   className={cn(
                     "rounded-md border p-2.5 transition-all",
-                    task.status === 'in_progress' 
-                      ? "border-primary/30 bg-primary/5" 
+                    task.status === 'in_progress'
+                      ? "border-primary/30 bg-primary/5"
                       : "border-border bg-background/50"
                   )}
                 >
                   {/* Task Header */}
                   <div className="flex items-start justify-between gap-2 mb-2">
                     <div className="flex items-start gap-2 flex-1 min-w-0">
-                      <StatusIcon 
+                      <StatusIcon
                         className={cn(
                           "h-3.5 w-3.5 mt-0.5 flex-shrink-0",
                           config.color,
                           config.animate && "animate-spin"
-                        )} 
+                        )}
                       />
                       <div className="flex-1 min-w-0">
-                        <p className="text-xs font-medium text-foreground truncate">
-                          {task.task_title}
-                        </p>
+                        <p className="text-xs font-medium text-foreground truncate">{task.task_title}</p>
                         {task.task_description && (
                           <p className="text-[10px] text-muted-foreground truncate mt-0.5">
                             {task.task_description}
@@ -131,8 +133,8 @@ export function AtlasTaskProgress({ tasks, isLoading }: AtlasTaskProgressProps) 
                         )}
                       </div>
                     </div>
-                    <Badge 
-                      variant="outline" 
+                    <Badge
+                      variant="outline"
                       className={cn(
                         "text-[9px] px-1.5 py-0 flex-shrink-0",
                         priorityColors[task.task_priority]
@@ -145,19 +147,12 @@ export function AtlasTaskProgress({ tasks, isLoading }: AtlasTaskProgressProps) 
                   {/* Progress Bar */}
                   <div className="space-y-1">
                     <div className="flex items-center justify-between">
-                      <span className={cn("text-[10px] font-medium", config.color)}>
-                        {config.label}
-                      </span>
-                      <span className="text-[10px] font-mono text-muted-foreground">
-                        {task.progress}%
-                      </span>
+                      <span className={cn("text-[10px] font-medium", config.color)}>{config.label}</span>
+                      <span className="text-[10px] font-mono text-muted-foreground">{task.progress}%</span>
                     </div>
-                    <Progress 
-                      value={task.progress} 
-                      className={cn(
-                        "h-1.5",
-                        task.status === 'in_progress' && "animate-pulse"
-                      )}
+                    <Progress
+                      value={task.progress}
+                      className={cn("h-1.5", task.status === 'in_progress' && "animate-pulse")}
                     />
                   </div>
 
