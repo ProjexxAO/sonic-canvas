@@ -661,6 +661,67 @@ export function useAgentOrchestration(userId: string | undefined) {
     }
   }, [userId, tasks]);
 
+  // Process tasks in the background (server-side)
+  const processTasksInBackground = useCallback(async () => {
+    if (!userId) return null;
+
+    try {
+      const response = await supabase.functions.invoke('atlas-task-processor', {
+        body: { action: 'process_user_tasks', userId }
+      });
+
+      if (response.error) throw response.error;
+
+      const result = response.data;
+      if (result.processed > 0) {
+        console.log(`Background processed ${result.processed} tasks`);
+        await fetchTasks(); // Refresh to show updates
+      }
+
+      return result;
+    } catch (error) {
+      console.error('Error processing tasks in background:', error);
+      return null;
+    }
+  }, [userId, fetchTasks]);
+
+  // Periodic background task processing (every 60 seconds while app is open)
+  useEffect(() => {
+    if (!userId) return;
+
+    // Initial processing after 5 seconds
+    const initialTimeout = setTimeout(() => {
+      processTasksInBackground();
+    }, 5000);
+
+    // Then every 60 seconds
+    const interval = setInterval(() => {
+      processTasksInBackground();
+    }, 60000);
+
+    return () => {
+      clearTimeout(initialTimeout);
+      clearInterval(interval);
+    };
+  }, [userId, processTasksInBackground]);
+
+  // Process tasks when page becomes visible again
+  useEffect(() => {
+    if (!userId) return;
+
+    const handleVisibilityChange = () => {
+      if (document.visibilityState === 'visible') {
+        // Process tasks when user returns to the tab
+        processTasksInBackground();
+      }
+    };
+
+    document.addEventListener('visibilitychange', handleVisibilityChange);
+    return () => {
+      document.removeEventListener('visibilitychange', handleVisibilityChange);
+    };
+  }, [userId, processTasksInBackground]);
+
   return {
     tasks,
     notifications,
@@ -679,5 +740,6 @@ export function useAgentOrchestration(userId: string | undefined) {
     syncMemoryTasks,
     resumeStaleTasks,
     pauseAllTasks,
+    processTasksInBackground,
   };
 }
