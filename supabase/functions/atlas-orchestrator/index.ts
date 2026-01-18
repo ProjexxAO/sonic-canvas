@@ -153,6 +153,37 @@ serve(async (req) => {
       });
     }
 
+    if (action === 'delete_task') {
+      const { taskId } = body;
+      
+      // Check if it's a csuite task
+      if (taskId.startsWith('csuite:')) {
+        const actualId = taskId.replace('csuite:', '');
+        const { error } = await supabase
+          .from('csuite_tasks')
+          .delete()
+          .eq('id', actualId)
+          .eq('user_id', userId);
+
+        if (error) throw error;
+      } else {
+        const { error } = await supabase
+          .from('agent_task_queue')
+          .delete()
+          .eq('id', taskId)
+          .eq('user_id', userId);
+
+        if (error) throw error;
+      }
+
+      return new Response(JSON.stringify({ 
+        success: true, 
+        message: 'Task deleted'
+      }), {
+        headers: { ...corsHeaders, 'Content-Type': 'application/json' },
+      });
+    }
+
     if (action === 'get_tasks') {
       const { data, error } = await supabase
         .from('agent_task_queue')
