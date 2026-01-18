@@ -7,7 +7,6 @@ import { voiceIntentParser } from '@/lib/voice-intent-parser';
 import { useVoiceCommandBus } from '@/lib/voice-command-bus';
 import { useAtlasMemory } from '@/hooks/useAtlasMemory';
 import { useAuth } from '@/hooks/useAuth';
-import { useAgentOrchestration } from '@/hooks/useAgentOrchestration';
 import { useDashboardAgents } from '@/hooks/useDashboardAgents';
 import { useDataHubController, getDomainKeyFromName, getTabFromName, getPersonaFromName } from '@/hooks/useDataHubController';
 import { useWakeWordDetection, WakeWordStatus, WakeWordName } from '@/hooks/useWakeWordDetection';
@@ -111,8 +110,6 @@ export function AtlasProvider({ children }: AtlasProviderProps) {
   const location = useLocation();
   const { user } = useAuth();
   const { agents } = useDashboardAgents({ limit: 200 });
-  const orchestration = useAgentOrchestration(user?.id);
-  const orchestrationRef = useRef(orchestration);
   
   // State
   const [isConnecting, setIsConnecting] = useState(false);
@@ -155,8 +152,7 @@ export function AtlasProvider({ children }: AtlasProviderProps) {
   useEffect(() => {
     userRef.current = user;
     agentsRef.current = agents;
-    orchestrationRef.current = orchestration;
-  }, [user, agents, orchestration]);
+  }, [user, agents]);
   
   // Track navigation history - using refs to avoid infinite loops
   useEffect(() => {
@@ -879,17 +875,8 @@ export function AtlasProvider({ children }: AtlasProviderProps) {
   });
 
   const stopConversation = useCallback(async () => {
-    // Pause all in-progress tasks when Atlas goes inactive
-    await orchestrationRef.current?.pauseAllTasks?.();
     await conversation.endSession();
   }, [conversation]);
-
-  // Resume stale tasks when Atlas becomes active
-  useEffect(() => {
-    if (isConnected && orchestrationRef.current?.resumeStaleTasks) {
-      orchestrationRef.current.resumeStaleTasks();
-    }
-  }, [isConnected]);
 
   const toggleMute = useCallback(async () => {
     if (isMuted) {
