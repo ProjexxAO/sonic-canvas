@@ -41,3 +41,6 @@ verify_jwt = false
 
 [functions.agent-memory]
 verify_jwt = false
+
+[functions.atlas-task-processor]
+verify_jwt = false
