@@ -1,6 +1,7 @@
 import { Progress } from '@/components/ui/progress';
 import { Badge } from '@/components/ui/badge';
 import { ScrollArea } from '@/components/ui/scroll-area';
+import { Button } from '@/components/ui/button';
 import { 
   CheckCircle2, 
   Clock, 
@@ -8,7 +9,9 @@ import {
   AlertCircle,
   ListTodo,
   ChevronDown,
-  ChevronUp
+  ChevronUp,
+  Brain,
+  RefreshCw
 } from 'lucide-react';
 import { cn } from '@/lib/utils';
 import { useState } from 'react';
@@ -17,6 +20,7 @@ import type { AgentTask } from '@/hooks/useAgentOrchestration';
 interface AtlasTaskProgressProps {
   tasks: AgentTask[];
   isLoading?: boolean;
+  onSyncMemory?: () => Promise<any>;
 }
 
 const statusConfig: Record<string, { icon: typeof Clock; color: string; bg: string; label: string; animate?: boolean }> = {
@@ -28,19 +32,30 @@ const statusConfig: Record<string, { icon: typeof Clock; color: string; bg: stri
   cancelled: { icon: Clock, color: 'text-muted-foreground', bg: 'bg-muted', label: 'Cancelled' },
 };
 
-const priorityColors = {
+const priorityColors: Record<string, string> = {
   low: 'bg-muted text-muted-foreground',
   medium: 'bg-secondary text-secondary-foreground',
   high: 'bg-warning/20 text-warning',
   critical: 'bg-destructive/20 text-destructive',
 };
 
-export function AtlasTaskProgress({ tasks, isLoading }: AtlasTaskProgressProps) {
+export function AtlasTaskProgress({ tasks, isLoading, onSyncMemory }: AtlasTaskProgressProps) {
   const [isExpanded, setIsExpanded] = useState(true);
+  const [isSyncing, setIsSyncing] = useState(false);
   
   const activeTasks = tasks.filter(t => 
     t.status === 'in_progress' || t.status === 'pending' || t.status === 'awaiting_approval'
   );
+
+  const handleSyncMemory = async () => {
+    if (!onSyncMemory || isSyncing) return;
+    setIsSyncing(true);
+    try {
+      await onSyncMemory();
+    } finally {
+      setIsSyncing(false);
+    }
+  };
 
   if (isLoading) {
     return (
@@ -56,9 +71,27 @@ export function AtlasTaskProgress({ tasks, isLoading }: AtlasTaskProgressProps) 
   if (activeTasks.length === 0) {
     return (
       <div className="rounded-lg border border-border bg-card/50 backdrop-blur-sm p-3">
-        <div className="flex items-center gap-2 text-muted-foreground">
-          <ListTodo className="h-4 w-4" />
-          <span className="text-xs font-medium">No active tasks</span>
+        <div className="flex items-center justify-between">
+          <div className="flex items-center gap-2 text-muted-foreground">
+            <ListTodo className="h-4 w-4" />
+            <span className="text-xs font-medium">No active tasks</span>
+          </div>
+          {onSyncMemory && (
+            <Button
+              variant="ghost"
+              size="sm"
+              onClick={handleSyncMemory}
+              disabled={isSyncing}
+              className="h-6 px-2 text-[10px] gap-1"
+            >
+              {isSyncing ? (
+                <Loader2 className="h-3 w-3 animate-spin" />
+              ) : (
+                <Brain className="h-3 w-3" />
+              )}
+              Sync from Memory
+            </Button>
+          )}
         </div>
       </div>
     );
@@ -67,11 +100,11 @@ export function AtlasTaskProgress({ tasks, isLoading }: AtlasTaskProgressProps) 
   return (
     <div className="rounded-lg border border-border bg-card/80 backdrop-blur-sm overflow-hidden">
       {/* Header */}
-      <button
-        onClick={() => setIsExpanded(!isExpanded)}
-        className="w-full flex items-center justify-between p-3 hover:bg-muted/50 transition-colors"
-      >
-        <div className="flex items-center gap-2">
+      <div className="flex items-center justify-between p-3">
+        <button
+          onClick={() => setIsExpanded(!isExpanded)}
+          className="flex items-center gap-2 hover:bg-muted/50 transition-colors rounded px-1 -ml-1"
+        >
           <div className="relative">
             <ListTodo className="h-4 w-4 text-primary" />
             {activeTasks.some(t => t.status === 'in_progress') && (
@@ -84,13 +117,29 @@ export function AtlasTaskProgress({ tasks, isLoading }: AtlasTaskProgressProps) 
           <Badge variant="secondary" className="text-[10px] px-1.5 py-0">
             {activeTasks.length}
           </Badge>
-        </div>
-        {isExpanded ? (
-          <ChevronUp className="h-3.5 w-3.5 text-muted-foreground" />
-        ) : (
-          <ChevronDown className="h-3.5 w-3.5 text-muted-foreground" />
+          {isExpanded ? (
+            <ChevronUp className="h-3.5 w-3.5 text-muted-foreground" />
+          ) : (
+            <ChevronDown className="h-3.5 w-3.5 text-muted-foreground" />
+          )}
+        </button>
+        {onSyncMemory && (
+          <Button
+            variant="ghost"
+            size="sm"
+            onClick={handleSyncMemory}
+            disabled={isSyncing}
+            className="h-6 px-2 text-[10px] gap-1"
+            title="Sync tasks from Atlas memory"
+          >
+            {isSyncing ? (
+              <Loader2 className="h-3 w-3 animate-spin" />
+            ) : (
+              <RefreshCw className="h-3 w-3" />
+            )}
+          </Button>
         )}
-      </button>
+      </div>
 
       {/* Task List */}
       {isExpanded && (
@@ -137,7 +186,7 @@ export function AtlasTaskProgress({ tasks, isLoading }: AtlasTaskProgressProps) 
                       variant="outline"
                       className={cn(
                         "text-[9px] px-1.5 py-0 flex-shrink-0",
-                        priorityColors[task.task_priority]
+                        priorityColors[task.task_priority] || priorityColors.medium
                       )}
                     >
                       {task.task_priority}

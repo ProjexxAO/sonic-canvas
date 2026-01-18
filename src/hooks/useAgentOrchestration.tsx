@@ -554,6 +554,38 @@ export function useAgentOrchestration(userId: string | undefined) {
     }
   }, [userId, approveTaskSuggestion, dismissNotification]);
 
+  // Sync tasks from long-term memory using AI extraction
+  const syncMemoryTasks = useCallback(async () => {
+    if (!userId) return null;
+
+    try {
+      toast.info('Extracting tasks from memory...', { duration: 2000 });
+      
+      const response = await supabase.functions.invoke('atlas-orchestrator', {
+        body: { action: 'sync_memory_tasks', userId }
+      });
+
+      if (response.error) throw response.error;
+
+      const result = response.data;
+      
+      if (result.inserted > 0) {
+        toast.success(`Synced ${result.inserted} tasks from memory`);
+        await fetchTasks(); // Refresh task list
+      } else if (result.extracted > 0) {
+        toast.info('All extracted tasks already exist');
+      } else {
+        toast.info('No actionable tasks found in memory');
+      }
+
+      return result;
+    } catch (error) {
+      console.error('Error syncing memory tasks:', error);
+      toast.error('Failed to sync tasks from memory');
+      return null;
+    }
+  }, [userId, fetchTasks]);
+
   return {
     tasks,
     notifications,
@@ -569,5 +601,6 @@ export function useAgentOrchestration(userId: string | undefined) {
     executeAction,
     refreshTasks: fetchTasks,
     refreshNotifications: fetchNotifications,
+    syncMemoryTasks,
   };
 }
