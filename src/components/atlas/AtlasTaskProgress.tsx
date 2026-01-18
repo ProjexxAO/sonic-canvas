@@ -174,9 +174,9 @@ export function AtlasTaskProgress({ tasks, isLoading, onSyncMemory }: AtlasTaskP
                         )}
                       />
                       <div className="flex-1 min-w-0">
-                        <p className="text-xs font-medium text-foreground truncate">{task.task_title}</p>
+                        <p className="text-xs font-medium text-foreground leading-snug break-words">{task.task_title}</p>
                         {task.task_description && (
-                          <p className="text-[10px] text-muted-foreground truncate mt-0.5">
+                          <p className="text-[10px] text-muted-foreground leading-snug break-words mt-0.5">
                             {task.task_description}
                           </p>
                         )}
