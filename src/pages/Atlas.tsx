@@ -1310,7 +1310,8 @@ function AtlasPage() {
         <div className="w-96 flex-shrink-0 flex flex-col gap-4 overflow-y-auto max-h-[calc(100vh-10rem)] pr-2 scrollbar-thin scrollbar-thumb-border scrollbar-track-transparent pb-4">
           {/* Atlas Task Progress */}
           <AtlasTaskProgress 
-            tasks={orchestration.tasks} 
+            tasks={orchestration.tasks}
+            completedTasks={orchestration.completedTasks}
             isLoading={orchestration.isLoading} 
             onSyncMemory={orchestration.syncMemoryTasks}
             onDeleteTask={orchestration.deleteTask}
