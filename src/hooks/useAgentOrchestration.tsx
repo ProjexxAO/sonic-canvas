@@ -467,6 +467,39 @@ export function useAgentOrchestration(userId: string | undefined) {
     }
   }, [userId, fetchTasks]);
 
+  // Delete a task permanently
+  const deleteTask = useCallback(async (taskId: string) => {
+    if (!userId) return;
+
+    try {
+      // Check if it's a csuite task
+      if (taskId.startsWith('csuite:')) {
+        const actualId = taskId.replace('csuite:', '');
+        const { error } = await supabase
+          .from('csuite_tasks')
+          .delete()
+          .eq('id', actualId)
+          .eq('user_id', userId);
+
+        if (error) throw error;
+      } else {
+        const { error } = await (supabase as any)
+          .from('agent_task_queue')
+          .delete()
+          .eq('id', taskId)
+          .eq('user_id', userId);
+
+        if (error) throw error;
+      }
+
+      setTasks(prev => prev.filter(t => t.id !== taskId));
+      toast.success('Task deleted');
+    } catch (error) {
+      console.error('Error deleting task:', error);
+      toast.error('Failed to delete task');
+    }
+  }, [userId]);
+
   // Update task progress
   const updateTaskProgress = useCallback(async (taskId: string, progress: number, status?: AgentTask['status']) => {
     if (!userId) return;
@@ -731,6 +764,7 @@ export function useAgentOrchestration(userId: string | undefined) {
     updateTaskProgress,
     approveTaskSuggestion,
     cancelTask,
+    deleteTask,
     markNotificationRead,
     dismissNotification,
     markAllRead,

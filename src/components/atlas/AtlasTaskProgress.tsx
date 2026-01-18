@@ -11,7 +11,8 @@ import {
   ChevronDown,
   ChevronUp,
   Brain,
-  RefreshCw
+  RefreshCw,
+  Trash2
 } from 'lucide-react';
 import { cn } from '@/lib/utils';
 import { useState } from 'react';
@@ -21,6 +22,7 @@ interface AtlasTaskProgressProps {
   tasks: AgentTask[];
   isLoading?: boolean;
   onSyncMemory?: () => Promise<any>;
+  onDeleteTask?: (taskId: string) => Promise<void>;
 }
 
 const statusConfig: Record<string, { icon: typeof Clock; color: string; bg: string; label: string; animate?: boolean }> = {
@@ -39,9 +41,10 @@ const priorityColors: Record<string, string> = {
   critical: 'bg-destructive/20 text-destructive',
 };
 
-export function AtlasTaskProgress({ tasks, isLoading, onSyncMemory }: AtlasTaskProgressProps) {
+export function AtlasTaskProgress({ tasks, isLoading, onSyncMemory, onDeleteTask }: AtlasTaskProgressProps) {
   const [isExpanded, setIsExpanded] = useState(true);
   const [isSyncing, setIsSyncing] = useState(false);
+  const [deletingTaskId, setDeletingTaskId] = useState<string | null>(null);
   
   const activeTasks = tasks.filter(t => 
     t.status === 'in_progress' || t.status === 'pending' || t.status === 'awaiting_approval'
@@ -54,6 +57,16 @@ export function AtlasTaskProgress({ tasks, isLoading, onSyncMemory }: AtlasTaskP
       await onSyncMemory();
     } finally {
       setIsSyncing(false);
+    }
+  };
+
+  const handleDeleteTask = async (taskId: string) => {
+    if (!onDeleteTask || deletingTaskId) return;
+    setDeletingTaskId(taskId);
+    try {
+      await onDeleteTask(taskId);
+    } finally {
+      setDeletingTaskId(null);
     }
   };
 
@@ -182,15 +195,36 @@ export function AtlasTaskProgress({ tasks, isLoading, onSyncMemory }: AtlasTaskP
                         )}
                       </div>
                     </div>
-                    <Badge
-                      variant="outline"
-                      className={cn(
-                        "text-[9px] px-1.5 py-0 flex-shrink-0",
-                        priorityColors[task.task_priority] || priorityColors.medium
+                    <div className="flex items-center gap-1 flex-shrink-0">
+                      <Badge
+                        variant="outline"
+                        className={cn(
+                          "text-[9px] px-1.5 py-0",
+                          priorityColors[task.task_priority] || priorityColors.medium
+                        )}
+                      >
+                        {task.task_priority}
+                      </Badge>
+                      {onDeleteTask && (
+                        <Button
+                          variant="ghost"
+                          size="sm"
+                          onClick={(e) => {
+                            e.stopPropagation();
+                            handleDeleteTask(task.id);
+                          }}
+                          disabled={deletingTaskId === task.id}
+                          className="h-5 w-5 p-0 hover:bg-destructive/10 hover:text-destructive"
+                          title="Delete task"
+                        >
+                          {deletingTaskId === task.id ? (
+                            <Loader2 className="h-3 w-3 animate-spin" />
+                          ) : (
+                            <Trash2 className="h-3 w-3" />
+                          )}
+                        </Button>
                       )}
-                    >
-                      {task.task_priority}
-                    </Badge>
+                    </div>
                   </div>
 
                   {/* Progress Bar */}

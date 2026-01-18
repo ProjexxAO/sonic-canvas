@@ -507,6 +507,83 @@ export function AtlasProvider({ children }: AtlasProviderProps) {
         }
       },
 
+      // Delete a task
+      deleteTask: async (params: { taskId?: string; taskTitle?: string }) => {
+        const logId = addLogRef.current('deleteTask', params, 'Deleting task...', 'pending');
+        try {
+          // If taskId provided, delete directly
+          if (params.taskId) {
+            const response = await supabase.functions.invoke('atlas-orchestrator', {
+              body: { 
+                action: 'delete_task', 
+                userId: userRef.current?.id,
+                taskId: params.taskId
+              }
+            });
+            
+            if (response.error) throw response.error;
+            
+            setActionLogs(prev => prev.map(l => 
+              l.id === logId ? { ...l, result: 'Task deleted', status: 'success' } : l
+            ));
+            
+            toast.success('Task deleted');
+            return 'Task has been deleted successfully.';
+          }
+          
+          // If taskTitle provided, find and delete by title
+          if (params.taskTitle) {
+            // First get tasks to find the matching one
+            const tasksResponse = await supabase.functions.invoke('atlas-orchestrator', {
+              body: { 
+                action: 'get_tasks', 
+                userId: userRef.current?.id,
+              }
+            });
+            
+            if (tasksResponse.error) throw tasksResponse.error;
+            
+            const tasks = tasksResponse.data?.tasks || [];
+            const matchingTask = tasks.find((t: any) => 
+              t.task_title.toLowerCase().includes(params.taskTitle!.toLowerCase())
+            );
+            
+            if (!matchingTask) {
+              setActionLogs(prev => prev.map(l => 
+                l.id === logId ? { ...l, result: 'Task not found', status: 'error' } : l
+              ));
+              return `Could not find a task matching "${params.taskTitle}". Please be more specific or check the task list.`;
+            }
+            
+            const response = await supabase.functions.invoke('atlas-orchestrator', {
+              body: { 
+                action: 'delete_task', 
+                userId: userRef.current?.id,
+                taskId: matchingTask.id
+              }
+            });
+            
+            if (response.error) throw response.error;
+            
+            setActionLogs(prev => prev.map(l => 
+              l.id === logId ? { ...l, result: `Deleted: ${matchingTask.task_title}`, status: 'success' } : l
+            ));
+            
+            toast.success(`Task deleted: ${matchingTask.task_title}`);
+            return `Task "${matchingTask.task_title}" has been deleted.`;
+          }
+          
+          return 'Please specify which task to delete by providing either a task ID or task title.';
+        } catch (error) {
+          const msg = error instanceof Error ? error.message : 'Task deletion failed';
+          setActionLogs(prev => prev.map(l => 
+            l.id === logId ? { ...l, result: msg, status: 'error' } : l
+          ));
+          toast.error('Failed to delete task');
+          return `Error: ${msg}`;
+        }
+      },
+
       // Navigate to page - comprehensive route support
       navigateTo: (params: { page: string }) => {
         addLogRef.current('navigateTo', params, `Navigating to ${params.page}`, 'success');

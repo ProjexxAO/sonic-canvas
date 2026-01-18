@@ -1313,6 +1313,7 @@ function AtlasPage() {
             tasks={orchestration.tasks} 
             isLoading={orchestration.isLoading} 
             onSyncMemory={orchestration.syncMemoryTasks}
+            onDeleteTask={orchestration.deleteTask}
           />
 
           {/* Search Results */}
