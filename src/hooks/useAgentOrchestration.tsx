@@ -78,28 +78,92 @@ export function useAgentOrchestration(userId: string | undefined) {
   const [unreadCount, setUnreadCount] = useState(0);
   const [isLoading, setIsLoading] = useState(true);
 
-  // Fetch active tasks
+  const csuiteTaskId = (id: string) => `csuite:${id}`;
+
+  const mapCsuiteTaskToAgentTask = (t: any): AgentTask => {
+    const rawStatus = String(t.status || 'pending');
+    const status: AgentTask['status'] =
+      rawStatus === 'done'
+        ? 'completed'
+        : rawStatus === 'review'
+          ? 'awaiting_approval'
+          : rawStatus === 'in_progress'
+            ? 'in_progress'
+            : 'pending';
+
+    const progress =
+      status === 'completed' ? 100 : status === 'awaiting_approval' ? 80 : status === 'in_progress' ? 50 : 0;
+
+    const priority = (String(t.priority || 'medium') as AgentTask['task_priority']) || 'medium';
+
+    return {
+      id: csuiteTaskId(t.id),
+      user_id: t.user_id,
+      task_type: 'assistance',
+      task_title: t.title,
+      task_description: t.description || undefined,
+      task_priority: priority,
+      assigned_agents: [],
+      orchestration_mode: 'user_directed',
+      status,
+      progress,
+      input_data: { source: 'csuite_tasks', csuite_task_id: t.id },
+      output_data: {},
+      agent_suggestions: [],
+      scheduled_at: undefined,
+      started_at: undefined,
+      completed_at: undefined,
+      created_at: new Date(t.created_at),
+    };
+  };
+
+  const isAtlasAssigned = (assignedTo: unknown) => {
+    if (!assignedTo) return false;
+    return String(assignedTo).toLowerCase().includes('atlas');
+  };
+
+  // Fetch tasks (orchestration queue + user-assigned-to-Atlas tasks)
   const fetchTasks = useCallback(async () => {
     if (!userId) return;
 
     try {
-      const { data, error } = await (supabase as any)
-        .from('agent_task_queue')
-        .select('*')
-        .eq('user_id', userId)
-        .in('status', ['pending', 'in_progress', 'awaiting_approval'])
-        .order('created_at', { ascending: false })
-        .limit(20);
+      const [agentTasksRes, csuiteTasksRes] = await Promise.all([
+        (supabase as any)
+          .from('agent_task_queue')
+          .select('*')
+          .eq('user_id', userId)
+          .in('status', ['pending', 'in_progress', 'awaiting_approval'])
+          .order('created_at', { ascending: false })
+          .limit(50),
+        supabase
+          .from('csuite_tasks')
+          .select('id,user_id,title,description,status,priority,assigned_to,created_at')
+          .eq('user_id', userId)
+          .order('created_at', { ascending: false })
+          .limit(200),
+      ]);
 
-      if (error) throw error;
+      if (agentTasksRes.error) throw agentTasksRes.error;
+      if (csuiteTasksRes.error) throw csuiteTasksRes.error;
 
-      setTasks(data?.map((t: any) => ({
+      const agentTasks: AgentTask[] = (agentTasksRes.data || []).map((t: any) => ({
         ...t,
         scheduled_at: t.scheduled_at ? new Date(t.scheduled_at) : undefined,
         started_at: t.started_at ? new Date(t.started_at) : undefined,
         completed_at: t.completed_at ? new Date(t.completed_at) : undefined,
         created_at: new Date(t.created_at),
-      })) || []);
+      }));
+
+      const csuiteAtlasTasks: AgentTask[] = (csuiteTasksRes.data || [])
+        .filter((t: any) => isAtlasAssigned(t.assigned_to))
+        .filter((t: any) => ['pending', 'in_progress', 'review'].includes(String(t.status || 'pending')))
+        .map(mapCsuiteTaskToAgentTask);
+
+      const merged = [...agentTasks, ...csuiteAtlasTasks].sort(
+        (a, b) => b.created_at.getTime() - a.created_at.getTime()
+      );
+
+      setTasks(merged);
     } catch (error) {
       console.error('Error fetching tasks:', error);
     }
@@ -137,12 +201,11 @@ export function useAgentOrchestration(userId: string | undefined) {
   useEffect(() => {
     if (userId) {
       setIsLoading(true);
-      Promise.all([fetchTasks(), fetchNotifications()])
-        .finally(() => setIsLoading(false));
+      Promise.all([fetchTasks(), fetchNotifications()]).finally(() => setIsLoading(false));
     }
   }, [userId, fetchTasks, fetchNotifications]);
 
-  // Real-time subscription for tasks
+  // Real-time subscription for orchestration tasks
   useEffect(() => {
     if (!userId) return;
 
@@ -151,7 +214,7 @@ export function useAgentOrchestration(userId: string | undefined) {
       .on(
         'postgres_changes',
         {
-          event: '*', // Listen to INSERT, UPDATE, DELETE
+          event: '*',
           schema: 'public',
           table: 'agent_task_queue',
           filter: `user_id=eq.${userId}`,
@@ -165,8 +228,8 @@ export function useAgentOrchestration(userId: string | undefined) {
               completed_at: payload.new.completed_at ? new Date(payload.new.completed_at) : undefined,
               created_at: new Date(payload.new.created_at),
             } as AgentTask;
-            
-            setTasks(prev => [newTask, ...prev]);
+
+            setTasks((prev) => [newTask, ...prev]);
             toast.info(`New task: ${newTask.task_title}`, {
               description: `Status: ${newTask.status}`,
             });
@@ -178,17 +241,61 @@ export function useAgentOrchestration(userId: string | undefined) {
               completed_at: payload.new.completed_at ? new Date(payload.new.completed_at) : undefined,
               created_at: new Date(payload.new.created_at),
             } as AgentTask;
-            
-            setTasks(prev => prev.map(t => t.id === updatedTask.id ? updatedTask : t));
-            
-            // Notify on completion or failure
+
+            setTasks((prev) => prev.map((t) => (t.id === updatedTask.id ? updatedTask : t)));
+
             if (updatedTask.status === 'completed') {
               toast.success(`Task completed: ${updatedTask.task_title}`);
             } else if (updatedTask.status === 'failed') {
               toast.error(`Task failed: ${updatedTask.task_title}`);
             }
           } else if (payload.eventType === 'DELETE') {
-            setTasks(prev => prev.filter(t => t.id !== payload.old.id));
+            setTasks((prev) => prev.filter((t) => t.id !== payload.old.id));
+          }
+        }
+      )
+      .subscribe();
+
+    return () => {
+      supabase.removeChannel(channel);
+    };
+  }, [userId]);
+
+  // Real-time subscription for user tasks assigned to Atlas (csuite_tasks)
+  useEffect(() => {
+    if (!userId) return;
+
+    const channel = supabase
+      .channel('csuite-atlas-tasks')
+      .on(
+        'postgres_changes',
+        {
+          event: '*',
+          schema: 'public',
+          table: 'csuite_tasks',
+          filter: `user_id=eq.${userId}`,
+        },
+        (payload) => {
+          if (payload.eventType === 'INSERT') {
+            if (!isAtlasAssigned((payload.new as any).assigned_to)) return;
+            const newTask = mapCsuiteTaskToAgentTask(payload.new);
+            setTasks((prev) => [newTask, ...prev].sort((a, b) => b.created_at.getTime() - a.created_at.getTime()));
+          } else if (payload.eventType === 'UPDATE') {
+            const id = csuiteTaskId((payload.new as any).id);
+            const shouldShow =
+              isAtlasAssigned((payload.new as any).assigned_to) &&
+              ['pending', 'in_progress', 'review'].includes(String((payload.new as any).status || 'pending'));
+
+            setTasks((prev) => {
+              const next = prev.filter((t) => t.id !== id);
+              if (!shouldShow) return next;
+              return [mapCsuiteTaskToAgentTask(payload.new), ...next].sort(
+                (a, b) => b.created_at.getTime() - a.created_at.getTime()
+              );
+            });
+          } else if (payload.eventType === 'DELETE') {
+            const id = csuiteTaskId((payload.old as any).id);
+            setTasks((prev) => prev.filter((t) => t.id !== id));
           }
         }
       )
