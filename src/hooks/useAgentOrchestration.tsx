@@ -74,6 +74,7 @@ export interface AgentCapability {
 
 export function useAgentOrchestration(userId: string | undefined) {
   const [tasks, setTasks] = useState<AgentTask[]>([]);
+  const [completedTasks, setCompletedTasks] = useState<AgentTask[]>([]);
   const [notifications, setNotifications] = useState<AgentNotification[]>([]);
   const [unreadCount, setUnreadCount] = useState(0);
   const [isLoading, setIsLoading] = useState(true);
@@ -127,7 +128,8 @@ export function useAgentOrchestration(userId: string | undefined) {
     if (!userId) return;
 
     try {
-      const [agentTasksRes, csuiteTasksRes] = await Promise.all([
+      const [agentTasksRes, completedAgentTasksRes, csuiteTasksRes] = await Promise.all([
+        // Active tasks from agent_task_queue
         (supabase as any)
           .from('agent_task_queue')
           .select('*')
@@ -135,6 +137,15 @@ export function useAgentOrchestration(userId: string | undefined) {
           .in('status', ['pending', 'in_progress', 'awaiting_approval'])
           .order('created_at', { ascending: false })
           .limit(50),
+        // Completed/failed tasks from agent_task_queue
+        (supabase as any)
+          .from('agent_task_queue')
+          .select('*')
+          .eq('user_id', userId)
+          .in('status', ['completed', 'failed', 'cancelled'])
+          .order('completed_at', { ascending: false })
+          .limit(100),
+        // All csuite_tasks for the user
         supabase
           .from('csuite_tasks')
           .select('id,user_id,title,description,status,priority,assigned_to,created_at')
@@ -144,26 +155,44 @@ export function useAgentOrchestration(userId: string | undefined) {
       ]);
 
       if (agentTasksRes.error) throw agentTasksRes.error;
+      if (completedAgentTasksRes.error) throw completedAgentTasksRes.error;
       if (csuiteTasksRes.error) throw csuiteTasksRes.error;
 
-      const agentTasks: AgentTask[] = (agentTasksRes.data || []).map((t: any) => ({
+      const mapAgentTask = (t: any): AgentTask => ({
         ...t,
         scheduled_at: t.scheduled_at ? new Date(t.scheduled_at) : undefined,
         started_at: t.started_at ? new Date(t.started_at) : undefined,
         completed_at: t.completed_at ? new Date(t.completed_at) : undefined,
         created_at: new Date(t.created_at),
-      }));
+      });
 
-      const csuiteAtlasTasks: AgentTask[] = (csuiteTasksRes.data || [])
+      const activeAgentTasks: AgentTask[] = (agentTasksRes.data || []).map(mapAgentTask);
+      const completedAgentTasks: AgentTask[] = (completedAgentTasksRes.data || []).map(mapAgentTask);
+
+      // Active csuite tasks assigned to Atlas
+      const activeCsuiteTasks: AgentTask[] = (csuiteTasksRes.data || [])
         .filter((t: any) => isAtlasAssigned(t.assigned_to))
         .filter((t: any) => ['pending', 'in_progress', 'review'].includes(String(t.status || 'pending')))
         .map(mapCsuiteTaskToAgentTask);
 
-      const merged = [...agentTasks, ...csuiteAtlasTasks].sort(
+      // Completed csuite tasks assigned to Atlas
+      const completedCsuiteTasks: AgentTask[] = (csuiteTasksRes.data || [])
+        .filter((t: any) => isAtlasAssigned(t.assigned_to))
+        .filter((t: any) => ['done', 'completed'].includes(String(t.status || '')))
+        .map(mapCsuiteTaskToAgentTask);
+
+      // Merge active tasks
+      const mergedActive = [...activeAgentTasks, ...activeCsuiteTasks].sort(
         (a, b) => b.created_at.getTime() - a.created_at.getTime()
       );
 
-      setTasks(merged);
+      // Merge completed tasks
+      const mergedCompleted = [...completedAgentTasks, ...completedCsuiteTasks].sort(
+        (a, b) => (b.completed_at?.getTime() || b.created_at.getTime()) - (a.completed_at?.getTime() || a.created_at.getTime())
+      );
+
+      setTasks(mergedActive);
+      setCompletedTasks(mergedCompleted);
     } catch (error) {
       console.error('Error fetching tasks:', error);
     }
@@ -757,6 +786,7 @@ export function useAgentOrchestration(userId: string | undefined) {
 
   return {
     tasks,
+    completedTasks,
     notifications,
     unreadCount,
     isLoading,
