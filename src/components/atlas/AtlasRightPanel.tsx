@@ -136,8 +136,8 @@ export function AtlasRightPanel({
           </ScrollArea>
         </TabsContent>
 
-        <TabsContent value="datahub" className="flex-1 mt-0 overflow-hidden">
-          <div className="h-full">
+        <TabsContent value="datahub" className="flex-1 mt-0 overflow-hidden flex flex-col min-h-0">
+          <div className="flex-1 min-h-0 overflow-auto">
             <CSuiteDataHub userId={userId} agents={agents} agentsLoading={agentsLoading} />
           </div>
         </TabsContent>
