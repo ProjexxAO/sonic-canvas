@@ -509,25 +509,63 @@ export function CSuiteDataHub({ userId, agents = [], agentsLoading = false }: CS
                     {/* Quick Action Cards - Always visible for quick navigation */}
                     <QuickActionCards 
                       personaId={userPersona}
+                      userId={userId}
                       onActionClick={(actionId) => {
                         const actionRoutes: Record<string, () => void> = {
-                          // Common actions - practical everyday use
+                          // Common domain actions
                           inbox: () => handleDomainClick('communications'),
                           my_tasks: () => handleDomainClick('tasks'),
+                          action_tracker: () => handleDomainClick('tasks'),
                           calendar: () => handleDomainClick('events'),
                           documents: () => handleDomainClick('documents'),
                           financials: () => handleDomainClick('financials'),
                           knowledge: () => handleDomainClick('knowledge'),
+                          contracts: () => handleDomainClick('documents'),
+                          meeting_prep: () => handleDomainClick('documents'),
+                          financial_reports: () => handleDomainClick('documents'),
                           
-                          // Role-specific actions
+                          // Dashboard & insights actions
                           kpi_dashboard: () => setActiveTab('insights'),
                           team_overview: () => setActiveTab('insights'),
+                          operations_dashboard: () => setActiveTab('insights'),
+                          workforce_analytics: () => setActiveTab('insights'),
+                          engagement_dashboard: () => setActiveTab('insights'),
+                          campaign_dashboard: () => setActiveTab('insights'),
+                          revenue_dashboard: () => setActiveTab('insights'),
+                          security_dashboard: () => setActiveTab('insights'),
+                          compliance_dashboard: () => setActiveTab('insights'),
+                          analytics: () => setActiveTab('insights'),
+                          
+                          // Tracking & planning actions
+                          strategic_initiatives: () => setActiveTab('insights'),
+                          budget_tracking: () => handleDomainClick('financials'),
+                          forecasting: () => handleDomainClick('financials'),
+                          pipeline_tracker: () => setActiveTab('insights'),
+                          hiring_pipeline: () => setActiveTab('insights'),
+                          process_tracker: () => setActiveTab('insights'),
+                          matter_tracker: () => handleDomainClick('tasks'),
+                          audit_tracker: () => handleDomainClick('tasks'),
+                          roadmap: () => setActiveTab('insights'),
+                          stakeholder_map: () => setActiveTab('insights'),
+                          
+                          // Resource & health actions
+                          system_health: () => setActiveTab('insights'),
                           infrastructure: () => setActiveTab('insights'),
                           security_posture: () => setActiveTab('insights'),
                           compliance: () => setActiveTab('insights'),
+                          compliance_tracker: () => setActiveTab('insights'),
+                          risk_register: () => setActiveTab('insights'),
+                          
+                          // Content & assets
                           campaigns: () => handleDomainClick('communications'),
+                          brand_assets: () => handleDomainClick('documents'),
+                          learning_programs: () => handleDomainClick('knowledge'),
+                          engagement_surveys: () => setActiveTab('insights'),
+                          audit_logs: () => setActiveTab('insights'),
+                          
+                          // Admin actions
                           user_management: () => setActiveTab('admin'),
-                          system_health: () => setActiveTab('insights'),
+                          persona_management: () => setActiveTab('admin'),
                           
                           // Entrepreneur-specific dialogs
                           growth_optimizer: () => setGrowthOptimizerOpen(true),
