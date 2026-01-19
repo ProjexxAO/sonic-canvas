@@ -1,8 +1,8 @@
 // Atlas Search & Knowledge Synthesis Panel
 // Displays web searches Atlas undertakes in real-time
 
-import React from 'react';
-import { Search, Globe, ExternalLink, Loader2, CheckCircle2, XCircle, Clock, Sparkles } from 'lucide-react';
+import React, { useState } from 'react';
+import { Search, Globe, ExternalLink, Loader2, CheckCircle2, XCircle, Sparkles, ChevronDown, ChevronUp } from 'lucide-react';
 import { ScrollArea } from '@/components/ui/scroll-area';
 import { Badge } from '@/components/ui/badge';
 import { formatDistanceToNow } from 'date-fns';
@@ -19,55 +19,79 @@ export interface WebSearchEntry {
 
 interface AtlasSearchPanelProps {
   searches: WebSearchEntry[];
-  isExpanded?: boolean;
 }
 
-export function AtlasSearchPanel({ searches, isExpanded = true }: AtlasSearchPanelProps) {
+export function AtlasSearchPanel({ searches }: AtlasSearchPanelProps) {
+  const [isExpanded, setIsExpanded] = useState(true);
   if (searches.length === 0) {
     return (
       <div className="bg-card/90 border border-border rounded-lg p-3 shadow-sm">
-        <div className="flex items-center gap-2 mb-2">
-          <Globe size={14} className="text-primary" />
-          <span className="text-xs font-mono text-muted-foreground">
-            ATLAS SEARCH
-          </span>
-        </div>
-        <div className="flex flex-col items-center justify-center py-6 text-center">
-          <div className="w-10 h-10 rounded-full bg-muted/50 flex items-center justify-center mb-3">
-            <Search size={18} className="text-muted-foreground/50" />
+        <button
+          onClick={() => setIsExpanded(!isExpanded)}
+          className="flex items-center justify-between w-full mb-2 hover:opacity-80 transition-opacity"
+        >
+          <div className="flex items-center gap-2">
+            <Globe size={14} className="text-primary" />
+            <span className="text-xs font-mono text-muted-foreground">
+              ATLAS SEARCH
+            </span>
           </div>
-          <p className="text-xs text-muted-foreground font-mono">
-            No web searches yet
-          </p>
-          <p className="text-[10px] text-muted-foreground/70 mt-1">
-            Ask Atlas to search for information
-          </p>
-        </div>
+          {isExpanded ? (
+            <ChevronUp size={14} className="text-muted-foreground" />
+          ) : (
+            <ChevronDown size={14} className="text-muted-foreground" />
+          )}
+        </button>
+        {isExpanded && (
+          <div className="flex flex-col items-center justify-center py-6 text-center">
+            <div className="w-10 h-10 rounded-full bg-muted/50 flex items-center justify-center mb-3">
+              <Search size={18} className="text-muted-foreground/50" />
+            </div>
+            <p className="text-xs text-muted-foreground font-mono">
+              No web searches yet
+            </p>
+            <p className="text-[10px] text-muted-foreground/70 mt-1">
+              Ask Atlas to search for information
+            </p>
+          </div>
+        )}
       </div>
     );
   }
 
   return (
     <div className="bg-card/90 border border-border rounded-lg p-3 shadow-sm">
-      <div className="flex items-center justify-between mb-3">
+      <button
+        onClick={() => setIsExpanded(!isExpanded)}
+        className="flex items-center justify-between w-full mb-3 hover:opacity-80 transition-opacity"
+      >
         <div className="flex items-center gap-2">
           <Globe size={14} className="text-primary" />
           <span className="text-xs font-mono text-muted-foreground">
             ATLAS SEARCH
           </span>
         </div>
-        <Badge variant="outline" className="text-[10px] font-mono">
-          {searches.length} {searches.length === 1 ? 'search' : 'searches'}
-        </Badge>
-      </div>
-
-      <ScrollArea className={isExpanded ? "h-64" : "h-40"}>
-        <div className="space-y-3">
-          {searches.map((search) => (
-            <SearchEntryCard key={search.id} search={search} />
-          ))}
+        <div className="flex items-center gap-2">
+          <Badge variant="outline" className="text-[10px] font-mono">
+            {searches.length} {searches.length === 1 ? 'search' : 'searches'}
+          </Badge>
+          {isExpanded ? (
+            <ChevronUp size={14} className="text-muted-foreground" />
+          ) : (
+            <ChevronDown size={14} className="text-muted-foreground" />
+          )}
         </div>
-      </ScrollArea>
+      </button>
+
+      {isExpanded && (
+        <ScrollArea className="h-64">
+          <div className="space-y-3">
+            {searches.map((search) => (
+              <SearchEntryCard key={search.id} search={search} />
+            ))}
+          </div>
+        </ScrollArea>
+      )}
     </div>
   );
 }
