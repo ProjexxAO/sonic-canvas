@@ -487,6 +487,42 @@ export function useSharedDashboards(userId: string | undefined) {
     }
   }, []);
 
+  // Delete a dashboard (only for admins/owners)
+  const deleteDashboard = useCallback(async (dashboardId: string) => {
+    if (!userId) return false;
+
+    try {
+      // First delete all related data
+      await supabase.from('dashboard_activity').delete().eq('dashboard_id', dashboardId);
+      await supabase.from('shared_items').delete().eq('dashboard_id', dashboardId);
+      await supabase.from('shared_dashboard_members').delete().eq('dashboard_id', dashboardId);
+      
+      // Delete the dashboard itself
+      const { error } = await supabase
+        .from('shared_dashboards')
+        .delete()
+        .eq('id', dashboardId);
+
+      if (error) throw error;
+
+      // Clear selection if this was the current dashboard
+      if (currentDashboard?.id === dashboardId) {
+        setCurrentDashboard(null);
+        setMembers([]);
+        setSharedItems([]);
+        setActivities([]);
+      }
+
+      toast.success('Dashboard deleted');
+      await fetchDashboards();
+      return true;
+    } catch (error: any) {
+      console.error('Failed to delete dashboard:', error);
+      toast.error('Failed to delete dashboard');
+      return false;
+    }
+  }, [userId, currentDashboard, fetchDashboards]);
+
   // Log activity
   const logActivity = useCallback(async (
     dashboardId: string,
@@ -562,6 +598,7 @@ export function useSharedDashboards(userId: string | undefined) {
     isLoading,
     fetchDashboards,
     createDashboard,
+    deleteDashboard,
     selectDashboard,
     inviteMember,
     updateMemberRole,
