@@ -837,6 +837,257 @@ export function AtlasProvider({ children }: AtlasProviderProps) {
         toast.info('Refreshing Data Hub...');
         return 'Refreshing Data Hub data';
       },
+
+      // ============= ENHANCED C-SUITE DATA HUB CONTROLS =============
+
+      // Create item in domain (respects persona permissions via backend)
+      createDataItem: async (params: { domain: string; title: string; content?: string; description?: string; metadata?: Record<string, any> }) => {
+        const logId = addLogRef.current('createDataItem', params, 'Creating item...', 'pending');
+        try {
+          const domainKey = getDomainKeyFromName(params.domain);
+          if (!domainKey) {
+            throw new Error(`Unknown domain: ${params.domain}`);
+          }
+
+          const tableMap: Record<string, string> = {
+            communications: 'csuite_communications',
+            documents: 'csuite_documents',
+            events: 'csuite_events',
+            financials: 'csuite_financials',
+            tasks: 'csuite_tasks',
+            knowledge: 'csuite_knowledge',
+          };
+
+          const tableName = tableMap[domainKey];
+          const { data, error } = await supabase
+            .from(tableName as any)
+            .insert({
+              user_id: userRef.current?.id,
+              source: 'atlas',
+              title: params.title,
+              content: params.content || '',
+              description: params.description || '',
+              type: 'general',
+              ...params.metadata,
+            } as any)
+            .select()
+            .single();
+
+          if (error) throw error;
+
+          setActionLogs(prev => prev.map(l =>
+            l.id === logId ? { ...l, result: `Created: ${params.title}`, status: 'success' } : l
+          ));
+          toast.success(`Created ${params.domain} item: ${params.title}`);
+          return `Successfully created "${params.title}" in ${params.domain}`;
+        } catch (error) {
+          const msg = error instanceof Error ? error.message : 'Creation failed';
+          setActionLogs(prev => prev.map(l =>
+            l.id === logId ? { ...l, result: msg, status: 'error' } : l
+          ));
+          toast.error(msg);
+          return `Error: ${msg}`;
+        }
+      },
+
+      // Query items from domain
+      queryDataItems: async (params: { domain: string; limit?: number; search?: string }) => {
+        const logId = addLogRef.current('queryDataItems', params, 'Querying...', 'pending');
+        try {
+          const domainKey = getDomainKeyFromName(params.domain);
+          if (!domainKey) {
+            throw new Error(`Unknown domain: ${params.domain}`);
+          }
+
+          const tableMap: Record<string, string> = {
+            communications: 'csuite_communications',
+            documents: 'csuite_documents',
+            events: 'csuite_events',
+            financials: 'csuite_financials',
+            tasks: 'csuite_tasks',
+            knowledge: 'csuite_knowledge',
+          };
+
+          const tableName = tableMap[domainKey];
+          let query = supabase
+            .from(tableName as any)
+            .select('*')
+            .eq('user_id', userRef.current?.id)
+            .order('created_at', { ascending: false })
+            .limit(params.limit || 10) as any;
+
+          const { data, error } = await query;
+
+          if (error) throw error;
+
+          const items = data || [];
+          const summary = items.slice(0, 5).map((item: any) =>
+            `• ${item.title || item.subject || 'Untitled'}`
+          ).join('\n');
+
+          setActionLogs(prev => prev.map(l =>
+            l.id === logId ? { ...l, result: `Found ${items.length} items`, status: 'success' } : l
+          ));
+
+          return `Found ${items.length} items in ${params.domain}:\n${summary}${items.length > 5 ? `\n... and ${items.length - 5} more` : ''}`;
+        } catch (error) {
+          const msg = error instanceof Error ? error.message : 'Query failed';
+          setActionLogs(prev => prev.map(l =>
+            l.id === logId ? { ...l, result: msg, status: 'error' } : l
+          ));
+          return `Error: ${msg}`;
+        }
+      },
+
+      // Run enterprise analysis
+      runEnterpriseAnalysis: async (params: { query: string; domains?: string[] }) => {
+        const logId = addLogRef.current('runEnterpriseAnalysis', params, 'Analyzing...', 'pending');
+        try {
+          const response = await supabase.functions.invoke('atlas-enterprise-query', {
+            body: {
+              action: 'analyze',
+              userId: userRef.current?.id,
+              query: params.query,
+              domains: params.domains,
+              options: { depth: 'detailed', includeAgents: true }
+            }
+          });
+
+          if (response.error) throw response.error;
+
+          const analysis = response.data;
+          setActionLogs(prev => prev.map(l =>
+            l.id === logId ? { ...l, result: 'Analysis complete', status: 'success' } : l
+          ));
+          toast.success('Enterprise analysis complete');
+
+          const summary = analysis?.executiveSummary || 'Analysis completed successfully.';
+          const risks = analysis?.risks?.slice(0, 3).map((r: any) => `• ${r.risk}`).join('\n') || '';
+
+          return `${summary}${risks ? '\n\nKey Risks:\n' + risks : ''}`;
+        } catch (error) {
+          const msg = error instanceof Error ? error.message : 'Analysis failed';
+          setActionLogs(prev => prev.map(l =>
+            l.id === logId ? { ...l, result: msg, status: 'error' } : l
+          ));
+          toast.error(msg);
+          return `Error: ${msg}`;
+        }
+      },
+
+      // Get enterprise recommendations
+      getStrategicRecommendations: async (params: { focus?: string }) => {
+        const logId = addLogRef.current('getStrategicRecommendations', params, 'Getting recommendations...', 'pending');
+        try {
+          const response = await supabase.functions.invoke('atlas-enterprise-query', {
+            body: {
+              action: 'recommend',
+              userId: userRef.current?.id,
+              query: params.focus || 'strategic priorities',
+            }
+          });
+
+          if (response.error) throw response.error;
+
+          const recs = response.data;
+          setActionLogs(prev => prev.map(l =>
+            l.id === logId ? { ...l, result: 'Recommendations ready', status: 'success' } : l
+          ));
+
+          const immediate = recs?.immediate?.slice(0, 3).map((r: any) => `• ${r.action}`).join('\n') || 'No immediate actions';
+          const strategic = recs?.strategic?.slice(0, 2).map((s: any) => `• ${s.initiative}`).join('\n') || '';
+
+          return `Immediate Actions:\n${immediate}${strategic ? '\n\nStrategic Initiatives:\n' + strategic : ''}`;
+        } catch (error) {
+          const msg = error instanceof Error ? error.message : 'Failed to get recommendations';
+          setActionLogs(prev => prev.map(l =>
+            l.id === logId ? { ...l, result: msg, status: 'error' } : l
+          ));
+          return `Error: ${msg}`;
+        }
+      },
+
+      // Execute quick action by ID
+      executeQuickAction: async (params: { actionId: string }) => {
+        const logId = addLogRef.current('executeQuickAction', params, 'Executing action...', 'pending');
+
+        const actionMap: Record<string, () => string> = {
+          'email': () => {
+            useDataHubController.getState().setExpandedDomain('communications');
+            useDataHubController.getState().setActiveTab('command');
+            return 'Opened communications domain';
+          },
+          'tasks': () => {
+            useDataHubController.getState().setExpandedDomain('tasks');
+            useDataHubController.getState().setActiveTab('command');
+            return 'Opened tasks domain';
+          },
+          'calendar': () => {
+            useDataHubController.getState().setExpandedDomain('events');
+            useDataHubController.getState().setActiveTab('command');
+            return 'Opened events/calendar domain';
+          },
+          'documents': () => {
+            useDataHubController.getState().setExpandedDomain('documents');
+            useDataHubController.getState().setActiveTab('command');
+            return 'Opened documents domain';
+          },
+          'financials': () => {
+            useDataHubController.getState().setExpandedDomain('financials');
+            useDataHubController.getState().setActiveTab('command');
+            return 'Opened financials domain';
+          },
+          'knowledge': () => {
+            useDataHubController.getState().setExpandedDomain('knowledge');
+            useDataHubController.getState().setActiveTab('command');
+            return 'Opened knowledge base';
+          },
+          'insights': () => {
+            useDataHubController.getState().setActiveTab('insights');
+            return 'Switched to insights tab';
+          },
+          'admin': () => {
+            useDataHubController.getState().setActiveTab('admin');
+            return 'Switched to admin tab';
+          },
+          'refresh': () => {
+            useDataHubController.getState().requestRefresh();
+            return 'Triggered data refresh';
+          },
+        };
+
+        const action = actionMap[params.actionId];
+        if (action) {
+          const result = action();
+          setActionLogs(prev => prev.map(l =>
+            l.id === logId ? { ...l, result, status: 'success' } : l
+          ));
+          toast.info(result);
+          return result;
+        }
+
+        setActionLogs(prev => prev.map(l =>
+          l.id === logId ? { ...l, result: 'Unknown action', status: 'error' } : l
+        ));
+        return `Unknown action: ${params.actionId}. Available: email, tasks, calendar, documents, financials, knowledge, insights, admin, refresh`;
+      },
+
+      // Get current Data Hub state
+      getDataHubState: () => {
+        const state = useDataHubController.getState();
+        addLogRef.current('getDataHubState', {}, 'State retrieved', 'success');
+        return `Current Data Hub state:
+- Active Tab: ${state.activeTab}
+- Expanded Domain: ${state.expandedDomain || 'none'}
+- Target Persona: ${state.targetPersona || 'default'}
+- Pending Report: ${state.triggerReportGeneration ? state.reportPersona : 'none'}`;
+      },
+
+      // Get available domains for current user's persona
+      getAccessibleDomains: () => {
+        addLogRef.current('getAccessibleDomains', {}, 'Domains listed', 'success');
+        return 'Available domains: communications (email, messages), documents (files, reports), events (calendar, meetings), financials (invoices, budgets), tasks (to-dos, projects), knowledge (wiki, policies)';
+      },
     },
     onConnect: () => {
       console.log("[Atlas Global] Connected to voice agent");
