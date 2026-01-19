@@ -506,72 +506,99 @@ export function CSuiteDataHub({ userId, agents = [], agentsLoading = false }: CS
               <TabsContent value="command" className="h-full m-0 overflow-hidden">
                 <ScrollArea className="h-full [&>[data-radix-scroll-area-viewport]]:max-h-full">
                   <div className="p-2 space-y-3">
-                    {/* Persona-Specific Layout OR Default View */}
-                    {userPersona ? (
-                      <PersonaLayoutRenderer
-                        personaId={userPersona}
-                        stats={stats}
-                        domainItems={domainItems}
-                        loadingDomains={loadingDomains}
-                        onDomainClick={(domain) => {
-                          if (personaPerms.canViewDomain(domain)) {
-                            handleDomainClick(domain);
-                          }
-                        }}
-                        onItemClick={handleItemClick}
-                        agents={agents}
-                        enterpriseData={{
-                          lastQuery: enterprise.lastQuery,
-                          lastAnalysis: enterprise.lastAnalysis,
-                          lastCorrelation: enterprise.lastCorrelation,
-                          lastRecommendations: enterprise.lastRecommendations,
-                        }}
-                      />
-                    ) : (
-                      /* Default Command Center when no persona */
-                      <div className="space-y-3">
-                        {/* Alert Banner */}
-                        <div className="p-2 rounded bg-yellow-500/10 border border-yellow-500/30 flex items-center gap-2">
-                          <AlertTriangle size={12} className="text-yellow-500" />
-                          <span className="text-[10px] text-yellow-600">No persona assigned. Contact your admin to get personalized insights.</span>
-                        </div>
+                    {/* Quick Action Cards - Always visible for quick navigation */}
+                    <QuickActionCards 
+                      personaId={userPersona}
+                      onActionClick={(actionId) => {
+                        const actionRoutes: Record<string, () => void> = {
+                          // CEO actions
+                          strategic_review: () => setActiveTab('insights'),
+                          stakeholder_brief: () => handleDomainClick('communications'),
+                          kpi_dashboard: () => setActiveTab('insights'),
+                          risk_assessment: () => setActiveTab('insights'),
+                          // CFO actions
+                          cash_flow: () => handleDomainClick('financials'),
+                          financial_forecast: () => setActiveTab('insights'),
+                          compliance_check: () => handleDomainClick('financials'),
+                          expense_report: () => handleDomainClick('financials'),
+                          // COO actions
+                          operations_metrics: () => setActiveTab('insights'),
+                          resource_allocation: () => setActiveTab('insights'),
+                          process_optimization: () => setActiveTab('insights'),
+                          team_performance: () => setActiveTab('insights'),
+                          // Chief of Staff actions
+                          executive_priorities: () => handleDomainClick('tasks'),
+                          cross_functional: () => setActiveTab('insights'),
+                          meeting_prep: () => handleDomainClick('events'),
+                          action_items: () => handleDomainClick('tasks'),
+                          // CTO actions
+                          tech_roadmap: () => handleDomainClick('knowledge'),
+                          innovation_radar: () => setActiveTab('insights'),
+                          tech_debt: () => setActiveTab('insights'),
+                          infrastructure: () => setActiveTab('insights'),
+                          // CISO actions
+                          security_posture: () => setActiveTab('insights'),
+                          threat_assessment: () => setActiveTab('insights'),
+                          compliance_audit: () => setActiveTab('insights'),
+                          incident_review: () => setActiveTab('insights'),
+                          // CHRO actions
+                          workforce_analytics: () => setActiveTab('insights'),
+                          talent_pipeline: () => setActiveTab('insights'),
+                          retention_analysis: () => setActiveTab('insights'),
+                          culture_pulse: () => setActiveTab('insights'),
+                          // Chief People actions
+                          engagement_score: () => setActiveTab('insights'),
+                          talent_development: () => setActiveTab('insights'),
+                          wellbeing_check: () => setActiveTab('insights'),
+                          org_culture: () => setActiveTab('insights'),
+                          // CMO actions
+                          campaign_performance: () => setActiveTab('insights'),
+                          brand_health: () => setActiveTab('insights'),
+                          customer_insights: () => handleDomainClick('communications'),
+                          content_calendar: () => handleDomainClick('events'),
+                          // CRO actions
+                          revenue_forecast: () => handleDomainClick('financials'),
+                          pipeline_review: () => setActiveTab('insights'),
+                          sales_performance: () => setActiveTab('insights'),
+                          customer_success: () => setActiveTab('insights'),
+                          // CLO actions
+                          contract_review: () => handleDomainClick('documents'),
+                          legal_matters: () => handleDomainClick('documents'),
+                          ip_portfolio: () => handleDomainClick('knowledge'),
+                          litigation_tracker: () => handleDomainClick('documents'),
+                          // CCO actions
+                          compliance_status: () => setActiveTab('insights'),
+                          regulatory_updates: () => handleDomainClick('documents'),
+                          ethics_review: () => setActiveTab('insights'),
+                          governance_check: () => setActiveTab('insights'),
+                          // Admin actions
+                          system_health: () => setActiveTab('insights'),
+                          user_management: () => setActiveTab('admin'),
+                          agent_oversight: () => setActiveTab('insights'),
+                          security_monitor: () => setActiveTab('insights'),
+                          // Entrepreneur actions
+                          launch_venture: () => setLaunchVentureOpen(true),
+                          financial_autopilot: () => handleDomainClick('financials'),
+                          growth_optimizer: () => setGrowthOptimizerOpen(true),
+                          idea_validator: () => setIdeaValidatorOpen(true),
+                          // Default actions
+                          browse_data: () => {},
+                          view_tasks: () => handleDomainClick('tasks'),
+                          recent_docs: () => handleDomainClick('documents'),
+                          check_calendar: () => handleDomainClick('events'),
+                        };
+                        const route = actionRoutes[actionId];
+                        if (route) route();
+                        else setActiveTab('insights');
+                      }}
+                      stats={stats}
+                    />
 
-                        {/* Quick Action Cards - Only for users without persona */}
-                        <QuickActionCards 
-                          personaId={null}
-                          onActionClick={(actionId) => {
-                            const actionRoutes: Record<string, () => void> = {
-                              browse_data: () => {},
-                              view_tasks: () => handleDomainClick('tasks'),
-                              recent_docs: () => handleDomainClick('documents'),
-                              check_calendar: () => handleDomainClick('events'),
-                            };
-                            const route = actionRoutes[actionId];
-                            if (route) route();
-                          }}
-                          stats={stats}
-                        />
-
-                        {/* Domain Quick Access */}
-                        <div className="p-2 rounded bg-background border border-border">
-                          <div className="flex items-center gap-2 mb-2">
-                            <Target size={12} className="text-primary" />
-                            <span className="text-[10px] font-mono text-muted-foreground">DATA DOMAINS</span>
-                          </div>
-                          <div className="grid grid-cols-3 gap-2">
-                            {DOMAIN_CONFIG.map(({ key, label, icon: Icon, color }) => (
-                              <button
-                                key={key}
-                                onClick={() => handleDomainClick(key)}
-                                className="p-2 rounded bg-muted/30 hover:bg-muted/50 border border-transparent hover:border-primary/30 transition-all text-center"
-                              >
-                                <Icon size={14} style={{ color }} className="mx-auto mb-1" />
-                                <span className="text-[9px] font-mono text-muted-foreground block">{label}</span>
-                                <span className="text-sm font-mono text-foreground">{stats[key]}</span>
-                              </button>
-                            ))}
-                          </div>
-                        </div>
+                    {/* No Persona Warning */}
+                    {!userPersona && (
+                      <div className="p-2 rounded bg-yellow-500/10 border border-yellow-500/30 flex items-center gap-2">
+                        <AlertTriangle size={12} className="text-yellow-500" />
+                        <span className="text-[10px] text-yellow-600">No persona assigned. Contact your admin for personalized insights.</span>
                       </div>
                     )}
 
