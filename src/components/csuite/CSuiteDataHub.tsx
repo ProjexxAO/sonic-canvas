@@ -436,8 +436,8 @@ export function CSuiteDataHub({ userId, agents = [], agentsLoading = false }: CS
         )}
       </FullscreenOverlay>
 
-      <div className="flex-1 bg-card/90 border border-border rounded-lg shadow-sm overflow-hidden flex flex-col">
-        <Tabs value={activeTab} onValueChange={setActiveTab} className="flex flex-col h-full">
+      <div className="h-full bg-card/90 border border-border rounded-lg shadow-sm overflow-hidden flex flex-col">
+        <Tabs value={activeTab} onValueChange={setActiveTab} className="flex flex-col h-full overflow-hidden">
           {/* Header */}
           <div className="px-3 py-2 border-b border-border flex items-center justify-between">
             <div className="flex items-center gap-2">
@@ -500,11 +500,11 @@ export function CSuiteDataHub({ userId, agents = [], agentsLoading = false }: CS
           </div>
 
           {/* Content */}
-          <div className="flex-1 overflow-hidden">
+          <div className="flex-1 overflow-hidden min-h-0">
             {/* COMMAND CENTER TAB - Unified Dashboard */}
             {(
-              <TabsContent value="command" className="h-full m-0">
-                <ScrollArea className="h-full">
+              <TabsContent value="command" className="h-full m-0 overflow-hidden">
+                <ScrollArea className="h-full [&>[data-radix-scroll-area-viewport]]:max-h-full">
                   <div className="p-2 space-y-3">
 
                     {/* Removed Domain Access Permissions section - users see accessible domains in Library */}
@@ -743,8 +743,8 @@ export function CSuiteDataHub({ userId, agents = [], agentsLoading = false }: CS
 
             {/* INSIGHTS TAB - AI Intelligence + Summary */}
             {(
-              <TabsContent value="insights" className="h-full m-0">
-                <ScrollArea className="h-full">
+              <TabsContent value="insights" className="h-full m-0 overflow-hidden">
+                <ScrollArea className="h-full [&>[data-radix-scroll-area-viewport]]:max-h-full">
                   <div className="p-2 space-y-3">
                     {/* Query Input */}
                     <div className="p-2 rounded bg-background border border-border">
@@ -870,9 +870,9 @@ export function CSuiteDataHub({ userId, agents = [], agentsLoading = false }: CS
 
             {/* ADMIN TAB - Superadmin/Admin Only */}
             {canManagePersonas && (
-              <TabsContent value="admin" className="h-full m-0 p-2 flex flex-col">
-                <ScrollArea className="flex-1">
-                  <div className="space-y-3">
+              <TabsContent value="admin" className="h-full m-0 overflow-hidden flex flex-col">
+                <ScrollArea className="flex-1 [&>[data-radix-scroll-area-viewport]]:max-h-full">
+                  <div className="p-2 space-y-3">
                     {/* User Persona Manager */}
                     <div className="p-2 rounded bg-background border border-border">
                       <div className="flex items-center gap-2 mb-2">
