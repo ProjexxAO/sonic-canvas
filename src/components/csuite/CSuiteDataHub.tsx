@@ -52,7 +52,9 @@ import { PersonaPermissionsManager } from './PersonaPermissionsManager';
 import { PersonaLayoutRenderer } from './persona-layouts/PersonaLayoutRenderer';
 import { QuickActionCards } from './QuickActionCards';
 import { LaunchVentureDialog, GrowthOptimizerDialog, IdeaValidatorDialog } from './entrepreneur';
+import { DashboardMemberManager } from './collaborative/DashboardMemberManager';
 import { useAtlasEnterprise } from '@/hooks/useAtlasEnterprise';
+import { useSharedDashboards } from '@/hooks/useSharedDashboards';
 import { usePersonaPermissions } from '@/hooks/usePersonaPermissions';
 import { useDataHubController } from '@/hooks/useDataHubController';
 import { supabase } from '@/integrations/supabase/client';
@@ -169,6 +171,12 @@ export function CSuiteDataHub({ userId, agents = [], agentsLoading = false }: CS
   const [launchVentureOpen, setLaunchVentureOpen] = useState(false);
   const [growthOptimizerOpen, setGrowthOptimizerOpen] = useState(false);
   const [ideaValidatorOpen, setIdeaValidatorOpen] = useState(false);
+  
+  // Dashboard member invite dialog state
+  const [inviteDashboardOpen, setInviteDashboardOpen] = useState(false);
+  
+  // Shared dashboards hook for member management
+  const sharedDashboards = useSharedDashboards(userId);
 
   // Sync tab state with controller
   const setActiveTab = useCallback((tab: TabId) => {
@@ -566,6 +574,13 @@ export function CSuiteDataHub({ userId, agents = [], agentsLoading = false }: CS
                           // Admin actions
                           user_management: () => setActiveTab('admin'),
                           persona_management: () => setActiveTab('admin'),
+                          invite_dashboard: () => {
+                            // Select first dashboard if none selected
+                            if (!sharedDashboards.currentDashboard && sharedDashboards.dashboards.length > 0) {
+                              sharedDashboards.selectDashboard(sharedDashboards.dashboards[0].id);
+                            }
+                            setInviteDashboardOpen(true);
+                          },
                           
                           // Entrepreneur-specific dialogs
                           growth_optimizer: () => setGrowthOptimizerOpen(true),
@@ -979,6 +994,16 @@ export function CSuiteDataHub({ userId, agents = [], agentsLoading = false }: CS
       <IdeaValidatorDialog 
         open={ideaValidatorOpen} 
         onOpenChange={setIdeaValidatorOpen} 
+      />
+      
+      {/* Dashboard Member Invite Dialog */}
+      <DashboardMemberManager
+        open={inviteDashboardOpen}
+        onOpenChange={setInviteDashboardOpen}
+        members={sharedDashboards.members}
+        onInvite={sharedDashboards.inviteMember}
+        onUpdateRole={sharedDashboards.updateMemberRole}
+        onRemove={sharedDashboards.removeMember}
       />
     </>
   );
