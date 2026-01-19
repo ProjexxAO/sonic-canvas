@@ -32,6 +32,17 @@ interface SearchResult {
   similarity?: number;
 }
 
+// Web search entry for tracking searches
+export interface WebSearchEntry {
+  id: string;
+  query: string;
+  status: 'searching' | 'complete' | 'error';
+  answer?: string;
+  citations?: string[];
+  timestamp: Date;
+  mode?: 'search' | 'deep' | 'multi' | 'extract' | 'citations';
+}
+
 interface AtlasContextValue {
   // Connection state
   isConnected: boolean;
@@ -74,6 +85,9 @@ interface AtlasContextValue {
   actionLogs: ActionLog[];
   searchResults: SearchResult[];
   synthesizedAgent: any | null;
+  
+  // Web searches tracking
+  webSearches: WebSearchEntry[];
   
   // Wake word detection
   wakeWordStatus: WakeWordStatus;
@@ -125,6 +139,7 @@ export function AtlasProvider({ children }: AtlasProviderProps) {
   const [isMinimized, setIsMinimized] = useState(false);
   const [searchResults, setSearchResults] = useState<SearchResult[]>([]);
   const [synthesizedAgent, setSynthesizedAgent] = useState<any | null>(null);
+  const [webSearches, setWebSearches] = useState<WebSearchEntry[]>([]);
   
   // Wake word settings
   const [wakeWordEnabled, setWakeWordEnabled] = useState(false);
@@ -269,6 +284,17 @@ export function AtlasProvider({ children }: AtlasProviderProps) {
       // Web search using Perplexity
       webSearch: async (params: { query: string }) => {
         const logId = addLogRef.current('webSearch', params, 'Searching the web...', 'pending');
+        const searchId = `search-${Date.now()}-${Math.random().toString(36).slice(2, 9)}`;
+        
+        // Add search entry as "searching"
+        setWebSearches(prev => [{
+          id: searchId,
+          query: params.query,
+          status: 'searching' as const,
+          timestamp: new Date(),
+          mode: 'search' as const,
+        }, ...prev].slice(0, 20)); // Keep last 20 searches
+        
         try {
           const response = await supabase.functions.invoke('atlas-orchestrator', {
             body: { action: 'web_search', query: params.query }
@@ -279,6 +305,11 @@ export function AtlasProvider({ children }: AtlasProviderProps) {
           const answer = response.data?.answer || 'No results found';
           const citations = response.data?.citations || [];
           
+          // Update search entry to "complete"
+          setWebSearches(prev => prev.map(s => 
+            s.id === searchId ? { ...s, status: 'complete' as const, answer, citations } : s
+          ));
+          
           setActionLogs(prev => prev.map(l => 
             l.id === logId ? { ...l, result: 'Web search complete', status: 'success' } : l
           ));
@@ -287,6 +318,12 @@ export function AtlasProvider({ children }: AtlasProviderProps) {
           return `${answer}${citations.length > 0 ? `\n\nSources: ${citations.join(', ')}` : ''}`;
         } catch (error) {
           const msg = error instanceof Error ? error.message : 'Web search failed';
+          
+          // Update search entry to "error"
+          setWebSearches(prev => prev.map(s => 
+            s.id === searchId ? { ...s, status: 'error' as const } : s
+          ));
+          
           setActionLogs(prev => prev.map(l => 
             l.id === logId ? { ...l, result: msg, status: 'error' } : l
           ));
@@ -1076,6 +1113,7 @@ export function AtlasProvider({ children }: AtlasProviderProps) {
     actionLogs,
     searchResults,
     synthesizedAgent,
+    webSearches,
     wakeWordStatus,
     wakeWordEnabled,
     setWakeWordEnabled,
