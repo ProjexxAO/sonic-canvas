@@ -28,6 +28,7 @@ import {
   Presentation,
   ShoppingCart,
   Globe,
+  UserPlus,
   LucideIcon
 } from 'lucide-react';
 import { Badge } from '@/components/ui/badge';
@@ -161,9 +162,9 @@ const PERSONA_ACTIONS: Record<string, QuickAction[]> = {
     { id: 'system_health', label: 'System Status', description: 'Platform health', icon: Cpu, color: 'hsl(var(--primary))', priority: 'high' },
     { id: 'inbox', label: 'System Inbox', description: 'Notifications', icon: Mail, color: 'hsl(200 70% 50%)', priority: 'high' },
     { id: 'user_management', label: 'Users', description: 'Manage users', icon: Users, color: 'hsl(150 70% 45%)', priority: 'high' },
-    { id: 'persona_management', label: 'Personas', description: 'Manage roles', icon: Building2, color: 'hsl(280 70% 50%)', priority: 'high' },
+    { id: 'invite_dashboard', label: 'Invite Members', description: 'Invite to dashboards', icon: UserPlus, color: 'hsl(280 70% 50%)', priority: 'high' },
+    { id: 'persona_management', label: 'Personas', description: 'Manage roles', icon: Building2, color: 'hsl(320 70% 50%)', priority: 'medium' },
     { id: 'audit_logs', label: 'Audit Logs', description: 'System activity', icon: FileText, color: 'hsl(45 80% 50%)', priority: 'medium' },
-    { id: 'my_tasks', label: 'Admin Tasks', description: 'Pending actions', icon: CheckSquare, color: 'hsl(350 70% 50%)', priority: 'medium' },
   ],
   entrepreneur: [
     { id: 'inbox', label: 'Business Inbox', description: 'Customer & leads', icon: Mail, color: 'hsl(200 70% 50%)', priority: 'high' },
