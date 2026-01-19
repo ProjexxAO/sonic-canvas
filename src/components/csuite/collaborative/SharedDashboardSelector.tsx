@@ -1,5 +1,5 @@
 import { useState } from 'react';
-import { Users, Plus, ChevronDown, User, Crown, Eye, Edit, Shield } from 'lucide-react';
+import { Users, Plus, ChevronDown, User, Crown, Eye, Edit, Shield, Trash2 } from 'lucide-react';
 import {
   DropdownMenu,
   DropdownMenuContent,
@@ -9,17 +9,28 @@ import {
 } from '@/components/ui/dropdown-menu';
 import { Button } from '@/components/ui/button';
 import { Badge } from '@/components/ui/badge';
-import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogFooter } from '@/components/ui/dialog';
+import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogFooter, DialogDescription } from '@/components/ui/dialog';
 import { Input } from '@/components/ui/input';
 import { Textarea } from '@/components/ui/textarea';
 import { Label } from '@/components/ui/label';
 import { SharedDashboard } from '@/hooks/useSharedDashboards';
+import {
+  AlertDialog,
+  AlertDialogAction,
+  AlertDialogCancel,
+  AlertDialogContent,
+  AlertDialogDescription,
+  AlertDialogFooter,
+  AlertDialogHeader,
+  AlertDialogTitle,
+} from '@/components/ui/alert-dialog';
 
 interface SharedDashboardSelectorProps {
   dashboards: SharedDashboard[];
   currentDashboard: SharedDashboard | null;
   onSelect: (dashboardId: string | null) => void;
   onCreate: (name: string, description?: string, workspaceId?: string, visibility?: 'private' | 'workspace') => Promise<any>;
+  onDelete?: (dashboardId: string) => Promise<boolean>;
   isLoading?: boolean;
 }
 
@@ -44,12 +55,16 @@ export function SharedDashboardSelector({
   currentDashboard,
   onSelect,
   onCreate,
+  onDelete,
   isLoading,
 }: SharedDashboardSelectorProps) {
   const [createDialogOpen, setCreateDialogOpen] = useState(false);
+  const [deleteDialogOpen, setDeleteDialogOpen] = useState(false);
+  const [dashboardToDelete, setDashboardToDelete] = useState<SharedDashboard | null>(null);
   const [newName, setNewName] = useState('');
   const [newDescription, setNewDescription] = useState('');
   const [isCreating, setIsCreating] = useState(false);
+  const [isDeleting, setIsDeleting] = useState(false);
 
   const handleCreate = async () => {
     if (!newName.trim()) return;
@@ -63,6 +78,25 @@ export function SharedDashboardSelector({
       setNewName('');
       setNewDescription('');
       onSelect(dashboard.id);
+    }
+  };
+
+  const handleDeleteClick = (e: React.MouseEvent, dashboard: SharedDashboard) => {
+    e.stopPropagation();
+    setDashboardToDelete(dashboard);
+    setDeleteDialogOpen(true);
+  };
+
+  const handleConfirmDelete = async () => {
+    if (!dashboardToDelete || !onDelete) return;
+    
+    setIsDeleting(true);
+    const success = await onDelete(dashboardToDelete.id);
+    setIsDeleting(false);
+    
+    if (success) {
+      setDeleteDialogOpen(false);
+      setDashboardToDelete(null);
     }
   };
 
@@ -116,12 +150,13 @@ export function SharedDashboardSelector({
             dashboards.map((dashboard) => {
               const RoleIcon = ROLE_ICONS[dashboard.my_role || 'viewer'] || User;
               const roleColor = ROLE_COLORS[dashboard.my_role || 'viewer'];
+              const canDelete = onDelete && ['owner', 'admin'].includes(dashboard.my_role || '');
               
               return (
                 <DropdownMenuItem
                   key={dashboard.id}
                   onClick={() => onSelect(dashboard.id)}
-                  className="flex items-center gap-2"
+                  className="flex items-center gap-2 group"
                 >
                   <Users size={12} className="text-primary" />
                   <div className="flex-1 min-w-0">
@@ -137,6 +172,16 @@ export function SharedDashboardSelector({
                     <Badge variant="secondary" className="text-[8px] px-1">
                       {dashboard.member_count}
                     </Badge>
+                    {canDelete && (
+                      <Button
+                        variant="ghost"
+                        size="sm"
+                        className="h-5 w-5 p-0 opacity-0 group-hover:opacity-100 text-destructive hover:text-destructive hover:bg-destructive/10"
+                        onClick={(e) => handleDeleteClick(e, dashboard)}
+                      >
+                        <Trash2 size={10} />
+                      </Button>
+                    )}
                   </div>
                   {currentDashboard?.id === dashboard.id && (
                     <Badge variant="default" className="text-[8px]">Active</Badge>
@@ -208,6 +253,28 @@ export function SharedDashboardSelector({
           </DialogFooter>
         </DialogContent>
       </Dialog>
+
+      {/* Delete Confirmation Dialog */}
+      <AlertDialog open={deleteDialogOpen} onOpenChange={setDeleteDialogOpen}>
+        <AlertDialogContent>
+          <AlertDialogHeader>
+            <AlertDialogTitle>Delete Dashboard</AlertDialogTitle>
+            <AlertDialogDescription>
+              Are you sure you want to delete "{dashboardToDelete?.name}"? This will permanently remove the dashboard and all shared items. This action cannot be undone.
+            </AlertDialogDescription>
+          </AlertDialogHeader>
+          <AlertDialogFooter>
+            <AlertDialogCancel disabled={isDeleting}>Cancel</AlertDialogCancel>
+            <AlertDialogAction
+              onClick={handleConfirmDelete}
+              disabled={isDeleting}
+              className="bg-destructive text-destructive-foreground hover:bg-destructive/90"
+            >
+              {isDeleting ? 'Deleting...' : 'Delete Dashboard'}
+            </AlertDialogAction>
+          </AlertDialogFooter>
+        </AlertDialogContent>
+      </AlertDialog>
     </>
   );
 }

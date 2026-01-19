@@ -466,6 +466,7 @@ export function CSuiteDataHub({ userId, agents = [], agentsLoading = false }: CS
                 currentDashboard={sharedDashboards.currentDashboard}
                 onSelect={(id) => sharedDashboards.selectDashboard(id)}
                 onCreate={sharedDashboards.createDashboard}
+                onDelete={sharedDashboards.deleteDashboard}
                 isLoading={sharedDashboards.isLoading}
               />
               <Button
