@@ -1,6 +1,5 @@
 import { 
   TrendingUp, 
-  AlertTriangle, 
   FileText, 
   Users, 
   DollarSign, 
@@ -12,9 +11,9 @@ import {
   Calendar,
   BarChart3,
   Zap,
-  Search,
   Mail,
   CheckSquare,
+  BookOpen,
   LucideIcon
 } from 'lucide-react';
 import { Badge } from '@/components/ui/badge';
@@ -41,100 +40,104 @@ interface QuickActionCardsProps {
   };
 }
 
+// Common actions available to all personas
+const COMMON_ACTIONS: QuickAction[] = [
+  { id: 'inbox', label: 'Inbox', description: 'View emails & messages', icon: Mail, color: 'hsl(200 70% 50%)', priority: 'high' },
+  { id: 'my_tasks', label: 'My Tasks', description: 'View pending tasks', icon: CheckSquare, color: 'hsl(350 70% 50%)', priority: 'high' },
+  { id: 'calendar', label: 'Calendar', description: 'Upcoming meetings & events', icon: Calendar, color: 'hsl(280 70% 50%)', priority: 'high' },
+  { id: 'documents', label: 'Documents', description: 'Access files & docs', icon: FileText, color: 'hsl(45 80% 50%)', priority: 'medium' },
+];
+
+// Role-specific actions (2 per persona) + common actions
 const PERSONA_ACTIONS: Record<string, QuickAction[]> = {
   ceo: [
-    { id: 'strategic_review', label: 'Strategic Review', description: 'Review key decisions & market position', icon: Target, color: 'hsl(var(--primary))', priority: 'high' },
-    { id: 'stakeholder_brief', label: 'Stakeholder Brief', description: 'Prepare stakeholder communications', icon: Users, color: 'hsl(200 70% 50%)', priority: 'high' },
-    { id: 'kpi_dashboard', label: 'KPI Dashboard', description: 'View company-wide metrics', icon: BarChart3, color: 'hsl(150 70% 45%)', priority: 'medium' },
-    { id: 'risk_assessment', label: 'Risk Assessment', description: 'Review critical risks & mitigations', icon: AlertTriangle, color: 'hsl(45 80% 50%)', priority: 'medium' },
+    { id: 'inbox', label: 'Inbox', description: 'Stakeholder communications', icon: Mail, color: 'hsl(200 70% 50%)', priority: 'high' },
+    { id: 'my_tasks', label: 'My Tasks', description: 'Executive action items', icon: CheckSquare, color: 'hsl(350 70% 50%)', priority: 'high' },
+    { id: 'kpi_dashboard', label: 'KPI Dashboard', description: 'Company-wide metrics', icon: BarChart3, color: 'hsl(150 70% 45%)', priority: 'high' },
+    { id: 'financials', label: 'Financials', description: 'Revenue & cash position', icon: DollarSign, color: 'hsl(45 80% 50%)', priority: 'high' },
   ],
   cfo: [
-    { id: 'cash_flow', label: 'Cash Flow Analysis', description: 'Review current cash position', icon: DollarSign, color: 'hsl(150 70% 45%)', priority: 'high' },
-    { id: 'financial_forecast', label: 'Financial Forecast', description: 'Generate quarterly projections', icon: TrendingUp, color: 'hsl(var(--primary))', priority: 'high' },
-    { id: 'compliance_check', label: 'Compliance Check', description: 'Review regulatory compliance', icon: Shield, color: 'hsl(280 70% 50%)', priority: 'medium' },
-    { id: 'expense_report', label: 'Expense Report', description: 'Analyze spending patterns', icon: FileText, color: 'hsl(200 70% 50%)', priority: 'medium' },
+    { id: 'inbox', label: 'Inbox', description: 'Financial communications', icon: Mail, color: 'hsl(200 70% 50%)', priority: 'high' },
+    { id: 'financials', label: 'Cash Flow', description: 'Current cash position', icon: DollarSign, color: 'hsl(150 70% 45%)', priority: 'high' },
+    { id: 'my_tasks', label: 'My Tasks', description: 'Finance action items', icon: CheckSquare, color: 'hsl(350 70% 50%)', priority: 'high' },
+    { id: 'documents', label: 'Reports', description: 'Financial statements', icon: FileText, color: 'hsl(280 70% 50%)', priority: 'high' },
   ],
   coo: [
-    { id: 'operations_metrics', label: 'Operations Metrics', description: 'View efficiency & performance', icon: BarChart3, color: 'hsl(var(--primary))', priority: 'high' },
-    { id: 'resource_allocation', label: 'Resource Allocation', description: 'Review team & resource usage', icon: Users, color: 'hsl(200 70% 50%)', priority: 'high' },
-    { id: 'process_optimization', label: 'Process Optimization', description: 'Identify improvement areas', icon: Zap, color: 'hsl(45 80% 50%)', priority: 'medium' },
-    { id: 'team_performance', label: 'Team Performance', description: 'Review team productivity', icon: TrendingUp, color: 'hsl(150 70% 45%)', priority: 'medium' },
+    { id: 'inbox', label: 'Inbox', description: 'Operations updates', icon: Mail, color: 'hsl(200 70% 50%)', priority: 'high' },
+    { id: 'my_tasks', label: 'My Tasks', description: 'Operations tasks', icon: CheckSquare, color: 'hsl(350 70% 50%)', priority: 'high' },
+    { id: 'team_overview', label: 'Team Overview', description: 'Resource allocation', icon: Users, color: 'hsl(var(--primary))', priority: 'high' },
+    { id: 'calendar', label: 'Calendar', description: 'Operations schedule', icon: Calendar, color: 'hsl(280 70% 50%)', priority: 'medium' },
   ],
   chief_of_staff: [
-    { id: 'executive_priorities', label: 'Executive Priorities', description: 'Track leadership action items', icon: Target, color: 'hsl(var(--primary))', priority: 'high' },
-    { id: 'cross_functional', label: 'Cross-Functional', description: 'Review department alignment', icon: Users, color: 'hsl(200 70% 50%)', priority: 'high' },
-    { id: 'meeting_prep', label: 'Meeting Prep', description: 'Prepare executive briefings', icon: Calendar, color: 'hsl(150 70% 45%)', priority: 'medium' },
-    { id: 'action_items', label: 'Action Items', description: 'Track open action items', icon: CheckSquare, color: 'hsl(350 70% 50%)', priority: 'medium' },
+    { id: 'inbox', label: 'Inbox', description: 'Executive communications', icon: Mail, color: 'hsl(200 70% 50%)', priority: 'high' },
+    { id: 'my_tasks', label: 'Action Items', description: 'Leadership priorities', icon: CheckSquare, color: 'hsl(350 70% 50%)', priority: 'high' },
+    { id: 'calendar', label: 'Calendar', description: 'Executive schedule', icon: Calendar, color: 'hsl(150 70% 45%)', priority: 'high' },
+    { id: 'documents', label: 'Briefings', description: 'Prepare executive docs', icon: FileText, color: 'hsl(280 70% 50%)', priority: 'medium' },
   ],
   cto: [
-    { id: 'tech_roadmap', label: 'Tech Roadmap', description: 'Review technology strategy', icon: Cpu, color: 'hsl(var(--primary))', priority: 'high' },
-    { id: 'innovation_radar', label: 'Innovation Radar', description: 'Explore emerging tech', icon: Search, color: 'hsl(280 70% 50%)', priority: 'high' },
-    { id: 'tech_debt', label: 'Tech Debt Analysis', description: 'Review technical debt', icon: AlertTriangle, color: 'hsl(45 80% 50%)', priority: 'medium' },
-    { id: 'infrastructure', label: 'Infrastructure', description: 'System health overview', icon: BarChart3, color: 'hsl(150 70% 45%)', priority: 'medium' },
+    { id: 'inbox', label: 'Inbox', description: 'Tech team updates', icon: Mail, color: 'hsl(200 70% 50%)', priority: 'high' },
+    { id: 'my_tasks', label: 'My Tasks', description: 'Tech priorities', icon: CheckSquare, color: 'hsl(350 70% 50%)', priority: 'high' },
+    { id: 'knowledge', label: 'Tech Docs', description: 'Technical documentation', icon: BookOpen, color: 'hsl(var(--primary))', priority: 'high' },
+    { id: 'infrastructure', label: 'Infrastructure', description: 'System health', icon: Cpu, color: 'hsl(150 70% 45%)', priority: 'medium' },
   ],
   ciso: [
-    { id: 'security_posture', label: 'Security Posture', description: 'Review overall security status', icon: Shield, color: 'hsl(var(--primary))', priority: 'high' },
-    { id: 'threat_assessment', label: 'Threat Assessment', description: 'Analyze active threats', icon: AlertTriangle, color: 'hsl(350 70% 50%)', priority: 'high' },
-    { id: 'compliance_audit', label: 'Compliance Audit', description: 'Review security compliance', icon: CheckSquare, color: 'hsl(150 70% 45%)', priority: 'medium' },
-    { id: 'incident_review', label: 'Incident Review', description: 'Recent security incidents', icon: Zap, color: 'hsl(45 80% 50%)', priority: 'medium' },
+    { id: 'inbox', label: 'Inbox', description: 'Security alerts', icon: Mail, color: 'hsl(200 70% 50%)', priority: 'high' },
+    { id: 'my_tasks', label: 'My Tasks', description: 'Security actions', icon: CheckSquare, color: 'hsl(350 70% 50%)', priority: 'high' },
+    { id: 'security_posture', label: 'Security', description: 'Overall security status', icon: Shield, color: 'hsl(var(--primary))', priority: 'high' },
+    { id: 'documents', label: 'Policies', description: 'Security policies', icon: FileText, color: 'hsl(280 70% 50%)', priority: 'medium' },
   ],
   chro: [
-    { id: 'workforce_analytics', label: 'Workforce Analytics', description: 'Employee metrics & trends', icon: Users, color: 'hsl(var(--primary))', priority: 'high' },
-    { id: 'talent_pipeline', label: 'Talent Pipeline', description: 'Recruitment & hiring status', icon: Target, color: 'hsl(200 70% 50%)', priority: 'high' },
-    { id: 'retention_analysis', label: 'Retention Analysis', description: 'Turnover & engagement data', icon: TrendingUp, color: 'hsl(150 70% 45%)', priority: 'medium' },
-    { id: 'culture_pulse', label: 'Culture Pulse', description: 'Employee sentiment analysis', icon: BarChart3, color: 'hsl(280 70% 50%)', priority: 'medium' },
+    { id: 'inbox', label: 'Inbox', description: 'HR communications', icon: Mail, color: 'hsl(200 70% 50%)', priority: 'high' },
+    { id: 'my_tasks', label: 'My Tasks', description: 'HR action items', icon: CheckSquare, color: 'hsl(350 70% 50%)', priority: 'high' },
+    { id: 'team_overview', label: 'Workforce', description: 'Employee analytics', icon: Users, color: 'hsl(var(--primary))', priority: 'high' },
+    { id: 'calendar', label: 'Calendar', description: 'HR schedule', icon: Calendar, color: 'hsl(280 70% 50%)', priority: 'medium' },
   ],
   chief_people: [
-    { id: 'engagement_score', label: 'Engagement Score', description: 'Current engagement metrics', icon: TrendingUp, color: 'hsl(var(--primary))', priority: 'high' },
-    { id: 'talent_development', label: 'Talent Development', description: 'L&D program overview', icon: Users, color: 'hsl(200 70% 50%)', priority: 'high' },
-    { id: 'wellbeing_check', label: 'Wellbeing Check', description: 'Employee wellbeing status', icon: Target, color: 'hsl(150 70% 45%)', priority: 'medium' },
-    { id: 'org_culture', label: 'Org Culture', description: 'Culture initiatives tracker', icon: BarChart3, color: 'hsl(280 70% 50%)', priority: 'medium' },
+    { id: 'inbox', label: 'Inbox', description: 'People updates', icon: Mail, color: 'hsl(200 70% 50%)', priority: 'high' },
+    { id: 'my_tasks', label: 'My Tasks', description: 'People initiatives', icon: CheckSquare, color: 'hsl(350 70% 50%)', priority: 'high' },
+    { id: 'team_overview', label: 'Team Pulse', description: 'Engagement metrics', icon: Users, color: 'hsl(var(--primary))', priority: 'high' },
+    { id: 'calendar', label: 'Calendar', description: 'Team events', icon: Calendar, color: 'hsl(150 70% 45%)', priority: 'medium' },
   ],
   cmo: [
-    { id: 'campaign_performance', label: 'Campaign Performance', description: 'Active campaign metrics', icon: Megaphone, color: 'hsl(var(--primary))', priority: 'high' },
-    { id: 'brand_health', label: 'Brand Health', description: 'Brand awareness & sentiment', icon: TrendingUp, color: 'hsl(200 70% 50%)', priority: 'high' },
-    { id: 'customer_insights', label: 'Customer Insights', description: 'Customer behavior analysis', icon: Users, color: 'hsl(150 70% 45%)', priority: 'medium' },
-    { id: 'content_calendar', label: 'Content Calendar', description: 'Upcoming content schedule', icon: Calendar, color: 'hsl(280 70% 50%)', priority: 'medium' },
+    { id: 'inbox', label: 'Inbox', description: 'Marketing updates', icon: Mail, color: 'hsl(200 70% 50%)', priority: 'high' },
+    { id: 'my_tasks', label: 'My Tasks', description: 'Campaign tasks', icon: CheckSquare, color: 'hsl(350 70% 50%)', priority: 'high' },
+    { id: 'campaigns', label: 'Campaigns', description: 'Active campaigns', icon: Megaphone, color: 'hsl(var(--primary))', priority: 'high' },
+    { id: 'calendar', label: 'Content Cal', description: 'Content schedule', icon: Calendar, color: 'hsl(280 70% 50%)', priority: 'medium' },
   ],
   cro: [
-    { id: 'revenue_forecast', label: 'Revenue Forecast', description: 'Current revenue projections', icon: DollarSign, color: 'hsl(var(--primary))', priority: 'high' },
-    { id: 'pipeline_review', label: 'Pipeline Review', description: 'Sales pipeline health', icon: TrendingUp, color: 'hsl(150 70% 45%)', priority: 'high' },
-    { id: 'sales_performance', label: 'Sales Performance', description: 'Team performance metrics', icon: BarChart3, color: 'hsl(200 70% 50%)', priority: 'medium' },
-    { id: 'customer_success', label: 'Customer Success', description: 'Retention & expansion', icon: Users, color: 'hsl(280 70% 50%)', priority: 'medium' },
+    { id: 'inbox', label: 'Inbox', description: 'Sales communications', icon: Mail, color: 'hsl(200 70% 50%)', priority: 'high' },
+    { id: 'my_tasks', label: 'My Tasks', description: 'Revenue tasks', icon: CheckSquare, color: 'hsl(350 70% 50%)', priority: 'high' },
+    { id: 'financials', label: 'Pipeline', description: 'Revenue pipeline', icon: DollarSign, color: 'hsl(150 70% 45%)', priority: 'high' },
+    { id: 'calendar', label: 'Calendar', description: 'Sales meetings', icon: Calendar, color: 'hsl(280 70% 50%)', priority: 'medium' },
   ],
   clo: [
-    { id: 'contract_review', label: 'Contract Review', description: 'Pending contracts & renewals', icon: FileText, color: 'hsl(var(--primary))', priority: 'high' },
-    { id: 'legal_matters', label: 'Legal Matters', description: 'Active legal issues', icon: Scale, color: 'hsl(200 70% 50%)', priority: 'high' },
-    { id: 'ip_portfolio', label: 'IP Portfolio', description: 'Intellectual property status', icon: Shield, color: 'hsl(280 70% 50%)', priority: 'medium' },
-    { id: 'litigation_tracker', label: 'Litigation Tracker', description: 'Active litigation cases', icon: AlertTriangle, color: 'hsl(350 70% 50%)', priority: 'medium' },
+    { id: 'inbox', label: 'Inbox', description: 'Legal communications', icon: Mail, color: 'hsl(200 70% 50%)', priority: 'high' },
+    { id: 'my_tasks', label: 'My Tasks', description: 'Legal matters', icon: CheckSquare, color: 'hsl(350 70% 50%)', priority: 'high' },
+    { id: 'documents', label: 'Contracts', description: 'Contract review', icon: FileText, color: 'hsl(var(--primary))', priority: 'high' },
+    { id: 'knowledge', label: 'Legal Docs', description: 'Legal library', icon: Scale, color: 'hsl(280 70% 50%)', priority: 'medium' },
   ],
   cco: [
-    { id: 'compliance_status', label: 'Compliance Status', description: 'Overall compliance health', icon: CheckSquare, color: 'hsl(var(--primary))', priority: 'high' },
-    { id: 'regulatory_updates', label: 'Regulatory Updates', description: 'New regulatory changes', icon: FileText, color: 'hsl(200 70% 50%)', priority: 'high' },
-    { id: 'ethics_review', label: 'Ethics Review', description: 'Ethics program status', icon: Scale, color: 'hsl(150 70% 45%)', priority: 'medium' },
-    { id: 'governance_check', label: 'Governance Check', description: 'Governance framework review', icon: Shield, color: 'hsl(280 70% 50%)', priority: 'medium' },
+    { id: 'inbox', label: 'Inbox', description: 'Compliance updates', icon: Mail, color: 'hsl(200 70% 50%)', priority: 'high' },
+    { id: 'my_tasks', label: 'My Tasks', description: 'Compliance tasks', icon: CheckSquare, color: 'hsl(350 70% 50%)', priority: 'high' },
+    { id: 'compliance', label: 'Compliance', description: 'Compliance status', icon: Shield, color: 'hsl(var(--primary))', priority: 'high' },
+    { id: 'documents', label: 'Regulations', description: 'Regulatory docs', icon: FileText, color: 'hsl(280 70% 50%)', priority: 'medium' },
   ],
   admin: [
-    { id: 'system_health', label: 'System Health', description: 'Platform status & metrics', icon: Cpu, color: 'hsl(var(--primary))', priority: 'high' },
-    { id: 'user_management', label: 'User Management', description: 'Manage users & permissions', icon: Users, color: 'hsl(200 70% 50%)', priority: 'high' },
-    { id: 'agent_oversight', label: 'Agent Oversight', description: 'Monitor agent activity', icon: Zap, color: 'hsl(150 70% 45%)', priority: 'medium' },
-    { id: 'security_monitor', label: 'Security Monitor', description: 'Security event logs', icon: Shield, color: 'hsl(350 70% 50%)', priority: 'medium' },
+    { id: 'inbox', label: 'Inbox', description: 'System notifications', icon: Mail, color: 'hsl(200 70% 50%)', priority: 'high' },
+    { id: 'my_tasks', label: 'My Tasks', description: 'Admin tasks', icon: CheckSquare, color: 'hsl(350 70% 50%)', priority: 'high' },
+    { id: 'user_management', label: 'Users', description: 'Manage users', icon: Users, color: 'hsl(var(--primary))', priority: 'high' },
+    { id: 'system_health', label: 'System', description: 'Platform health', icon: Cpu, color: 'hsl(150 70% 45%)', priority: 'medium' },
   ],
   entrepreneur: [
-    { id: 'launch_venture', label: 'Launch Venture', description: 'Start a new business initiative', icon: Target, color: 'hsl(var(--primary))', priority: 'high' },
-    { id: 'financial_autopilot', label: 'Financial Autopilot', description: 'Automated cash flow & invoicing', icon: DollarSign, color: 'hsl(150 70% 45%)', priority: 'high' },
-    { id: 'growth_optimizer', label: 'Growth Optimizer', description: 'AI-driven marketing campaigns', icon: TrendingUp, color: 'hsl(200 70% 50%)', priority: 'high' },
-    { id: 'idea_validator', label: 'Idea Validator', description: 'Validate new business ideas', icon: Zap, color: 'hsl(45 80% 50%)', priority: 'medium' },
+    { id: 'inbox', label: 'Inbox', description: 'Business messages', icon: Mail, color: 'hsl(200 70% 50%)', priority: 'high' },
+    { id: 'my_tasks', label: 'My Tasks', description: 'Priority tasks', icon: CheckSquare, color: 'hsl(350 70% 50%)', priority: 'high' },
+    { id: 'financials', label: 'Cash Flow', description: 'Money in & out', icon: DollarSign, color: 'hsl(150 70% 45%)', priority: 'high' },
+    { id: 'growth_optimizer', label: 'Growth', description: 'Grow your business', icon: TrendingUp, color: 'hsl(var(--primary))', priority: 'high' },
   ],
 };
 
 // Default actions for users without a persona
-const DEFAULT_ACTIONS: QuickAction[] = [
-  { id: 'browse_data', label: 'Browse Data', description: 'Explore your connected data', icon: Search, color: 'hsl(var(--primary))', priority: 'high' },
-  { id: 'view_tasks', label: 'View Tasks', description: 'Check pending tasks', icon: CheckSquare, color: 'hsl(350 70% 50%)', priority: 'high' },
-  { id: 'recent_docs', label: 'Recent Documents', description: 'Access recent documents', icon: FileText, color: 'hsl(280 70% 50%)', priority: 'medium' },
-  { id: 'check_calendar', label: 'Check Calendar', description: 'Upcoming events', icon: Calendar, color: 'hsl(150 70% 45%)', priority: 'medium' },
-];
+const DEFAULT_ACTIONS: QuickAction[] = COMMON_ACTIONS;
 
 export function QuickActionCards({ personaId, onActionClick, stats }: QuickActionCardsProps) {
   const actions = personaId ? (PERSONA_ACTIONS[personaId] || DEFAULT_ACTIONS) : DEFAULT_ACTIONS;
@@ -148,6 +151,17 @@ export function QuickActionCards({ personaId, onActionClick, stats }: QuickActio
       <div className="grid grid-cols-2 gap-2">
         {actions.map((action) => {
           const Icon = action.icon;
+          // Show count for relevant actions
+          const count = stats ? (
+            action.id === 'inbox' ? stats.communications :
+            action.id === 'my_tasks' ? stats.tasks :
+            action.id === 'calendar' ? stats.events :
+            action.id === 'documents' ? stats.documents :
+            action.id === 'financials' ? stats.financials :
+            action.id === 'knowledge' ? stats.knowledge :
+            null
+          ) : null;
+
           return (
             <button
               key={action.id}
@@ -161,9 +175,9 @@ export function QuickActionCards({ personaId, onActionClick, stats }: QuickActio
                     {action.label}
                   </span>
                 </div>
-                {action.priority === 'high' && (
-                  <Badge variant="secondary" className="text-[7px] px-1 py-0 h-3">
-                    Priority
+                {count !== null && count > 0 && (
+                  <Badge variant="secondary" className="text-[8px] px-1.5 py-0 h-4 font-mono">
+                    {count}
                   </Badge>
                 )}
               </div>
