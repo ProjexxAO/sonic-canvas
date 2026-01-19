@@ -184,6 +184,12 @@ export function getPersonaFromName(name: string): string | null {
     'people': 'chief_people',
     'admin': 'admin',
     'administrator': 'admin',
+    'entrepreneur': 'entrepreneur',
+    'founder': 'entrepreneur',
+    'owner': 'entrepreneur',
+    'business owner': 'entrepreneur',
+    'startup': 'entrepreneur',
+    'solopreneur': 'entrepreneur',
   };
   return personaMap[normalized] || null;
 }
