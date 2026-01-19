@@ -76,6 +76,7 @@ import { useCSuiteData } from '@/hooks/useCSuiteData';
 import { Button } from '@/components/ui/button';
 import { ScrollArea } from '@/components/ui/scroll-area';
 import { AtlasTaskProgress } from '@/components/atlas/AtlasTaskProgress';
+import { AtlasSearchPanel } from '@/components/atlas/AtlasSearchPanel';
 import { CSuiteDataHub } from '@/components/csuite/CSuiteDataHub';
 import { OnboardingFlow } from '@/components/onboarding';
 import { useAgentOrchestration } from '@/hooks/useAgentOrchestration';
@@ -126,6 +127,7 @@ function AtlasPage() {
     actionLogs,
     searchResults,
     synthesizedAgent,
+    webSearches,
     conversation,
     wakeWordEnabled,
     setWakeWordEnabled,
@@ -1316,6 +1318,9 @@ function AtlasPage() {
             onSyncMemory={orchestration.syncMemoryTasks}
             onDeleteTask={orchestration.deleteTask}
           />
+
+          {/* Web Search & Knowledge Synthesis Panel */}
+          <AtlasSearchPanel searches={webSearches} />
 
           {/* Search Results */}
           {searchResults.length > 0 && (
