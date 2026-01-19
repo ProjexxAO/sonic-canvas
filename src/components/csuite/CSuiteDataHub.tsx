@@ -53,6 +53,8 @@ import { PersonaLayoutRenderer } from './persona-layouts/PersonaLayoutRenderer';
 import { QuickActionCards } from './QuickActionCards';
 import { LaunchVentureDialog, GrowthOptimizerDialog, IdeaValidatorDialog } from './entrepreneur';
 import { DashboardMemberManager } from './collaborative/DashboardMemberManager';
+import { SharedDashboardSelector } from './collaborative/SharedDashboardSelector';
+import { SharedDashboardView } from './collaborative/SharedDashboardView';
 import { useAtlasEnterprise } from '@/hooks/useAtlasEnterprise';
 import { useSharedDashboards } from '@/hooks/useSharedDashboards';
 import { usePersonaPermissions } from '@/hooks/usePersonaPermissions';
@@ -451,21 +453,31 @@ export function CSuiteDataHub({ userId, agents = [], agentsLoading = false }: CS
             <div className="flex items-center gap-2">
               <BarChart3 size={14} className="text-primary" />
               <span className="text-xs font-mono text-muted-foreground">C-SUITE DATA HUB</span>
-              {currentPersona && (
+              {currentPersona && !sharedDashboards.currentDashboard && (
                 <Badge variant="outline" className="text-[8px] font-mono">
                   {currentPersona.label}
                 </Badge>
               )}
             </div>
-            <Button
-              variant="ghost"
-              size="icon"
-              className="h-6 w-6"
-              onClick={() => refresh()}
-              disabled={isLoading}
-            >
-              <RefreshCw size={12} className={isLoading ? 'animate-spin' : ''} />
-            </Button>
+            <div className="flex items-center gap-1">
+              {/* Dashboard View Switcher */}
+              <SharedDashboardSelector
+                dashboards={sharedDashboards.dashboards}
+                currentDashboard={sharedDashboards.currentDashboard}
+                onSelect={(id) => sharedDashboards.selectDashboard(id)}
+                onCreate={sharedDashboards.createDashboard}
+                isLoading={sharedDashboards.isLoading}
+              />
+              <Button
+                variant="ghost"
+                size="icon"
+                className="h-6 w-6"
+                onClick={() => refresh()}
+                disabled={isLoading}
+              >
+                <RefreshCw size={12} className={isLoading ? 'animate-spin' : ''} />
+              </Button>
+            </div>
           </div>
 
           {/* Restructured Tabs - 4 Main Sections + Marketplace Shortcut */}
@@ -509,9 +521,34 @@ export function CSuiteDataHub({ userId, agents = [], agentsLoading = false }: CS
 
           {/* Content */}
           <div className="flex-1 overflow-hidden min-h-0">
-            {/* COMMAND CENTER TAB - Unified Dashboard */}
-            {(
-              <TabsContent value="command" className="h-full m-0 overflow-hidden">
+            {/* Show SharedDashboardView when a shared dashboard is selected */}
+            {sharedDashboards.currentDashboard ? (
+              <div className="h-full overflow-auto">
+                <SharedDashboardView
+                  dashboard={sharedDashboards.currentDashboard}
+                  sharedItems={sharedDashboards.sharedItems}
+                  members={sharedDashboards.members}
+                  activities={sharedDashboards.activities}
+                  activeViewers={sharedDashboards.activeViewers}
+                  permissions={{
+                    canView: true,
+                    canUpload: ['contributor', 'editor', 'admin', 'owner'].includes(sharedDashboards.currentDashboard.my_role || ''),
+                    canShare: ['editor', 'admin', 'owner'].includes(sharedDashboards.currentDashboard.my_role || ''),
+                    canComment: true,
+                    canManage: ['admin', 'owner'].includes(sharedDashboards.currentDashboard.my_role || ''),
+                  }}
+                  onUnshareItem={sharedDashboards.unshareItem}
+                  onTogglePin={sharedDashboards.togglePinItem}
+                  onInviteMember={(userId, role) => 
+                    sharedDashboards.inviteMember(sharedDashboards.currentDashboard!.id, userId, role)
+                  }
+                  onUpdateMember={(memberId, role) => sharedDashboards.updateMemberRole(memberId, role)}
+                  onRemoveMember={sharedDashboards.removeMember}
+                />
+              </div>
+            ) : (
+            /* COMMAND CENTER TAB - Unified Dashboard */
+            <TabsContent value="command" className="h-full m-0 overflow-hidden">
                 <ScrollArea className="h-full [&>[data-radix-scroll-area-viewport]]:max-h-full">
                   <div className="p-2 space-y-3">
                     {/* Quick Action Cards - Always visible for quick navigation */}
