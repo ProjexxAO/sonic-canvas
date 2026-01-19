@@ -1102,6 +1102,47 @@ export type Database = {
         }
         Relationships: []
       }
+      dashboard_activity: {
+        Row: {
+          action: string
+          created_at: string | null
+          dashboard_id: string
+          id: string
+          item_id: string | null
+          item_type: string | null
+          metadata: Json | null
+          user_id: string
+        }
+        Insert: {
+          action: string
+          created_at?: string | null
+          dashboard_id: string
+          id?: string
+          item_id?: string | null
+          item_type?: string | null
+          metadata?: Json | null
+          user_id: string
+        }
+        Update: {
+          action?: string
+          created_at?: string | null
+          dashboard_id?: string
+          id?: string
+          item_id?: string | null
+          item_type?: string | null
+          metadata?: Json | null
+          user_id?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "dashboard_activity_dashboard_id_fkey"
+            columns: ["dashboard_id"]
+            isOneToOne: false
+            referencedRelation: "shared_dashboards"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
       document_versions: {
         Row: {
           change_summary: string | null
@@ -1580,6 +1621,138 @@ export type Database = {
           user_id?: string
         }
         Relationships: []
+      }
+      shared_dashboard_members: {
+        Row: {
+          can_comment: boolean | null
+          can_share: boolean | null
+          can_upload: boolean | null
+          dashboard_id: string
+          id: string
+          invited_by: string | null
+          joined_at: string | null
+          role: string
+          user_id: string
+        }
+        Insert: {
+          can_comment?: boolean | null
+          can_share?: boolean | null
+          can_upload?: boolean | null
+          dashboard_id: string
+          id?: string
+          invited_by?: string | null
+          joined_at?: string | null
+          role?: string
+          user_id: string
+        }
+        Update: {
+          can_comment?: boolean | null
+          can_share?: boolean | null
+          can_upload?: boolean | null
+          dashboard_id?: string
+          id?: string
+          invited_by?: string | null
+          joined_at?: string | null
+          role?: string
+          user_id?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "shared_dashboard_members_dashboard_id_fkey"
+            columns: ["dashboard_id"]
+            isOneToOne: false
+            referencedRelation: "shared_dashboards"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      shared_dashboards: {
+        Row: {
+          created_at: string | null
+          created_by: string
+          description: string | null
+          id: string
+          is_active: boolean | null
+          name: string
+          settings: Json | null
+          updated_at: string | null
+          visibility: string
+          workspace_id: string | null
+        }
+        Insert: {
+          created_at?: string | null
+          created_by: string
+          description?: string | null
+          id?: string
+          is_active?: boolean | null
+          name: string
+          settings?: Json | null
+          updated_at?: string | null
+          visibility?: string
+          workspace_id?: string | null
+        }
+        Update: {
+          created_at?: string | null
+          created_by?: string
+          description?: string | null
+          id?: string
+          is_active?: boolean | null
+          name?: string
+          settings?: Json | null
+          updated_at?: string | null
+          visibility?: string
+          workspace_id?: string | null
+        }
+        Relationships: [
+          {
+            foreignKeyName: "shared_dashboards_workspace_id_fkey"
+            columns: ["workspace_id"]
+            isOneToOne: false
+            referencedRelation: "workspaces"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      shared_items: {
+        Row: {
+          created_at: string | null
+          dashboard_id: string
+          id: string
+          item_id: string
+          item_type: string
+          note: string | null
+          pin_position: number | null
+          shared_by: string
+        }
+        Insert: {
+          created_at?: string | null
+          dashboard_id: string
+          id?: string
+          item_id: string
+          item_type: string
+          note?: string | null
+          pin_position?: number | null
+          shared_by: string
+        }
+        Update: {
+          created_at?: string | null
+          dashboard_id?: string
+          id?: string
+          item_id?: string
+          item_type?: string
+          note?: string | null
+          pin_position?: number | null
+          shared_by?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "shared_items_dashboard_id_fkey"
+            columns: ["dashboard_id"]
+            isOneToOne: false
+            referencedRelation: "shared_dashboards"
+            referencedColumns: ["id"]
+          },
+        ]
       }
       sonic_agents: {
         Row: {
@@ -2307,6 +2480,14 @@ export type Database = {
       }
       is_channel_member: {
         Args: { _channel_id: string; _user_id: string }
+        Returns: boolean
+      }
+      is_dashboard_admin: {
+        Args: { _dashboard_id: string; _user_id: string }
+        Returns: boolean
+      }
+      is_dashboard_member: {
+        Args: { _dashboard_id: string; _user_id: string }
         Returns: boolean
       }
       is_org_member: {
