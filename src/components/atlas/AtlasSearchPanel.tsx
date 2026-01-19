@@ -29,7 +29,7 @@ export function AtlasSearchPanel({ searches, isExpanded = true }: AtlasSearchPan
         <div className="flex items-center gap-2 mb-2">
           <Globe size={14} className="text-primary" />
           <span className="text-xs font-mono text-muted-foreground">
-            KNOWLEDGE SYNTHESIS
+            ATLAS SEARCH
           </span>
         </div>
         <div className="flex flex-col items-center justify-center py-6 text-center">
@@ -53,7 +53,7 @@ export function AtlasSearchPanel({ searches, isExpanded = true }: AtlasSearchPan
         <div className="flex items-center gap-2">
           <Globe size={14} className="text-primary" />
           <span className="text-xs font-mono text-muted-foreground">
-            KNOWLEDGE SYNTHESIS
+            ATLAS SEARCH
           </span>
         </div>
         <Badge variant="outline" className="text-[10px] font-mono">
