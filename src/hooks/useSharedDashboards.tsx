@@ -52,7 +52,7 @@ export interface DashboardActivity {
   action: string;
   item_type: string | null;
   item_id: string | null;
-  metadata: Record<string, any>;
+  metadata: Record<string, any> | null;
   created_at: string;
   user_name?: string;
 }
@@ -228,7 +228,12 @@ export function useSharedDashboards(userId: string | undefined) {
         .order('created_at', { ascending: false })
         .limit(50);
 
-      setActivities(activityData || []);
+      setActivities((activityData || []).map(a => ({
+        ...a,
+        metadata: (typeof a.metadata === 'object' && a.metadata !== null && !Array.isArray(a.metadata)) 
+          ? a.metadata as Record<string, any> 
+          : null
+      })));
 
       // Setup presence tracking
       if (userId) {
