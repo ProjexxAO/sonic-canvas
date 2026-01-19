@@ -19,7 +19,7 @@ interface SharedDashboardSelectorProps {
   dashboards: SharedDashboard[];
   currentDashboard: SharedDashboard | null;
   onSelect: (dashboardId: string | null) => void;
-  onCreate: (name: string, description?: string) => Promise<SharedDashboard | null>;
+  onCreate: (name: string, description?: string, workspaceId?: string, visibility?: 'private' | 'workspace') => Promise<any>;
   isLoading?: boolean;
 }
 
