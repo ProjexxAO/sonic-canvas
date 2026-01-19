@@ -511,85 +511,31 @@ export function CSuiteDataHub({ userId, agents = [], agentsLoading = false }: CS
                       personaId={userPersona}
                       onActionClick={(actionId) => {
                         const actionRoutes: Record<string, () => void> = {
-                          // CEO actions
-                          strategic_review: () => setActiveTab('insights'),
-                          stakeholder_brief: () => handleDomainClick('communications'),
+                          // Common actions - practical everyday use
+                          inbox: () => handleDomainClick('communications'),
+                          my_tasks: () => handleDomainClick('tasks'),
+                          calendar: () => handleDomainClick('events'),
+                          documents: () => handleDomainClick('documents'),
+                          financials: () => handleDomainClick('financials'),
+                          knowledge: () => handleDomainClick('knowledge'),
+                          
+                          // Role-specific actions
                           kpi_dashboard: () => setActiveTab('insights'),
-                          risk_assessment: () => setActiveTab('insights'),
-                          // CFO actions
-                          cash_flow: () => handleDomainClick('financials'),
-                          financial_forecast: () => setActiveTab('insights'),
-                          compliance_check: () => handleDomainClick('financials'),
-                          expense_report: () => handleDomainClick('financials'),
-                          // COO actions
-                          operations_metrics: () => setActiveTab('insights'),
-                          resource_allocation: () => setActiveTab('insights'),
-                          process_optimization: () => setActiveTab('insights'),
-                          team_performance: () => setActiveTab('insights'),
-                          // Chief of Staff actions
-                          executive_priorities: () => handleDomainClick('tasks'),
-                          cross_functional: () => setActiveTab('insights'),
-                          meeting_prep: () => handleDomainClick('events'),
-                          action_items: () => handleDomainClick('tasks'),
-                          // CTO actions
-                          tech_roadmap: () => handleDomainClick('knowledge'),
-                          innovation_radar: () => setActiveTab('insights'),
-                          tech_debt: () => setActiveTab('insights'),
+                          team_overview: () => setActiveTab('insights'),
                           infrastructure: () => setActiveTab('insights'),
-                          // CISO actions
                           security_posture: () => setActiveTab('insights'),
-                          threat_assessment: () => setActiveTab('insights'),
-                          compliance_audit: () => setActiveTab('insights'),
-                          incident_review: () => setActiveTab('insights'),
-                          // CHRO actions
-                          workforce_analytics: () => setActiveTab('insights'),
-                          talent_pipeline: () => setActiveTab('insights'),
-                          retention_analysis: () => setActiveTab('insights'),
-                          culture_pulse: () => setActiveTab('insights'),
-                          // Chief People actions
-                          engagement_score: () => setActiveTab('insights'),
-                          talent_development: () => setActiveTab('insights'),
-                          wellbeing_check: () => setActiveTab('insights'),
-                          org_culture: () => setActiveTab('insights'),
-                          // CMO actions
-                          campaign_performance: () => setActiveTab('insights'),
-                          brand_health: () => setActiveTab('insights'),
-                          customer_insights: () => handleDomainClick('communications'),
-                          content_calendar: () => handleDomainClick('events'),
-                          // CRO actions
-                          revenue_forecast: () => handleDomainClick('financials'),
-                          pipeline_review: () => setActiveTab('insights'),
-                          sales_performance: () => setActiveTab('insights'),
-                          customer_success: () => setActiveTab('insights'),
-                          // CLO actions
-                          contract_review: () => handleDomainClick('documents'),
-                          legal_matters: () => handleDomainClick('documents'),
-                          ip_portfolio: () => handleDomainClick('knowledge'),
-                          litigation_tracker: () => handleDomainClick('documents'),
-                          // CCO actions
-                          compliance_status: () => setActiveTab('insights'),
-                          regulatory_updates: () => handleDomainClick('documents'),
-                          ethics_review: () => setActiveTab('insights'),
-                          governance_check: () => setActiveTab('insights'),
-                          // Admin actions
-                          system_health: () => setActiveTab('insights'),
+                          compliance: () => setActiveTab('insights'),
+                          campaigns: () => handleDomainClick('communications'),
                           user_management: () => setActiveTab('admin'),
-                          agent_oversight: () => setActiveTab('insights'),
-                          security_monitor: () => setActiveTab('insights'),
-                          // Entrepreneur actions
-                          launch_venture: () => setLaunchVentureOpen(true),
-                          financial_autopilot: () => handleDomainClick('financials'),
+                          system_health: () => setActiveTab('insights'),
+                          
+                          // Entrepreneur-specific dialogs
                           growth_optimizer: () => setGrowthOptimizerOpen(true),
+                          launch_venture: () => setLaunchVentureOpen(true),
                           idea_validator: () => setIdeaValidatorOpen(true),
-                          // Default actions
-                          browse_data: () => {},
-                          view_tasks: () => handleDomainClick('tasks'),
-                          recent_docs: () => handleDomainClick('documents'),
-                          check_calendar: () => handleDomainClick('events'),
                         };
                         const route = actionRoutes[actionId];
                         if (route) route();
-                        else setActiveTab('insights');
                       }}
                       stats={stats}
                     />
