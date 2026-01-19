@@ -75,9 +75,7 @@ import { useOnboarding } from '@/hooks/useOnboarding';
 import { useCSuiteData } from '@/hooks/useCSuiteData';
 import { Button } from '@/components/ui/button';
 import { ScrollArea } from '@/components/ui/scroll-area';
-import { AtlasTaskProgress } from '@/components/atlas/AtlasTaskProgress';
-import { AtlasSearchPanel } from '@/components/atlas/AtlasSearchPanel';
-import { CSuiteDataHub } from '@/components/csuite/CSuiteDataHub';
+import { AtlasRightPanel } from '@/components/atlas/AtlasRightPanel';
 import { OnboardingFlow } from '@/components/onboarding';
 import { useAgentOrchestration } from '@/hooks/useAgentOrchestration';
 
@@ -1308,68 +1306,20 @@ function AtlasPage() {
 
         </div>
 
-        {/* Right Panel - Results & Logs (Scrollable) */}
-        <div className="w-96 flex-shrink-0 flex flex-col gap-4 overflow-y-auto max-h-[calc(100vh-10rem)] pr-2 scrollbar-thin scrollbar-thumb-border scrollbar-track-transparent pb-4">
-          {/* Atlas Task Progress */}
-          <AtlasTaskProgress 
-            tasks={orchestration.tasks}
-            completedTasks={orchestration.completedTasks}
-            isLoading={orchestration.isLoading} 
-            onSyncMemory={orchestration.syncMemoryTasks}
-            onDeleteTask={orchestration.deleteTask}
-          />
-
-          {/* Web Search & Knowledge Synthesis Panel */}
-          <AtlasSearchPanel searches={webSearches} />
-
-          {/* Search Results */}
-          {searchResults.length > 0 && (
-            <div className="bg-card/90 border border-border rounded-lg p-3 shadow-sm">
-              <div className="flex items-center gap-2 mb-2">
-                <Search size={14} className="text-primary" />
-                <span className="text-xs font-mono text-muted-foreground">
-                  SEARCH RESULTS ({searchResults.length})
-                </span>
-              </div>
-              <ScrollArea className="h-32">
-                <div className="space-y-2">
-                  {searchResults.map((agent) => (
-                    <div key={agent.id} className="p-2 bg-background rounded border border-border">
-                      <div className="flex items-center justify-between">
-                        <span className="text-sm font-mono text-foreground">{agent.name}</span>
-                        <span className="text-[10px] text-primary">{agent.sector}</span>
-                      </div>
-                      {agent.similarity && (
-                        <div className="text-[10px] text-muted-foreground">
-                          Match: {(agent.similarity * 100).toFixed(1)}%
-                        </div>
-                      )}
-                    </div>
-                  ))}
-                </div>
-              </ScrollArea>
-            </div>
-          )}
-
-          {/* Synthesized Agent */}
-          {synthesizedAgent && (
-            <div className="bg-card/90 border border-secondary/60 rounded-lg p-3 shadow-sm">
-              <div className="flex items-center gap-2 mb-2">
-                <Sparkles size={14} className="text-secondary" />
-                <span className="text-xs font-mono text-muted-foreground">SYNTHESIZED AGENT</span>
-              </div>
-              <div className="p-2 bg-background rounded border border-border">
-                <div className="text-sm font-mono text-secondary">{synthesizedAgent.name}</div>
-                <div className="text-[10px] text-muted-foreground mt-1">{synthesizedAgent.sector}</div>
-                <div className="text-xs text-foreground/80 mt-2">{synthesizedAgent.description}</div>
-              </div>
-            </div>
-          )}
-
-          {/* C-Suite Data Hub - Consolidated Enterprise Control Center */}
-          <CSuiteDataHub userId={user?.id} agents={agents} agentsLoading={agentsLoading} />
-
-        </div>
+        {/* Right Panel - Tabbed Layout */}
+        <AtlasRightPanel
+          tasks={orchestration.tasks}
+          completedTasks={orchestration.completedTasks}
+          isLoading={orchestration.isLoading}
+          onSyncMemory={orchestration.syncMemoryTasks}
+          onDeleteTask={orchestration.deleteTask}
+          webSearches={webSearches}
+          searchResults={searchResults}
+          synthesizedAgent={synthesizedAgent}
+          userId={user?.id}
+          agents={agents}
+          agentsLoading={agentsLoading}
+        />
       </main>
 
       {/* Bottom Bar - Transcript & Text Input */}
