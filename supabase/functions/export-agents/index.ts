@@ -74,9 +74,18 @@ Deno.serve(async (req) => {
       'stability', 'created_at', 'last_active', 'linked_agents', 'code_artifact'
     ]
 
+    // Escape and sanitize CSV values to prevent formula injection attacks
     const escapeCSV = (value: any): string => {
       if (value === null || value === undefined) return ''
-      const str = String(value)
+      let str = String(value)
+      
+      // Prevent formula injection by prefixing dangerous characters with single quote
+      // This neutralizes formulas when opened in Excel, Google Sheets, etc.
+      if (/^[=+\-@\t\r]/.test(str)) {
+        str = "'" + str
+      }
+      
+      // Escape quotes and wrap in quotes if needed
       if (str.includes(',') || str.includes('"') || str.includes('\n') || str.includes('\r')) {
         return `"${str.replace(/"/g, '""')}"`
       }

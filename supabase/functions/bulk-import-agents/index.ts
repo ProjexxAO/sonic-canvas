@@ -23,6 +23,19 @@ interface AgentRow {
   code_artifact?: string
 }
 
+// Sanitize CSV values to prevent formula injection attacks
+// Prefixes dangerous characters with a single quote to neutralize formulas
+function sanitizeCSVValue(value: string): string {
+  if (!value) return value;
+  
+  // If value starts with formula indicators (=, +, -, @, tab, carriage return), prefix with single quote
+  if (/^[=+\-@\t\r]/.test(value)) {
+    return "'" + value;
+  }
+  
+  return value;
+}
+
 function parseCSV(csvText: string): AgentRow[] {
   const lines = csvText.trim().split('\n')
   if (lines.length < 2) return []
@@ -56,10 +69,11 @@ function parseCSV(csvText: string): AgentRow[] {
       row[header] = values[index] || ''
     })
     
+    // Sanitize all string fields to prevent CSV injection
     agents.push({
       id: row.id || undefined,
-      name: row.name || 'Imported Agent',
-      designation: row.designation || `IMP-${Math.floor(Math.random() * 10000).toString().padStart(4, '0')}`,
+      name: sanitizeCSVValue(row.name || 'Imported Agent'),
+      designation: sanitizeCSVValue(row.designation || `IMP-${Math.floor(Math.random() * 10000).toString().padStart(4, '0')}`),
       sector: mapSector(row.sector),
       status: mapStatus(row.status),
       class: mapClass(row.class),
@@ -67,11 +81,11 @@ function parseCSV(csvText: string): AgentRow[] {
       frequency: parseFloat(row.frequency) || 440,
       modulation: parseFloat(row.modulation) || 5,
       density: parseFloat(row.density) || 50,
-      color: row.color || '#00ffd5',
+      color: sanitizeCSVValue(row.color || '#00ffd5'),
       cycles: parseInt(row.cycles) || 0,
       efficiency: parseFloat(row.efficiency) || 75,
       stability: parseFloat(row.stability) || 85,
-      code_artifact: row.code_artifact || undefined,
+      code_artifact: row.code_artifact ? sanitizeCSVValue(row.code_artifact) : undefined,
     })
   }
   
