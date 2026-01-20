@@ -1,9 +1,10 @@
-// Atlas Sonic OS - Header Component
+// Atlas Sonic OS - Header Component with Sonic Entity Integration
 
-import { useState } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { audioEngine } from '@/lib/audioEngine';
 import { User } from '@supabase/supabase-js';
+import { useSonicEntity } from '@/hooks/useSonicEntity';
+import { CapabilityTemplates } from '@/lib/sonicEntityBridge';
 import WorkspaceSelector from './WorkspaceSelector';
 import { 
   Volume2, 
@@ -14,7 +15,6 @@ import {
   Hexagon,
   LogIn,
   LogOut,
-  User as UserIcon,
   Download,
   MessageCircle,
   Wrench,
@@ -29,8 +29,61 @@ interface HeaderProps {
   onSignOut?: () => void;
 }
 
+// Sonic Entity-enabled Header Button
+function HeaderButton({ 
+  entityName, 
+  onClick, 
+  title, 
+  children, 
+  className = '',
+  importance = 'medium' as const
+}: { 
+  entityName: string;
+  onClick: () => void;
+  title: string;
+  children: React.ReactNode;
+  className?: string;
+  importance?: 'critical' | 'high' | 'medium' | 'low';
+}) {
+  const { recordInteraction, updateState } = useSonicEntity(
+    {
+      name: entityName,
+      category: 'navigation',
+      componentType: 'HeaderButton',
+      importance,
+      capabilities: [CapabilityTemplates.click(title)],
+    },
+    { onClick }
+  );
+
+  const handleClick = () => {
+    recordInteraction();
+    updateState('active');
+    onClick();
+    setTimeout(() => updateState('idle'), 300);
+  };
+
+  return (
+    <button
+      onClick={handleClick}
+      className={className}
+      title={title}
+    >
+      {children}
+    </button>
+  );
+}
+
 export default function Header({ onToggleAudio, audioEnabled, user, onSignOut }: HeaderProps) {
   const navigate = useNavigate();
+  
+  // Register Header as a container entity
+  useSonicEntity({
+    name: 'Main Header',
+    category: 'container',
+    componentType: 'Header',
+    importance: 'high',
+  });
   
   const handleAudioToggle = () => {
     if (!audioEnabled) {
@@ -79,93 +132,109 @@ export default function Header({ onToggleAudio, audioEnabled, user, onSignOut }:
 
       {/* Right controls */}
       <div className="flex items-center gap-2">
-        <button
+        <HeaderButton
+          entityName="Audio Toggle"
           onClick={handleAudioToggle}
+          title={audioEnabled ? 'Mute audio' : 'Enable audio'}
           className={`p-2 rounded transition-all ${
             audioEnabled 
               ? 'bg-primary/20 text-primary' 
               : 'text-muted-foreground hover:text-foreground'
           }`}
-          title={audioEnabled ? 'Mute audio' : 'Enable audio'}
         >
           {audioEnabled ? <Volume2 size={18} /> : <VolumeX size={18} />}
-        </button>
+        </HeaderButton>
         
-        <button
+        <HeaderButton
+          entityName="Atlas Dashboard"
           onClick={() => navigate('/atlas')}
-          className="p-2 text-primary hover:text-primary/80 transition-colors"
           title="Atlas Voice Agent"
+          importance="high"
+          className="p-2 text-primary hover:text-primary/80 transition-colors"
         >
           <MessageCircle size={18} />
-        </button>
+        </HeaderButton>
         
-        <button
+        <HeaderButton
+          entityName="Import Agents"
           onClick={() => navigate('/import')}
-          className="p-2 text-muted-foreground hover:text-foreground transition-colors"
           title="Import Agents"
+          className="p-2 text-muted-foreground hover:text-foreground transition-colors"
         >
           <Download size={18} />
-        </button>
+        </HeaderButton>
         
         {user && (
           <>
-            <button
+            <HeaderButton
+              entityName="Integrations Marketplace"
               onClick={() => navigate('/marketplace')}
-              className="p-2 text-muted-foreground hover:text-foreground transition-colors"
               title="Integrations"
+              className="p-2 text-muted-foreground hover:text-foreground transition-colors"
             >
               <Plug size={18} />
-            </button>
-            <button
+            </HeaderButton>
+            <HeaderButton
+              entityName="Tool Governance"
               onClick={() => navigate('/governance')}
-              className="p-2 text-muted-foreground hover:text-foreground transition-colors"
               title="Tool Governance"
+              className="p-2 text-muted-foreground hover:text-foreground transition-colors"
             >
               <Shield size={18} />
-            </button>
-            <button
+            </HeaderButton>
+            <HeaderButton
+              entityName="Tool Permissions"
               onClick={() => navigate('/workspace/tools')}
-              className="p-2 text-muted-foreground hover:text-foreground transition-colors"
               title="Tool Permissions"
+              className="p-2 text-muted-foreground hover:text-foreground transition-colors"
             >
               <Wrench size={18} />
-            </button>
+            </HeaderButton>
           </>
         )}
         
-        <button
-          className="p-2 text-muted-foreground hover:text-foreground transition-colors"
+        <HeaderButton
+          entityName="Settings"
+          onClick={() => {}}
           title="Settings"
+          className="p-2 text-muted-foreground hover:text-foreground transition-colors"
         >
           <Settings size={18} />
-        </button>
+        </HeaderButton>
         
-        <button
-          className="p-2 text-muted-foreground hover:text-foreground transition-colors"
+        <HeaderButton
+          entityName="Help"
+          onClick={() => {}}
           title="Help"
+          className="p-2 text-muted-foreground hover:text-foreground transition-colors"
         >
           <HelpCircle size={18} />
-        </button>
+        </HeaderButton>
 
         <div className="h-6 w-px bg-border mx-1" />
 
         {user ? (
-          <button
-            onClick={onSignOut}
-            className="flex items-center gap-2 px-3 py-1.5 text-xs text-muted-foreground hover:text-destructive transition-colors"
+          <HeaderButton
+            entityName="Logout"
+            onClick={onSignOut || (() => {})}
             title="Sign out"
+            importance="high"
+            className="flex items-center gap-2 px-3 py-1.5 text-xs text-muted-foreground hover:text-destructive transition-colors"
           >
             <LogOut size={16} />
             <span className="hidden sm:inline">LOGOUT</span>
-          </button>
+          </HeaderButton>
         ) : (
-          <button
+          <HeaderButton
+            entityName="Login"
             onClick={() => navigate('/auth')}
+            title="Login"
+            importance="high"
             className="flex items-center gap-2 px-3 py-1.5 bg-primary/20 text-primary rounded hover:bg-primary/30 transition-colors text-xs"
           >
             <LogIn size={16} />
             <span>LOGIN</span>
-          </button>
+          </HeaderButton>
         )}
       </div>
     </header>
