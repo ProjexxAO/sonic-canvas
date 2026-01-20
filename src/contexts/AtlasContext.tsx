@@ -1723,12 +1723,16 @@ export function AtlasProvider({ children }: AtlasProviderProps) {
     };
   }, [isConnected, conversation]);
 
+  // Extract stable properties from conversation to avoid object reference comparison
+  const conversationStatus = conversation.status;
+  const conversationIsSpeaking = conversation.isSpeaking;
+  
   const value: AtlasContextValue = useMemo(() => ({
     isConnected,
     isConnecting,
     isMuted,
-    isSpeaking: conversation.isSpeaking,
-    status: conversation.status,
+    isSpeaking: conversationIsSpeaking,
+    status: conversationStatus,
     audioLevels,
     inputVolume,
     outputVolume,
@@ -1762,7 +1766,7 @@ export function AtlasProvider({ children }: AtlasProviderProps) {
     setWakeWord,
     conversation,
   }), [
-    isConnected, isConnecting, isMuted, conversation.isSpeaking, conversation.status,
+    isConnected, isConnecting, isMuted, conversationIsSpeaking, conversationStatus,
     audioLevels, inputVolume, outputVolume, frequencyBands, transcript, isTranscribing,
     startConversation, stopConversation, toggleMute, sendTextMessage, sendContextualUpdate,
     goBack, goForward, canGoBack, canGoForward, location.pathname,
