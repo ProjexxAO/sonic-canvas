@@ -31,6 +31,8 @@ interface AtlasRightPanelProps {
   onDeleteTask: (taskId: string) => Promise<void>;
   // Web Search props
   webSearches: WebSearchEntry[];
+  onWebSearch?: (query: string) => void;
+  isSearching?: boolean;
   // Search Results props
   searchResults: SearchResult[];
   // Synthesized Agent props
@@ -48,6 +50,8 @@ export function AtlasRightPanel({
   onSyncMemory,
   onDeleteTask,
   webSearches,
+  onWebSearch,
+  isSearching,
   searchResults,
   synthesizedAgent,
   userId,
@@ -87,7 +91,11 @@ export function AtlasRightPanel({
               />
 
               {/* Web Search & Knowledge Synthesis Panel */}
-              <AtlasSearchPanel searches={webSearches} />
+              <AtlasSearchPanel 
+                searches={webSearches} 
+                onSearch={onWebSearch}
+                isSearching={isSearching}
+              />
 
               {/* Search Results */}
               {searchResults.length > 0 && (

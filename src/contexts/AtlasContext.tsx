@@ -88,6 +88,8 @@ interface AtlasContextValue {
   
   // Web searches tracking
   webSearches: WebSearchEntry[];
+  manualWebSearch: (query: string) => Promise<void>;
+  isWebSearching: boolean;
   
   // Wake word detection
   wakeWordStatus: WakeWordStatus;
@@ -140,6 +142,7 @@ export function AtlasProvider({ children }: AtlasProviderProps) {
   const [searchResults, setSearchResults] = useState<SearchResult[]>([]);
   const [synthesizedAgent, setSynthesizedAgent] = useState<any | null>(null);
   const [webSearches, setWebSearches] = useState<WebSearchEntry[]>([]);
+  const [isWebSearching, setIsWebSearching] = useState(false);
   
   // Wake word settings
   const [wakeWordEnabled, setWakeWordEnabled] = useState(false);
@@ -1586,7 +1589,51 @@ export function AtlasProvider({ children }: AtlasProviderProps) {
     }
   }, [isConnected, conversation]);
 
-
+  // Manual web search (for user-initiated searches from UI)
+  const manualWebSearch = useCallback(async (query: string) => {
+    if (!query.trim()) return;
+    
+    setIsWebSearching(true);
+    const searchId = `search-${Date.now()}-${Math.random().toString(36).slice(2, 9)}`;
+    
+    // Add search entry as "searching"
+    setWebSearches(prev => [{
+      id: searchId,
+      query: query,
+      status: 'searching' as const,
+      timestamp: new Date(),
+      mode: 'search' as const,
+    }, ...prev].slice(0, 20));
+    
+    try {
+      const response = await supabase.functions.invoke('atlas-orchestrator', {
+        body: { action: 'web_search', query: query }
+      });
+      
+      if (response.error) throw response.error;
+      
+      const answer = response.data?.answer || 'No results found';
+      const citations = response.data?.citations || [];
+      
+      // Update search entry to "complete"
+      setWebSearches(prev => prev.map(s => 
+        s.id === searchId ? { ...s, status: 'complete' as const, answer, citations } : s
+      ));
+      
+      toast.success(`Search complete: "${query.slice(0, 30)}${query.length > 30 ? '...' : ''}"`);
+    } catch (error) {
+      const msg = error instanceof Error ? error.message : 'Web search failed';
+      
+      // Update search entry to "error"
+      setWebSearches(prev => prev.map(s => 
+        s.id === searchId ? { ...s, status: 'error' as const } : s
+      ));
+      
+      toast.error('Search failed: ' + msg);
+    } finally {
+      setIsWebSearching(false);
+    }
+  }, []);
   // Audio visualization
   useEffect(() => {
     if (!isConnected) {
@@ -1671,6 +1718,8 @@ export function AtlasProvider({ children }: AtlasProviderProps) {
     searchResults,
     synthesizedAgent,
     webSearches,
+    manualWebSearch,
+    isWebSearching,
     wakeWordStatus,
     wakeWordEnabled,
     setWakeWordEnabled,

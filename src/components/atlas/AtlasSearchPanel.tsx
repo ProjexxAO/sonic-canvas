@@ -2,9 +2,11 @@
 // Displays web searches Atlas undertakes in real-time
 
 import React, { useState } from 'react';
-import { Search, Globe, ExternalLink, Loader2, CheckCircle2, XCircle, Sparkles, ChevronDown, ChevronUp } from 'lucide-react';
+import { Search, Globe, ExternalLink, Loader2, CheckCircle2, XCircle, Sparkles, ChevronDown, ChevronUp, Send } from 'lucide-react';
 import { ScrollArea } from '@/components/ui/scroll-area';
 import { Badge } from '@/components/ui/badge';
+import { Input } from '@/components/ui/input';
+import { Button } from '@/components/ui/button';
 import { formatDistanceToNow } from 'date-fns';
 
 export interface WebSearchEntry {
@@ -19,10 +21,47 @@ export interface WebSearchEntry {
 
 interface AtlasSearchPanelProps {
   searches: WebSearchEntry[];
+  onSearch?: (query: string) => void;
+  isSearching?: boolean;
 }
 
-export function AtlasSearchPanel({ searches }: AtlasSearchPanelProps) {
+export function AtlasSearchPanel({ searches, onSearch, isSearching }: AtlasSearchPanelProps) {
   const [isExpanded, setIsExpanded] = useState(true);
+  const [searchQuery, setSearchQuery] = useState('');
+
+  const handleSubmit = (e: React.FormEvent) => {
+    e.preventDefault();
+    if (searchQuery.trim() && onSearch) {
+      onSearch(searchQuery.trim());
+      setSearchQuery('');
+    }
+  };
+
+  const SearchInput = () => (
+    <form onSubmit={handleSubmit} className="flex gap-2 mt-2">
+      <Input
+        value={searchQuery}
+        onChange={(e) => setSearchQuery(e.target.value)}
+        placeholder="Search the web..."
+        className="h-8 text-xs bg-background/50 border-border/50 focus-visible:ring-primary/30"
+        disabled={isSearching}
+      />
+      <Button 
+        type="submit" 
+        size="sm" 
+        variant="ghost"
+        className="h-8 w-8 p-0 shrink-0"
+        disabled={!searchQuery.trim() || isSearching}
+      >
+        {isSearching ? (
+          <Loader2 size={14} className="animate-spin text-primary" />
+        ) : (
+          <Send size={14} className="text-primary" />
+        )}
+      </Button>
+    </form>
+  );
+
   if (searches.length === 0) {
     return (
       <div className="bg-card/90 border border-border rounded-lg p-3 shadow-sm">
@@ -43,17 +82,20 @@ export function AtlasSearchPanel({ searches }: AtlasSearchPanelProps) {
           )}
         </button>
         {isExpanded && (
-          <div className="flex flex-col items-center justify-center py-6 text-center">
-            <div className="w-10 h-10 rounded-full bg-muted/50 flex items-center justify-center mb-3">
-              <Search size={18} className="text-muted-foreground/50" />
+          <>
+            <SearchInput />
+            <div className="flex flex-col items-center justify-center py-6 text-center">
+              <div className="w-10 h-10 rounded-full bg-muted/50 flex items-center justify-center mb-3">
+                <Search size={18} className="text-muted-foreground/50" />
+              </div>
+              <p className="text-xs text-muted-foreground font-mono">
+                No web searches yet
+              </p>
+              <p className="text-[10px] text-muted-foreground/70 mt-1">
+                Type above or ask Atlas to search
+              </p>
             </div>
-            <p className="text-xs text-muted-foreground font-mono">
-              No web searches yet
-            </p>
-            <p className="text-[10px] text-muted-foreground/70 mt-1">
-              Ask Atlas to search for information
-            </p>
-          </div>
+          </>
         )}
       </div>
     );
@@ -63,7 +105,7 @@ export function AtlasSearchPanel({ searches }: AtlasSearchPanelProps) {
     <div className="bg-card/90 border border-border rounded-lg p-3 shadow-sm">
       <button
         onClick={() => setIsExpanded(!isExpanded)}
-        className="flex items-center justify-between w-full mb-3 hover:opacity-80 transition-opacity"
+        className="flex items-center justify-between w-full hover:opacity-80 transition-opacity"
       >
         <div className="flex items-center gap-2">
           <Globe size={14} className="text-primary" />
@@ -84,13 +126,16 @@ export function AtlasSearchPanel({ searches }: AtlasSearchPanelProps) {
       </button>
 
       {isExpanded && (
-        <ScrollArea className="h-64">
-          <div className="space-y-3">
-            {searches.map((search) => (
-              <SearchEntryCard key={search.id} search={search} />
-            ))}
-          </div>
-        </ScrollArea>
+        <>
+          <SearchInput />
+          <ScrollArea className="h-56 mt-3">
+            <div className="space-y-3">
+              {searches.map((search) => (
+                <SearchEntryCard key={search.id} search={search} />
+              ))}
+            </div>
+          </ScrollArea>
+        </>
       )}
     </div>
   );
