@@ -553,6 +553,447 @@ Respond with a JSON object:
     }
 
     // =============================================
+    // SHARED DASHBOARD ACTIONS
+    // =============================================
+
+    if (action === 'dashboard_list') {
+      // List all dashboards user has access to
+      const { data: memberData, error: memberError } = await supabase
+        .from('shared_dashboard_members')
+        .select('dashboard_id, role')
+        .eq('user_id', userId);
+
+      if (memberError) throw memberError;
+
+      const dashboardIds = memberData?.map(m => m.dashboard_id) || [];
+      
+      if (dashboardIds.length === 0) {
+        return new Response(JSON.stringify({ dashboards: [] }), {
+          headers: { ...corsHeaders, 'Content-Type': 'application/json' },
+        });
+      }
+
+      const { data: dashboards, error: dashError } = await supabase
+        .from('shared_dashboards')
+        .select('id, name, description, created_at, updated_at')
+        .in('id', dashboardIds)
+        .eq('is_active', true);
+
+      if (dashError) throw dashError;
+
+      // Enrich with member counts and user's role
+      const enrichedDashboards = await Promise.all(
+        (dashboards || []).map(async (d) => {
+          const { count } = await supabase
+            .from('shared_dashboard_members')
+            .select('*', { count: 'exact', head: true })
+            .eq('dashboard_id', d.id);
+
+          const myMembership = memberData?.find(m => m.dashboard_id === d.id);
+          
+          return {
+            ...d,
+            member_count: count || 0,
+            role: myMembership?.role || 'viewer',
+          };
+        })
+      );
+
+      return new Response(JSON.stringify({ dashboards: enrichedDashboards }), {
+        headers: { ...corsHeaders, 'Content-Type': 'application/json' },
+      });
+    }
+
+    if (action === 'dashboard_select') {
+      const { dashboardName } = body;
+      
+      // Find dashboard by name (case-insensitive)
+      const { data: dashboards, error } = await supabase
+        .from('shared_dashboards')
+        .select('id, name, description')
+        .ilike('name', `%${dashboardName}%`)
+        .eq('is_active', true)
+        .limit(1);
+
+      if (error) throw error;
+
+      const dashboard = dashboards?.[0];
+      if (!dashboard) {
+        return new Response(JSON.stringify({ error: 'Dashboard not found' }), {
+          status: 404,
+          headers: { ...corsHeaders, 'Content-Type': 'application/json' },
+        });
+      }
+
+      // Verify user is a member
+      const { data: membership } = await supabase
+        .from('shared_dashboard_members')
+        .select('role')
+        .eq('dashboard_id', dashboard.id)
+        .eq('user_id', userId)
+        .single();
+
+      if (!membership) {
+        return new Response(JSON.stringify({ error: 'You are not a member of this dashboard' }), {
+          status: 403,
+          headers: { ...corsHeaders, 'Content-Type': 'application/json' },
+        });
+      }
+
+      // Get member count
+      const { count } = await supabase
+        .from('shared_dashboard_members')
+        .select('*', { count: 'exact', head: true })
+        .eq('dashboard_id', dashboard.id);
+
+      return new Response(JSON.stringify({ 
+        dashboard: {
+          ...dashboard,
+          role: membership.role,
+          member_count: count || 0,
+        }
+      }), {
+        headers: { ...corsHeaders, 'Content-Type': 'application/json' },
+      });
+    }
+
+    if (action === 'dashboard_messages') {
+      const { dashboardName, limit = 20 } = body;
+      
+      let dashboardId: string | null = null;
+
+      if (dashboardName) {
+        const { data } = await supabase
+          .from('shared_dashboards')
+          .select('id')
+          .ilike('name', `%${dashboardName}%`)
+          .limit(1);
+        dashboardId = data?.[0]?.id || null;
+      } else {
+        // Get user's most recent dashboard
+        const { data: memberData } = await supabase
+          .from('shared_dashboard_members')
+          .select('dashboard_id')
+          .eq('user_id', userId)
+          .limit(1);
+        dashboardId = memberData?.[0]?.dashboard_id || null;
+      }
+
+      if (!dashboardId) {
+        return new Response(JSON.stringify({ messages: [], error: 'No dashboard found' }), {
+          headers: { ...corsHeaders, 'Content-Type': 'application/json' },
+        });
+      }
+
+      // Get messages with user info
+      const { data: messages, error } = await supabase
+        .from('dashboard_messages')
+        .select('id, content, user_id, created_at, is_edited, mentions')
+        .eq('dashboard_id', dashboardId)
+        .order('created_at', { ascending: false })
+        .limit(limit);
+
+      if (error) throw error;
+
+      // Enrich with user names
+      const userIds = [...new Set((messages || []).map(m => m.user_id))];
+      const { data: profiles } = await supabase
+        .from('profiles')
+        .select('user_id, display_name')
+        .in('user_id', userIds);
+
+      const profileMap = new Map(profiles?.map(p => [p.user_id, p.display_name]) || []);
+
+      const enrichedMessages = (messages || []).map(m => ({
+        ...m,
+        sender_name: profileMap.get(m.user_id) || 'Unknown User',
+      }));
+
+      return new Response(JSON.stringify({ messages: enrichedMessages }), {
+        headers: { ...corsHeaders, 'Content-Type': 'application/json' },
+      });
+    }
+
+    if (action === 'dashboard_send_message') {
+      const { dashboardName, message } = body;
+      
+      let dashboardId: string | null = null;
+
+      if (dashboardName) {
+        const { data } = await supabase
+          .from('shared_dashboards')
+          .select('id')
+          .ilike('name', `%${dashboardName}%`)
+          .limit(1);
+        dashboardId = data?.[0]?.id || null;
+      } else {
+        const { data: memberData } = await supabase
+          .from('shared_dashboard_members')
+          .select('dashboard_id')
+          .eq('user_id', userId)
+          .limit(1);
+        dashboardId = memberData?.[0]?.dashboard_id || null;
+      }
+
+      if (!dashboardId) {
+        return new Response(JSON.stringify({ error: 'No dashboard found' }), {
+          status: 404,
+          headers: { ...corsHeaders, 'Content-Type': 'application/json' },
+        });
+      }
+
+      // Check user has permission to comment
+      const { data: membership } = await supabase
+        .from('shared_dashboard_members')
+        .select('can_comment')
+        .eq('dashboard_id', dashboardId)
+        .eq('user_id', userId)
+        .single();
+
+      if (!membership?.can_comment) {
+        return new Response(JSON.stringify({ error: 'You do not have permission to send messages' }), {
+          status: 403,
+          headers: { ...corsHeaders, 'Content-Type': 'application/json' },
+        });
+      }
+
+      // Insert message
+      const { data: newMessage, error } = await supabase
+        .from('dashboard_messages')
+        .insert({
+          dashboard_id: dashboardId,
+          user_id: userId,
+          content: message,
+        })
+        .select()
+        .single();
+
+      if (error) throw error;
+
+      return new Response(JSON.stringify({ success: true, message: newMessage }), {
+        headers: { ...corsHeaders, 'Content-Type': 'application/json' },
+      });
+    }
+
+    if (action === 'dashboard_files') {
+      const { dashboardName } = body;
+      
+      let dashboardId: string | null = null;
+
+      if (dashboardName) {
+        const { data } = await supabase
+          .from('shared_dashboards')
+          .select('id')
+          .ilike('name', `%${dashboardName}%`)
+          .limit(1);
+        dashboardId = data?.[0]?.id || null;
+      } else {
+        const { data: memberData } = await supabase
+          .from('shared_dashboard_members')
+          .select('dashboard_id')
+          .eq('user_id', userId)
+          .limit(1);
+        dashboardId = memberData?.[0]?.dashboard_id || null;
+      }
+
+      if (!dashboardId) {
+        return new Response(JSON.stringify({ files: [] }), {
+          headers: { ...corsHeaders, 'Content-Type': 'application/json' },
+        });
+      }
+
+      const { data: files, error } = await supabase
+        .from('dashboard_files')
+        .select('id, file_name, file_size, mime_type, uploaded_by, created_at')
+        .eq('dashboard_id', dashboardId)
+        .order('created_at', { ascending: false });
+
+      if (error) throw error;
+
+      // Enrich with uploader names and format size
+      const uploaderIds = [...new Set((files || []).map(f => f.uploaded_by))];
+      const { data: profiles } = await supabase
+        .from('profiles')
+        .select('user_id, display_name')
+        .in('user_id', uploaderIds);
+
+      const profileMap = new Map(profiles?.map(p => [p.user_id, p.display_name]) || []);
+
+      const formatSize = (bytes: number | null): string => {
+        if (!bytes) return 'Unknown size';
+        if (bytes < 1024) return `${bytes} B`;
+        if (bytes < 1024 * 1024) return `${(bytes / 1024).toFixed(1)} KB`;
+        return `${(bytes / (1024 * 1024)).toFixed(1)} MB`;
+      };
+
+      const enrichedFiles = (files || []).map(f => ({
+        ...f,
+        uploader_name: profileMap.get(f.uploaded_by) || 'Unknown',
+        size_formatted: formatSize(f.file_size),
+      }));
+
+      return new Response(JSON.stringify({ files: enrichedFiles }), {
+        headers: { ...corsHeaders, 'Content-Type': 'application/json' },
+      });
+    }
+
+    if (action === 'dashboard_notifications') {
+      const { data: notifications, error } = await supabase
+        .from('dashboard_notifications')
+        .select('id, title, message, notification_type, is_read, created_at, dashboard_id, actor_id')
+        .eq('user_id', userId)
+        .order('created_at', { ascending: false })
+        .limit(20);
+
+      if (error) throw error;
+
+      return new Response(JSON.stringify({ notifications: notifications || [] }), {
+        headers: { ...corsHeaders, 'Content-Type': 'application/json' },
+      });
+    }
+
+    if (action === 'dashboard_members') {
+      const { dashboardName } = body;
+      
+      let dashboardId: string | null = null;
+
+      if (dashboardName) {
+        const { data } = await supabase
+          .from('shared_dashboards')
+          .select('id')
+          .ilike('name', `%${dashboardName}%`)
+          .limit(1);
+        dashboardId = data?.[0]?.id || null;
+      } else {
+        const { data: memberData } = await supabase
+          .from('shared_dashboard_members')
+          .select('dashboard_id')
+          .eq('user_id', userId)
+          .limit(1);
+        dashboardId = memberData?.[0]?.dashboard_id || null;
+      }
+
+      if (!dashboardId) {
+        return new Response(JSON.stringify({ members: [] }), {
+          headers: { ...corsHeaders, 'Content-Type': 'application/json' },
+        });
+      }
+
+      const { data: members, error } = await supabase
+        .from('shared_dashboard_members')
+        .select('user_id, role, can_comment, can_share, can_upload, joined_at')
+        .eq('dashboard_id', dashboardId);
+
+      if (error) throw error;
+
+      // Enrich with profile info
+      const userIds = (members || []).map(m => m.user_id);
+      const { data: profiles } = await supabase
+        .from('profiles')
+        .select('user_id, display_name, avatar_url')
+        .in('user_id', userIds);
+
+      const profileMap = new Map(profiles?.map(p => [p.user_id, p]) || []);
+
+      const enrichedMembers = (members || []).map(m => ({
+        ...m,
+        display_name: profileMap.get(m.user_id)?.display_name || 'Unknown User',
+        avatar_url: profileMap.get(m.user_id)?.avatar_url,
+      }));
+
+      return new Response(JSON.stringify({ members: enrichedMembers }), {
+        headers: { ...corsHeaders, 'Content-Type': 'application/json' },
+      });
+    }
+
+    if (action === 'dashboard_summary') {
+      const { dashboardName } = body;
+      
+      let dashboardId: string | null = null;
+      let dashboardNameResolved = dashboardName;
+
+      if (dashboardName) {
+        const { data } = await supabase
+          .from('shared_dashboards')
+          .select('id, name')
+          .ilike('name', `%${dashboardName}%`)
+          .limit(1);
+        dashboardId = data?.[0]?.id || null;
+        dashboardNameResolved = data?.[0]?.name || dashboardName;
+      } else {
+        const { data: memberData } = await supabase
+          .from('shared_dashboard_members')
+          .select('dashboard_id')
+          .eq('user_id', userId)
+          .limit(1);
+        dashboardId = memberData?.[0]?.dashboard_id || null;
+        
+        if (dashboardId) {
+          const { data } = await supabase
+            .from('shared_dashboards')
+            .select('name')
+            .eq('id', dashboardId)
+            .single();
+          dashboardNameResolved = data?.name || 'Dashboard';
+        }
+      }
+
+      if (!dashboardId) {
+        return new Response(JSON.stringify({ summary: 'No dashboard found to summarize.' }), {
+          headers: { ...corsHeaders, 'Content-Type': 'application/json' },
+        });
+      }
+
+      // Gather dashboard data for AI summary
+      const [messagesRes, filesRes, membersRes, activitiesRes] = await Promise.all([
+        supabase.from('dashboard_messages').select('content, created_at').eq('dashboard_id', dashboardId).order('created_at', { ascending: false }).limit(20),
+        supabase.from('dashboard_files').select('file_name, created_at').eq('dashboard_id', dashboardId).limit(10),
+        supabase.from('shared_dashboard_members').select('role').eq('dashboard_id', dashboardId),
+        supabase.from('dashboard_activity').select('action, item_type, created_at').eq('dashboard_id', dashboardId).order('created_at', { ascending: false }).limit(20),
+      ]);
+
+      const context = {
+        name: dashboardNameResolved,
+        messageCount: messagesRes.data?.length || 0,
+        recentMessages: messagesRes.data?.slice(0, 5).map(m => m.content.slice(0, 100)) || [],
+        fileCount: filesRes.data?.length || 0,
+        recentFiles: filesRes.data?.map(f => f.file_name) || [],
+        memberCount: membersRes.data?.length || 0,
+        roles: membersRes.data?.map(m => m.role) || [],
+        recentActivity: activitiesRes.data?.slice(0, 5).map(a => a.action) || [],
+      };
+
+      // Generate AI summary
+      const aiResponse = await fetch('https://ai.gateway.lovable.dev/v1/chat/completions', {
+        method: 'POST',
+        headers: {
+          'Authorization': `Bearer ${lovableApiKey}`,
+          'Content-Type': 'application/json',
+        },
+        body: JSON.stringify({
+          model: 'google/gemini-2.5-flash',
+          messages: [
+            { role: 'system', content: 'You are Atlas, a helpful AI assistant. Generate a concise but informative summary of a shared dashboard based on the provided context. Focus on recent activity, key discussions, and team composition.' },
+            { role: 'user', content: `Summarize this dashboard:\n${JSON.stringify(context, null, 2)}` },
+          ],
+        }),
+      });
+
+      if (!aiResponse.ok) {
+        return new Response(JSON.stringify({ summary: 'Unable to generate summary at this time.' }), {
+          headers: { ...corsHeaders, 'Content-Type': 'application/json' },
+        });
+      }
+
+      const aiData = await aiResponse.json();
+      const summary = aiData.choices?.[0]?.message?.content || 'No summary available.';
+
+      return new Response(JSON.stringify({ summary }), {
+        headers: { ...corsHeaders, 'Content-Type': 'application/json' },
+      });
+    }
+
+    // =============================================
     // EXISTING SEARCH/SYNTHESIS ACTIONS
     // =============================================
 
