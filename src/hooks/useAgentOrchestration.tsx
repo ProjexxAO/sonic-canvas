@@ -522,6 +522,7 @@ export function useAgentOrchestration(userId: string | undefined) {
       }
 
       setTasks(prev => prev.filter(t => t.id !== taskId));
+      setCompletedTasks(prev => prev.filter(t => t.id !== taskId));
       toast.success('Task deleted');
     } catch (error) {
       console.error('Error deleting task:', error);
