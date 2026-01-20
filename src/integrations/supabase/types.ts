@@ -2606,6 +2606,54 @@ export type Database = {
           },
         ]
       }
+      user_accessibility_settings: {
+        Row: {
+          audio_feedback_enabled: boolean
+          audio_volume: number
+          color_blind_mode: string | null
+          created_at: string
+          dyslexia_friendly: boolean
+          font_size: string
+          high_contrast: boolean
+          id: string
+          keyboard_navigation_hints: boolean
+          reduced_motion: boolean
+          screen_reader_optimized: boolean
+          updated_at: string
+          user_id: string
+        }
+        Insert: {
+          audio_feedback_enabled?: boolean
+          audio_volume?: number
+          color_blind_mode?: string | null
+          created_at?: string
+          dyslexia_friendly?: boolean
+          font_size?: string
+          high_contrast?: boolean
+          id?: string
+          keyboard_navigation_hints?: boolean
+          reduced_motion?: boolean
+          screen_reader_optimized?: boolean
+          updated_at?: string
+          user_id: string
+        }
+        Update: {
+          audio_feedback_enabled?: boolean
+          audio_volume?: number
+          color_blind_mode?: string | null
+          created_at?: string
+          dyslexia_friendly?: boolean
+          font_size?: string
+          high_contrast?: boolean
+          id?: string
+          keyboard_navigation_hints?: boolean
+          reduced_motion?: boolean
+          screen_reader_optimized?: boolean
+          updated_at?: string
+          user_id?: string
+        }
+        Relationships: []
+      }
       user_agents: {
         Row: {
           agent_id: string
@@ -2637,6 +2685,87 @@ export type Database = {
             referencedColumns: ["id"]
           },
         ]
+      }
+      user_difficulty_preferences: {
+        Row: {
+          agent_autonomy_preference: string
+          auto_adjust_enabled: boolean
+          created_at: string
+          domain_difficulties: Json
+          global_difficulty: string
+          id: string
+          report_complexity: string
+          show_advanced_features: boolean
+          updated_at: string
+          user_id: string
+        }
+        Insert: {
+          agent_autonomy_preference?: string
+          auto_adjust_enabled?: boolean
+          created_at?: string
+          domain_difficulties?: Json
+          global_difficulty?: string
+          id?: string
+          report_complexity?: string
+          show_advanced_features?: boolean
+          updated_at?: string
+          user_id: string
+        }
+        Update: {
+          agent_autonomy_preference?: string
+          auto_adjust_enabled?: boolean
+          created_at?: string
+          domain_difficulties?: Json
+          global_difficulty?: string
+          id?: string
+          report_complexity?: string
+          show_advanced_features?: boolean
+          updated_at?: string
+          user_id?: string
+        }
+        Relationships: []
+      }
+      user_learning_progress: {
+        Row: {
+          achievements: string[] | null
+          created_at: string
+          id: string
+          last_activity_at: string | null
+          skill_category: string
+          skill_level: number
+          total_actions: number
+          unlocked_features: string[] | null
+          updated_at: string
+          user_id: string
+          xp_points: number
+        }
+        Insert: {
+          achievements?: string[] | null
+          created_at?: string
+          id?: string
+          last_activity_at?: string | null
+          skill_category: string
+          skill_level?: number
+          total_actions?: number
+          unlocked_features?: string[] | null
+          updated_at?: string
+          user_id: string
+          xp_points?: number
+        }
+        Update: {
+          achievements?: string[] | null
+          created_at?: string
+          id?: string
+          last_activity_at?: string | null
+          skill_category?: string
+          skill_level?: number
+          total_actions?: number
+          unlocked_features?: string[] | null
+          updated_at?: string
+          user_id?: string
+          xp_points?: number
+        }
+        Relationships: []
       }
       user_memory_messages: {
         Row: {
@@ -2694,6 +2823,36 @@ export type Database = {
           message_count?: number | null
           summary?: string
           updated_at?: string
+          user_id?: string
+        }
+        Relationships: []
+      }
+      user_preference_surveys: {
+        Row: {
+          context: Json | null
+          created_at: string
+          id: string
+          question_id: string
+          response: Json
+          survey_type: string
+          user_id: string
+        }
+        Insert: {
+          context?: Json | null
+          created_at?: string
+          id?: string
+          question_id: string
+          response: Json
+          survey_type: string
+          user_id: string
+        }
+        Update: {
+          context?: Json | null
+          created_at?: string
+          id?: string
+          question_id?: string
+          response?: Json
+          survey_type?: string
           user_id?: string
         }
         Relationships: []
