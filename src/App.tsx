@@ -9,6 +9,7 @@ import { WorkspacesProvider } from "@/hooks/useWorkspaces";
 import { useVoiceCommandExecutor } from "@/hooks/useVoiceCommandExecutor";
 import { AtlasProvider } from "@/contexts/AtlasContext";
 import { GlobalAtlasOrb } from "@/components/atlas/GlobalAtlasOrb";
+import { GlobalAccessibilityHandler } from "@/components/personalization/GlobalAccessibilityHandler";
 import Index from "./pages/Index";
 import Auth from "./pages/Auth";
 import Atlas from "./pages/Atlas";
@@ -42,6 +43,7 @@ const App = () => (
             <BrowserRouter>
               <AtlasProvider>
                 <VoiceCommandHandler />
+                <GlobalAccessibilityHandler />
                 <Routes>
                   <Route path="/" element={<Index />} />
                   <Route path="/auth" element={<Auth />} />
