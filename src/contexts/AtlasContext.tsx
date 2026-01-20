@@ -10,6 +10,7 @@ import { useAuth } from '@/hooks/useAuth';
 import { useDashboardAgents } from '@/hooks/useDashboardAgents';
 import { useDataHubController, getDomainKeyFromName, getTabFromName, getPersonaFromName } from '@/hooks/useDataHubController';
 import { useWakeWordDetection, WakeWordStatus, WakeWordName } from '@/hooks/useWakeWordDetection';
+import { atlasUIClientTools } from '@/lib/atlasUIBridge';
 import { supabase } from '@/integrations/supabase/client';
 import { toast } from 'sonner';
 
