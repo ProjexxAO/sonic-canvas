@@ -259,11 +259,30 @@ export function useAtlasMemory({
   }, [userId, agentId, buildContextString]);
 
   // Memoize return value to prevent infinite loops in consumers
+  // Use individual state properties instead of the state object to avoid new object reference on every render
   return useMemo(() => ({
-    ...state,
+    messages: state.messages,
+    summary: state.summary,
+    contextString: state.contextString,
+    isLoading: state.isLoading,
+    isLoaded: state.isLoaded,
+    error: state.error,
+    lastLoadedAt: state.lastLoadedAt,
     loadMemory,
     refreshMemory,
     storeMessage,
     clearLocalMemory
-  }), [state, loadMemory, refreshMemory, storeMessage, clearLocalMemory]);
+  }), [
+    state.messages, 
+    state.summary, 
+    state.contextString, 
+    state.isLoading, 
+    state.isLoaded, 
+    state.error, 
+    state.lastLoadedAt,
+    loadMemory, 
+    refreshMemory, 
+    storeMessage, 
+    clearLocalMemory
+  ]);
 }
