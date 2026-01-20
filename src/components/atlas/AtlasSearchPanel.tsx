@@ -128,7 +128,7 @@ export function AtlasSearchPanel({ searches, onSearch, isSearching }: AtlasSearc
       {isExpanded && (
         <>
           {searchInputElement}
-          <ScrollArea className="h-56 mt-3">
+          <ScrollArea className="h-72 mt-3">
             <div className="space-y-3">
               {searches.map((search) => (
                 <SearchEntryCard key={search.id} search={search} />
@@ -191,7 +191,7 @@ function SearchEntryCard({ search }: { search: WebSearchEntry }) {
             <Sparkles size={10} className="text-primary" />
             <span className="text-[10px] font-mono text-primary">SYNTHESIS</span>
           </div>
-          <p className="text-xs text-foreground/90 line-clamp-3 leading-relaxed">
+          <p className="text-xs text-foreground/90 leading-relaxed whitespace-pre-wrap">
             {search.answer}
           </p>
         </div>
