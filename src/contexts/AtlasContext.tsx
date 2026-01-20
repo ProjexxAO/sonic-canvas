@@ -156,6 +156,12 @@ export function AtlasProvider({ children }: AtlasProviderProps) {
   
   // Memory
   const atlasMemory = useAtlasMemory({ userId: user?.id, autoLoad: true, messageLimit: 20 });
+  const atlasMemoryRef = useRef(atlasMemory);
+  
+  // Keep atlasMemory ref updated
+  useEffect(() => {
+    atlasMemoryRef.current = atlasMemory;
+  }, [atlasMemory]);
   
   // Refs
   const lastSavedMessageRef = useRef<string>('');
@@ -1429,7 +1435,7 @@ export function AtlasProvider({ children }: AtlasProviderProps) {
           lastSavedMessageRef.current = content;
           const role = message.role === "agent" ? 'assistant' : 'user';
           
-          atlasMemory.storeMessage(role, content, {
+          atlasMemoryRef.current.storeMessage(role, content, {
             timestamp: new Date().toISOString(),
             source: 'voice'
           });
@@ -1448,7 +1454,7 @@ export function AtlasProvider({ children }: AtlasProviderProps) {
       addLogRef.current('system', { error }, 'Connection error', 'error');
       toast.error('Atlas connection error');
     },
-  }), [navigate, location.pathname, goBack, goForward, historyIndex, historyStack, atlasMemory]);
+  }), [navigate, location.pathname, goBack, goForward, historyIndex, historyStack]);
 
   const conversation = useConversation({
     ...conversationConfig,
@@ -1514,8 +1520,8 @@ export function AtlasProvider({ children }: AtlasProviderProps) {
 
       const userDisplayName = user?.email?.split("@")[0] || "Operator";
       
-      if (atlasMemory.contextString) {
-        pendingMemoryContextRef.current = atlasMemory.contextString;
+      if (atlasMemoryRef.current.contextString) {
+        pendingMemoryContextRef.current = atlasMemoryRef.current.contextString;
       }
 
       await conversation.startSession({
@@ -1533,7 +1539,7 @@ export function AtlasProvider({ children }: AtlasProviderProps) {
       startConversationLockRef.current = false;
       setIsConnecting(false);
     }
-  }, [conversation, isConnecting, user, atlasMemory.contextString]);
+  }, [conversation, isConnecting, user]);
 
   // Keep ref updated (no deps to avoid loop)
   startConversationRef.current = startConversation;
@@ -1569,7 +1575,7 @@ export function AtlasProvider({ children }: AtlasProviderProps) {
       setTranscript(`You: ${text}`);
 
       // Store to memory for Atlas context
-      atlasMemory.storeMessage('user', text, {
+      atlasMemoryRef.current.storeMessage('user', text, {
         timestamp: new Date().toISOString(),
         source: 'text'
       });
@@ -1580,7 +1586,7 @@ export function AtlasProvider({ children }: AtlasProviderProps) {
         useVoiceCommandBus.getState().sendCommand(intent.command);
       }
     }
-  }, [atlasMemory]);
+  }, []);
 
   // Send contextual update to Atlas
   const sendContextualUpdate = useCallback((text: string) => {
