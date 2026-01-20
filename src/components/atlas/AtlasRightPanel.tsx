@@ -1,11 +1,12 @@
-// Atlas Right Panel - Tabbed layout for Operations and Data Hub
+// Atlas Right Panel - Tabbed layout for Operations, Data Hub, and Knowledge Discovery
 import React from 'react';
-import { Activity, Database, Search, Sparkles } from 'lucide-react';
+import { Activity, Database, Search, Sparkles, Brain } from 'lucide-react';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
 import { ScrollArea } from '@/components/ui/scroll-area';
 import { AtlasTaskProgress } from './AtlasTaskProgress';
 import { AtlasSearchPanel, WebSearchEntry } from './AtlasSearchPanel';
 import { CSuiteDataHub } from '@/components/csuite/CSuiteDataHub';
+import { KnowledgeDiscoveryPanel } from './KnowledgeDiscoveryPanel';
 import { AgentTask } from '@/hooks/useAgentOrchestration';
 
 interface SearchResult {
@@ -61,20 +62,27 @@ export function AtlasRightPanel({
   return (
     <div className="w-96 flex-shrink-0 flex flex-col h-[calc(100vh-10rem)]">
       <Tabs defaultValue="operations" className="flex flex-col h-full">
-        <TabsList className="w-full grid grid-cols-2 bg-muted/50 border border-border rounded-lg p-1 mb-3 flex-shrink-0">
+        <TabsList className="w-full grid grid-cols-3 bg-muted/50 border border-border rounded-lg p-1 mb-3 flex-shrink-0">
           <TabsTrigger 
             value="operations" 
-            className="flex items-center gap-2 text-xs font-mono data-[state=active]:bg-background data-[state=active]:shadow-sm"
+            className="flex items-center gap-1.5 text-xs font-mono data-[state=active]:bg-background data-[state=active]:shadow-sm"
           >
             <Activity size={14} />
-            Operations
+            Ops
           </TabsTrigger>
           <TabsTrigger 
             value="datahub" 
-            className="flex items-center gap-2 text-xs font-mono data-[state=active]:bg-background data-[state=active]:shadow-sm"
+            className="flex items-center gap-1.5 text-xs font-mono data-[state=active]:bg-background data-[state=active]:shadow-sm"
           >
             <Database size={14} />
-            Data Hub
+            Data
+          </TabsTrigger>
+          <TabsTrigger 
+            value="discovery" 
+            className="flex items-center gap-1.5 text-xs font-mono data-[state=active]:bg-background data-[state=active]:shadow-sm"
+          >
+            <Brain size={14} />
+            Discover
           </TabsTrigger>
         </TabsList>
 
@@ -147,6 +155,12 @@ export function AtlasRightPanel({
         <TabsContent value="datahub" className="flex-1 mt-0 overflow-hidden flex flex-col min-h-0">
           <div className="flex-1 min-h-0 overflow-auto">
             <CSuiteDataHub userId={userId} agents={agents} agentsLoading={agentsLoading} />
+          </div>
+        </TabsContent>
+
+        <TabsContent value="discovery" className="flex-1 mt-0 overflow-hidden flex flex-col min-h-0">
+          <div className="flex-1 min-h-0 bg-card/90 border border-border rounded-lg overflow-hidden">
+            <KnowledgeDiscoveryPanel />
           </div>
         </TabsContent>
       </Tabs>
