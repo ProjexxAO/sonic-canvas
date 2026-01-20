@@ -1143,6 +1143,154 @@ export type Database = {
           },
         ]
       }
+      dashboard_files: {
+        Row: {
+          created_at: string | null
+          dashboard_id: string
+          description: string | null
+          file_name: string
+          file_path: string
+          file_size: number | null
+          id: string
+          mime_type: string | null
+          uploaded_by: string
+        }
+        Insert: {
+          created_at?: string | null
+          dashboard_id: string
+          description?: string | null
+          file_name: string
+          file_path: string
+          file_size?: number | null
+          id?: string
+          mime_type?: string | null
+          uploaded_by: string
+        }
+        Update: {
+          created_at?: string | null
+          dashboard_id?: string
+          description?: string | null
+          file_name?: string
+          file_path?: string
+          file_size?: number | null
+          id?: string
+          mime_type?: string | null
+          uploaded_by?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "dashboard_files_dashboard_id_fkey"
+            columns: ["dashboard_id"]
+            isOneToOne: false
+            referencedRelation: "shared_dashboards"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      dashboard_messages: {
+        Row: {
+          attachments: Json | null
+          content: string
+          created_at: string | null
+          dashboard_id: string
+          id: string
+          is_edited: boolean | null
+          mentions: string[] | null
+          reply_to_id: string | null
+          updated_at: string | null
+          user_id: string
+        }
+        Insert: {
+          attachments?: Json | null
+          content: string
+          created_at?: string | null
+          dashboard_id: string
+          id?: string
+          is_edited?: boolean | null
+          mentions?: string[] | null
+          reply_to_id?: string | null
+          updated_at?: string | null
+          user_id: string
+        }
+        Update: {
+          attachments?: Json | null
+          content?: string
+          created_at?: string | null
+          dashboard_id?: string
+          id?: string
+          is_edited?: boolean | null
+          mentions?: string[] | null
+          reply_to_id?: string | null
+          updated_at?: string | null
+          user_id?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "dashboard_messages_dashboard_id_fkey"
+            columns: ["dashboard_id"]
+            isOneToOne: false
+            referencedRelation: "shared_dashboards"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "dashboard_messages_reply_to_id_fkey"
+            columns: ["reply_to_id"]
+            isOneToOne: false
+            referencedRelation: "dashboard_messages"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      dashboard_notifications: {
+        Row: {
+          actor_id: string
+          created_at: string | null
+          dashboard_id: string
+          id: string
+          is_read: boolean | null
+          message: string | null
+          notification_type: string
+          reference_id: string | null
+          reference_type: string | null
+          title: string
+          user_id: string
+        }
+        Insert: {
+          actor_id: string
+          created_at?: string | null
+          dashboard_id: string
+          id?: string
+          is_read?: boolean | null
+          message?: string | null
+          notification_type: string
+          reference_id?: string | null
+          reference_type?: string | null
+          title: string
+          user_id: string
+        }
+        Update: {
+          actor_id?: string
+          created_at?: string | null
+          dashboard_id?: string
+          id?: string
+          is_read?: boolean | null
+          message?: string | null
+          notification_type?: string
+          reference_id?: string | null
+          reference_type?: string | null
+          title?: string
+          user_id?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "dashboard_notifications_dashboard_id_fkey"
+            columns: ["dashboard_id"]
+            isOneToOne: false
+            referencedRelation: "shared_dashboards"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
       document_versions: {
         Row: {
           change_summary: string | null
@@ -1261,6 +1409,47 @@ export type Database = {
           user_id?: string
         }
         Relationships: []
+      }
+      item_comments: {
+        Row: {
+          content: string
+          created_at: string | null
+          id: string
+          is_edited: boolean | null
+          mentions: string[] | null
+          shared_item_id: string
+          updated_at: string | null
+          user_id: string
+        }
+        Insert: {
+          content: string
+          created_at?: string | null
+          id?: string
+          is_edited?: boolean | null
+          mentions?: string[] | null
+          shared_item_id: string
+          updated_at?: string | null
+          user_id: string
+        }
+        Update: {
+          content?: string
+          created_at?: string | null
+          id?: string
+          is_edited?: boolean | null
+          mentions?: string[] | null
+          shared_item_id?: string
+          updated_at?: string | null
+          user_id?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "item_comments_shared_item_id_fkey"
+            columns: ["shared_item_id"]
+            isOneToOne: false
+            referencedRelation: "shared_items"
+            referencedColumns: ["id"]
+          },
+        ]
       }
       message_reactions: {
         Row: {
