@@ -1417,6 +1417,48 @@ export function AtlasProvider({ children }: AtlasProviderProps) {
           return `Error: ${msg}`;
         }
       },
+
+      // ============= SONIC ENTITY UI BRIDGE TOOLS =============
+
+      // Perceive the current UI state as Sonic Entities
+      perceiveUI: () => {
+        addLogRef.current('perceiveUI', {}, 'Perceiving UI...', 'success');
+        return atlasUIClientTools.perceiveUI();
+      },
+
+      // Query UI elements by natural language
+      queryUI: (params: { query: string }) => {
+        addLogRef.current('queryUI', params, 'Querying UI...', 'success');
+        return atlasUIClientTools.queryUI(params);
+      },
+
+      // Execute an action on a UI entity
+      executeUIAction: async (params: { entityId: string; action: string; parameters?: Record<string, unknown> }) => {
+        const logId = addLogRef.current('executeUIAction', params, 'Executing action...', 'pending');
+        const result = await atlasUIClientTools.executeUIAction(params);
+        setActionLogs(prev => prev.map(l =>
+          l.id === logId ? { ...l, result, status: result.includes('Error') ? 'error' : 'success' } : l
+        ));
+        return result;
+      },
+
+      // Find relevant UI elements for a given context
+      findRelevantUI: (params: { context: string; limit?: number }) => {
+        addLogRef.current('findRelevantUI', params, 'Finding relevant UI...', 'success');
+        return atlasUIClientTools.findRelevantUI(params);
+      },
+
+      // Get detailed description of a UI element
+      describeUIElement: (params: { entityId: string }) => {
+        addLogRef.current('describeUIElement', params, 'Describing element...', 'success');
+        return atlasUIClientTools.describeUIElement(params);
+      },
+
+      // Get all actionable elements in the current UI
+      getActionableElements: () => {
+        addLogRef.current('getActionableElements', {}, 'Getting actions...', 'success');
+        return atlasUIClientTools.getActionableElements();
+      },
     },
     onConnect: () => {
       console.log("[Atlas Global] Connected to voice agent");
