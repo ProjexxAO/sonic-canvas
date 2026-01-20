@@ -950,7 +950,7 @@ function AtlasPage() {
       </header>
 
       {/* Main Content */}
-      <main className="flex-1 flex gap-4 p-4 overflow-hidden relative z-10">
+      <main className="flex-1 flex gap-4 p-4 overflow-hidden relative z-10 min-h-0">
         {/* Left Panel - Visualizer & Controls (Fixed position) */}
         <div className="flex-1 flex flex-col items-center justify-center relative">
           {/* Central Visualizer */}
