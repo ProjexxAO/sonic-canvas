@@ -37,7 +37,7 @@ export function AtlasSearchPanel({ searches, onSearch, isSearching }: AtlasSearc
     }
   };
 
-  const SearchInput = () => (
+  const searchInputElement = (
     <form onSubmit={handleSubmit} className="flex gap-2 mt-2">
       <Input
         value={searchQuery}
@@ -83,7 +83,7 @@ export function AtlasSearchPanel({ searches, onSearch, isSearching }: AtlasSearc
         </button>
         {isExpanded && (
           <>
-            <SearchInput />
+            {searchInputElement}
             <div className="flex flex-col items-center justify-center py-6 text-center">
               <div className="w-10 h-10 rounded-full bg-muted/50 flex items-center justify-center mb-3">
                 <Search size={18} className="text-muted-foreground/50" />
@@ -127,7 +127,7 @@ export function AtlasSearchPanel({ searches, onSearch, isSearching }: AtlasSearc
 
       {isExpanded && (
         <>
-          <SearchInput />
+          {searchInputElement}
           <ScrollArea className="h-56 mt-3">
             <div className="space-y-3">
               {searches.map((search) => (
