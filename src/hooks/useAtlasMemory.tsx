@@ -1,4 +1,4 @@
-import { useState, useEffect, useCallback, useRef } from 'react';
+import { useState, useEffect, useCallback, useRef, useMemo } from 'react';
 import { supabase } from '@/integrations/supabase/client';
 
 export interface MemoryMessage {
@@ -258,11 +258,12 @@ export function useAtlasMemory({
     };
   }, [userId, agentId, buildContextString]);
 
-  return {
+  // Memoize return value to prevent infinite loops in consumers
+  return useMemo(() => ({
     ...state,
     loadMemory,
     refreshMemory,
     storeMessage,
     clearLocalMemory
-  };
+  }), [state, loadMemory, refreshMemory, storeMessage, clearLocalMemory]);
 }

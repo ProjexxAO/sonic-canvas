@@ -158,10 +158,10 @@ export function AtlasProvider({ children }: AtlasProviderProps) {
   const atlasMemory = useAtlasMemory({ userId: user?.id, autoLoad: true, messageLimit: 20 });
   const atlasMemoryRef = useRef(atlasMemory);
   
-  // Keep atlasMemory ref updated
+  // Keep atlasMemory ref updated - use individual stable properties to avoid infinite loops
   useEffect(() => {
     atlasMemoryRef.current = atlasMemory;
-  }, [atlasMemory]);
+  }, [atlasMemory.isLoaded, atlasMemory.contextString, atlasMemory.messages.length]);
   
   // Refs
   const lastSavedMessageRef = useRef<string>('');
@@ -226,24 +226,34 @@ export function AtlasProvider({ children }: AtlasProviderProps) {
 
   // Navigation functions
   const goBack = useCallback(() => {
-    if (historyIndex > 0) {
-      const newIndex = historyIndex - 1;
+    if (historyIndexRef.current > 0) {
+      const newIndex = historyIndexRef.current - 1;
+      historyIndexRef.current = newIndex;
       setHistoryIndex(newIndex);
-      navigate(historyStack[newIndex]);
-      addLog('goBack', {}, `Navigated back to ${historyStack[newIndex]}`, 'success');
+      navigate(historyStackRef.current[newIndex]);
+      addLogRef.current('goBack', {}, `Navigated back to ${historyStackRef.current[newIndex]}`, 'success');
       toast.info('Navigated back');
     }
-  }, [historyIndex, historyStack, navigate, addLog]);
+  }, [navigate]);
 
   const goForward = useCallback(() => {
-    if (historyIndex < historyStack.length - 1) {
-      const newIndex = historyIndex + 1;
+    if (historyIndexRef.current < historyStackRef.current.length - 1) {
+      const newIndex = historyIndexRef.current + 1;
+      historyIndexRef.current = newIndex;
       setHistoryIndex(newIndex);
-      navigate(historyStack[newIndex]);
-      addLog('goForward', {}, `Navigated forward to ${historyStack[newIndex]}`, 'success');
+      navigate(historyStackRef.current[newIndex]);
+      addLogRef.current('goForward', {}, `Navigated forward to ${historyStackRef.current[newIndex]}`, 'success');
       toast.info('Navigated forward');
     }
-  }, [historyIndex, historyStack, navigate, addLog]);
+  }, [navigate]);
+
+  // Refs for stable clientTools callbacks
+  const goBackRef = useRef(goBack);
+  const goForwardRef = useRef(goForward);
+  useEffect(() => {
+    goBackRef.current = goBack;
+    goForwardRef.current = goForward;
+  }, [goBack, goForward]);
 
   const canGoBack = historyIndex > 0;
   const canGoForward = historyIndex < historyStack.length - 1;
@@ -251,19 +261,19 @@ export function AtlasProvider({ children }: AtlasProviderProps) {
   // Conversation config with all client tools
   const conversationConfig = useMemo(() => ({
     clientTools: {
-      // Navigation - go back
+      // Navigation - go back (use refs for stability)
       goBack: () => {
-        if (historyIndex > 0) {
-          goBack();
+        if (historyIndexRef.current > 0) {
+          goBackRef.current();
           return 'Navigated back to the previous page';
         }
         return 'Cannot go back - already at the beginning of navigation history';
       },
 
-      // Navigation - go forward
+      // Navigation - go forward (use refs for stability)
       goForward: () => {
-        if (historyIndex < historyStack.length - 1) {
-          goForward();
+        if (historyIndexRef.current < historyStackRef.current.length - 1) {
+          goForwardRef.current();
           return 'Navigated forward to the next page';
         }
         return 'Cannot go forward - already at the most recent page';
@@ -1454,7 +1464,7 @@ export function AtlasProvider({ children }: AtlasProviderProps) {
       addLogRef.current('system', { error }, 'Connection error', 'error');
       toast.error('Atlas connection error');
     },
-  }), [navigate, location.pathname, goBack, goForward, historyIndex, historyStack]);
+  }), [navigate, location.pathname]); // Removed unstable deps - using refs for navigation functions
 
   const conversation = useConversation({
     ...conversationConfig,
