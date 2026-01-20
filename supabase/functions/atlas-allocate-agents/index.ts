@@ -94,18 +94,37 @@ serve(async (req) => {
   }
 
   try {
-    const { userId, workspaceId, persona, autoAssign = false, limit = 5 }: AllocationRequest = await req.json();
-    
-    if (!userId) {
-      return new Response(JSON.stringify({ error: 'userId is required' }), {
-        status: 400,
-        headers: { ...corsHeaders, 'Content-Type': 'application/json' },
-      });
+    // Verify authentication first
+    const authHeader = req.headers.get('Authorization');
+    if (!authHeader) {
+      return new Response(
+        JSON.stringify({ error: 'Missing authorization header' }),
+        { status: 401, headers: { ...corsHeaders, 'Content-Type': 'application/json' } }
+      );
     }
+
+    const supabaseUrl = Deno.env.get('SUPABASE_URL')!;
+    const supabaseAnonKey = Deno.env.get('SUPABASE_ANON_KEY')!;
+    const supabaseAuth = createClient(supabaseUrl, supabaseAnonKey, {
+      global: { headers: { Authorization: authHeader } }
+    });
+
+    const { data: { user }, error: authError } = await supabaseAuth.auth.getUser();
+    if (authError || !user) {
+      return new Response(
+        JSON.stringify({ error: 'Unauthorized' }),
+        { status: 401, headers: { ...corsHeaders, 'Content-Type': 'application/json' } }
+      );
+    }
+
+    const { workspaceId, persona, autoAssign = false, limit = 5 }: AllocationRequest = await req.json();
+    
+    // Use authenticated user's ID instead of accepting it from the request body
+    const userId = user.id;
 
     console.log(`[atlas-allocate] Allocating agents for user ${userId}, persona: ${persona}, workspace: ${workspaceId}`);
 
-    const supabaseUrl = Deno.env.get('SUPABASE_URL')!;
+    // Use service role for internal queries with validated user context
     const supabaseKey = Deno.env.get('SUPABASE_SERVICE_ROLE_KEY')!;
     const supabase = createClient(supabaseUrl, supabaseKey);
 
