@@ -5,3 +5,4 @@ export { InSessionSurvey } from './InSessionSurvey';
 export { UnlockNotification } from './UnlockNotification';
 export { SurveyTrigger } from './SurveyTrigger';
 export { PersonalizationSettingsDialog } from './PersonalizationSettingsDialog';
+export { GlobalAccessibilityHandler } from './GlobalAccessibilityHandler';
