@@ -1088,6 +1088,312 @@ export function AtlasProvider({ children }: AtlasProviderProps) {
         addLogRef.current('getAccessibleDomains', {}, 'Domains listed', 'success');
         return 'Available domains: communications (email, messages), documents (files, reports), events (calendar, meetings), financials (invoices, budgets), tasks (to-dos, projects), knowledge (wiki, policies)';
       },
+
+      // ============= SHARED DASHBOARD CONTROLS =============
+
+      // List all shared dashboards the user has access to
+      listSharedDashboards: async () => {
+        const logId = addLogRef.current('listSharedDashboards', {}, 'Fetching dashboards...', 'pending');
+        try {
+          const response = await supabase.functions.invoke('atlas-orchestrator', {
+            body: { action: 'dashboard_list', userId: userRef.current?.id }
+          });
+
+          if (response.error) throw response.error;
+
+          const dashboards = response.data?.dashboards || [];
+          setActionLogs(prev => prev.map(l =>
+            l.id === logId ? { ...l, result: `Found ${dashboards.length} dashboards`, status: 'success' } : l
+          ));
+
+          if (dashboards.length === 0) {
+            return 'You have no shared dashboards. You can create one from the Data Hub.';
+          }
+
+          const summary = dashboards.map((d: any) => 
+            `• ${d.name} (${d.member_count} members, ${d.role})`
+          ).join('\n');
+
+          return `Your shared dashboards:\n${summary}`;
+        } catch (error) {
+          const msg = error instanceof Error ? error.message : 'Failed to list dashboards';
+          setActionLogs(prev => prev.map(l =>
+            l.id === logId ? { ...l, result: msg, status: 'error' } : l
+          ));
+          return `Error: ${msg}`;
+        }
+      },
+
+      // Select/switch to a specific dashboard
+      selectDashboard: async (params: { dashboardName: string }) => {
+        const logId = addLogRef.current('selectDashboard', params, 'Selecting dashboard...', 'pending');
+        try {
+          const response = await supabase.functions.invoke('atlas-orchestrator', {
+            body: { 
+              action: 'dashboard_select', 
+              userId: userRef.current?.id,
+              dashboardName: params.dashboardName
+            }
+          });
+
+          if (response.error) throw response.error;
+
+          const dashboard = response.data?.dashboard;
+          if (!dashboard) {
+            setActionLogs(prev => prev.map(l =>
+              l.id === logId ? { ...l, result: 'Dashboard not found', status: 'error' } : l
+            ));
+            return `Could not find a dashboard matching "${params.dashboardName}"`;
+          }
+
+          setActionLogs(prev => prev.map(l =>
+            l.id === logId ? { ...l, result: `Selected: ${dashboard.name}`, status: 'success' } : l
+          ));
+          toast.info(`Switched to dashboard: ${dashboard.name}`);
+          return `Switched to "${dashboard.name}" dashboard. You have ${dashboard.role} access with ${dashboard.member_count} team members.`;
+        } catch (error) {
+          const msg = error instanceof Error ? error.message : 'Failed to select dashboard';
+          setActionLogs(prev => prev.map(l =>
+            l.id === logId ? { ...l, result: msg, status: 'error' } : l
+          ));
+          return `Error: ${msg}`;
+        }
+      },
+
+      // Get dashboard messages/chat
+      getDashboardMessages: async (params: { dashboardName?: string; limit?: number }) => {
+        const logId = addLogRef.current('getDashboardMessages', params, 'Fetching messages...', 'pending');
+        try {
+          const response = await supabase.functions.invoke('atlas-orchestrator', {
+            body: { 
+              action: 'dashboard_messages', 
+              userId: userRef.current?.id,
+              dashboardName: params.dashboardName,
+              limit: params.limit || 10
+            }
+          });
+
+          if (response.error) throw response.error;
+
+          const messages = response.data?.messages || [];
+          setActionLogs(prev => prev.map(l =>
+            l.id === logId ? { ...l, result: `Got ${messages.length} messages`, status: 'success' } : l
+          ));
+
+          if (messages.length === 0) {
+            return 'No messages in this dashboard yet.';
+          }
+
+          const summary = messages.map((m: any) => 
+            `${m.sender_name}: ${m.content.slice(0, 100)}${m.content.length > 100 ? '...' : ''}`
+          ).join('\n');
+
+          return `Recent messages:\n${summary}`;
+        } catch (error) {
+          const msg = error instanceof Error ? error.message : 'Failed to get messages';
+          setActionLogs(prev => prev.map(l =>
+            l.id === logId ? { ...l, result: msg, status: 'error' } : l
+          ));
+          return `Error: ${msg}`;
+        }
+      },
+
+      // Send a message to dashboard chat
+      sendDashboardMessage: async (params: { message: string; dashboardName?: string }) => {
+        const logId = addLogRef.current('sendDashboardMessage', params, 'Sending message...', 'pending');
+        try {
+          const response = await supabase.functions.invoke('atlas-orchestrator', {
+            body: { 
+              action: 'dashboard_send_message', 
+              userId: userRef.current?.id,
+              dashboardName: params.dashboardName,
+              message: params.message
+            }
+          });
+
+          if (response.error) throw response.error;
+
+          setActionLogs(prev => prev.map(l =>
+            l.id === logId ? { ...l, result: 'Message sent', status: 'success' } : l
+          ));
+          toast.success('Message sent to dashboard');
+          return `Message sent: "${params.message.slice(0, 50)}${params.message.length > 50 ? '...' : ''}"`;
+        } catch (error) {
+          const msg = error instanceof Error ? error.message : 'Failed to send message';
+          setActionLogs(prev => prev.map(l =>
+            l.id === logId ? { ...l, result: msg, status: 'error' } : l
+          ));
+          return `Error: ${msg}`;
+        }
+      },
+
+      // List files in dashboard
+      listDashboardFiles: async (params: { dashboardName?: string }) => {
+        const logId = addLogRef.current('listDashboardFiles', params, 'Listing files...', 'pending');
+        try {
+          const response = await supabase.functions.invoke('atlas-orchestrator', {
+            body: { 
+              action: 'dashboard_files', 
+              userId: userRef.current?.id,
+              dashboardName: params.dashboardName
+            }
+          });
+
+          if (response.error) throw response.error;
+
+          const files = response.data?.files || [];
+          setActionLogs(prev => prev.map(l =>
+            l.id === logId ? { ...l, result: `Found ${files.length} files`, status: 'success' } : l
+          ));
+
+          if (files.length === 0) {
+            return 'No files have been uploaded to this dashboard yet.';
+          }
+
+          const summary = files.map((f: any) => 
+            `• ${f.file_name} (${f.size_formatted}, by ${f.uploader_name})`
+          ).join('\n');
+
+          return `Dashboard files:\n${summary}`;
+        } catch (error) {
+          const msg = error instanceof Error ? error.message : 'Failed to list files';
+          setActionLogs(prev => prev.map(l =>
+            l.id === logId ? { ...l, result: msg, status: 'error' } : l
+          ));
+          return `Error: ${msg}`;
+        }
+      },
+
+      // Get user's dashboard notifications
+      getMyDashboardNotifications: async () => {
+        const logId = addLogRef.current('getMyDashboardNotifications', {}, 'Fetching notifications...', 'pending');
+        try {
+          const response = await supabase.functions.invoke('atlas-orchestrator', {
+            body: { 
+              action: 'dashboard_notifications', 
+              userId: userRef.current?.id
+            }
+          });
+
+          if (response.error) throw response.error;
+
+          const notifications = response.data?.notifications || [];
+          const unreadCount = notifications.filter((n: any) => !n.is_read).length;
+
+          setActionLogs(prev => prev.map(l =>
+            l.id === logId ? { ...l, result: `${unreadCount} unread`, status: 'success' } : l
+          ));
+
+          if (notifications.length === 0) {
+            return 'You have no dashboard notifications.';
+          }
+
+          const summary = notifications.slice(0, 5).map((n: any) => 
+            `• ${n.title}${n.is_read ? '' : ' (unread)'}`
+          ).join('\n');
+
+          return `You have ${unreadCount} unread notifications:\n${summary}`;
+        } catch (error) {
+          const msg = error instanceof Error ? error.message : 'Failed to get notifications';
+          setActionLogs(prev => prev.map(l =>
+            l.id === logId ? { ...l, result: msg, status: 'error' } : l
+          ));
+          return `Error: ${msg}`;
+        }
+      },
+
+      // Get dashboard summary (AI-generated)
+      getDashboardSummary: async (params: { dashboardName?: string }) => {
+        const logId = addLogRef.current('getDashboardSummary', params, 'Generating summary...', 'pending');
+        try {
+          const response = await supabase.functions.invoke('atlas-orchestrator', {
+            body: { 
+              action: 'dashboard_summary', 
+              userId: userRef.current?.id,
+              dashboardName: params.dashboardName
+            }
+          });
+
+          if (response.error) throw response.error;
+
+          setActionLogs(prev => prev.map(l =>
+            l.id === logId ? { ...l, result: 'Summary generated', status: 'success' } : l
+          ));
+
+          return response.data?.summary || 'No summary available for this dashboard.';
+        } catch (error) {
+          const msg = error instanceof Error ? error.message : 'Failed to generate summary';
+          setActionLogs(prev => prev.map(l =>
+            l.id === logId ? { ...l, result: msg, status: 'error' } : l
+          ));
+          return `Error: ${msg}`;
+        }
+      },
+
+      // Get dashboard members
+      getDashboardMembers: async (params: { dashboardName?: string }) => {
+        const logId = addLogRef.current('getDashboardMembers', params, 'Fetching members...', 'pending');
+        try {
+          const response = await supabase.functions.invoke('atlas-orchestrator', {
+            body: { 
+              action: 'dashboard_members', 
+              userId: userRef.current?.id,
+              dashboardName: params.dashboardName
+            }
+          });
+
+          if (response.error) throw response.error;
+
+          const members = response.data?.members || [];
+          setActionLogs(prev => prev.map(l =>
+            l.id === logId ? { ...l, result: `Found ${members.length} members`, status: 'success' } : l
+          ));
+
+          if (members.length === 0) {
+            return 'This dashboard has no members yet.';
+          }
+
+          const summary = members.map((m: any) => 
+            `• ${m.display_name || m.user_id} (${m.role})`
+          ).join('\n');
+
+          return `Dashboard members:\n${summary}`;
+        } catch (error) {
+          const msg = error instanceof Error ? error.message : 'Failed to get members';
+          setActionLogs(prev => prev.map(l =>
+            l.id === logId ? { ...l, result: msg, status: 'error' } : l
+          ));
+          return `Error: ${msg}`;
+        }
+      },
+
+      // Query across all accessible dashboards
+      queryAcrossDashboards: async (params: { query: string }) => {
+        const logId = addLogRef.current('queryAcrossDashboards', params, 'Searching dashboards...', 'pending');
+        try {
+          const response = await supabase.functions.invoke('atlas-enterprise-query', {
+            body: { 
+              action: 'dashboard_correlate', 
+              userId: userRef.current?.id,
+              query: params.query
+            }
+          });
+
+          if (response.error) throw response.error;
+
+          setActionLogs(prev => prev.map(l =>
+            l.id === logId ? { ...l, result: 'Query complete', status: 'success' } : l
+          ));
+
+          return response.data?.answer || 'No results found across dashboards.';
+        } catch (error) {
+          const msg = error instanceof Error ? error.message : 'Query failed';
+          setActionLogs(prev => prev.map(l =>
+            l.id === logId ? { ...l, result: msg, status: 'error' } : l
+          ));
+          return `Error: ${msg}`;
+        }
+      },
     },
     onConnect: () => {
       console.log("[Atlas Global] Connected to voice agent");

@@ -7,7 +7,7 @@ const corsHeaders = {
 };
 
 interface EnterpriseQueryRequest {
-  action: 'query' | 'correlate' | 'analyze' | 'recommend' | 'workflow_trigger';
+  action: 'query' | 'correlate' | 'analyze' | 'recommend' | 'workflow_trigger' | 'dashboard_correlate';
   userId: string;
   query?: string;
   domains?: string[];
@@ -612,6 +612,58 @@ Respond with JSON:
         status: 'completed',
         result
       }), {
+        headers: { ...corsHeaders, 'Content-Type': 'application/json' }
+      });
+    }
+
+    if (action === 'dashboard_correlate') {
+      // Cross-dashboard intelligence query
+      const { data: memberData } = await supabase
+        .from('shared_dashboard_members')
+        .select('dashboard_id')
+        .eq('user_id', userId);
+
+      const dashboardIds = memberData?.map(m => m.dashboard_id) || [];
+
+      if (dashboardIds.length === 0) {
+        return new Response(JSON.stringify({ answer: 'You have no shared dashboards to query.' }), {
+          headers: { ...corsHeaders, 'Content-Type': 'application/json' }
+        });
+      }
+
+      // Gather data from all dashboards
+      const [dashboards, messages, files, activities] = await Promise.all([
+        supabase.from('shared_dashboards').select('id, name').in('id', dashboardIds),
+        supabase.from('dashboard_messages').select('content, dashboard_id, created_at').in('dashboard_id', dashboardIds).order('created_at', { ascending: false }).limit(50),
+        supabase.from('dashboard_files').select('file_name, dashboard_id').in('dashboard_id', dashboardIds).limit(20),
+        supabase.from('dashboard_activity').select('action, dashboard_id, item_type').in('dashboard_id', dashboardIds).limit(30),
+      ]);
+
+      const dashboardMap = new Map(dashboards.data?.map(d => [d.id, d.name]) || []);
+
+      const context = {
+        dashboards: dashboards.data?.map(d => d.name) || [],
+        recentMessages: messages.data?.slice(0, 20).map(m => ({ dashboard: dashboardMap.get(m.dashboard_id), content: m.content.slice(0, 150) })) || [],
+        files: files.data?.map(f => ({ dashboard: dashboardMap.get(f.dashboard_id), name: f.file_name })) || [],
+        activities: activities.data?.slice(0, 15).map(a => ({ dashboard: dashboardMap.get(a.dashboard_id), action: a.action })) || [],
+      };
+
+      const aiResponse = await fetch('https://ai.gateway.lovable.dev/v1/chat/completions', {
+        method: 'POST',
+        headers: { 'Authorization': `Bearer ${lovableApiKey}`, 'Content-Type': 'application/json' },
+        body: JSON.stringify({
+          model: 'google/gemini-2.5-flash',
+          messages: [
+            { role: 'system', content: 'You are Atlas, an AI assistant with access to multiple shared dashboards. Answer questions by analyzing data across all dashboards the user has access to.' },
+            { role: 'user', content: `Query: ${query}\n\nDashboard data:\n${JSON.stringify(context, null, 2)}` },
+          ],
+        }),
+      });
+
+      const aiData = await aiResponse.json();
+      const answer = aiData.choices?.[0]?.message?.content || 'Unable to analyze dashboards.';
+
+      return new Response(JSON.stringify({ answer, dashboardsAnalyzed: dashboards.data?.length || 0 }), {
         headers: { ...corsHeaders, 'Content-Type': 'application/json' }
       });
     }
