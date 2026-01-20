@@ -1701,6 +1701,57 @@ export type Database = {
           },
         ]
       }
+      knowledge_discoveries: {
+        Row: {
+          application_areas: string[] | null
+          applied_at: string | null
+          applied_to: string[] | null
+          confidence_score: number | null
+          created_at: string
+          detailed_content: string | null
+          domain: string
+          id: string
+          is_applied: boolean | null
+          metadata: Json | null
+          source_query: string | null
+          summary: string
+          title: string
+          updated_at: string
+        }
+        Insert: {
+          application_areas?: string[] | null
+          applied_at?: string | null
+          applied_to?: string[] | null
+          confidence_score?: number | null
+          created_at?: string
+          detailed_content?: string | null
+          domain: string
+          id?: string
+          is_applied?: boolean | null
+          metadata?: Json | null
+          source_query?: string | null
+          summary: string
+          title: string
+          updated_at?: string
+        }
+        Update: {
+          application_areas?: string[] | null
+          applied_at?: string | null
+          applied_to?: string[] | null
+          confidence_score?: number | null
+          created_at?: string
+          detailed_content?: string | null
+          domain?: string
+          id?: string
+          is_applied?: boolean | null
+          metadata?: Json | null
+          source_query?: string | null
+          summary?: string
+          title?: string
+          updated_at?: string
+        }
+        Relationships: []
+      }
       mail_merge_campaigns: {
         Row: {
           body_html_template: string | null
