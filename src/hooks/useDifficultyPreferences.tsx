@@ -58,17 +58,11 @@ export function useDifficultyPreferences(userId: string | undefined) {
             agent_autonomy_preference: data.agent_autonomy_preference as AutonomyPreference,
           });
         } else {
-          const { error: insertError } = await supabase
+          await supabase
             .from('user_difficulty_preferences')
             .insert({ user_id: userId });
-
-          if (!insertError) {
-            setPreferences({
-              ...DEFAULT_PREFERENCES,
-              user_id: userId,
-              ...newData,
-            });
-          }
+          
+          setPreferences(DEFAULT_PREFERENCES);
         }
       } catch (error) {
         console.error('Error fetching difficulty preferences:', error);

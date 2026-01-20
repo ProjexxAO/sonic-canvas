@@ -78,6 +78,9 @@ import { ScrollArea } from '@/components/ui/scroll-area';
 import { AtlasRightPanel } from '@/components/atlas/AtlasRightPanel';
 import { OnboardingFlow } from '@/components/onboarding';
 import { useAgentOrchestration } from '@/hooks/useAgentOrchestration';
+import { InSessionSurvey, UnlockNotification, SurveyTrigger, PersonalizationSettingsDialog } from '@/components/personalization';
+import { useLearningProgress } from '@/hooks/useLearningProgress';
+import { useAudioFeedback } from '@/hooks/useAudioFeedback';
 
 interface ActionLog {
   id: string;
@@ -147,6 +150,10 @@ function AtlasPage() {
 
   // Agent orchestration for task tracking
   const orchestration = useAgentOrchestration(user?.id);
+
+  // Learning progress and audio feedback for personalization
+  const learningProgress = useLearningProgress(user?.id);
+  const audioFeedback = useAudioFeedback(user?.id);
 
   // Get active agents (those with ACTIVE or PROCESSING status)
   const activeAgents = agents.filter(a => a.status === 'ACTIVE' || a.status === 'PROCESSING').slice(0, 6);
@@ -897,7 +904,13 @@ function AtlasPage() {
         </div>
 
         {/* Connection Status */}
-        <div className="flex items-center gap-4">
+        <div className="flex items-center gap-3">
+          {/* Personalization Settings Dialog */}
+          <PersonalizationSettingsDialog userId={user?.id} />
+          
+          {/* Survey Trigger for Personalization */}
+          <SurveyTrigger userId={user?.id} />
+          
           {/* Theme Toggle */}
           <button 
             onClick={() => setTheme(theme === 'dark' ? 'light' : 'dark')}
@@ -1388,6 +1401,10 @@ function AtlasPage() {
           </Button>
         </form>
       </div>
+
+      {/* Personalization Overlays */}
+      <InSessionSurvey userId={user?.id} />
+      <UnlockNotification userId={user?.id} />
     </div>
   );
 }
