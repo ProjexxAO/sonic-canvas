@@ -10,6 +10,7 @@ import { useVoiceCommandExecutor } from "@/hooks/useVoiceCommandExecutor";
 import { AtlasProvider } from "@/contexts/AtlasContext";
 import { GlobalAtlasOrb } from "@/components/atlas/GlobalAtlasOrb";
 import { GlobalAccessibilityHandler } from "@/components/personalization/GlobalAccessibilityHandler";
+import { ErrorBoundary } from "@/components/ErrorBoundary";
 import Index from "./pages/Index";
 import Auth from "./pages/Auth";
 import Atlas from "./pages/Atlas";
@@ -18,7 +19,6 @@ import UserToolPermissions from "./pages/UserToolPermissions";
 import ToolGovernance from "./pages/ToolGovernance";
 import Integrations from "./pages/Integrations";
 import NotFound from "./pages/NotFound";
-
 const queryClient = new QueryClient();
 
 // Component that uses the voice command executor hook
@@ -28,41 +28,45 @@ function VoiceCommandHandler() {
 }
 
 const App = () => (
-  <ThemeProvider
-    attribute="class"
-    defaultTheme="dark"
-    enableSystem={false}
-    storageKey="sonic-theme"
-  >
-    <QueryClientProvider client={queryClient}>
-      <AuthProvider>
-        <WorkspacesProvider>
-          <TooltipProvider>
-            <Toaster />
-            <Sonner />
-            <BrowserRouter>
-              <AtlasProvider>
-                <VoiceCommandHandler />
-                <GlobalAccessibilityHandler />
-                <Routes>
-                  <Route path="/" element={<Index />} />
-                  <Route path="/auth" element={<Auth />} />
-                  <Route path="/atlas" element={<Atlas />} />
-                  <Route path="/import" element={<ImportAgents />} />
-                  <Route path="/workspace/tools/:userId?" element={<UserToolPermissions />} />
-                  <Route path="/governance" element={<ToolGovernance />} />
-                  <Route path="/marketplace" element={<Integrations />} />
-                  {/* ADD ALL CUSTOM ROUTES ABOVE THE CATCH-ALL "*" ROUTE */}
-                  <Route path="*" element={<NotFound />} />
-                </Routes>
-                <GlobalAtlasOrb />
-              </AtlasProvider>
-            </BrowserRouter>
-          </TooltipProvider>
-        </WorkspacesProvider>
-      </AuthProvider>
-    </QueryClientProvider>
-  </ThemeProvider>
+  <ErrorBoundary>
+    <ThemeProvider
+      attribute="class"
+      defaultTheme="dark"
+      enableSystem={false}
+      storageKey="sonic-theme"
+    >
+      <QueryClientProvider client={queryClient}>
+        <AuthProvider>
+          <WorkspacesProvider>
+            <TooltipProvider>
+              <Toaster />
+              <Sonner />
+              <BrowserRouter>
+                <AtlasProvider>
+                  <VoiceCommandHandler />
+                  <GlobalAccessibilityHandler />
+                  <ErrorBoundary>
+                    <Routes>
+                      <Route path="/" element={<Index />} />
+                      <Route path="/auth" element={<Auth />} />
+                      <Route path="/atlas" element={<Atlas />} />
+                      <Route path="/import" element={<ImportAgents />} />
+                      <Route path="/workspace/tools/:userId?" element={<UserToolPermissions />} />
+                      <Route path="/governance" element={<ToolGovernance />} />
+                      <Route path="/marketplace" element={<Integrations />} />
+                      {/* ADD ALL CUSTOM ROUTES ABOVE THE CATCH-ALL "*" ROUTE */}
+                      <Route path="*" element={<NotFound />} />
+                    </Routes>
+                  </ErrorBoundary>
+                  <GlobalAtlasOrb />
+                </AtlasProvider>
+              </BrowserRouter>
+            </TooltipProvider>
+          </WorkspacesProvider>
+        </AuthProvider>
+      </QueryClientProvider>
+    </ThemeProvider>
+  </ErrorBoundary>
 );
 
 export default App;

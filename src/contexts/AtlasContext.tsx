@@ -171,12 +171,14 @@ export function AtlasProvider({ children }: AtlasProviderProps) {
   const pendingMemoryContextRef = useRef<string | null>(null);
   const userRef = useRef(user);
   const agentsRef = useRef(agents);
+  const locationRef = useRef(location.pathname);
   
   // Keep refs updated
   useEffect(() => {
     userRef.current = user;
     agentsRef.current = agents;
-  }, [user, agents]);
+    locationRef.current = location.pathname;
+  }, [user, agents, location.pathname]);
   
   // Track navigation history - using refs to avoid infinite loops
   useEffect(() => {
@@ -279,9 +281,10 @@ export function AtlasProvider({ children }: AtlasProviderProps) {
         return 'Cannot go forward - already at the most recent page';
       },
 
-      // Get current location
+      // Get current location (use ref to avoid dependency on location.pathname)
       getCurrentLocation: () => {
-        addLogRef.current('getCurrentLocation', {}, location.pathname, 'success');
+        const currentPath = locationRef.current;
+        addLogRef.current('getCurrentLocation', {}, currentPath, 'success');
         const pageNames: Record<string, string> = {
           '/': 'Agent Grid - Atlas Sonic OS',
           '/atlas': 'Dashboard - Atlas Command Center',
@@ -292,11 +295,11 @@ export function AtlasProvider({ children }: AtlasProviderProps) {
           '/auth': 'Authentication - Login/Sign Up',
         };
         // Handle dynamic routes
-        let pageName = pageNames[location.pathname];
-        if (!pageName && location.pathname.startsWith('/workspace/tools')) {
+        let pageName = pageNames[currentPath];
+        if (!pageName && currentPath.startsWith('/workspace/tools')) {
           pageName = 'User Tool Permissions';
         }
-        pageName = pageName || location.pathname;
+        pageName = pageName || currentPath;
         return `You are currently on: ${pageName}`;
       },
 
@@ -797,10 +800,10 @@ export function AtlasProvider({ children }: AtlasProviderProps) {
         return `Displayed ${toastType} notification: ${params.title}`;
       },
 
-      // System status
+      // System status (use refs for stability)
       getSystemStatus: () => {
         addLogRef.current('getSystemStatus', {}, 'Status retrieved', 'success');
-        return `System online. Current page: ${location.pathname}. Agents loaded: ${agentsRef.current.length}.`;
+        return `System online. Current page: ${locationRef.current}. Agents loaded: ${agentsRef.current.length}.`;
       },
 
       // Data Hub controls
@@ -1464,7 +1467,7 @@ export function AtlasProvider({ children }: AtlasProviderProps) {
       addLogRef.current('system', { error }, 'Connection error', 'error');
       toast.error('Atlas connection error');
     },
-  }), [navigate, location.pathname]); // Removed unstable deps - using refs for navigation functions
+  }), [navigate]); // All location/agent refs are stable - no pathname dependency needed
 
   const conversation = useConversation({
     ...conversationConfig,
