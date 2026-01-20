@@ -942,3 +942,85 @@
 .animate-scale-fade-in {
   animation: scale-fade-in 0.3s cubic-bezier(0.16, 1, 0.3, 1) both;
 }
+
+/* ============================================
+   ACCESSIBILITY SETTINGS
+   ============================================ */
+
+/* Reduced Motion - disable animations */
+.reduce-motion,
+.reduce-motion * {
+  animation-duration: 0.01ms !important;
+  animation-iteration-count: 1 !important;
+  transition-duration: 0.01ms !important;
+  scroll-behavior: auto !important;
+}
+
+/* High Contrast Mode */
+.high-contrast {
+  --background: 0 0% 0%;
+  --foreground: 0 0% 100%;
+  --muted: 0 0% 20%;
+  --muted-foreground: 0 0% 90%;
+  --border: 0 0% 60%;
+  --card: 0 0% 5%;
+  --card-foreground: 0 0% 100%;
+}
+
+.high-contrast .dark {
+  --background: 0 0% 0%;
+  --foreground: 0 0% 100%;
+  --primary: 180 100% 50%;
+  --primary-foreground: 0 0% 0%;
+}
+
+/* Dyslexia-Friendly Font */
+@font-face {
+  font-family: 'OpenDyslexic';
+  src: url('https://cdn.jsdelivr.net/npm/open-dyslexic@1.0.3/woff/OpenDyslexic-Regular.woff') format('woff');
+  font-weight: normal;
+  font-style: normal;
+  font-display: swap;
+}
+
+.dyslexia-friendly,
+.dyslexia-friendly * {
+  font-family: 'OpenDyslexic', sans-serif !important;
+  letter-spacing: 0.05em !important;
+  word-spacing: 0.1em !important;
+  line-height: 1.8 !important;
+}
+
+/* Color Blind Modes */
+.colorblind-protanopia {
+  filter: url('#protanopia-filter');
+}
+
+.colorblind-deuteranopia {
+  filter: url('#deuteranopia-filter');
+}
+
+.colorblind-tritanopia {
+  filter: url('#tritanopia-filter');
+}
+
+/* Focus visible for keyboard navigation */
+:focus-visible {
+  outline: 2px solid hsl(var(--primary));
+  outline-offset: 2px;
+}
+
+/* Skip to main content link */
+.skip-to-main {
+  position: absolute;
+  left: -9999px;
+  z-index: 9999;
+  padding: 1rem;
+  background: hsl(var(--background));
+  color: hsl(var(--foreground));
+  text-decoration: underline;
+}
+
+.skip-to-main:focus {
+  left: 0;
+}
