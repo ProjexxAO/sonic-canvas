@@ -315,6 +315,66 @@ export type Database = {
         }
         Relationships: []
       }
+      automation_webhooks: {
+        Row: {
+          created_at: string
+          description: string | null
+          error_count: number | null
+          headers: Json | null
+          id: string
+          is_active: boolean | null
+          last_error: string | null
+          last_triggered_at: string | null
+          metadata: Json | null
+          name: string
+          provider: string
+          trigger_conditions: Json | null
+          trigger_count: number | null
+          trigger_type: string
+          updated_at: string
+          user_id: string
+          webhook_url: string
+        }
+        Insert: {
+          created_at?: string
+          description?: string | null
+          error_count?: number | null
+          headers?: Json | null
+          id?: string
+          is_active?: boolean | null
+          last_error?: string | null
+          last_triggered_at?: string | null
+          metadata?: Json | null
+          name: string
+          provider?: string
+          trigger_conditions?: Json | null
+          trigger_count?: number | null
+          trigger_type: string
+          updated_at?: string
+          user_id: string
+          webhook_url: string
+        }
+        Update: {
+          created_at?: string
+          description?: string | null
+          error_count?: number | null
+          headers?: Json | null
+          id?: string
+          is_active?: boolean | null
+          last_error?: string | null
+          last_triggered_at?: string | null
+          metadata?: Json | null
+          name?: string
+          provider?: string
+          trigger_conditions?: Json | null
+          trigger_count?: number | null
+          trigger_type?: string
+          updated_at?: string
+          user_id?: string
+          webhook_url?: string
+        }
+        Relationships: []
+      }
       bank_accounts: {
         Row: {
           access_token_encrypted: string | null
@@ -1350,6 +1410,196 @@ export type Database = {
           },
         ]
       }
+      email_sync_jobs: {
+        Row: {
+          completed_at: string | null
+          created_at: string
+          error_count: number | null
+          id: string
+          job_type: string
+          last_error: string | null
+          metadata: Json | null
+          platform: string
+          platform_connection_id: string | null
+          priority: number | null
+          processed_items: number | null
+          progress: number | null
+          scheduled_at: string | null
+          started_at: string | null
+          status: string
+          sync_cursor: string | null
+          total_items: number | null
+          updated_at: string
+          user_id: string
+        }
+        Insert: {
+          completed_at?: string | null
+          created_at?: string
+          error_count?: number | null
+          id?: string
+          job_type: string
+          last_error?: string | null
+          metadata?: Json | null
+          platform: string
+          platform_connection_id?: string | null
+          priority?: number | null
+          processed_items?: number | null
+          progress?: number | null
+          scheduled_at?: string | null
+          started_at?: string | null
+          status?: string
+          sync_cursor?: string | null
+          total_items?: number | null
+          updated_at?: string
+          user_id: string
+        }
+        Update: {
+          completed_at?: string | null
+          created_at?: string
+          error_count?: number | null
+          id?: string
+          job_type?: string
+          last_error?: string | null
+          metadata?: Json | null
+          platform?: string
+          platform_connection_id?: string | null
+          priority?: number | null
+          processed_items?: number | null
+          progress?: number | null
+          scheduled_at?: string | null
+          started_at?: string | null
+          status?: string
+          sync_cursor?: string | null
+          total_items?: number | null
+          updated_at?: string
+          user_id?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "email_sync_jobs_platform_connection_id_fkey"
+            columns: ["platform_connection_id"]
+            isOneToOne: false
+            referencedRelation: "platform_connections"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      email_tracking_aggregates: {
+        Row: {
+          bounce_rate: number | null
+          click_rate: number | null
+          created_at: string
+          id: string
+          metadata: Json | null
+          open_rate: number | null
+          period_end: string
+          period_start: string
+          period_type: string
+          total_bounced: number | null
+          total_clicked: number | null
+          total_delivered: number | null
+          total_opened: number | null
+          total_sent: number | null
+          unique_clicks: number | null
+          unique_opens: number | null
+          updated_at: string
+          user_id: string
+        }
+        Insert: {
+          bounce_rate?: number | null
+          click_rate?: number | null
+          created_at?: string
+          id?: string
+          metadata?: Json | null
+          open_rate?: number | null
+          period_end: string
+          period_start: string
+          period_type: string
+          total_bounced?: number | null
+          total_clicked?: number | null
+          total_delivered?: number | null
+          total_opened?: number | null
+          total_sent?: number | null
+          unique_clicks?: number | null
+          unique_opens?: number | null
+          updated_at?: string
+          user_id: string
+        }
+        Update: {
+          bounce_rate?: number | null
+          click_rate?: number | null
+          created_at?: string
+          id?: string
+          metadata?: Json | null
+          open_rate?: number | null
+          period_end?: string
+          period_start?: string
+          period_type?: string
+          total_bounced?: number | null
+          total_clicked?: number | null
+          total_delivered?: number | null
+          total_opened?: number | null
+          total_sent?: number | null
+          unique_clicks?: number | null
+          unique_opens?: number | null
+          updated_at?: string
+          user_id?: string
+        }
+        Relationships: []
+      }
+      email_tracking_events: {
+        Row: {
+          created_at: string
+          event_type: string
+          geo_location: Json | null
+          id: string
+          ip_address: string | null
+          link_id: string | null
+          link_url: string | null
+          message_id: string | null
+          metadata: Json | null
+          recipient_email: string | null
+          user_agent: string | null
+          user_id: string
+        }
+        Insert: {
+          created_at?: string
+          event_type: string
+          geo_location?: Json | null
+          id?: string
+          ip_address?: string | null
+          link_id?: string | null
+          link_url?: string | null
+          message_id?: string | null
+          metadata?: Json | null
+          recipient_email?: string | null
+          user_agent?: string | null
+          user_id: string
+        }
+        Update: {
+          created_at?: string
+          event_type?: string
+          geo_location?: Json | null
+          id?: string
+          ip_address?: string | null
+          link_id?: string | null
+          link_url?: string | null
+          message_id?: string | null
+          metadata?: Json | null
+          recipient_email?: string | null
+          user_agent?: string | null
+          user_id?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "email_tracking_events_message_id_fkey"
+            columns: ["message_id"]
+            isOneToOne: false
+            referencedRelation: "communication_messages"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
       financial_insights: {
         Row: {
           actioned_at: string | null
@@ -1447,6 +1697,135 @@ export type Database = {
             columns: ["shared_item_id"]
             isOneToOne: false
             referencedRelation: "shared_items"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      mail_merge_campaigns: {
+        Row: {
+          body_html_template: string | null
+          body_template: string
+          completed_at: string | null
+          created_at: string
+          description: string | null
+          failed_count: number | null
+          from_address: string | null
+          id: string
+          merge_fields: string[] | null
+          metadata: Json | null
+          name: string
+          platform: string | null
+          scheduled_at: string | null
+          sent_count: number | null
+          settings: Json | null
+          started_at: string | null
+          status: string
+          subject_template: string
+          total_recipients: number | null
+          updated_at: string
+          user_id: string
+        }
+        Insert: {
+          body_html_template?: string | null
+          body_template: string
+          completed_at?: string | null
+          created_at?: string
+          description?: string | null
+          failed_count?: number | null
+          from_address?: string | null
+          id?: string
+          merge_fields?: string[] | null
+          metadata?: Json | null
+          name: string
+          platform?: string | null
+          scheduled_at?: string | null
+          sent_count?: number | null
+          settings?: Json | null
+          started_at?: string | null
+          status?: string
+          subject_template: string
+          total_recipients?: number | null
+          updated_at?: string
+          user_id: string
+        }
+        Update: {
+          body_html_template?: string | null
+          body_template?: string
+          completed_at?: string | null
+          created_at?: string
+          description?: string | null
+          failed_count?: number | null
+          from_address?: string | null
+          id?: string
+          merge_fields?: string[] | null
+          metadata?: Json | null
+          name?: string
+          platform?: string | null
+          scheduled_at?: string | null
+          sent_count?: number | null
+          settings?: Json | null
+          started_at?: string | null
+          status?: string
+          subject_template?: string
+          total_recipients?: number | null
+          updated_at?: string
+          user_id?: string
+        }
+        Relationships: []
+      }
+      mail_merge_recipients: {
+        Row: {
+          campaign_id: string
+          created_at: string
+          email: string
+          error_message: string | null
+          id: string
+          merge_data: Json | null
+          message_id: string | null
+          sent_at: string | null
+          status: string
+          tracking_events: Json | null
+          updated_at: string
+        }
+        Insert: {
+          campaign_id: string
+          created_at?: string
+          email: string
+          error_message?: string | null
+          id?: string
+          merge_data?: Json | null
+          message_id?: string | null
+          sent_at?: string | null
+          status?: string
+          tracking_events?: Json | null
+          updated_at?: string
+        }
+        Update: {
+          campaign_id?: string
+          created_at?: string
+          email?: string
+          error_message?: string | null
+          id?: string
+          merge_data?: Json | null
+          message_id?: string | null
+          sent_at?: string | null
+          status?: string
+          tracking_events?: Json | null
+          updated_at?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "mail_merge_recipients_campaign_id_fkey"
+            columns: ["campaign_id"]
+            isOneToOne: false
+            referencedRelation: "mail_merge_campaigns"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "mail_merge_recipients_message_id_fkey"
+            columns: ["message_id"]
+            isOneToOne: false
+            referencedRelation: "communication_messages"
             referencedColumns: ["id"]
           },
         ]
