@@ -126,6 +126,8 @@ function AtlasPage() {
     searchResults,
     synthesizedAgent,
     webSearches,
+    manualWebSearch,
+    isWebSearching,
     conversation,
     wakeWordEnabled,
     setWakeWordEnabled,
@@ -1314,6 +1316,8 @@ function AtlasPage() {
           onSyncMemory={orchestration.syncMemoryTasks}
           onDeleteTask={orchestration.deleteTask}
           webSearches={webSearches}
+          onWebSearch={manualWebSearch}
+          isSearching={isWebSearching}
           searchResults={searchResults}
           synthesizedAgent={synthesizedAgent}
           userId={user?.id}
