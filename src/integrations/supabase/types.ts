@@ -553,6 +553,78 @@ export type Database = {
           },
         ]
       }
+      code_evolutions: {
+        Row: {
+          applied_at: string | null
+          applied_by: string | null
+          compatibility_score: number | null
+          created_at: string
+          entity_id: string | null
+          entity_name: string
+          entity_type: string
+          evolution_status: string
+          evolution_type: string
+          evolved_code: string | null
+          id: string
+          improvement_analysis: Json | null
+          integration_plan: Json | null
+          performance_impact: Json | null
+          risk_assessment: Json | null
+          rollback_available: boolean | null
+          rollback_data: Json | null
+          sonic_signature: Json
+          source_code: string | null
+          updated_at: string
+          user_id: string
+        }
+        Insert: {
+          applied_at?: string | null
+          applied_by?: string | null
+          compatibility_score?: number | null
+          created_at?: string
+          entity_id?: string | null
+          entity_name: string
+          entity_type?: string
+          evolution_status?: string
+          evolution_type?: string
+          evolved_code?: string | null
+          id?: string
+          improvement_analysis?: Json | null
+          integration_plan?: Json | null
+          performance_impact?: Json | null
+          risk_assessment?: Json | null
+          rollback_available?: boolean | null
+          rollback_data?: Json | null
+          sonic_signature?: Json
+          source_code?: string | null
+          updated_at?: string
+          user_id: string
+        }
+        Update: {
+          applied_at?: string | null
+          applied_by?: string | null
+          compatibility_score?: number | null
+          created_at?: string
+          entity_id?: string | null
+          entity_name?: string
+          entity_type?: string
+          evolution_status?: string
+          evolution_type?: string
+          evolved_code?: string | null
+          id?: string
+          improvement_analysis?: Json | null
+          integration_plan?: Json | null
+          performance_impact?: Json | null
+          risk_assessment?: Json | null
+          rollback_available?: boolean | null
+          rollback_data?: Json | null
+          sonic_signature?: Json
+          source_code?: string | null
+          updated_at?: string
+          user_id?: string
+        }
+        Relationships: []
+      }
       communication_channels: {
         Row: {
           avatar_url: string | null

@@ -1,7 +1,8 @@
 import { PersonaLayoutProps } from './types';
 import { Section, MetricCard } from './shared';
-import { Shield, Users, Activity, Server, AlertTriangle, Database, Cpu, Lock, BarChart3, Zap, Mail, FileText, Calendar, DollarSign, CheckSquare, BookOpen } from 'lucide-react';
+import { Shield, Users, Activity, Server, AlertTriangle, Database, Cpu, Lock, BarChart3, Zap, Mail, FileText, Calendar, DollarSign, CheckSquare, BookOpen, Dna } from 'lucide-react';
 import { DomainKey } from '@/hooks/useCSuiteData';
+import { CodeEvolutionPanel } from '@/components/csuite/CodeEvolutionPanel';
 
 const DOMAIN_CONFIG: { key: DomainKey; label: string; icon: typeof Mail; color: string }[] = [
   { key: 'communications', label: 'Communications', icon: Mail, color: 'hsl(200 70% 50%)' },
@@ -11,7 +12,6 @@ const DOMAIN_CONFIG: { key: DomainKey; label: string; icon: typeof Mail; color: 
   { key: 'tasks', label: 'Tasks', icon: CheckSquare, color: 'hsl(350 70% 50%)' },
   { key: 'knowledge', label: 'Knowledge', icon: BookOpen, color: 'hsl(220 70% 55%)' },
 ];
-
 export function AdminLayout({ stats, domainItems, agents, onDomainClick }: PersonaLayoutProps) {
   const activeAgents = agents?.filter(a => a.status === 'ACTIVE').length || 0;
   const totalAgents = agents?.length || 0;
@@ -135,6 +135,11 @@ export function AdminLayout({ stats, domainItems, agents, onDomainClick }: Perso
             <div className="text-[9px] text-muted-foreground">Data Volume</div>
           </div>
         </div>
+      </Section>
+
+      {/* Code Evolution Engine - Only visible to projexxnz@gmail.com */}
+      <Section title="Code Evolution" icon={<Dna size={12} className="text-primary" />}>
+        <CodeEvolutionPanel />
       </Section>
     </div>
   );

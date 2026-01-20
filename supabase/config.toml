@@ -53,3 +53,6 @@ verify_jwt = false
 
 [functions.veracity-evaluator]
 verify_jwt = false
+
+[functions.code-evolution-engine]
+verify_jwt = false
