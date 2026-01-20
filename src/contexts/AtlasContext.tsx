@@ -1469,13 +1469,21 @@ export function AtlasProvider({ children }: AtlasProviderProps) {
     },
   }), [navigate]); // All location/agent refs are stable - no pathname dependency needed
 
-  const conversation = useConversation({
+  // Memoize the full config to prevent recreating useConversation on every render
+  const fullConversationConfig = useMemo(() => ({
     ...conversationConfig,
-    micMuted: isMuted,
-  });
+  }), [conversationConfig]);
+  
+  const conversation = useConversation(fullConversationConfig);
   conversationRef.current = conversation;
 
   const isConnected = conversation.status === "connected";
+  
+  // Handle mute state separately via conversation.setVolume to avoid re-initializing
+  const isMutedRef = useRef(isMuted);
+  useEffect(() => {
+    isMutedRef.current = isMuted;
+  }, [isMuted]);
 
   // Ref to hold the latest startConversation function for wake word callback
   const startConversationRef = useRef<(() => Promise<void>) | null>(null);
@@ -1707,7 +1715,7 @@ export function AtlasProvider({ children }: AtlasProviderProps) {
     };
   }, [isConnected, conversation]);
 
-  const value: AtlasContextValue = {
+  const value: AtlasContextValue = useMemo(() => ({
     isConnected,
     isConnecting,
     isMuted,
@@ -1745,7 +1753,15 @@ export function AtlasProvider({ children }: AtlasProviderProps) {
     wakeWord,
     setWakeWord,
     conversation,
-  };
+  }), [
+    isConnected, isConnecting, isMuted, conversation.isSpeaking, conversation.status,
+    audioLevels, inputVolume, outputVolume, frequencyBands, transcript, isTranscribing,
+    startConversation, stopConversation, toggleMute, sendTextMessage, sendContextualUpdate,
+    goBack, goForward, canGoBack, canGoForward, location.pathname,
+    isExpanded, isMinimized, actionLogs, searchResults, synthesizedAgent,
+    webSearches, manualWebSearch, isWebSearching, wakeWordStatus, wakeWordEnabled,
+    wakeWord, conversation
+  ]);
 
   return (
     <AtlasContext.Provider value={value}>
