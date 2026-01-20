@@ -1,5 +1,6 @@
 import React from 'react';
 import { useKnowledgeDiscovery, KnowledgeDiscovery } from '@/hooks/useKnowledgeDiscovery';
+import { useVeracityEvaluation } from '@/hooks/useVeracityEvaluation';
 import { Button } from '@/components/ui/button';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
 import { Badge } from '@/components/ui/badge';
@@ -16,7 +17,9 @@ import {
   Cpu,
   DollarSign,
   FlaskConical,
-  Microscope
+  Microscope,
+  Shield,
+  Loader2
 } from 'lucide-react';
 import { formatDistanceToNow } from 'date-fns';
 
@@ -40,14 +43,20 @@ const domainColors: Record<string, string> = {
   cognitive_science: 'bg-cyan-500/20 text-cyan-400 border-cyan-500/30',
 };
 
-function DiscoveryCard({ discovery }: { discovery: KnowledgeDiscovery }) {
+interface DiscoveryCardProps {
+  discovery: KnowledgeDiscovery;
+  onVerify: (discovery: KnowledgeDiscovery) => Promise<void>;
+  isVerifying: boolean;
+}
+
+function DiscoveryCard({ discovery, onVerify, isVerifying }: DiscoveryCardProps) {
   const [expanded, setExpanded] = React.useState(false);
   
   return (
     <Card className="bg-background/50 border-border/50 hover:border-primary/30 transition-colors">
       <CardHeader className="pb-2">
         <div className="flex items-start justify-between gap-2">
-          <div className="flex items-center gap-2">
+          <div className="flex items-center gap-2 flex-wrap">
             <Badge 
               variant="outline" 
               className={`${domainColors[discovery.domain] || 'bg-muted'} flex items-center gap-1`}
@@ -62,7 +71,7 @@ function DiscoveryCard({ discovery }: { discovery: KnowledgeDiscovery }) {
               </Badge>
             )}
           </div>
-          <span className="text-xs text-muted-foreground">
+          <span className="text-xs text-muted-foreground shrink-0">
             {formatDistanceToNow(new Date(discovery.created_at), { addSuffix: true })}
           </span>
         </div>
@@ -89,14 +98,31 @@ function DiscoveryCard({ discovery }: { discovery: KnowledgeDiscovery }) {
               </Badge>
             ))}
           </div>
-          <Button 
-            variant="ghost" 
-            size="sm" 
-            className="text-xs h-6 px-2"
-            onClick={() => setExpanded(!expanded)}
-          >
-            {expanded ? 'Less' : 'More'}
-          </Button>
+          <div className="flex gap-1">
+            <Button 
+              variant="ghost" 
+              size="sm" 
+              className="text-xs h-6 px-2"
+              onClick={() => setExpanded(!expanded)}
+            >
+              {expanded ? 'Less' : 'More'}
+            </Button>
+            <Button 
+              variant="outline" 
+              size="sm" 
+              className="text-xs h-6 px-2 gap-1"
+              onClick={() => onVerify(discovery)}
+              disabled={isVerifying}
+              title="Verify this discovery's plausibility"
+            >
+              {isVerifying ? (
+                <Loader2 className="h-3 w-3 animate-spin" />
+              ) : (
+                <Shield className="h-3 w-3" />
+              )}
+              Verify
+            </Button>
+          </div>
         </div>
         
         <div className="flex items-center gap-2 text-[10px] text-muted-foreground">
@@ -110,6 +136,7 @@ function DiscoveryCard({ discovery }: { discovery: KnowledgeDiscovery }) {
   );
 }
 
+
 export function KnowledgeDiscoveryPanel() {
   const { 
     discoveries, 
@@ -118,6 +145,22 @@ export function KnowledgeDiscoveryPanel() {
     triggerDiscovery,
     fetchDiscoveries 
   } = useKnowledgeDiscovery();
+  
+  const { evaluateStatement, isEvaluating } = useVeracityEvaluation();
+  const [verifyingId, setVerifyingId] = React.useState<string | null>(null);
+
+  const handleVerifyDiscovery = async (discovery: KnowledgeDiscovery) => {
+    setVerifyingId(discovery.id);
+    try {
+      await evaluateStatement(
+        discovery.summary,
+        `Domain: ${discovery.domain}. Full content: ${discovery.detailed_content}`,
+        discovery.id
+      );
+    } finally {
+      setVerifyingId(null);
+    }
+  };
 
   return (
     <div className="flex flex-col h-full">
@@ -180,7 +223,12 @@ export function KnowledgeDiscoveryPanel() {
         ) : (
           <div className="space-y-3">
             {discoveries.map((discovery) => (
-              <DiscoveryCard key={discovery.id} discovery={discovery} />
+              <DiscoveryCard 
+                key={discovery.id} 
+                discovery={discovery}
+                onVerify={handleVerifyDiscovery}
+                isVerifying={verifyingId === discovery.id || (isEvaluating && verifyingId === discovery.id)}
+              />
             ))}
           </div>
         )}
@@ -188,3 +236,4 @@ export function KnowledgeDiscoveryPanel() {
     </div>
   );
 }
+

@@ -1,12 +1,13 @@
-// Atlas Right Panel - Tabbed layout for Operations, Data Hub, and Knowledge Discovery
+// Atlas Right Panel - Tabbed layout for Operations, Data Hub, Knowledge Discovery, and Veracity Evaluation
 import React from 'react';
-import { Activity, Database, Search, Sparkles, Brain } from 'lucide-react';
+import { Activity, Database, Search, Sparkles, Brain, Shield } from 'lucide-react';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
 import { ScrollArea } from '@/components/ui/scroll-area';
 import { AtlasTaskProgress } from './AtlasTaskProgress';
 import { AtlasSearchPanel, WebSearchEntry } from './AtlasSearchPanel';
 import { CSuiteDataHub } from '@/components/csuite/CSuiteDataHub';
 import { KnowledgeDiscoveryPanel } from './KnowledgeDiscoveryPanel';
+import { VeracityEvaluationPanel } from './VeracityEvaluationPanel';
 import { AgentTask } from '@/hooks/useAgentOrchestration';
 
 interface SearchResult {
@@ -62,27 +63,34 @@ export function AtlasRightPanel({
   return (
     <div className="w-96 flex-shrink-0 flex flex-col h-full">
       <Tabs defaultValue="operations" className="flex flex-col h-full">
-        <TabsList className="w-full grid grid-cols-3 bg-muted/50 border border-border rounded-lg p-1 mb-3 flex-shrink-0">
+        <TabsList className="w-full grid grid-cols-4 bg-muted/50 border border-border rounded-lg p-1 mb-3 flex-shrink-0">
           <TabsTrigger 
             value="operations" 
-            className="flex items-center gap-1.5 text-xs font-mono data-[state=active]:bg-background data-[state=active]:shadow-sm"
+            className="flex items-center gap-1 text-[10px] font-mono data-[state=active]:bg-background data-[state=active]:shadow-sm px-2"
           >
-            <Activity size={14} />
+            <Activity size={12} />
             Ops
           </TabsTrigger>
           <TabsTrigger 
             value="datahub" 
-            className="flex items-center gap-1.5 text-xs font-mono data-[state=active]:bg-background data-[state=active]:shadow-sm"
+            className="flex items-center gap-1 text-[10px] font-mono data-[state=active]:bg-background data-[state=active]:shadow-sm px-2"
           >
-            <Database size={14} />
+            <Database size={12} />
             Data
           </TabsTrigger>
           <TabsTrigger 
             value="discovery" 
-            className="flex items-center gap-1.5 text-xs font-mono data-[state=active]:bg-background data-[state=active]:shadow-sm"
+            className="flex items-center gap-1 text-[10px] font-mono data-[state=active]:bg-background data-[state=active]:shadow-sm px-2"
           >
-            <Brain size={14} />
+            <Brain size={12} />
             Discover
+          </TabsTrigger>
+          <TabsTrigger 
+            value="verify" 
+            className="flex items-center gap-1 text-[10px] font-mono data-[state=active]:bg-background data-[state=active]:shadow-sm px-2"
+          >
+            <Shield size={12} />
+            Verify
           </TabsTrigger>
         </TabsList>
 
@@ -161,6 +169,12 @@ export function AtlasRightPanel({
         <TabsContent value="discovery" className="flex-1 mt-0 overflow-hidden flex flex-col min-h-0">
           <div className="flex-1 min-h-0 bg-card/90 border border-border rounded-lg overflow-hidden">
             <KnowledgeDiscoveryPanel />
+          </div>
+        </TabsContent>
+
+        <TabsContent value="verify" className="flex-1 mt-0 overflow-hidden flex flex-col min-h-0">
+          <div className="flex-1 min-h-0 bg-card/90 border border-border rounded-lg overflow-hidden">
+            <VeracityEvaluationPanel />
           </div>
         </TabsContent>
       </Tabs>

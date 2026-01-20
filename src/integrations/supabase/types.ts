@@ -3013,6 +3013,80 @@ export type Database = {
         }
         Relationships: []
       }
+      veracity_evaluations: {
+        Row: {
+          citations: string[] | null
+          confidence_level: string | null
+          context: string | null
+          contextual_fit_score: number | null
+          contradicting_evidence: Json | null
+          created_at: string
+          evaluated_by: string | null
+          evaluation_summary: string | null
+          id: string
+          knowledge_alignment_score: number | null
+          metadata: Json | null
+          plausibility_factors: Json | null
+          related_discovery_id: string | null
+          source_reliability_score: number | null
+          statement: string
+          supporting_evidence: Json | null
+          updated_at: string
+          user_id: string | null
+          veracity_score: number | null
+        }
+        Insert: {
+          citations?: string[] | null
+          confidence_level?: string | null
+          context?: string | null
+          contextual_fit_score?: number | null
+          contradicting_evidence?: Json | null
+          created_at?: string
+          evaluated_by?: string | null
+          evaluation_summary?: string | null
+          id?: string
+          knowledge_alignment_score?: number | null
+          metadata?: Json | null
+          plausibility_factors?: Json | null
+          related_discovery_id?: string | null
+          source_reliability_score?: number | null
+          statement: string
+          supporting_evidence?: Json | null
+          updated_at?: string
+          user_id?: string | null
+          veracity_score?: number | null
+        }
+        Update: {
+          citations?: string[] | null
+          confidence_level?: string | null
+          context?: string | null
+          contextual_fit_score?: number | null
+          contradicting_evidence?: Json | null
+          created_at?: string
+          evaluated_by?: string | null
+          evaluation_summary?: string | null
+          id?: string
+          knowledge_alignment_score?: number | null
+          metadata?: Json | null
+          plausibility_factors?: Json | null
+          related_discovery_id?: string | null
+          source_reliability_score?: number | null
+          statement?: string
+          supporting_evidence?: Json | null
+          updated_at?: string
+          user_id?: string | null
+          veracity_score?: number | null
+        }
+        Relationships: [
+          {
+            foreignKeyName: "veracity_evaluations_related_discovery_id_fkey"
+            columns: ["related_discovery_id"]
+            isOneToOne: false
+            referencedRelation: "knowledge_discoveries"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
       workspace_members: {
         Row: {
           assigned_agent_cluster_id: string | null
