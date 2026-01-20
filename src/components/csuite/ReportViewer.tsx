@@ -1,4 +1,5 @@
 import { useState } from 'react';
+import DOMPurify from 'dompurify';
 import { 
   X, 
   Download, 
@@ -111,11 +112,17 @@ function renderMarkdown(content: string) {
         .replace(/\*\*(.*?)\*\*/g, '<strong>$1</strong>')
         .replace(/\*(.*?)\*/g, '<em>$1</em>');
       
+      // Sanitize HTML to prevent XSS attacks
+      const sanitized = DOMPurify.sanitize(formatted, {
+        ALLOWED_TAGS: ['strong', 'em'],
+        ALLOWED_ATTR: []
+      });
+      
       elements.push(
         <p 
           key={index} 
           className="text-sm text-foreground/90 my-2 leading-relaxed"
-          dangerouslySetInnerHTML={{ __html: formatted }}
+          dangerouslySetInnerHTML={{ __html: sanitized }}
         />
       );
     }
