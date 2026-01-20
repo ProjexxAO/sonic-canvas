@@ -1732,6 +1732,71 @@ export type Database = {
         }
         Relationships: []
       }
+      habit_completions: {
+        Row: {
+          completed_at: string
+          habit_id: string
+          id: string
+          notes: string | null
+          user_id: string
+        }
+        Insert: {
+          completed_at?: string
+          habit_id: string
+          id?: string
+          notes?: string | null
+          user_id: string
+        }
+        Update: {
+          completed_at?: string
+          habit_id?: string
+          id?: string
+          notes?: string | null
+          user_id?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "habit_completions_habit_id_fkey"
+            columns: ["habit_id"]
+            isOneToOne: false
+            referencedRelation: "personal_habits"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      hub_access: {
+        Row: {
+          access_level: string
+          expires_at: string | null
+          granted_at: string
+          granted_by: string | null
+          hub_type: Database["public"]["Enums"]["hub_type"]
+          id: string
+          is_active: boolean | null
+          user_id: string
+        }
+        Insert: {
+          access_level?: string
+          expires_at?: string | null
+          granted_at?: string
+          granted_by?: string | null
+          hub_type: Database["public"]["Enums"]["hub_type"]
+          id?: string
+          is_active?: boolean | null
+          user_id: string
+        }
+        Update: {
+          access_level?: string
+          expires_at?: string | null
+          granted_at?: string
+          granted_by?: string | null
+          hub_type?: Database["public"]["Enums"]["hub_type"]
+          id?: string
+          is_active?: boolean | null
+          user_id?: string
+        }
+        Relationships: []
+      }
       item_comments: {
         Row: {
           content: string
@@ -2139,6 +2204,176 @@ export type Database = {
         }
         Relationships: []
       }
+      personal_goals: {
+        Row: {
+          category: string | null
+          created_at: string
+          current_value: number | null
+          description: string | null
+          id: string
+          start_date: string
+          status: string | null
+          target_date: string | null
+          target_value: number | null
+          title: string
+          unit: string | null
+          updated_at: string
+          user_id: string
+        }
+        Insert: {
+          category?: string | null
+          created_at?: string
+          current_value?: number | null
+          description?: string | null
+          id?: string
+          start_date?: string
+          status?: string | null
+          target_date?: string | null
+          target_value?: number | null
+          title: string
+          unit?: string | null
+          updated_at?: string
+          user_id: string
+        }
+        Update: {
+          category?: string | null
+          created_at?: string
+          current_value?: number | null
+          description?: string | null
+          id?: string
+          start_date?: string
+          status?: string | null
+          target_date?: string | null
+          target_value?: number | null
+          title?: string
+          unit?: string | null
+          updated_at?: string
+          user_id?: string
+        }
+        Relationships: []
+      }
+      personal_habits: {
+        Row: {
+          created_at: string
+          current_streak: number | null
+          description: string | null
+          frequency: string
+          id: string
+          is_active: boolean | null
+          last_completed_at: string | null
+          longest_streak: number | null
+          name: string
+          reminder_time: string | null
+          target_count: number | null
+          updated_at: string
+          user_id: string
+        }
+        Insert: {
+          created_at?: string
+          current_streak?: number | null
+          description?: string | null
+          frequency: string
+          id?: string
+          is_active?: boolean | null
+          last_completed_at?: string | null
+          longest_streak?: number | null
+          name: string
+          reminder_time?: string | null
+          target_count?: number | null
+          updated_at?: string
+          user_id: string
+        }
+        Update: {
+          created_at?: string
+          current_streak?: number | null
+          description?: string | null
+          frequency?: string
+          id?: string
+          is_active?: boolean | null
+          last_completed_at?: string | null
+          longest_streak?: number | null
+          name?: string
+          reminder_time?: string | null
+          target_count?: number | null
+          updated_at?: string
+          user_id?: string
+        }
+        Relationships: []
+      }
+      personal_items: {
+        Row: {
+          ai_summary: string | null
+          ai_tags: string[] | null
+          completed_at: string | null
+          content: string | null
+          created_at: string
+          due_date: string | null
+          embedding: string | null
+          id: string
+          item_type: string
+          metadata: Json | null
+          parent_item_id: string | null
+          priority: string | null
+          recurrence_rule: string | null
+          reminder_at: string | null
+          status: string | null
+          tags: string[] | null
+          title: string
+          updated_at: string
+          user_id: string
+        }
+        Insert: {
+          ai_summary?: string | null
+          ai_tags?: string[] | null
+          completed_at?: string | null
+          content?: string | null
+          created_at?: string
+          due_date?: string | null
+          embedding?: string | null
+          id?: string
+          item_type: string
+          metadata?: Json | null
+          parent_item_id?: string | null
+          priority?: string | null
+          recurrence_rule?: string | null
+          reminder_at?: string | null
+          status?: string | null
+          tags?: string[] | null
+          title: string
+          updated_at?: string
+          user_id: string
+        }
+        Update: {
+          ai_summary?: string | null
+          ai_tags?: string[] | null
+          completed_at?: string | null
+          content?: string | null
+          created_at?: string
+          due_date?: string | null
+          embedding?: string | null
+          id?: string
+          item_type?: string
+          metadata?: Json | null
+          parent_item_id?: string | null
+          priority?: string | null
+          recurrence_rule?: string | null
+          reminder_at?: string | null
+          status?: string | null
+          tags?: string[] | null
+          title?: string
+          updated_at?: string
+          user_id?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "personal_items_parent_item_id_fkey"
+            columns: ["parent_item_id"]
+            isOneToOne: false
+            referencedRelation: "personal_items"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
       platform_connections: {
         Row: {
           access_token_encrypted: string | null
@@ -2520,6 +2755,63 @@ export type Database = {
         }
         Relationships: []
       }
+      subscriptions: {
+        Row: {
+          ai_credits_monthly: number | null
+          ai_credits_used: number | null
+          cancel_at_period_end: boolean | null
+          created_at: string
+          current_period_end: string | null
+          current_period_start: string | null
+          group_memberships_limit: number | null
+          id: string
+          personal_items_limit: number | null
+          status: string
+          storage_mb_limit: number | null
+          stripe_customer_id: string | null
+          stripe_subscription_id: string | null
+          tier: Database["public"]["Enums"]["subscription_tier"]
+          updated_at: string
+          user_id: string
+        }
+        Insert: {
+          ai_credits_monthly?: number | null
+          ai_credits_used?: number | null
+          cancel_at_period_end?: boolean | null
+          created_at?: string
+          current_period_end?: string | null
+          current_period_start?: string | null
+          group_memberships_limit?: number | null
+          id?: string
+          personal_items_limit?: number | null
+          status?: string
+          storage_mb_limit?: number | null
+          stripe_customer_id?: string | null
+          stripe_subscription_id?: string | null
+          tier?: Database["public"]["Enums"]["subscription_tier"]
+          updated_at?: string
+          user_id: string
+        }
+        Update: {
+          ai_credits_monthly?: number | null
+          ai_credits_used?: number | null
+          cancel_at_period_end?: boolean | null
+          created_at?: string
+          current_period_end?: string | null
+          current_period_start?: string | null
+          group_memberships_limit?: number | null
+          id?: string
+          personal_items_limit?: number | null
+          status?: string
+          storage_mb_limit?: number | null
+          stripe_customer_id?: string | null
+          stripe_subscription_id?: string | null
+          tier?: Database["public"]["Enums"]["subscription_tier"]
+          updated_at?: string
+          user_id?: string
+        }
+        Relationships: []
+      }
       tax_configurations: {
         Row: {
           country_code: string
@@ -2577,6 +2869,36 @@ export type Database = {
           threshold_amount?: number | null
           threshold_currency?: string | null
           updated_at?: string
+        }
+        Relationships: []
+      }
+      tier_features: {
+        Row: {
+          description: string | null
+          feature_key: string
+          hub_type: Database["public"]["Enums"]["hub_type"]
+          id: string
+          is_enabled: boolean | null
+          tier: Database["public"]["Enums"]["subscription_tier"]
+          usage_limit: number | null
+        }
+        Insert: {
+          description?: string | null
+          feature_key: string
+          hub_type: Database["public"]["Enums"]["hub_type"]
+          id?: string
+          is_enabled?: boolean | null
+          tier: Database["public"]["Enums"]["subscription_tier"]
+          usage_limit?: number | null
+        }
+        Update: {
+          description?: string | null
+          feature_key?: string
+          hub_type?: Database["public"]["Enums"]["hub_type"]
+          id?: string
+          is_enabled?: boolean | null
+          tier?: Database["public"]["Enums"]["subscription_tier"]
+          usage_limit?: number | null
         }
         Relationships: []
       }
@@ -3332,6 +3654,13 @@ export type Database = {
       [_ in never]: never
     }
     Functions: {
+      can_access_hub: {
+        Args: {
+          p_hub: Database["public"]["Enums"]["hub_type"]
+          p_user_id: string
+        }
+        Returns: boolean
+      }
       compute_agent_tool_permissions: {
         Args: { _agent_id: string; _user_id?: string; _workspace_id?: string }
         Returns: {
@@ -3382,6 +3711,10 @@ export type Database = {
           tool_id: string
           tool_name: string
         }[]
+      }
+      get_user_tier: {
+        Args: { p_user_id: string }
+        Returns: Database["public"]["Enums"]["subscription_tier"]
       }
       has_role: {
         Args: {
@@ -3467,6 +3800,7 @@ export type Database = {
         | "other"
       compliance_mode: "standard" | "gdpr" | "hipaa" | "enterprise"
       governance_level: "persona" | "industry" | "workspace" | "user" | "agent"
+      hub_type: "personal" | "group" | "csuite"
       insight_cadence: "daily" | "weekly" | "monthly" | "manual"
       message_status:
         | "draft"
@@ -3476,6 +3810,12 @@ export type Database = {
         | "read"
         | "failed"
       org_plan: "free" | "personal" | "pro" | "team" | "enterprise"
+      subscription_tier:
+        | "free"
+        | "personal"
+        | "team"
+        | "business"
+        | "enterprise"
       tool_permission_status: "allowed" | "blocked" | "preferred"
       user_status: "active" | "invited" | "disabled"
       waveform_type: "sine" | "square" | "sawtooth" | "triangle"
@@ -3633,6 +3973,7 @@ export const Constants = {
       ],
       compliance_mode: ["standard", "gdpr", "hipaa", "enterprise"],
       governance_level: ["persona", "industry", "workspace", "user", "agent"],
+      hub_type: ["personal", "group", "csuite"],
       insight_cadence: ["daily", "weekly", "monthly", "manual"],
       message_status: [
         "draft",
@@ -3643,6 +3984,7 @@ export const Constants = {
         "failed",
       ],
       org_plan: ["free", "personal", "pro", "team", "enterprise"],
+      subscription_tier: ["free", "personal", "team", "business", "enterprise"],
       tool_permission_status: ["allowed", "blocked", "preferred"],
       user_status: ["active", "invited", "disabled"],
       waveform_type: ["sine", "square", "sawtooth", "triangle"],

@@ -18,6 +18,7 @@ import ImportAgents from "./pages/ImportAgents";
 import UserToolPermissions from "./pages/UserToolPermissions";
 import ToolGovernance from "./pages/ToolGovernance";
 import Integrations from "./pages/Integrations";
+import PersonalHub from "./pages/PersonalHub";
 import NotFound from "./pages/NotFound";
 const queryClient = new QueryClient();
 
@@ -54,6 +55,7 @@ const App = () => (
                       <Route path="/workspace/tools/:userId?" element={<UserToolPermissions />} />
                       <Route path="/governance" element={<ToolGovernance />} />
                       <Route path="/marketplace" element={<Integrations />} />
+                      <Route path="/personal" element={<PersonalHub />} />
                       {/* ADD ALL CUSTOM ROUTES ABOVE THE CATCH-ALL "*" ROUTE */}
                       <Route path="*" element={<NotFound />} />
                     </Routes>
