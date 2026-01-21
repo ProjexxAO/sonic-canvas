@@ -7,7 +7,7 @@ import { useVoiceCommandBus } from '@/lib/voice-command-bus';
 import { useAtlas } from '@/contexts/AtlasContext';
 
 // Error boundary to handle ElevenLabs SDK internal React errors during HMR
-class AtlasErrorBoundary extends React.Component<
+export class AtlasErrorBoundary extends React.Component<
   { children: React.ReactNode },
   { hasError: boolean; error: Error | null }
 > {
