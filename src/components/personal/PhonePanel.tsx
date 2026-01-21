@@ -181,11 +181,21 @@ export function PhonePanel() {
             {/* Quick Actions */}
             <div className="px-3 pb-3">
               <div className="flex gap-2">
-                <Button variant="outline" size="sm" className="flex-1 h-8 text-[10px]">
+                <Button 
+                  variant="outline" 
+                  size="sm" 
+                  className="flex-1 h-8 text-[10px]"
+                  onClick={() => window.open('tel:', '_self')}
+                >
                   <Phone size={12} className="mr-1" />
                   Dial
                 </Button>
-                <Button variant="outline" size="sm" className="flex-1 h-8 text-[10px]">
+                <Button 
+                  variant="outline" 
+                  size="sm" 
+                  className="flex-1 h-8 text-[10px]"
+                  onClick={() => window.open('https://meet.google.com/new', '_blank', 'noopener,noreferrer')}
+                >
                   <Video size={12} className="mr-1" />
                   Video Call
                 </Button>

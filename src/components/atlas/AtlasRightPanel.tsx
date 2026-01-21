@@ -1,8 +1,9 @@
 // Atlas Right Panel - Context-aware layout for Personal vs Enterprise hubs
-import React from 'react';
-import { Activity, Database, Search, Sparkles, Brain, Shield, User, Camera, Phone, Bell } from 'lucide-react';
+import React, { useRef, useCallback } from 'react';
+import { Activity, Database, Search, Sparkles, Brain, Shield, User, Camera, Phone, Bell, Upload, Image } from 'lucide-react';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
 import { ScrollArea } from '@/components/ui/scroll-area';
+import { Button } from '@/components/ui/button';
 import { AtlasTaskProgress } from './AtlasTaskProgress';
 import { AtlasSearchPanel, WebSearchEntry } from './AtlasSearchPanel';
 import { CSuiteDataHub } from '@/components/csuite/CSuiteDataHub';
@@ -17,6 +18,8 @@ import { cn } from '@/lib/utils';
 import { useAuth } from '@/hooks/useAuth';
 import { Badge } from '@/components/ui/badge';
 import { useDashboardNotifications } from '@/hooks/useDashboardNotifications';
+import { useUserPhotos } from '@/hooks/useUserPhotos';
+import { toast } from 'sonner';
 
 export type HubType = 'personal' | 'group' | 'csuite';
 
@@ -77,9 +80,28 @@ export function AtlasRightPanel({
 }: AtlasRightPanelProps) {
   const { user } = useAuth();
   const { unreadCount } = useDashboardNotifications(user?.id);
+  const { uploadMultiplePhotos, photos, isUploading, getPhotoUrl } = useUserPhotos();
+  const fileInputRef = useRef<HTMLInputElement>(null);
+  const cameraInputRef = useRef<HTMLInputElement>(null);
   
   // Get user display name or email for personal hub
   const userDisplayName = user?.user_metadata?.display_name || user?.email?.split('@')[0] || 'Personal';
+
+  // Handle photo upload
+  const handlePhotoUpload = useCallback(async (files: FileList | null) => {
+    if (!files || files.length === 0) return;
+    const count = await uploadMultiplePhotos(files);
+    if (count > 0) {
+      toast.success(`${count} photo(s) uploaded successfully`);
+    }
+  }, [uploadMultiplePhotos]);
+
+  // Handle camera capture
+  const handleCameraCapture = useCallback(() => {
+    if (cameraInputRef.current) {
+      cameraInputRef.current.click();
+    }
+  }, []);
 
   // Personal hub has simplified tabs: User's name (data), Phone, Camera, and hub quick access
   if (hubType === 'personal') {
@@ -143,12 +165,89 @@ export function AtlasRightPanel({
           </TabsContent>
 
           <TabsContent value="camera" className="flex-1 mt-0 overflow-hidden flex flex-col min-h-0">
-            <div className="flex-1 min-h-0 bg-card/90 border border-border rounded-lg overflow-hidden flex items-center justify-center">
-              <div className="text-center p-6">
-                <Camera size={48} className="mx-auto mb-4 text-muted-foreground" />
-                <h3 className="text-sm font-medium mb-1">Camera</h3>
-                <p className="text-xs text-muted-foreground">Quick capture for photos and documents</p>
-              </div>
+            <div className="flex-1 min-h-0 bg-card/90 border border-border rounded-lg overflow-hidden">
+              {/* Hidden file inputs */}
+              <input
+                ref={fileInputRef}
+                type="file"
+                accept="image/*"
+                multiple
+                onChange={(e) => handlePhotoUpload(e.target.files)}
+                className="hidden"
+              />
+              <input
+                ref={cameraInputRef}
+                type="file"
+                accept="image/*"
+                capture="environment"
+                onChange={(e) => handlePhotoUpload(e.target.files)}
+                className="hidden"
+              />
+              
+              <ScrollArea className="h-full">
+                <div className="p-4">
+                  {/* Camera Actions */}
+                  <div className="flex flex-col items-center gap-4 py-6">
+                    <div className="w-20 h-20 rounded-full bg-primary/10 flex items-center justify-center">
+                      <Camera size={32} className="text-primary" />
+                    </div>
+                    <h3 className="text-sm font-medium">Capture & Upload</h3>
+                    <p className="text-xs text-muted-foreground text-center max-w-[200px]">
+                      Take photos or upload images to your personal hub
+                    </p>
+                    <div className="flex gap-2">
+                      <Button 
+                        onClick={handleCameraCapture}
+                        disabled={isUploading}
+                        className="gap-2"
+                      >
+                        <Camera size={14} />
+                        Take Photo
+                      </Button>
+                      <Button 
+                        variant="outline"
+                        onClick={() => fileInputRef.current?.click()}
+                        disabled={isUploading}
+                        className="gap-2"
+                      >
+                        <Upload size={14} />
+                        Upload
+                      </Button>
+                    </div>
+                  </div>
+
+                  {/* Recent Photos */}
+                  {photos.length > 0 && (
+                    <div className="mt-6">
+                      <div className="flex items-center gap-2 mb-3">
+                        <Image size={14} className="text-muted-foreground" />
+                        <span className="text-xs font-mono text-muted-foreground uppercase">
+                          Recent Photos ({photos.length})
+                        </span>
+                      </div>
+                      <div className="grid grid-cols-3 gap-2">
+                        {photos.slice(0, 6).map((photo) => (
+                          <div 
+                            key={photo.id}
+                            className="aspect-square rounded-lg overflow-hidden bg-muted border border-border"
+                          >
+                            <img 
+                              src={getPhotoUrl(photo)} 
+                              alt={photo.file_name}
+                              className="w-full h-full object-cover"
+                            />
+                          </div>
+                        ))}
+                      </div>
+                      {photos.length > 6 && (
+                        <p className="text-[10px] text-muted-foreground text-center mt-2">
+                          +{photos.length - 6} more photos
+                        </p>
+                      )}
+                    </div>
+                  )}
+                </div>
+              </ScrollArea>
             </div>
           </TabsContent>
 
