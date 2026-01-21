@@ -1291,7 +1291,7 @@ function AtlasPage() {
                   ? "bg-primary/20 text-primary hover:bg-primary/30" 
                   : "bg-muted/30 text-muted-foreground hover:bg-muted/50 opacity-50"
               )}
-              title={wakeWordEnabled ? `Wake word active - say "Jarvis"` : 'Enable wake word detection'}
+              title={wakeWordEnabled ? `Wake word active - say "Computer"` : 'Enable wake word detection'}
             >
               {wakeWordEnabled ? <Ear className="w-4 h-4" /> : <EarOff className="w-4 h-4" />}
             </button>

@@ -145,9 +145,9 @@ export function AtlasProvider({ children }: AtlasProviderProps) {
   const [webSearches, setWebSearches] = useState<WebSearchEntry[]>([]);
   const [isWebSearching, setIsWebSearching] = useState(false);
   
-  // Wake word settings
-  const [wakeWordEnabled, setWakeWordEnabled] = useState(false);
-  const [wakeWord, setWakeWord] = useState<WakeWordName>("jarvis");
+  // Wake word settings - always listening by default, using "Computer" as closest to "Atlas"
+  const [wakeWordEnabled, setWakeWordEnabled] = useState(true);
+  const [wakeWord, setWakeWord] = useState<WakeWordName>("computer");
   
   // Navigation history tracking
   const [historyStack, setHistoryStack] = useState<string[]>([location.pathname]);
