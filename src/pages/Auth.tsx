@@ -26,10 +26,10 @@ export default function Auth() {
   const [googleLoading, setGoogleLoading] = useState(false);
   const [errors, setErrors] = useState<Record<string, string>>({});
 
-  // Redirect if already logged in
+  // Redirect if already logged in - Personal Hub first (people-first approach)
   useEffect(() => {
     if (user && !authLoading) {
-      navigate('/atlas');
+      navigate('/personal');
     }
   }, [user, authLoading, navigate]);
 
@@ -75,7 +75,7 @@ export default function Auth() {
         } else {
           audioEngine.playSuccess();
           toast.success('Access granted');
-          navigate('/atlas');
+          navigate('/personal');
         }
       } else {
         const { error } = await signUp(email, password, displayName);
@@ -89,7 +89,7 @@ export default function Auth() {
         } else {
           audioEngine.playSuccess();
           toast.success('Operator registered successfully');
-          navigate('/atlas');
+          navigate('/personal');
         }
       }
     } finally {
@@ -105,7 +105,7 @@ export default function Auth() {
       const { error } = await supabase.auth.signInWithOAuth({
         provider: 'google',
         options: {
-          redirectTo: `${window.location.origin}/atlas`,
+          redirectTo: `${window.location.origin}/personal`,
         },
       });
       
