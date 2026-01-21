@@ -1688,25 +1688,27 @@ export function PersonalDataHub({ userId }: PersonalDataHubProps) {
         <ScrollArea className="flex-1">
           <DragDropContext onDragEnd={handleWidgetDragEnd}>
             <Droppable droppableId="overview-widgets" direction="vertical">
-              {(provided) => (
-                <div 
-                  ref={provided.innerRef}
-                  {...provided.droppableProps}
-                  className="p-3 grid grid-cols-6 gap-3 auto-rows-min"
-                >
-                  {widgetOrder.map((widgetId, index) => {
-                    const widgetConfig = getWidgetConfig(widgetId);
-                    if (!widgetConfig || !widgetConfig.content) return null;
-                    
-                    return (
-                      <Draggable key={widgetId} draggableId={widgetId} index={index}>
+              {(provided) => {
+                // Filter out null widgets first to ensure consecutive indices
+                const visibleWidgets = widgetOrder
+                  .map(widgetId => ({ id: widgetId, config: getWidgetConfig(widgetId) }))
+                  .filter(w => w.config !== null && w.config.content !== null);
+
+                return (
+                  <div 
+                    ref={provided.innerRef}
+                    {...provided.droppableProps}
+                    className="p-3 grid grid-cols-6 gap-3 auto-rows-min"
+                  >
+                    {visibleWidgets.map((widget, index) => (
+                      <Draggable key={widget.id} draggableId={widget.id} index={index}>
                         {(provided, snapshot) => (
                           <div
                             ref={provided.innerRef}
                             {...provided.draggableProps}
                             className={cn(
                               "relative group",
-                              widgetConfig.colSpan,
+                              widget.config!.colSpan,
                               snapshot.isDragging && "opacity-90 shadow-lg z-50 bg-card rounded-lg"
                             )}
                           >
@@ -1720,15 +1722,15 @@ export function PersonalDataHub({ userId }: PersonalDataHubProps) {
                             >
                               <GripVertical size={10} className="text-muted-foreground" />
                             </div>
-                            {widgetConfig.content}
+                            {widget.config!.content}
                           </div>
                         )}
                       </Draggable>
-                    );
-                  })}
-                  {provided.placeholder}
-                </div>
-              )}
+                    ))}
+                    {provided.placeholder}
+                  </div>
+                );
+              }}
             </Droppable>
           </DragDropContext>
         </ScrollArea>
