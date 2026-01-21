@@ -1,4 +1,4 @@
-// Phone Panel - Text messages and messaging apps interface
+// Phone Panel - Unified messaging and phone sync interface
 import { useState } from 'react';
 import { 
   Phone, 
@@ -7,7 +7,8 @@ import {
   Send,
   Search,
   Plus,
-  ExternalLink
+  ExternalLink,
+  Smartphone
 } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
@@ -15,6 +16,8 @@ import { Badge } from '@/components/ui/badge';
 import { ScrollArea } from '@/components/ui/scroll-area';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
 import { cn } from '@/lib/utils';
+import { PhoneSyncPanel } from './PhoneSyncPanel';
+import { useAuth } from '@/hooks/useAuth';
 
 // Messaging app definitions
 const MESSAGING_APPS = [
@@ -40,6 +43,7 @@ const RECENT_MESSAGES = [
 export function PhonePanel() {
   const [searchQuery, setSearchQuery] = useState('');
   const [selectedTab, setSelectedTab] = useState('messages');
+  const { user } = useAuth();
 
   const totalUnread = MESSAGING_APPS.reduce((sum, app) => sum + app.unread, 0);
 
@@ -82,12 +86,16 @@ export function PhonePanel() {
 
       {/* Tabs */}
       <Tabs value={selectedTab} onValueChange={setSelectedTab} className="flex-1 flex flex-col overflow-hidden">
-        <TabsList className="w-full grid grid-cols-2 bg-muted/30 border-b border-border rounded-none p-0 h-8">
+        <TabsList className="w-full grid grid-cols-3 bg-muted/30 border-b border-border rounded-none p-0 h-8">
           <TabsTrigger value="messages" className="text-[10px] font-mono rounded-none data-[state=active]:bg-background">
             Messages
           </TabsTrigger>
           <TabsTrigger value="apps" className="text-[10px] font-mono rounded-none data-[state=active]:bg-background">
             Apps
+          </TabsTrigger>
+          <TabsTrigger value="sync" className="text-[10px] font-mono rounded-none data-[state=active]:bg-background gap-1">
+            <Smartphone size={10} />
+            Sync
           </TabsTrigger>
         </TabsList>
 
@@ -184,6 +192,11 @@ export function PhonePanel() {
               </div>
             </div>
           </ScrollArea>
+        </TabsContent>
+
+        {/* Sync Tab */}
+        <TabsContent value="sync" className="flex-1 mt-0 overflow-hidden">
+          <PhoneSyncPanel userId={user?.id} />
         </TabsContent>
       </Tabs>
     </div>
