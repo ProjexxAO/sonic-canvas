@@ -1,6 +1,6 @@
-// Atlas Right Panel - Tabbed layout for Operations, Data Hub, Knowledge Discovery, and Veracity Evaluation
+// Atlas Right Panel - Context-aware layout for Personal vs Enterprise hubs
 import React from 'react';
-import { Activity, Database, Search, Sparkles, Brain, Shield } from 'lucide-react';
+import { Activity, Database, Search, Sparkles, Brain, Shield, User, Camera, ChevronDown } from 'lucide-react';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
 import { ScrollArea } from '@/components/ui/scroll-area';
 import { AtlasTaskProgress } from './AtlasTaskProgress';
@@ -11,6 +11,7 @@ import { KnowledgeDiscoveryPanel } from './KnowledgeDiscoveryPanel';
 import { VeracityEvaluationPanel } from './VeracityEvaluationPanel';
 import { AgentTask } from '@/hooks/useAgentOrchestration';
 import { cn } from '@/lib/utils';
+import { useAuth } from '@/hooks/useAuth';
 
 export type HubType = 'personal' | 'group' | 'csuite';
 
@@ -69,11 +70,56 @@ export function AtlasRightPanel({
   agents,
   agentsLoading,
 }: AtlasRightPanelProps) {
+  const { user } = useAuth();
+  
+  // Get user display name or email for personal hub
+  const userDisplayName = user?.user_metadata?.display_name || user?.email?.split('@')[0] || 'Personal';
+
+  // Personal hub has simplified tabs: User's name (data), Camera
+  if (hubType === 'personal') {
+    return (
+      <div className="flex-1 min-w-0 flex flex-col h-full">
+        <Tabs defaultValue="personal-data" className="flex flex-col h-full">
+          <TabsList className="w-full flex justify-start gap-1 bg-muted/50 border border-border rounded-lg p-1 mb-3 flex-shrink-0">
+            <TabsTrigger 
+              value="personal-data" 
+              className="flex items-center gap-1 text-[10px] font-mono data-[state=active]:bg-background data-[state=active]:shadow-sm px-3"
+            >
+              <User size={12} />
+              {userDisplayName}
+            </TabsTrigger>
+            <TabsTrigger 
+              value="camera" 
+              className="flex items-center gap-1 text-[10px] font-mono data-[state=active]:bg-background data-[state=active]:shadow-sm px-3"
+            >
+              <Camera size={12} />
+              Camera
+            </TabsTrigger>
+          </TabsList>
+
+          <TabsContent value="personal-data" className="flex-1 mt-0 overflow-hidden flex flex-col min-h-0">
+            <div className="flex-1 min-h-0 overflow-auto">
+              <PersonalDataHub userId={userId} />
+            </div>
+          </TabsContent>
+
+          <TabsContent value="camera" className="flex-1 mt-0 overflow-hidden flex flex-col min-h-0">
+            <div className="flex-1 min-h-0 bg-card/90 border border-border rounded-lg overflow-hidden flex items-center justify-center">
+              <div className="text-center p-6">
+                <Camera size={48} className="mx-auto mb-4 text-muted-foreground" />
+                <h3 className="text-sm font-medium mb-1">Camera</h3>
+                <p className="text-xs text-muted-foreground">Quick capture for photos and documents</p>
+              </div>
+            </div>
+          </TabsContent>
+        </Tabs>
+      </div>
+    );
+  }
+
+  // Enterprise/Group hubs keep full tabs: Ops, Data, Discover, Verify
   return (
-    <div className={cn(
-      "flex-shrink-0 flex flex-col h-full",
-      hubType === 'personal' ? "flex-1 min-w-0" : "w-96"
-    )}>
+    <div className="w-96 flex-shrink-0 flex flex-col h-full">
       <Tabs defaultValue="operations" className="flex flex-col h-full">
         <TabsList className="w-full grid grid-cols-4 bg-muted/50 border border-border rounded-lg p-1 mb-3 flex-shrink-0">
           <TabsTrigger 
@@ -174,18 +220,13 @@ export function AtlasRightPanel({
 
         <TabsContent value="datahub" className="flex-1 mt-0 overflow-hidden flex flex-col min-h-0">
           <div className="flex-1 min-h-0 overflow-auto">
-            {/* Use PersonalDataHub for personal context, CSuiteDataHub for group/csuite */}
-            {hubType === 'personal' ? (
-              <PersonalDataHub userId={userId} />
-            ) : (
-              <CSuiteDataHub 
-                userId={userId} 
-                agents={agents} 
-                agentsLoading={agentsLoading} 
-                hubType={hubType}
-                groupId={groupId}
-              />
-            )}
+            <CSuiteDataHub 
+              userId={userId} 
+              agents={agents} 
+              agentsLoading={agentsLoading} 
+              hubType={hubType}
+              groupId={groupId}
+            />
           </div>
         </TabsContent>
 
