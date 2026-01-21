@@ -11,3 +11,7 @@ export { AtlasDailyBrief } from './AtlasDailyBrief';
 export { FocusModeSelector } from './FocusModeSelector';
 export { StressMonitor } from './StressMonitor';
 export { UnifiedInbox } from './UnifiedInbox';
+export { WellnessWidget } from './WellnessWidget';
+export { FocusTimerWidget } from './FocusTimerWidget';
+export { HabitStreakChart } from './HabitStreakChart';
+export { GoalProgressTimeline } from './GoalProgressTimeline';

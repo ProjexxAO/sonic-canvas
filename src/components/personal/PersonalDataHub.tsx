@@ -89,6 +89,11 @@ import { supabase } from '@/integrations/supabase/client';
 import { cn } from '@/lib/utils';
 import { toast } from 'sonner';
 import { format, isToday, isPast, parseISO } from 'date-fns';
+import { AtlasDailyBrief } from './AtlasDailyBrief';
+import { WellnessWidget } from './WellnessWidget';
+import { FocusTimerWidget } from './FocusTimerWidget';
+import { HabitStreakChart } from './HabitStreakChart';
+import { GoalProgressTimeline } from './GoalProgressTimeline';
 
 interface PersonalDataHubProps {
   userId: string | undefined;
@@ -1737,6 +1742,13 @@ export function PersonalDataHub({ userId }: PersonalDataHubProps) {
               </Card>
             </div>
 
+            {/* New Widgets Row - Atlas Brief, Wellness, Focus */}
+            <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-3">
+              <AtlasDailyBrief compact />
+              <WellnessWidget compact />
+              <FocusTimerWidget compact />
+            </div>
+
             {/* Quick Add Task */}
             <div className="flex gap-2">
               <Input
@@ -1790,7 +1802,13 @@ export function PersonalDataHub({ userId }: PersonalDataHubProps) {
               </div>
             )}
 
-            {/* Goals Preview */}
+            {/* Enhanced Visualizations Row */}
+            <div className="grid grid-cols-1 md:grid-cols-2 gap-3">
+              <HabitStreakChart />
+              <GoalProgressTimeline />
+            </div>
+
+            {/* Goals Preview (legacy - kept for compatibility) */}
             {goals.length > 0 && (
               <div id="section-goals">
                 <h3 className="text-[10px] font-mono text-muted-foreground mb-2 flex items-center gap-1">
