@@ -479,10 +479,16 @@ export function AtlasHubLayout({
       {/* Main Content */}
       <main className="relative z-10 flex-1 flex overflow-hidden p-6 gap-6">
         {/* Left Side - Visualizer */}
-        <div className="flex-1 flex items-center justify-center relative">
-          {/* Central Orb */}
+        <div className={cn(
+          "flex items-center justify-center relative",
+          hubType === 'personal' ? "w-48 flex-shrink-0" : "flex-1"
+        )}>
+          {/* Central Orb - Half size for personal hub */}
           <div 
-            className="relative w-72 h-72"
+            className={cn(
+              "relative",
+              hubType === 'personal' ? "w-36 h-36" : "w-72 h-72"
+            )}
             style={{ 
               transform: `scale(${1 + (conversation.isSpeaking ? outputVolume : inputVolume) * 0.08})`,
               transition: 'transform 0.15s ease-out'
@@ -504,7 +510,8 @@ export function AtlasHubLayout({
             {/* Middle ring */}
             <div 
               className={cn(
-                "absolute inset-4 rounded-full border-2",
+                "absolute rounded-full border-2",
+                hubType === 'personal' ? "inset-2" : "inset-4",
                 isConnected && conversation.isSpeaking && "border-secondary animate-spin"
               )}
               style={{ 
@@ -518,7 +525,8 @@ export function AtlasHubLayout({
             {/* Inner circle - Cosmic Orb */}
             <div
               className={cn(
-                "absolute inset-8 rounded-full border border-border flex items-center justify-center overflow-hidden",
+                "absolute rounded-full border border-border flex items-center justify-center overflow-hidden",
+                hubType === 'personal' ? "inset-4" : "inset-8",
                 !isConnected && !isConnecting && "cursor-pointer hover:border-primary/50 transition-colors",
                 theme === 'dark' 
                   ? "bg-[hsl(240_10%_6%/0.9)]" 
