@@ -46,10 +46,13 @@ interface QuickAction {
   priority: 'high' | 'medium' | 'low';
 }
 
+export type HubType = 'personal' | 'group' | 'csuite';
+
 interface QuickActionCardsProps {
   personaId: string | null;
   userId: string | undefined;
   onActionClick: (actionId: string) => void;
+  hubType?: HubType;
   stats?: {
     communications: number;
     documents: number;
@@ -59,6 +62,26 @@ interface QuickActionCardsProps {
     knowledge: number;
   };
 }
+
+// Personal Hub specific actions
+const PERSONAL_ACTIONS: QuickAction[] = [
+  { id: 'my_tasks', label: 'My Tasks', description: 'Personal to-dos', icon: CheckSquare, color: 'hsl(350 70% 50%)', priority: 'high' },
+  { id: 'calendar', label: 'My Calendar', description: 'Personal events', icon: Calendar, color: 'hsl(280 70% 50%)', priority: 'high' },
+  { id: 'goals', label: 'Goals', description: 'Track your goals', icon: Target, color: 'hsl(150 70% 45%)', priority: 'high' },
+  { id: 'habits', label: 'Habits', description: 'Daily habits', icon: TrendingUp, color: 'hsl(45 80% 50%)', priority: 'high' },
+  { id: 'notes', label: 'Notes', description: 'Personal notes', icon: FileText, color: 'hsl(200 70% 50%)', priority: 'medium' },
+  { id: 'bookmarks', label: 'Bookmarks', description: 'Saved items', icon: BookOpen, color: 'hsl(var(--primary))', priority: 'medium' },
+];
+
+// Group Hub specific actions  
+const GROUP_ACTIONS: QuickAction[] = [
+  { id: 'group_tasks', label: 'Team Tasks', description: 'Shared to-dos', icon: CheckSquare, color: 'hsl(350 70% 50%)', priority: 'high' },
+  { id: 'group_calendar', label: 'Team Calendar', description: 'Group events', icon: Calendar, color: 'hsl(280 70% 50%)', priority: 'high' },
+  { id: 'group_notes', label: 'Shared Notes', description: 'Team knowledge', icon: FileText, color: 'hsl(200 70% 50%)', priority: 'high' },
+  { id: 'members', label: 'Members', description: 'Team directory', icon: Users, color: 'hsl(150 70% 45%)', priority: 'high' },
+  { id: 'announcements', label: 'Announcements', description: 'Team updates', icon: Megaphone, color: 'hsl(45 80% 50%)', priority: 'medium' },
+  { id: 'resources', label: 'Resources', description: 'Shared files', icon: BookOpen, color: 'hsl(var(--primary))', priority: 'medium' },
+];
 
 // Persona-specific unique actions - each persona gets DIFFERENT actions tailored to their role
 const PERSONA_ACTIONS: Record<string, QuickAction[]> = {
@@ -194,17 +217,26 @@ const DEFAULT_ACTIONS: QuickAction[] = [
   { id: 'knowledge', label: 'Knowledge', description: 'Info library', icon: BookOpen, color: 'hsl(var(--primary))', priority: 'medium' },
 ];
 
-export function QuickActionCards({ personaId, userId, onActionClick, stats }: QuickActionCardsProps) {
+export function QuickActionCards({ personaId, userId, onActionClick, hubType = 'csuite', stats }: QuickActionCardsProps) {
   const { preferences, recordUsage, setCustomOrder, clearCustomOrder, getSortedActionIds } = useQuickActionPreferences(userId);
   const [isDragMode, setIsDragMode] = useState(false);
 
-  // Get actions for current persona
+  // Get actions based on hub type first, then persona
   const baseActions = useMemo(() => {
+    // Personal hub - show personal actions
+    if (hubType === 'personal') {
+      return PERSONAL_ACTIONS;
+    }
+    // Group hub - show group actions
+    if (hubType === 'group') {
+      return GROUP_ACTIONS;
+    }
+    // C-Suite hub - use persona-based actions
     if (personaId && PERSONA_ACTIONS[personaId]) {
       return PERSONA_ACTIONS[personaId];
     }
     return DEFAULT_ACTIONS;
-  }, [personaId]);
+  }, [hubType, personaId]);
 
   // Sort actions based on user preferences
   const sortedActions = useMemo(() => {

@@ -97,7 +97,9 @@ export function GlobalAtlasOrb() {
   }, [transcript, isSpeaking]);
 
   // Don't render on the Atlas page itself - it has its own full interface
-  if (location.pathname === '/atlas') return null;
+  // Hide on pages that have their own Atlas orb (AtlasHubLayout)
+  const hubRoutes = ['/atlas', '/personal', '/group'];
+  if (hubRoutes.some(route => location.pathname.startsWith(route))) return null;
   
   // Don't render if context is not available
   if (!atlas) return null;
