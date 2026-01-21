@@ -7,3 +7,7 @@ export { PersonalDataHub } from './PersonalDataHub';
 export { PhonePanel } from './PhonePanel';
 export { HubQuickAccess } from './HubQuickAccess';
 export { NotificationSettingsPanel } from './NotificationSettingsPanel';
+export { AtlasDailyBrief } from './AtlasDailyBrief';
+export { FocusModeSelector } from './FocusModeSelector';
+export { StressMonitor } from './StressMonitor';
+export { UnifiedInbox } from './UnifiedInbox';
