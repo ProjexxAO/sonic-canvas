@@ -3495,6 +3495,42 @@ export type Database = {
           },
         ]
       }
+      user_dashboard_preferences: {
+        Row: {
+          atlas_filter: Json | null
+          columns: number | null
+          created_at: string
+          id: string
+          layout_preset: string | null
+          selected_shortcuts: string[] | null
+          updated_at: string
+          user_id: string
+          widget_order: string[] | null
+        }
+        Insert: {
+          atlas_filter?: Json | null
+          columns?: number | null
+          created_at?: string
+          id?: string
+          layout_preset?: string | null
+          selected_shortcuts?: string[] | null
+          updated_at?: string
+          user_id: string
+          widget_order?: string[] | null
+        }
+        Update: {
+          atlas_filter?: Json | null
+          columns?: number | null
+          created_at?: string
+          id?: string
+          layout_preset?: string | null
+          selected_shortcuts?: string[] | null
+          updated_at?: string
+          user_id?: string
+          widget_order?: string[] | null
+        }
+        Relationships: []
+      }
       user_difficulty_preferences: {
         Row: {
           agent_autonomy_preference: string
