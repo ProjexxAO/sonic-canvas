@@ -19,7 +19,10 @@ import {
   MessageCircle,
   Wrench,
   Shield,
-  Plug
+  Plug,
+  User as UserIcon,
+  Users,
+  Briefcase
 } from 'lucide-react';
 
 interface HeaderProps {
@@ -154,6 +157,34 @@ export default function Header({ onToggleAudio, audioEnabled, user, onSignOut }:
         >
           <MessageCircle size={18} />
         </HeaderButton>
+        
+        {/* Data Hubs Navigation */}
+        <div className="hidden md:flex items-center gap-1 px-2 py-1 bg-muted/30 rounded-md">
+          <HeaderButton
+            entityName="Personal Hub"
+            onClick={() => navigate('/personal')}
+            title="Personal Hub"
+            className="p-2 text-muted-foreground hover:text-primary transition-colors"
+          >
+            <UserIcon size={16} />
+          </HeaderButton>
+          <HeaderButton
+            entityName="Group Hub"
+            onClick={() => navigate('/group')}
+            title="Group Hub"
+            className="p-2 text-muted-foreground hover:text-primary transition-colors"
+          >
+            <Users size={16} />
+          </HeaderButton>
+          <HeaderButton
+            entityName="C-Suite Hub"
+            onClick={() => navigate('/atlas')}
+            title="C-Suite Data Hub"
+            className="p-2 text-muted-foreground hover:text-primary transition-colors"
+          >
+            <Briefcase size={16} />
+          </HeaderButton>
+        </div>
         
         <HeaderButton
           entityName="Import Agents"
