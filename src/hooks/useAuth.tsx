@@ -41,7 +41,8 @@ export function AuthProvider({ children }: { children: ReactNode }) {
   }, []);
 
   const signUp = async (email: string, password: string, displayName?: string) => {
-    const redirectUrl = `${window.location.origin}/atlas`;
+    // Redirect to Personal Hub first (people-first approach)
+    const redirectUrl = `${window.location.origin}/personal`;
     
     const { error } = await supabase.auth.signUp({
       email,
