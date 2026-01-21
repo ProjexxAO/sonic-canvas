@@ -10,6 +10,7 @@ import { useBanking } from '@/hooks/useBanking';
 import { usePersonalHub } from '@/hooks/usePersonalHub';
 import { DashboardWidgetMemo } from './DashboardWidget';
 import { DashboardCustomizer } from './DashboardCustomizer';
+import { InvitedDashboardsPanel } from './InvitedDashboardsPanel';
 import { useTheme } from 'next-themes';
 
 interface PersonalDashboardViewProps {
@@ -125,7 +126,10 @@ export function PersonalDashboardView({ userId }: PersonalDashboardViewProps) {
   }
 
   return (
-    <div>
+    <div className="space-y-6">
+      {/* Invited Dashboards - Prominent placement for hub transitions */}
+      <InvitedDashboardsPanel />
+
       {/* Customizer Bar */}
       <DashboardCustomizer
         columns={layout.columns}

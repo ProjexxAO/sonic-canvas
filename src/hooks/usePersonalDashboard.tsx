@@ -18,7 +18,8 @@ export type WidgetType =
   | 'recent-activity'
   | 'weather'
   | 'tasks-today'
-  | 'notes-recent';
+  | 'notes-recent'
+  | 'hub-access';
 
 export type WidgetSize = 'small' | 'medium' | 'large' | 'full';
 
@@ -88,6 +89,7 @@ export const WIDGET_CATALOG: {
     widgets: [
       { type: 'recent-activity', title: 'Recent Activity', description: 'Activity across all services', defaultSize: 'large', icon: 'activity' },
       { type: 'weather', title: 'Weather', description: 'Current weather conditions', defaultSize: 'small', icon: 'cloud-sun' },
+      { type: 'hub-access', title: 'Hub Access', description: 'Quick links to invited dashboards', defaultSize: 'medium', icon: 'external-link' },
     ]
   }
 ];

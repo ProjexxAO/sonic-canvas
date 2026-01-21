@@ -1,4 +1,5 @@
 import { memo } from 'react';
+import { useNavigate } from 'react-router-dom';
 import { 
   CreditCard, 
   Mail, 
@@ -19,7 +20,11 @@ import {
   GripVertical,
   X,
   Maximize2,
-  Minimize2
+  Minimize2,
+  ExternalLink,
+  Briefcase,
+  Users,
+  ChevronRight
 } from 'lucide-react';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
@@ -27,6 +32,7 @@ import { Badge } from '@/components/ui/badge';
 import { cn } from '@/lib/utils';
 import { DashboardWidget as DashboardWidgetType, WidgetType } from '@/hooks/usePersonalDashboard';
 import { useTheme } from 'next-themes';
+import { useCrossHubAccess } from '@/hooks/useCrossHubAccess';
 
 const WIDGET_ICONS: Record<WidgetType, typeof CreditCard> = {
   'bank-balance': CreditCard,
@@ -45,6 +51,7 @@ const WIDGET_ICONS: Record<WidgetType, typeof CreditCard> = {
   'weather': CloudSun,
   'tasks-today': CheckSquare,
   'notes-recent': FileText,
+  'hub-access': ExternalLink,
 };
 
 const WIDGET_COLORS: Record<WidgetType, string> = {
@@ -64,6 +71,7 @@ const WIDGET_COLORS: Record<WidgetType, string> = {
   'weather': 'sky',
   'tasks-today': 'primary',
   'notes-recent': 'purple',
+  'hub-access': 'primary',
 };
 
 interface DashboardWidgetProps {
@@ -72,6 +80,74 @@ interface DashboardWidgetProps {
   onResize: (size: 'small' | 'medium' | 'large') => void;
   isDragging?: boolean;
   dragHandleProps?: any;
+}
+
+// Hub Access Widget Content
+function HubAccessContent() {
+  const navigate = useNavigate();
+  const { theme } = useTheme();
+  const { grantedToMe } = useCrossHubAccess();
+  
+  const hubInvitations = grantedToMe.filter(g => g.sourceHubType !== 'personal');
+
+  if (hubInvitations.length === 0) {
+    return (
+      <div className="text-center py-4">
+        <ExternalLink className="h-8 w-8 text-muted-foreground/30 mx-auto mb-2" />
+        <p className="text-xs text-muted-foreground">No hub invitations yet</p>
+      </div>
+    );
+  }
+
+  return (
+    <div className="space-y-2">
+      {hubInvitations.slice(0, 3).map(grant => {
+        const isGroup = grant.sourceHubType === 'group';
+        const Icon = isGroup ? Users : Briefcase;
+        const route = isGroup ? '/group' : '/atlas';
+        
+        return (
+          <div
+            key={grant.id}
+            className={cn(
+              "flex items-center gap-2 p-2 rounded-lg cursor-pointer transition-colors",
+              theme === 'dark' ? "hover:bg-muted/30" : "hover:bg-muted/40"
+            )}
+            onClick={() => navigate(route)}
+          >
+            <div className={cn(
+              "p-1.5 rounded-lg",
+              isGroup ? "bg-emerald-500/10" : "bg-purple-500/10"
+            )}>
+              <Icon className={cn(
+                "h-3.5 w-3.5",
+                isGroup ? "text-emerald-500" : "text-purple-500"
+              )} />
+            </div>
+            <div className="flex-1 min-w-0">
+              <p className="text-sm font-medium truncate">
+                {grant.sourceHubName || (isGroup ? 'Group Hub' : 'Executive Hub')}
+              </p>
+              <p className="text-[10px] text-muted-foreground capitalize">
+                {grant.accessType} access
+              </p>
+            </div>
+            <ChevronRight className="h-3.5 w-3.5 text-muted-foreground" />
+          </div>
+        );
+      })}
+      {hubInvitations.length > 3 && (
+        <Button 
+          variant="ghost" 
+          size="sm" 
+          className="w-full text-xs"
+          onClick={() => navigate('/personal')}
+        >
+          View all {hubInvitations.length} invitations
+        </Button>
+      )}
+    </div>
+  );
 }
 
 function DashboardWidgetComponent({
@@ -233,6 +309,9 @@ function DashboardWidgetComponent({
             ))}
           </div>
         );
+      
+      case 'hub-access':
+        return <HubAccessContent />;
       
       default:
         return (
