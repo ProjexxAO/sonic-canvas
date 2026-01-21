@@ -1,17 +1,22 @@
 // Atlas Right Panel - Context-aware layout for Personal vs Enterprise hubs
 import React from 'react';
-import { Activity, Database, Search, Sparkles, Brain, Shield, User, Camera, ChevronDown } from 'lucide-react';
+import { Activity, Database, Search, Sparkles, Brain, Shield, User, Camera, Phone, Bell } from 'lucide-react';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
 import { ScrollArea } from '@/components/ui/scroll-area';
 import { AtlasTaskProgress } from './AtlasTaskProgress';
 import { AtlasSearchPanel, WebSearchEntry } from './AtlasSearchPanel';
 import { CSuiteDataHub } from '@/components/csuite/CSuiteDataHub';
 import { PersonalDataHub } from '@/components/personal/PersonalDataHub';
+import { PhonePanel } from '@/components/personal/PhonePanel';
+import { HubQuickAccess } from '@/components/personal/HubQuickAccess';
+import { NotificationSettingsPanel } from '@/components/personal/NotificationSettingsPanel';
 import { KnowledgeDiscoveryPanel } from './KnowledgeDiscoveryPanel';
 import { VeracityEvaluationPanel } from './VeracityEvaluationPanel';
 import { AgentTask } from '@/hooks/useAgentOrchestration';
 import { cn } from '@/lib/utils';
 import { useAuth } from '@/hooks/useAuth';
+import { Badge } from '@/components/ui/badge';
+import { useDashboardNotifications } from '@/hooks/useDashboardNotifications';
 
 export type HubType = 'personal' | 'group' | 'csuite';
 
@@ -71,35 +76,69 @@ export function AtlasRightPanel({
   agentsLoading,
 }: AtlasRightPanelProps) {
   const { user } = useAuth();
+  const { unreadCount } = useDashboardNotifications(user?.id);
   
   // Get user display name or email for personal hub
   const userDisplayName = user?.user_metadata?.display_name || user?.email?.split('@')[0] || 'Personal';
 
-  // Personal hub has simplified tabs: User's name (data), Camera
+  // Personal hub has simplified tabs: User's name (data), Phone, Camera, and hub quick access
   if (hubType === 'personal') {
     return (
       <div className="flex-1 min-w-0 flex flex-col h-full">
         <Tabs defaultValue="personal-data" className="flex flex-col h-full">
-          <TabsList className="w-full flex justify-start gap-1 bg-muted/50 border border-border rounded-lg p-1 mb-3 flex-shrink-0">
-            <TabsTrigger 
-              value="personal-data" 
-              className="flex items-center gap-1 text-[10px] font-mono data-[state=active]:bg-background data-[state=active]:shadow-sm px-3"
-            >
-              <User size={12} />
-              {userDisplayName}
-            </TabsTrigger>
-            <TabsTrigger 
-              value="camera" 
-              className="flex items-center gap-1 text-[10px] font-mono data-[state=active]:bg-background data-[state=active]:shadow-sm px-3"
-            >
-              <Camera size={12} />
-              Camera
-            </TabsTrigger>
-          </TabsList>
+          {/* Tab Header Row */}
+          <div className="flex items-center gap-2 mb-3 flex-shrink-0">
+            <TabsList className="flex-1 flex justify-start gap-1 bg-muted/50 border border-border rounded-lg p-1">
+              <TabsTrigger 
+                value="personal-data" 
+                className="flex items-center gap-1 text-[10px] font-mono data-[state=active]:bg-background data-[state=active]:shadow-sm px-3"
+              >
+                <User size={12} />
+                {userDisplayName}
+              </TabsTrigger>
+              <TabsTrigger 
+                value="phone" 
+                className="flex items-center gap-1 text-[10px] font-mono data-[state=active]:bg-background data-[state=active]:shadow-sm px-3"
+              >
+                <Phone size={12} />
+                Phone
+              </TabsTrigger>
+              <TabsTrigger 
+                value="camera" 
+                className="flex items-center gap-1 text-[10px] font-mono data-[state=active]:bg-background data-[state=active]:shadow-sm px-3"
+              >
+                <Camera size={12} />
+                Camera
+              </TabsTrigger>
+              <TabsTrigger 
+                value="notifications" 
+                className="flex items-center gap-1 text-[10px] font-mono data-[state=active]:bg-background data-[state=active]:shadow-sm px-3 relative"
+              >
+                <Bell size={12} />
+                Settings
+                {unreadCount > 0 && (
+                  <Badge variant="destructive" className="ml-1 text-[8px] px-1 py-0 h-3.5">
+                    {unreadCount}
+                  </Badge>
+                )}
+              </TabsTrigger>
+            </TabsList>
+            
+            {/* Hub Quick Access Links */}
+            <div className="flex-shrink-0 border-l border-border pl-2">
+              <HubQuickAccess />
+            </div>
+          </div>
 
           <TabsContent value="personal-data" className="flex-1 mt-0 overflow-hidden flex flex-col min-h-0">
             <div className="flex-1 min-h-0 overflow-auto">
               <PersonalDataHub userId={userId} />
+            </div>
+          </TabsContent>
+
+          <TabsContent value="phone" className="flex-1 mt-0 overflow-hidden flex flex-col min-h-0">
+            <div className="flex-1 min-h-0">
+              <PhonePanel />
             </div>
           </TabsContent>
 
@@ -110,6 +149,12 @@ export function AtlasRightPanel({
                 <h3 className="text-sm font-medium mb-1">Camera</h3>
                 <p className="text-xs text-muted-foreground">Quick capture for photos and documents</p>
               </div>
+            </div>
+          </TabsContent>
+
+          <TabsContent value="notifications" className="flex-1 mt-0 overflow-hidden flex flex-col min-h-0">
+            <div className="flex-1 min-h-0 bg-card/90 border border-border rounded-lg overflow-hidden">
+              <NotificationSettingsPanel />
             </div>
           </TabsContent>
         </Tabs>
