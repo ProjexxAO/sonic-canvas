@@ -456,8 +456,10 @@ export function CSuiteDataHub({ userId, agents = [], agentsLoading = false, hubT
           <div className="px-3 py-2 border-b border-border flex items-center justify-between">
             <div className="flex items-center gap-2">
               <BarChart3 size={14} className="text-primary" />
-              <span className="text-xs font-mono text-muted-foreground">C-SUITE DATA HUB</span>
-              {currentPersona && !sharedDashboards.currentDashboard && (
+              <span className="text-xs font-mono text-muted-foreground uppercase">
+                {hubType === 'personal' ? 'PERSONAL DATA HUB' : hubType === 'group' ? 'GROUP DATA HUB' : 'C-SUITE DATA HUB'}
+              </span>
+              {hubType === 'csuite' && currentPersona && !sharedDashboards.currentDashboard && (
                 <Badge variant="outline" className="text-[8px] font-mono">
                   {currentPersona.label}
                 </Badge>
@@ -556,12 +558,27 @@ export function CSuiteDataHub({ userId, agents = [], agentsLoading = false, hubT
             <TabsContent value="command" className="h-full m-0 overflow-hidden">
                 <ScrollArea className="h-full [&>[data-radix-scroll-area-viewport]]:max-h-full">
                   <div className="p-2 space-y-3">
-                    {/* Quick Action Cards - Always visible for quick navigation */}
+                    {/* Quick Action Cards - Hub-specific actions */}
                     <QuickActionCards 
                       personaId={userPersona}
                       userId={userId}
+                      hubType={hubType}
                       onActionClick={(actionId) => {
                         const actionRoutes: Record<string, () => void> = {
+                          // Personal hub actions
+                          goals: () => handleDomainClick('tasks'), // Goals map to tasks domain for now
+                          habits: () => handleDomainClick('tasks'),
+                          notes: () => handleDomainClick('documents'),
+                          bookmarks: () => handleDomainClick('knowledge'),
+                          
+                          // Group hub actions
+                          group_tasks: () => handleDomainClick('tasks'),
+                          group_calendar: () => handleDomainClick('events'),
+                          group_notes: () => handleDomainClick('documents'),
+                          members: () => setActiveTab('admin'),
+                          announcements: () => handleDomainClick('communications'),
+                          resources: () => handleDomainClick('documents'),
+                          
                           // Common domain actions
                           inbox: () => handleDomainClick('communications'),
                           my_tasks: () => handleDomainClick('tasks'),
@@ -617,7 +634,6 @@ export function CSuiteDataHub({ userId, agents = [], agentsLoading = false, hubT
                           user_management: () => setActiveTab('admin'),
                           persona_management: () => setActiveTab('admin'),
                           invite_dashboard: () => {
-                            // Select first dashboard if none selected
                             if (!sharedDashboards.currentDashboard && sharedDashboards.dashboards.length > 0) {
                               sharedDashboards.selectDashboard(sharedDashboards.dashboards[0].id);
                             }
@@ -635,8 +651,8 @@ export function CSuiteDataHub({ userId, agents = [], agentsLoading = false, hubT
                       stats={stats}
                     />
 
-                    {/* No Persona Warning */}
-                    {!userPersona && (
+                    {/* No Persona Warning - Only for C-Suite hub */}
+                    {hubType === 'csuite' && !userPersona && (
                       <div className="p-2 rounded bg-yellow-500/10 border border-yellow-500/30 flex items-center gap-2">
                         <AlertTriangle size={12} className="text-yellow-500" />
                         <span className="text-[10px] text-yellow-600">No persona assigned. Contact your admin for personalized insights.</span>
