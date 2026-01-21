@@ -443,16 +443,22 @@ export function PersonalDataHub({ userId }: PersonalDataHubProps) {
   const [selectedPhotos, setSelectedPhotos] = useState<string[]>([]);
   const [isDragMode, setIsDragMode] = useState(false);
 
-  // Default widget order for overview - each individual item
-  const DEFAULT_WIDGET_ORDER = [
-    'shortcuts',
-    'stat-today', 'stat-streak', 'stat-items',
-    'widget-atlas-brief', 'widget-wellness', 'widget-focus',
-    'quick-add',
-    'todays-tasks', 'overdue', 'habits',
-    'viz-habit-streak', 'viz-goal-timeline',
-    'goals'
-  ];
+  // Default widget order for overview - each individual item is draggable
+  // Shortcuts are individual widgets prefixed with 'shortcut-'
+  const getDefaultWidgetOrder = useCallback((actions: string[]) => {
+    const shortcutWidgets = actions.map(id => `shortcut-${id}`);
+    return [
+      ...shortcutWidgets,
+      'stat-today', 'stat-streak', 'stat-items',
+      'widget-atlas-brief', 'widget-wellness', 'widget-focus',
+      'quick-add',
+      'todays-tasks', 'overdue', 'habits',
+      'viz-habit-streak', 'viz-goal-timeline',
+      'goals'
+    ];
+  }, []);
+  
+  const DEFAULT_WIDGET_ORDER = getDefaultWidgetOrder(['tasks', 'goals', 'habits', 'email', 'photos', 'finance']);
   
   // Initialize selectedActions from localStorage
   const [selectedActions, setSelectedActions] = useState<string[]>(() => {
@@ -469,13 +475,31 @@ export function PersonalDataHub({ userId }: PersonalDataHubProps) {
     return ['tasks', 'goals', 'habits', 'email', 'photos', 'finance'];
   });
 
-  // Initialize widget order from localStorage
+  // Initialize widget order from localStorage (with migration from old format)
   const [widgetOrder, setWidgetOrder] = useState<string[]>(() => {
     if (typeof window !== 'undefined' && userId) {
       const saved = localStorage.getItem(`personal-widget-order-${userId}`);
       if (saved) {
         try {
-          return JSON.parse(saved);
+          let order = JSON.parse(saved) as string[];
+          
+          // Migrate from old 'shortcuts' format to individual shortcut widgets
+          if (order.includes('shortcuts')) {
+            // Get the saved selected actions
+            const savedActions = localStorage.getItem(`personal-shortcuts-${userId}`);
+            const actions = savedActions ? JSON.parse(savedActions) : ['tasks', 'goals', 'habits', 'email', 'photos', 'finance'];
+            const shortcutWidgets = actions.map((id: string) => `shortcut-${id}`);
+            
+            // Replace 'shortcuts' with individual shortcut widgets
+            const shortcutsIndex = order.indexOf('shortcuts');
+            order = [
+              ...order.slice(0, shortcutsIndex),
+              ...shortcutWidgets,
+              ...order.slice(shortcutsIndex + 1)
+            ];
+          }
+          
+          return order;
         } catch (e) {
           console.error('Error loading widget order:', e);
         }
@@ -493,6 +517,43 @@ export function PersonalDataHub({ userId }: PersonalDataHubProps) {
       localStorage.setItem(`personal-shortcuts-${userId}`, JSON.stringify(selectedActions));
     }
   }, [selectedActions, userId]);
+
+  // Sync widget order when selectedActions changes (add new shortcuts, remove old ones)
+  useEffect(() => {
+    setWidgetOrder(prevOrder => {
+      const currentShortcutWidgets = prevOrder.filter(id => id.startsWith('shortcut-'));
+      const expectedShortcutWidgets = selectedActions.map(id => `shortcut-${id}`);
+      
+      // Check if shortcuts match
+      const currentSet = new Set(currentShortcutWidgets);
+      const expectedSet = new Set(expectedShortcutWidgets);
+      
+      // Find new shortcuts to add and old ones to remove
+      const toAdd = expectedShortcutWidgets.filter(id => !currentSet.has(id));
+      const toRemove = currentShortcutWidgets.filter(id => !expectedSet.has(id));
+      
+      if (toAdd.length === 0 && toRemove.length === 0) {
+        return prevOrder; // No changes needed
+      }
+      
+      // Remove old shortcuts
+      let newOrder = prevOrder.filter(id => !toRemove.includes(id));
+      
+      // Add new shortcuts at the beginning (after existing shortcuts)
+      const lastShortcutIndex = newOrder.findIndex(id => !id.startsWith('shortcut-'));
+      if (lastShortcutIndex === -1) {
+        newOrder = [...newOrder, ...toAdd];
+      } else {
+        newOrder = [
+          ...newOrder.slice(0, lastShortcutIndex),
+          ...toAdd,
+          ...newOrder.slice(lastShortcutIndex)
+        ];
+      }
+      
+      return newOrder;
+    });
+  }, [selectedActions]);
 
   // Persist widget order to localStorage
   useEffect(() => {
@@ -1901,74 +1962,29 @@ export function PersonalDataHub({ userId }: PersonalDataHubProps) {
           )
         };
 
-      // Shortcuts section - full width
-      case 'shortcuts':
-        if (sortedActions.length === 0) return null;
-        return {
-          colSpan: 'col-span-6',
-          content: (
-            <div>
-              <div className="flex items-center justify-between mb-2">
-                <h3 className="text-[10px] font-mono text-muted-foreground">MY SHORTCUTS</h3>
-                <div className="flex items-center gap-1">
-                  <TooltipProvider>
-                    <Tooltip>
-                      <TooltipTrigger asChild>
-                        <Button 
-                          variant="ghost" 
-                          size="icon" 
-                          className="h-5 w-5"
-                          onClick={handleAtlasOptimize}
-                        >
-                          <Sparkles size={10} className="text-primary" />
-                        </Button>
-                      </TooltipTrigger>
-                      <TooltipContent side="bottom" className="text-xs">
-                        Atlas: Optimize by usage
-                      </TooltipContent>
-                    </Tooltip>
-                  </TooltipProvider>
-                  {!actionPrefs.autoSortByUsage && (
-                    <TooltipProvider>
-                      <Tooltip>
-                        <TooltipTrigger asChild>
-                          <Button 
-                            variant="ghost" 
-                            size="icon" 
-                            className="h-5 w-5"
-                            onClick={handleResetToAutoSort}
-                          >
-                            <RefreshCw size={10} className="text-muted-foreground" />
-                          </Button>
-                        </TooltipTrigger>
-                        <TooltipContent side="bottom" className="text-xs">
-                          Reset to auto-sort
-                        </TooltipContent>
-                      </Tooltip>
-                    </TooltipProvider>
-                  )}
-                </div>
-              </div>
-              <div className="grid grid-cols-4 md:grid-cols-5 lg:grid-cols-6 gap-2">
-                {sortedActions.map((action) => (
-                  <PersonalQuickAction 
-                    key={action.id}
-                    icon={action.icon} 
-                    label={action.label} 
-                    count={'count' in action ? action.count : undefined}
-                    badge={'badge' in action ? action.badge : undefined}
-                    color={action.color} 
-                    url={'url' in action ? action.url : undefined}
-                    onClick={() => handleShortcutClick(action.id)} 
-                    onRemove={() => removeActionFromOverview(action.id)}
-                  />
-                ))}
-              </div>
-            </div>
-          )
-        };
-
       default:
+        // Handle individual shortcut widgets (format: 'shortcut-{actionId}')
+        if (widgetId.startsWith('shortcut-')) {
+          const actionId = widgetId.replace('shortcut-', '');
+          const action = allActionsMap[actionId];
+          if (!action || !selectedActions.includes(actionId)) return null;
+          
+          return {
+            colSpan: 'col-span-1',
+            content: (
+              <PersonalQuickAction 
+                icon={action.icon} 
+                label={action.label} 
+                count={'count' in action ? action.count : undefined}
+                badge={'badge' in action ? action.badge : undefined}
+                color={action.color} 
+                url={'url' in action ? action.url : undefined}
+                onClick={() => handleShortcutClick(action.id)} 
+                onRemove={() => removeActionFromOverview(action.id)}
+              />
+            )
+          };
+        }
         return null;
     }
   }
