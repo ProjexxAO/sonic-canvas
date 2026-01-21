@@ -2685,6 +2685,50 @@ export type Database = {
           },
         ]
       }
+      photo_albums: {
+        Row: {
+          cover_photo_id: string | null
+          created_at: string
+          description: string | null
+          id: string
+          is_smart: boolean | null
+          name: string
+          smart_filter: Json | null
+          updated_at: string
+          user_id: string
+        }
+        Insert: {
+          cover_photo_id?: string | null
+          created_at?: string
+          description?: string | null
+          id?: string
+          is_smart?: boolean | null
+          name: string
+          smart_filter?: Json | null
+          updated_at?: string
+          user_id: string
+        }
+        Update: {
+          cover_photo_id?: string | null
+          created_at?: string
+          description?: string | null
+          id?: string
+          is_smart?: boolean | null
+          name?: string
+          smart_filter?: Json | null
+          updated_at?: string
+          user_id?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "photo_albums_cover_photo_id_fkey"
+            columns: ["cover_photo_id"]
+            isOneToOne: false
+            referencedRelation: "user_photos"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
       platform_connections: {
         Row: {
           access_token_encrypted: string | null
@@ -3580,6 +3624,78 @@ export type Database = {
           summary?: string
           updated_at?: string
           user_id?: string
+        }
+        Relationships: []
+      }
+      user_photos: {
+        Row: {
+          ai_tags: string[] | null
+          category: string | null
+          created_at: string
+          exif_data: Json | null
+          file_name: string
+          file_path: string
+          file_size: number | null
+          height: number | null
+          id: string
+          is_archived: boolean | null
+          is_deleted: boolean | null
+          is_favorite: boolean | null
+          location: Json | null
+          mime_type: string | null
+          share_history: Json | null
+          shared_to: string[] | null
+          tags: string[] | null
+          taken_at: string | null
+          updated_at: string
+          user_id: string
+          width: number | null
+        }
+        Insert: {
+          ai_tags?: string[] | null
+          category?: string | null
+          created_at?: string
+          exif_data?: Json | null
+          file_name: string
+          file_path: string
+          file_size?: number | null
+          height?: number | null
+          id?: string
+          is_archived?: boolean | null
+          is_deleted?: boolean | null
+          is_favorite?: boolean | null
+          location?: Json | null
+          mime_type?: string | null
+          share_history?: Json | null
+          shared_to?: string[] | null
+          tags?: string[] | null
+          taken_at?: string | null
+          updated_at?: string
+          user_id: string
+          width?: number | null
+        }
+        Update: {
+          ai_tags?: string[] | null
+          category?: string | null
+          created_at?: string
+          exif_data?: Json | null
+          file_name?: string
+          file_path?: string
+          file_size?: number | null
+          height?: number | null
+          id?: string
+          is_archived?: boolean | null
+          is_deleted?: boolean | null
+          is_favorite?: boolean | null
+          location?: Json | null
+          mime_type?: string | null
+          share_history?: Json | null
+          shared_to?: string[] | null
+          tags?: string[] | null
+          taken_at?: string | null
+          updated_at?: string
+          user_id?: string
+          width?: number | null
         }
         Relationships: []
       }
