@@ -53,7 +53,11 @@ import {
   LineChart,
   Banknote,
   Sparkles,
-  Move
+  Move,
+  Search,
+  Globe,
+  Loader2,
+  Link as LinkIcon
 } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { ScrollArea } from '@/components/ui/scroll-area';
@@ -78,6 +82,7 @@ import { usePersonalHub, PersonalItem, PersonalGoal, PersonalHabit } from '@/hoo
 import { useBanking, BankAccount, BankTransaction } from '@/hooks/useBanking';
 import { useUserPhotos, PHOTO_CATEGORIES, SOCIAL_PLATFORMS } from '@/hooks/useUserPhotos';
 import { useQuickActionPreferences } from '@/hooks/useQuickActionPreferences';
+import { supabase } from '@/integrations/supabase/client';
 import { cn } from '@/lib/utils';
 import { toast } from 'sonner';
 import { format, isToday, isPast, parseISO } from 'date-fns';
@@ -116,6 +121,7 @@ const ALL_QUICK_ACTIONS: QuickActionItem[] = [
   { id: 'youtube', icon: Youtube, label: 'YouTube', color: 'hsl(0 80% 50%)', category: 'social', url: 'https://youtube.com' },
   
   // More category
+  { id: 'search', icon: Search, label: 'Search', color: 'hsl(260 70% 55%)', category: 'more' },
   { id: 'news', icon: Rss, label: 'News', color: 'hsl(35 80% 50%)', category: 'more' },
   { id: 'weather', icon: Sun, label: 'Weather', color: 'hsl(45 90% 50%)', category: 'more', url: 'https://weather.com' },
   { id: 'cloud', icon: Cloud, label: 'Cloud Storage', color: 'hsl(200 60% 50%)', category: 'more' },
@@ -370,7 +376,17 @@ function HabitCard({ habit, onComplete }: { habit: PersonalHabit; onComplete: ()
 }
 
 // Active view type for full-screen sections
-type ActiveView = 'overview' | 'tasks' | 'goals' | 'habits' | 'notes' | 'finance' | 'photos';
+type ActiveView = 'overview' | 'tasks' | 'goals' | 'habits' | 'notes' | 'finance' | 'photos' | 'search';
+
+// Search result type
+interface SearchResult {
+  id: string;
+  query: string;
+  answer: string;
+  citations: string[];
+  timestamp: Date;
+  isLoading?: boolean;
+}
 
 export function PersonalDataHub({ userId }: PersonalDataHubProps) {
   const {
@@ -477,10 +493,68 @@ export function PersonalDataHub({ userId }: PersonalDataHubProps) {
     recordUsage(actionId);
     
     // Navigate to full view for core actions
-    if (['tasks', 'goals', 'habits', 'notes', 'finance', 'photos'].includes(actionId)) {
+    if (['tasks', 'goals', 'habits', 'notes', 'finance', 'photos', 'search'].includes(actionId)) {
       setActiveView(actionId as ActiveView);
     }
   }, [recordUsage]);
+
+  // Search state and functionality
+  const [searchQuery, setSearchQuery] = useState('');
+  const [searchResults, setSearchResults] = useState<SearchResult[]>([]);
+  const [isSearching, setIsSearching] = useState(false);
+  const searchInputRef = useRef<HTMLInputElement>(null);
+
+  const handleSearch = useCallback(async (query: string) => {
+    if (!query.trim()) return;
+    
+    const searchId = `search-${Date.now()}`;
+    
+    // Add placeholder result
+    setSearchResults(prev => [{
+      id: searchId,
+      query: query.trim(),
+      answer: '',
+      citations: [],
+      timestamp: new Date(),
+      isLoading: true,
+    }, ...prev]);
+    
+    setIsSearching(true);
+    setSearchQuery('');
+    
+    try {
+      const { data, error } = await supabase.functions.invoke('perplexity-search', {
+        body: { query: query.trim() }
+      });
+      
+      if (error) throw error;
+      
+      setSearchResults(prev => prev.map(r => 
+        r.id === searchId 
+          ? {
+              ...r,
+              answer: data?.answer || 'No results found.',
+              citations: data?.citations || [],
+              isLoading: false,
+            }
+          : r
+      ));
+    } catch (err) {
+      console.error('Search error:', err);
+      setSearchResults(prev => prev.map(r => 
+        r.id === searchId 
+          ? {
+              ...r,
+              answer: 'Search failed. Please try again.',
+              isLoading: false,
+            }
+          : r
+      ));
+      toast.error('Search failed');
+    } finally {
+      setIsSearching(false);
+    }
+  }, []);
 
   const handlePhotoUpload = async (e: React.ChangeEvent<HTMLInputElement>) => {
     if (e.target.files && e.target.files.length > 0) {
@@ -774,6 +848,141 @@ export function PersonalDataHub({ userId }: PersonalDataHubProps) {
                   ))}
                 </div>
               </div>
+            )}
+          </div>
+        </ScrollArea>
+      </div>
+    );
+  }
+
+  // Full Search View - Web search powered by Atlas
+  if (activeView === 'search') {
+    return (
+      <div className="h-full bg-card/90 border border-border rounded-lg shadow-sm overflow-hidden flex flex-col">
+        <div className="px-3 py-2 border-b border-border flex items-center justify-between">
+          <div className="flex items-center gap-2">
+            <Button variant="ghost" size="sm" className="h-6 px-2" onClick={() => setActiveView('overview')}>
+              <ChevronDown size={12} className="rotate-90 mr-1" />
+              Back
+            </Button>
+            <Globe size={14} className="text-primary" />
+            <span className="text-xs font-mono text-muted-foreground uppercase">WEB SEARCH</span>
+          </div>
+          <Badge variant="outline" className="text-[9px]">
+            <Sparkles size={10} className="mr-1" />
+            Powered by Atlas
+          </Badge>
+        </div>
+        
+        {/* Search Input */}
+        <div className="p-3 border-b border-border">
+          <form 
+            onSubmit={(e) => { e.preventDefault(); handleSearch(searchQuery); }}
+            className="flex gap-2"
+          >
+            <Input
+              ref={searchInputRef}
+              value={searchQuery}
+              onChange={(e) => setSearchQuery(e.target.value)}
+              placeholder="Search the web..."
+              className="h-9 text-sm bg-background/50"
+              disabled={isSearching}
+            />
+            <Button 
+              type="submit" 
+              size="sm" 
+              className="h-9 px-4"
+              disabled={!searchQuery.trim() || isSearching}
+            >
+              {isSearching ? (
+                <Loader2 size={14} className="animate-spin" />
+              ) : (
+                <Search size={14} />
+              )}
+            </Button>
+          </form>
+          <p className="text-[10px] text-muted-foreground mt-2">
+            AI-powered search with real-time results and citations
+          </p>
+        </div>
+        
+        <ScrollArea className="flex-1">
+          <div className="p-3 space-y-4">
+            {searchResults.length === 0 ? (
+              <div className="text-center py-12">
+                <Search size={32} className="mx-auto text-muted-foreground/30 mb-3" />
+                <h3 className="text-sm font-medium text-muted-foreground">Search the Web</h3>
+                <p className="text-xs text-muted-foreground/70 mt-1">
+                  Ask any question and get real-time answers with sources
+                </p>
+                <div className="flex flex-wrap gap-2 justify-center mt-4">
+                  {['Latest news', 'Weather forecast', 'Stock market', 'Recipe ideas'].map(suggestion => (
+                    <Button
+                      key={suggestion}
+                      variant="outline"
+                      size="sm"
+                      className="text-[10px] h-6"
+                      onClick={() => {
+                        setSearchQuery(suggestion);
+                        searchInputRef.current?.focus();
+                      }}
+                    >
+                      {suggestion}
+                    </Button>
+                  ))}
+                </div>
+              </div>
+            ) : (
+              searchResults.map(result => (
+                <Card key={result.id} className="bg-card/50">
+                  <CardContent className="p-3">
+                    <div className="flex items-start gap-2">
+                      <div className="w-6 h-6 rounded-full bg-primary/10 flex items-center justify-center flex-shrink-0 mt-0.5">
+                        {result.isLoading ? (
+                          <Loader2 size={12} className="animate-spin text-primary" />
+                        ) : (
+                          <Search size={12} className="text-primary" />
+                        )}
+                      </div>
+                      <div className="flex-1 min-w-0">
+                        <p className="text-xs font-medium text-primary mb-1">{result.query}</p>
+                        {result.isLoading ? (
+                          <div className="space-y-2">
+                            <div className="h-3 bg-muted animate-pulse rounded w-full" />
+                            <div className="h-3 bg-muted animate-pulse rounded w-3/4" />
+                          </div>
+                        ) : (
+                          <>
+                            <p className="text-xs text-foreground whitespace-pre-wrap">{result.answer}</p>
+                            {result.citations.length > 0 && (
+                              <div className="mt-2 pt-2 border-t border-border">
+                                <p className="text-[9px] text-muted-foreground mb-1">Sources:</p>
+                                <div className="flex flex-wrap gap-1">
+                                  {result.citations.slice(0, 4).map((url, idx) => (
+                                    <a
+                                      key={idx}
+                                      href={url}
+                                      target="_blank"
+                                      rel="noopener noreferrer"
+                                      className="flex items-center gap-1 text-[9px] text-primary hover:underline bg-primary/5 px-1.5 py-0.5 rounded"
+                                    >
+                                      <LinkIcon size={8} />
+                                      {new URL(url).hostname.replace('www.', '')}
+                                    </a>
+                                  ))}
+                                </div>
+                              </div>
+                            )}
+                          </>
+                        )}
+                        <p className="text-[8px] text-muted-foreground mt-2">
+                          {format(result.timestamp, 'h:mm a')}
+                        </p>
+                      </div>
+                    </div>
+                  </CardContent>
+                </Card>
+              ))
             )}
           </div>
         </ScrollArea>
