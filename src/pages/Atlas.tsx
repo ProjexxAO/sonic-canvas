@@ -66,6 +66,7 @@ import {
   Ear,
   EarOff
 } from 'lucide-react';
+import { cn } from '@/lib/utils';
 import { Input } from '@/components/ui/input';
 import { useTheme } from 'next-themes';
 import { useAuth } from '@/hooks/useAuth';
@@ -1281,18 +1282,19 @@ function AtlasPage() {
           {/* Controls */}
           <div className="flex flex-col items-center gap-4 mt-8">
             
-            {/* Wake Word Toggle */}
-            <Button
+            {/* Wake Word Toggle - Subtle icon-only button */}
+            <button
               onClick={() => setWakeWordEnabled(!wakeWordEnabled)}
-              variant={wakeWordEnabled ? "default" : "outline"}
-              className="gap-2 font-mono text-xs"
-              title={wakeWordEnabled ? `Listening for "Jarvis" wake word` : 'Enable wake word detection'}
+              className={cn(
+                "p-2 rounded-full transition-all duration-200",
+                wakeWordEnabled 
+                  ? "bg-primary/20 text-primary hover:bg-primary/30" 
+                  : "bg-muted/30 text-muted-foreground hover:bg-muted/50 opacity-50"
+              )}
+              title={wakeWordEnabled ? `Wake word active - say "Jarvis"` : 'Enable wake word detection'}
             >
               {wakeWordEnabled ? <Ear className="w-4 h-4" /> : <EarOff className="w-4 h-4" />}
-              {wakeWordEnabled 
-                ? wakeWordStatus === 'listening' ? 'LISTENING...' : 'WAKE WORD ON'
-                : 'WAKE WORD OFF'}
-            </Button>
+            </button>
             
             {/* Main controls */}
             <div className="flex justify-center gap-3">
