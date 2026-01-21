@@ -62,10 +62,14 @@ import { useDataHubController } from '@/hooks/useDataHubController';
 import { supabase } from '@/integrations/supabase/client';
 import { toast } from 'sonner';
 
+export type HubType = 'personal' | 'group' | 'csuite';
+
 interface CSuiteDataHubProps {
   userId: string | undefined;
   agents?: any[];
   agentsLoading?: boolean;
+  hubType?: HubType;
+  groupId?: string;
 }
 
 type PersonaCategory = 'executive' | 'tech' | 'people' | 'growth' | 'legal' | 'admin';
@@ -121,7 +125,7 @@ const CONNECTOR_CONFIG: Record<string, { label: string; icon: typeof Cloud; colo
   local: { label: 'Local Upload', icon: Upload, color: 'hsl(200 60% 50%)' },
 };
 
-export function CSuiteDataHub({ userId, agents = [], agentsLoading = false }: CSuiteDataHubProps) {
+export function CSuiteDataHub({ userId, agents = [], agentsLoading = false, hubType = 'csuite', groupId }: CSuiteDataHubProps) {
   const navigate = useNavigate();
   const {
     stats,
