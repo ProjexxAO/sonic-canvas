@@ -6,6 +6,7 @@ import { ScrollArea } from '@/components/ui/scroll-area';
 import { AtlasTaskProgress } from './AtlasTaskProgress';
 import { AtlasSearchPanel, WebSearchEntry } from './AtlasSearchPanel';
 import { CSuiteDataHub } from '@/components/csuite/CSuiteDataHub';
+import { PersonalDataHub } from '@/components/personal/PersonalDataHub';
 import { KnowledgeDiscoveryPanel } from './KnowledgeDiscoveryPanel';
 import { VeracityEvaluationPanel } from './VeracityEvaluationPanel';
 import { AgentTask } from '@/hooks/useAgentOrchestration';
@@ -169,13 +170,18 @@ export function AtlasRightPanel({
 
         <TabsContent value="datahub" className="flex-1 mt-0 overflow-hidden flex flex-col min-h-0">
           <div className="flex-1 min-h-0 overflow-auto">
-            <CSuiteDataHub 
-              userId={userId} 
-              agents={agents} 
-              agentsLoading={agentsLoading} 
-              hubType={hubType}
-              groupId={groupId}
-            />
+            {/* Use PersonalDataHub for personal context, CSuiteDataHub for group/csuite */}
+            {hubType === 'personal' ? (
+              <PersonalDataHub userId={userId} />
+            ) : (
+              <CSuiteDataHub 
+                userId={userId} 
+                agents={agents} 
+                agentsLoading={agentsLoading} 
+                hubType={hubType}
+                groupId={groupId}
+              />
+            )}
           </div>
         </TabsContent>
 
