@@ -2794,6 +2794,9 @@ export type Database = {
           last_active_at: string | null
           locale: string | null
           operator_handle: string | null
+          phone_number: string | null
+          phone_verified: boolean | null
+          phone_verified_at: string | null
           preferred_persona: string | null
           status: Database["public"]["Enums"]["user_status"] | null
           timezone: string | null
@@ -2810,6 +2813,9 @@ export type Database = {
           last_active_at?: string | null
           locale?: string | null
           operator_handle?: string | null
+          phone_number?: string | null
+          phone_verified?: boolean | null
+          phone_verified_at?: string | null
           preferred_persona?: string | null
           status?: Database["public"]["Enums"]["user_status"] | null
           timezone?: string | null
@@ -2826,6 +2832,9 @@ export type Database = {
           last_active_at?: string | null
           locale?: string | null
           operator_handle?: string | null
+          phone_number?: string | null
+          phone_verified?: boolean | null
+          phone_verified_at?: string | null
           preferred_persona?: string | null
           status?: Database["public"]["Enums"]["user_status"] | null
           timezone?: string | null
