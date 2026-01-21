@@ -478,120 +478,209 @@ export function AtlasHubLayout({
 
       {/* Main Content */}
       <main className="relative z-10 flex-1 flex overflow-hidden p-6 gap-6">
-        {/* Left Side - Visualizer (smaller for personal hub) */}
-        <div className={cn(
-          "flex items-center justify-center relative flex-shrink-0",
-          hubType === 'personal' ? "w-40" : "flex-1"
-        )}>
-          {/* Central Orb - Half size for personal hub */}
+        {/* Floating Orb for Personal Hub - Top Left Corner */}
+        {hubType === 'personal' && (
           <div 
-            className={cn(
-              "relative",
-              hubType === 'personal' ? "w-32 h-32" : "w-72 h-72"
-            )}
+            className="fixed top-20 left-6 z-50 animate-fade-in"
             style={{ 
               transform: `scale(${1 + (conversation.isSpeaking ? outputVolume : inputVolume) * 0.08})`,
               transition: 'transform 0.15s ease-out'
             }}
           >
-            {/* Outer ring */}
-            <div 
-              className={cn(
-                "absolute inset-0 rounded-full border-2",
-                isConnected && "border-primary animate-pulse"
-              )}
-              style={{
-                borderColor: !isConnected 
-                  ? `hsl(var(--border) / ${theme === 'dark' ? 1 : 1})`
-                  : undefined,
-              }}
-            />
-            
-            {/* Middle ring */}
-            <div 
-              className={cn(
-                "absolute rounded-full border-2",
-                hubType === 'personal' ? "inset-1" : "inset-4",
-                isConnected && conversation.isSpeaking && "border-secondary animate-spin"
-              )}
-              style={{ 
-                animationDuration: '3s',
-                borderColor: !(isConnected && conversation.isSpeaking)
-                  ? `hsl(var(--border) / ${theme === 'dark' ? 0.5 : 0.8})`
-                  : undefined
-              }}
-            />
-            
-            {/* Inner circle - Cosmic Orb */}
-            <div
-              className={cn(
-                "absolute rounded-full border border-border flex items-center justify-center overflow-hidden",
-                hubType === 'personal' ? "inset-2" : "inset-8",
-                !isConnected && !isConnecting && "cursor-pointer hover:border-primary/50 transition-colors",
-                theme === 'dark' 
-                  ? "bg-[hsl(240_10%_6%/0.9)]" 
-                  : "bg-gradient-to-br from-[hsl(220_20%_92%)] to-[hsl(220_25%_88%)] shadow-lg"
-              )}
-              onClick={() => {
-                if (!isConnected && !isConnecting) {
-                  startConversation();
-                }
-              }}
-              title={!isConnected ? "Tap to activate Atlas" : undefined}
-            >
-              {/* Cosmic Orb visual */}
-              <div className="relative w-full h-full flex items-center justify-center pointer-events-none">
-                <div 
-                  className="absolute w-[85%] h-[85%] rounded-full overflow-hidden"
-                  style={{
-                    transform: `scale(${1 + (conversation.isSpeaking ? outputVolume : inputVolume) * 0.15})`,
-                    transition: 'transform 0.1s ease-out'
-                  }}
-                >
+            <div className="relative w-16 h-16 group">
+              {/* Outer glow ring */}
+              <div 
+                className={cn(
+                  "absolute -inset-1 rounded-full opacity-50 blur-sm transition-all",
+                  isConnected ? "bg-primary/30 animate-pulse" : "bg-muted/20"
+                )}
+              />
+              
+              {/* Outer ring */}
+              <div 
+                className={cn(
+                  "absolute inset-0 rounded-full border-2 transition-colors",
+                  isConnected ? "border-primary" : "border-border"
+                )}
+              />
+              
+              {/* Inner circle - Cosmic Orb */}
+              <div
+                className={cn(
+                  "absolute inset-1 rounded-full border border-border flex items-center justify-center overflow-hidden cursor-pointer transition-all hover:border-primary/50",
+                  theme === 'dark' 
+                    ? "bg-[hsl(240_10%_6%/0.95)]" 
+                    : "bg-gradient-to-br from-[hsl(220_20%_92%)] to-[hsl(220_25%_88%)] shadow-lg"
+                )}
+                onClick={() => {
+                  if (!isConnected && !isConnecting) {
+                    startConversation();
+                  }
+                }}
+                title={!isConnected ? "Tap to activate Atlas" : "Atlas is active"}
+              >
+                {/* Cosmic visual */}
+                <div className="relative w-full h-full flex items-center justify-center">
                   <div 
-                    className="absolute inset-0 rounded-full"
+                    className="absolute inset-1 rounded-full overflow-hidden"
                     style={{
-                      background: theme === 'dark' 
-                        ? `radial-gradient(ellipse at ${30 + frequencyBands.bass * 20}% ${40 + frequencyBands.mid * 20}%, 
-                            hsl(270 100% ${isConnected ? 45 + outputVolume * 35 : 35}% / ${0.8 + outputVolume * 0.2}) 0%,
-                            hsl(220 100% ${isConnected ? 35 + outputVolume * 25 : 28}% / ${0.7 + outputVolume * 0.3}) 30%,
-                            hsl(280 100% ${isConnected ? 28 + outputVolume * 20 : 22}% / ${0.6 + outputVolume * 0.3}) 60%,
-                            transparent 100%)`
-                        : `radial-gradient(ellipse at ${30 + frequencyBands.bass * 20}% ${40 + frequencyBands.mid * 20}%, 
-                            hsl(222 70% ${isConnected ? 38 + outputVolume * 18 : 35}% / ${0.9 + outputVolume * 0.1}) 0%,
-                            hsl(201 75% ${isConnected ? 32 + outputVolume * 15 : 30}% / ${0.8 + outputVolume * 0.15}) 25%,
-                            hsl(173 70% ${isConnected ? 28 + outputVolume * 14 : 26}% / ${0.7 + outputVolume * 0.2}) 50%,
-                            hsl(220 25% 85% / 0.5) 100%)`,
-                      animation: isConnected && conversation.isSpeaking 
-                        ? 'orb-pulse 0.5s ease-in-out infinite' 
-                        : 'orb-idle 4s ease-in-out infinite',
+                      transform: `scale(${1 + (conversation.isSpeaking ? outputVolume : inputVolume) * 0.15})`,
+                      transition: 'transform 0.1s ease-out'
                     }}
-                  />
+                  >
+                    <div 
+                      className="absolute inset-0 rounded-full"
+                      style={{
+                        background: theme === 'dark' 
+                          ? `radial-gradient(ellipse at ${30 + frequencyBands.bass * 20}% ${40 + frequencyBands.mid * 20}%, 
+                              hsl(270 100% ${isConnected ? 45 + outputVolume * 35 : 35}% / ${0.8 + outputVolume * 0.2}) 0%,
+                              hsl(220 100% ${isConnected ? 35 + outputVolume * 25 : 28}% / ${0.7 + outputVolume * 0.3}) 30%,
+                              hsl(280 100% ${isConnected ? 28 + outputVolume * 20 : 22}% / ${0.6 + outputVolume * 0.3}) 60%,
+                              transparent 100%)`
+                          : `radial-gradient(ellipse at ${30 + frequencyBands.bass * 20}% ${40 + frequencyBands.mid * 20}%, 
+                              hsl(222 70% ${isConnected ? 38 + outputVolume * 18 : 35}% / ${0.9 + outputVolume * 0.1}) 0%,
+                              hsl(201 75% ${isConnected ? 32 + outputVolume * 15 : 30}% / ${0.8 + outputVolume * 0.15}) 25%,
+                              hsl(173 70% ${isConnected ? 28 + outputVolume * 14 : 26}% / ${0.7 + outputVolume * 0.2}) 50%,
+                              hsl(220 25% 85% / 0.5) 100%)`,
+                        animation: isConnected && conversation.isSpeaking 
+                          ? 'orb-pulse 0.5s ease-in-out infinite' 
+                          : 'orb-idle 4s ease-in-out infinite',
+                      }}
+                    />
+                  </div>
+                  
+                  {/* Center indicator */}
+                  {!isConnected && !isConnecting && (
+                    <span className="text-[6px] font-mono text-muted-foreground uppercase tracking-wider">
+                      Tap
+                    </span>
+                  )}
+                  {isConnecting && (
+                    <span className="text-[6px] font-mono text-primary animate-pulse">
+                      ...
+                    </span>
+                  )}
+                  {isConnected && (
+                    <div className="w-1.5 h-1.5 rounded-full bg-primary animate-pulse" />
+                  )}
                 </div>
-                
-                {/* Center text - smaller for personal hub */}
-                {!isConnected && !isConnecting && (
-                  <span className={cn(
-                    "font-mono text-muted-foreground uppercase tracking-widest text-center",
-                    hubType === 'personal' ? "text-[8px]" : "text-xs"
-                  )}>
-                    {hubType === 'personal' ? 'Tap' : 'Tap to Activate'}
-                  </span>
-                )}
-                {isConnecting && (
-                  <span className={cn(
-                    "font-mono text-primary uppercase tracking-widest animate-pulse",
-                    hubType === 'personal' ? "text-[8px]" : "text-xs"
-                  )}>
-                    {hubType === 'personal' ? '...' : 'Connecting...'}
-                  </span>
-                )}
               </div>
+              
+              {/* Floating controls on hover */}
+              {isConnected && (
+                <div className="absolute -right-10 top-1/2 -translate-y-1/2 flex flex-col gap-1 opacity-0 group-hover:opacity-100 transition-opacity">
+                  <Button onClick={toggleMute} variant="ghost" size="icon" className="h-6 w-6 bg-background/80 backdrop-blur-sm border border-border">
+                    {isMuted ? <VolumeX className="w-3 h-3" /> : <Volume2 className="w-3 h-3" />}
+                  </Button>
+                  <Button onClick={stopConversation} variant="ghost" size="icon" className="h-6 w-6 bg-background/80 backdrop-blur-sm border border-border text-destructive">
+                    <MicOff className="w-3 h-3" />
+                  </Button>
+                </div>
+              )}
             </div>
           </div>
+        )}
 
-          {/* Voice Controls - Compact for personal hub */}
-          {hubType !== 'personal' && (
+        {/* Left Side - Visualizer (only for non-personal hubs) */}
+        {hubType !== 'personal' && (
+          <div className="flex items-center justify-center relative flex-shrink-0 flex-1">
+            {/* Central Orb */}
+            <div 
+              className="relative w-72 h-72"
+              style={{ 
+                transform: `scale(${1 + (conversation.isSpeaking ? outputVolume : inputVolume) * 0.08})`,
+                transition: 'transform 0.15s ease-out'
+              }}
+            >
+              {/* Outer ring */}
+              <div 
+                className={cn(
+                  "absolute inset-0 rounded-full border-2",
+                  isConnected && "border-primary animate-pulse"
+                )}
+                style={{
+                  borderColor: !isConnected 
+                    ? `hsl(var(--border) / ${theme === 'dark' ? 1 : 1})`
+                    : undefined,
+                }}
+              />
+              
+              {/* Middle ring */}
+              <div 
+                className={cn(
+                  "absolute inset-4 rounded-full border-2",
+                  isConnected && conversation.isSpeaking && "border-secondary animate-spin"
+                )}
+                style={{ 
+                  animationDuration: '3s',
+                  borderColor: !(isConnected && conversation.isSpeaking)
+                    ? `hsl(var(--border) / ${theme === 'dark' ? 0.5 : 0.8})`
+                    : undefined
+                }}
+              />
+              
+              {/* Inner circle - Cosmic Orb */}
+              <div
+                className={cn(
+                  "absolute inset-8 rounded-full border border-border flex items-center justify-center overflow-hidden",
+                  !isConnected && !isConnecting && "cursor-pointer hover:border-primary/50 transition-colors",
+                  theme === 'dark' 
+                    ? "bg-[hsl(240_10%_6%/0.9)]" 
+                    : "bg-gradient-to-br from-[hsl(220_20%_92%)] to-[hsl(220_25%_88%)] shadow-lg"
+                )}
+                onClick={() => {
+                  if (!isConnected && !isConnecting) {
+                    startConversation();
+                  }
+                }}
+                title={!isConnected ? "Tap to activate Atlas" : undefined}
+              >
+                {/* Cosmic Orb visual */}
+                <div className="relative w-full h-full flex items-center justify-center pointer-events-none">
+                  <div 
+                    className="absolute w-[85%] h-[85%] rounded-full overflow-hidden"
+                    style={{
+                      transform: `scale(${1 + (conversation.isSpeaking ? outputVolume : inputVolume) * 0.15})`,
+                      transition: 'transform 0.1s ease-out'
+                    }}
+                  >
+                    <div 
+                      className="absolute inset-0 rounded-full"
+                      style={{
+                        background: theme === 'dark' 
+                          ? `radial-gradient(ellipse at ${30 + frequencyBands.bass * 20}% ${40 + frequencyBands.mid * 20}%, 
+                              hsl(270 100% ${isConnected ? 45 + outputVolume * 35 : 35}% / ${0.8 + outputVolume * 0.2}) 0%,
+                              hsl(220 100% ${isConnected ? 35 + outputVolume * 25 : 28}% / ${0.7 + outputVolume * 0.3}) 30%,
+                              hsl(280 100% ${isConnected ? 28 + outputVolume * 20 : 22}% / ${0.6 + outputVolume * 0.3}) 60%,
+                              transparent 100%)`
+                          : `radial-gradient(ellipse at ${30 + frequencyBands.bass * 20}% ${40 + frequencyBands.mid * 20}%, 
+                              hsl(222 70% ${isConnected ? 38 + outputVolume * 18 : 35}% / ${0.9 + outputVolume * 0.1}) 0%,
+                              hsl(201 75% ${isConnected ? 32 + outputVolume * 15 : 30}% / ${0.8 + outputVolume * 0.15}) 25%,
+                              hsl(173 70% ${isConnected ? 28 + outputVolume * 14 : 26}% / ${0.7 + outputVolume * 0.2}) 50%,
+                              hsl(220 25% 85% / 0.5) 100%)`,
+                        animation: isConnected && conversation.isSpeaking 
+                          ? 'orb-pulse 0.5s ease-in-out infinite' 
+                          : 'orb-idle 4s ease-in-out infinite',
+                      }}
+                    />
+                  </div>
+                  
+                  {/* Center text */}
+                  {!isConnected && !isConnecting && (
+                    <span className="text-xs font-mono text-muted-foreground uppercase tracking-widest text-center">
+                      Tap to Activate
+                    </span>
+                  )}
+                  {isConnecting && (
+                    <span className="text-xs font-mono text-primary uppercase tracking-widest animate-pulse">
+                      Connecting...
+                    </span>
+                  )}
+                </div>
+              </div>
+            </div>
+
+            {/* Voice Controls */}
             <div className="absolute bottom-0 left-1/2 -translate-x-1/2">
               <div className="flex justify-center gap-3">
                 {isConnected && (
@@ -608,39 +697,31 @@ export function AtlasHubLayout({
                 )}
               </div>
             </div>
-          )}
-          
-          {/* Compact controls for personal hub */}
-          {hubType === 'personal' && isConnected && (
-            <div className="absolute -bottom-2 left-1/2 -translate-x-1/2 flex gap-1">
-              <Button onClick={toggleMute} variant="ghost" size="icon" className="h-6 w-6">
-                {isMuted ? <VolumeX className="w-3 h-3" /> : <Volume2 className="w-3 h-3" />}
-              </Button>
-              <Button onClick={stopConversation} variant="ghost" size="icon" className="h-6 w-6 text-destructive">
-                <MicOff className="w-3 h-3" />
-              </Button>
-            </div>
-          )}
-        </div>
+          </div>
+        )}
 
-        {/* Right Panel */}
-        <AtlasRightPanel
-          hubType={hubType}
-          groupId={groupId}
-          tasks={orchestration.tasks}
-          completedTasks={orchestration.completedTasks}
-          isLoading={orchestration.isLoading}
-          onSyncMemory={orchestration.syncMemoryTasks}
-          onDeleteTask={orchestration.deleteTask}
-          webSearches={webSearches}
-          onWebSearch={manualWebSearch}
-          isSearching={isWebSearching}
-          searchResults={searchResults}
-          synthesizedAgent={synthesizedAgent}
-          userId={user?.id}
-          agents={agents}
-          agentsLoading={agentsLoading}
-        />
+        {/* Right Panel - Full width for personal hub */}
+        <div className={cn(
+          hubType === 'personal' ? "flex-1" : ""
+        )}>
+          <AtlasRightPanel
+            hubType={hubType}
+            groupId={groupId}
+            tasks={orchestration.tasks}
+            completedTasks={orchestration.completedTasks}
+            isLoading={orchestration.isLoading}
+            onSyncMemory={orchestration.syncMemoryTasks}
+            onDeleteTask={orchestration.deleteTask}
+            webSearches={webSearches}
+            onWebSearch={manualWebSearch}
+            isSearching={isWebSearching}
+            searchResults={searchResults}
+            synthesizedAgent={synthesizedAgent}
+            userId={user?.id}
+            agents={agents}
+            agentsLoading={agentsLoading}
+          />
+        </div>
       </main>
 
       {/* Bottom Bar - Transcript & Text Input */}
