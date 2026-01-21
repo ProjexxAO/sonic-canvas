@@ -10,6 +10,7 @@ import { PersonalDataHub } from '@/components/personal/PersonalDataHub';
 import { KnowledgeDiscoveryPanel } from './KnowledgeDiscoveryPanel';
 import { VeracityEvaluationPanel } from './VeracityEvaluationPanel';
 import { AgentTask } from '@/hooks/useAgentOrchestration';
+import { cn } from '@/lib/utils';
 
 export type HubType = 'personal' | 'group' | 'csuite';
 
@@ -69,7 +70,10 @@ export function AtlasRightPanel({
   agentsLoading,
 }: AtlasRightPanelProps) {
   return (
-    <div className="w-96 flex-shrink-0 flex flex-col h-full">
+    <div className={cn(
+      "flex-shrink-0 flex flex-col h-full",
+      hubType === 'personal' ? "flex-1 min-w-0" : "w-96"
+    )}>
       <Tabs defaultValue="operations" className="flex flex-col h-full">
         <TabsList className="w-full grid grid-cols-4 bg-muted/50 border border-border rounded-lg p-1 mb-3 flex-shrink-0">
           <TabsTrigger 
