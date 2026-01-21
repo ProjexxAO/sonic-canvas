@@ -700,28 +700,24 @@ export function AtlasHubLayout({
           </div>
         )}
 
-        {/* Right Panel - Full width for personal hub */}
-        <div className={cn(
-          hubType === 'personal' ? "flex-1" : ""
-        )}>
-          <AtlasRightPanel
-            hubType={hubType}
-            groupId={groupId}
-            tasks={orchestration.tasks}
-            completedTasks={orchestration.completedTasks}
-            isLoading={orchestration.isLoading}
-            onSyncMemory={orchestration.syncMemoryTasks}
-            onDeleteTask={orchestration.deleteTask}
-            webSearches={webSearches}
-            onWebSearch={manualWebSearch}
-            isSearching={isWebSearching}
-            searchResults={searchResults}
-            synthesizedAgent={synthesizedAgent}
-            userId={user?.id}
-            agents={agents}
-            agentsLoading={agentsLoading}
-          />
-        </div>
+        {/* Right Panel - Fixed width for all hub types */}
+        <AtlasRightPanel
+          hubType={hubType}
+          groupId={groupId}
+          tasks={orchestration.tasks}
+          completedTasks={orchestration.completedTasks}
+          isLoading={orchestration.isLoading}
+          onSyncMemory={orchestration.syncMemoryTasks}
+          onDeleteTask={orchestration.deleteTask}
+          webSearches={webSearches}
+          onWebSearch={manualWebSearch}
+          isSearching={isWebSearching}
+          searchResults={searchResults}
+          synthesizedAgent={synthesizedAgent}
+          userId={user?.id}
+          agents={agents}
+          agentsLoading={agentsLoading}
+        />
       </main>
 
       {/* Bottom Bar - Transcript & Text Input */}
