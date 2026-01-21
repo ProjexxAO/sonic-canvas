@@ -56,3 +56,6 @@ verify_jwt = false
 
 [functions.code-evolution-engine]
 verify_jwt = false
+
+[functions.atlas-universal-query]
+verify_jwt = false
