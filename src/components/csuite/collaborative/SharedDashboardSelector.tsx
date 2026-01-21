@@ -1,5 +1,6 @@
 import { useState } from 'react';
-import { Users, Plus, ChevronDown, User, Crown, Eye, Edit, Shield, Trash2 } from 'lucide-react';
+import { useNavigate, useLocation } from 'react-router-dom';
+import { Users, Plus, ChevronDown, User, Crown, Eye, Edit, Shield, Trash2, Briefcase } from 'lucide-react';
 import {
   DropdownMenu,
   DropdownMenuContent,
@@ -58,6 +59,8 @@ export function SharedDashboardSelector({
   onDelete,
   isLoading,
 }: SharedDashboardSelectorProps) {
+  const navigate = useNavigate();
+  const location = useLocation();
   const [createDialogOpen, setCreateDialogOpen] = useState(false);
   const [deleteDialogOpen, setDeleteDialogOpen] = useState(false);
   const [dashboardToDelete, setDashboardToDelete] = useState<SharedDashboard | null>(null);
@@ -65,6 +68,8 @@ export function SharedDashboardSelector({
   const [newDescription, setNewDescription] = useState('');
   const [isCreating, setIsCreating] = useState(false);
   const [isDeleting, setIsDeleting] = useState(false);
+
+  const currentPath = location.pathname;
 
   const handleCreate = async () => {
     if (!newName.trim()) return;
@@ -125,13 +130,51 @@ export function SharedDashboardSelector({
           </Button>
         </DropdownMenuTrigger>
         <DropdownMenuContent align="start" className="w-64">
+          {/* Data Hub Navigation */}
+          <div className="px-2 py-1.5 text-[9px] font-mono text-muted-foreground">
+            DATA HUBS
+          </div>
+          
           <DropdownMenuItem 
             onClick={() => onSelect(null)}
             className="flex items-center gap-2"
           >
             <User size={12} />
             <span className="flex-1">Personal View</span>
-            {!currentDashboard && (
+            {!currentDashboard && currentPath === '/atlas' && (
+              <Badge variant="default" className="text-[8px]">Active</Badge>
+            )}
+          </DropdownMenuItem>
+          
+          <DropdownMenuItem 
+            onClick={() => navigate('/personal')}
+            className="flex items-center gap-2"
+          >
+            <User size={12} className="text-blue-500" />
+            <span className="flex-1">Personal Hub</span>
+            {currentPath === '/personal' && (
+              <Badge variant="default" className="text-[8px]">Active</Badge>
+            )}
+          </DropdownMenuItem>
+          
+          <DropdownMenuItem 
+            onClick={() => navigate('/group')}
+            className="flex items-center gap-2"
+          >
+            <Users size={12} className="text-green-500" />
+            <span className="flex-1">Group Hub</span>
+            {currentPath === '/group' && (
+              <Badge variant="default" className="text-[8px]">Active</Badge>
+            )}
+          </DropdownMenuItem>
+          
+          <DropdownMenuItem 
+            onClick={() => navigate('/atlas')}
+            className="flex items-center gap-2"
+          >
+            <Briefcase size={12} className="text-purple-500" />
+            <span className="flex-1">C-Suite Hub</span>
+            {currentPath === '/atlas' && currentDashboard && (
               <Badge variant="default" className="text-[8px]">Active</Badge>
             )}
           </DropdownMenuItem>
