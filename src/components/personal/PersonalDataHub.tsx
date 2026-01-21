@@ -84,6 +84,7 @@ import { usePersonalHub, PersonalItem, PersonalGoal, PersonalHabit } from '@/hoo
 import { useBanking, BankAccount, BankTransaction } from '@/hooks/useBanking';
 import { useUserPhotos, PHOTO_CATEGORIES, SOCIAL_PLATFORMS } from '@/hooks/useUserPhotos';
 import { useQuickActionPreferences } from '@/hooks/useQuickActionPreferences';
+import { useDashboardPreferences } from '@/hooks/useDashboardPreferences';
 import { useIsMobile } from '@/hooks/use-mobile';
 import { supabase } from '@/integrations/supabase/client';
 import { cn } from '@/lib/utils';
@@ -461,120 +462,99 @@ export function PersonalDataHub({ userId }: PersonalDataHubProps) {
   
   const DEFAULT_WIDGET_ORDER = getDefaultWidgetOrder(['tasks', 'goals', 'habits', 'email', 'photos', 'finance']);
   
-  // Initialize selectedActions from localStorage
-  const [selectedActions, setSelectedActions] = useState<string[]>(() => {
-    if (typeof window !== 'undefined' && userId) {
-      const saved = localStorage.getItem(`personal-shortcuts-${userId}`);
-      if (saved) {
-        try {
-          return JSON.parse(saved);
-        } catch (e) {
-          console.error('Error loading shortcuts:', e);
-        }
-      }
-    }
-    return ['tasks', 'goals', 'habits', 'email', 'photos', 'finance'];
-  });
-
-  // Initialize widget order from localStorage (with migration from old format)
-  const [widgetOrder, setWidgetOrder] = useState<string[]>(() => {
-    if (typeof window !== 'undefined' && userId) {
-      const saved = localStorage.getItem(`personal-widget-order-${userId}`);
-      if (saved) {
-        try {
-          let order = JSON.parse(saved) as string[];
-          
-          // Migrate from old 'shortcuts' format to individual shortcut widgets
-          if (order.includes('shortcuts')) {
-            // Get the saved selected actions
-            const savedActions = localStorage.getItem(`personal-shortcuts-${userId}`);
-            const actions = savedActions ? JSON.parse(savedActions) : ['tasks', 'goals', 'habits', 'email', 'photos', 'finance'];
-            const shortcutWidgets = actions.map((id: string) => `shortcut-${id}`);
-            
-            // Replace 'shortcuts' with shortcuts-header + individual shortcut widgets
-            const shortcutsIndex = order.indexOf('shortcuts');
-            order = [
-              ...order.slice(0, shortcutsIndex),
-              'shortcuts-header',
-              ...shortcutWidgets,
-              ...order.slice(shortcutsIndex + 1)
-            ];
-          }
-          
-          // Ensure shortcuts-header exists if there are shortcut widgets
-          if (!order.includes('shortcuts-header') && order.some(id => id.startsWith('shortcut-'))) {
-            const firstShortcutIndex = order.findIndex(id => id.startsWith('shortcut-'));
-            order = [
-              ...order.slice(0, firstShortcutIndex),
-              'shortcuts-header',
-              ...order.slice(firstShortcutIndex)
-            ];
-          }
-          
-          return order;
-        } catch (e) {
-          console.error('Error loading widget order:', e);
-        }
-      }
-    }
-    return DEFAULT_WIDGET_ORDER;
-  });
+  // Use database-backed preferences for cross-domain sync
+  const {
+    preferences: dashboardPrefs,
+    isLoading: isPrefsLoading,
+    updateWidgetOrder: saveDashboardWidgetOrder,
+    updateSelectedShortcuts: saveDashboardShortcuts
+  } = useDashboardPreferences();
   
-  const inputRef = useRef<HTMLInputElement>(null);
-  const fileInputRef = useRef<HTMLInputElement>(null);
-
-  // Persist selectedActions to localStorage whenever it changes
+  // Local state for widget order (synced from database)
+  const [widgetOrder, setWidgetOrder] = useState<string[]>(DEFAULT_WIDGET_ORDER);
+  const [selectedActions, setSelectedActions] = useState<string[]>(['tasks', 'goals', 'habits', 'email', 'photos', 'finance']);
+  
+  // Sync local state from database preferences
   useEffect(() => {
-    if (userId && selectedActions.length > 0) {
-      localStorage.setItem(`personal-shortcuts-${userId}`, JSON.stringify(selectedActions));
+    if (!isPrefsLoading) {
+      // Apply widget order from database, or migrate old format
+      if (dashboardPrefs.widget_order.length > 0) {
+        let order = [...dashboardPrefs.widget_order];
+        
+        // Migrate from old 'shortcuts' format
+        if (order.includes('shortcuts')) {
+          const shortcutWidgets = dashboardPrefs.selected_shortcuts.map(id => `shortcut-${id}`);
+          const shortcutsIndex = order.indexOf('shortcuts');
+          order = [
+            ...order.slice(0, shortcutsIndex),
+            'shortcuts-header',
+            ...shortcutWidgets,
+            ...order.slice(shortcutsIndex + 1)
+          ];
+          saveDashboardWidgetOrder(order);
+        }
+        
+        // Ensure shortcuts-header exists
+        if (!order.includes('shortcuts-header') && order.some(id => id.startsWith('shortcut-'))) {
+          const firstShortcutIndex = order.findIndex(id => id.startsWith('shortcut-'));
+          order = [
+            ...order.slice(0, firstShortcutIndex),
+            'shortcuts-header',
+            ...order.slice(firstShortcutIndex)
+          ];
+        }
+        
+        setWidgetOrder(order);
+      } else {
+        // Use default order based on selected shortcuts
+        setWidgetOrder(getDefaultWidgetOrder(dashboardPrefs.selected_shortcuts));
+      }
+      
+      setSelectedActions(dashboardPrefs.selected_shortcuts);
     }
-  }, [selectedActions, userId]);
-
+  }, [isPrefsLoading, dashboardPrefs.widget_order, dashboardPrefs.selected_shortcuts]);
+  
   // Sync widget order when selectedActions changes (add new shortcuts, remove old ones)
   useEffect(() => {
+    if (isPrefsLoading) return;
+    
     setWidgetOrder(prevOrder => {
       const currentShortcutWidgets = prevOrder.filter(id => id.startsWith('shortcut-'));
       const expectedShortcutWidgets = selectedActions.map(id => `shortcut-${id}`);
       
-      // Check if shortcuts match
       const currentSet = new Set(currentShortcutWidgets);
       const expectedSet = new Set(expectedShortcutWidgets);
       
-      // Find new shortcuts to add and old ones to remove
       const toAdd = expectedShortcutWidgets.filter(id => !currentSet.has(id));
       const toRemove = currentShortcutWidgets.filter(id => !expectedSet.has(id));
       
       if (toAdd.length === 0 && toRemove.length === 0) {
-        return prevOrder; // No changes needed
+        return prevOrder;
       }
       
-      // Remove old shortcuts
       let newOrder = prevOrder.filter(id => !toRemove.includes(id));
       
-      // Add new shortcuts at the beginning (after existing shortcuts)
-      const lastShortcutIndex = newOrder.findIndex(id => !id.startsWith('shortcut-'));
-      if (lastShortcutIndex === -1) {
-        newOrder = [...newOrder, ...toAdd];
-      } else {
+      const headerIndex = newOrder.indexOf('shortcuts-header');
+      if (headerIndex !== -1) {
+        // Insert after shortcuts-header and existing shortcuts
+        const insertAt = headerIndex + 1 + currentShortcutWidgets.filter(id => !toRemove.includes(id)).length;
         newOrder = [
-          ...newOrder.slice(0, lastShortcutIndex),
+          ...newOrder.slice(0, insertAt),
           ...toAdd,
-          ...newOrder.slice(lastShortcutIndex)
+          ...newOrder.slice(insertAt)
         ];
+      } else {
+        newOrder = ['shortcuts-header', ...toAdd, ...newOrder];
       }
       
       return newOrder;
     });
-  }, [selectedActions]);
+  }, [selectedActions, isPrefsLoading]);
+  
+  const inputRef = useRef<HTMLInputElement>(null);
+  const fileInputRef = useRef<HTMLInputElement>(null);
 
-  // Persist widget order to localStorage
-  useEffect(() => {
-    if (userId && widgetOrder.length > 0) {
-      localStorage.setItem(`personal-widget-order-${userId}`, JSON.stringify(widgetOrder));
-    }
-  }, [widgetOrder, userId]);
-
-  // Handle widget drag end
+  // Handle widget drag end - save to database
   const handleWidgetDragEnd = useCallback((result: DropResult) => {
     if (!result.destination) return;
     
@@ -583,7 +563,8 @@ export function PersonalDataHub({ userId }: PersonalDataHubProps) {
     items.splice(result.destination.index, 0, reorderedItem);
     
     setWidgetOrder(items);
-  }, [widgetOrder]);
+    saveDashboardWidgetOrder(items); // Save to database
+  }, [widgetOrder, saveDashboardWidgetOrder]);
 
   const handleQuickAddTask = useCallback(async () => {
     if (!newTaskTitle.trim()) return;
@@ -596,24 +577,24 @@ export function PersonalDataHub({ userId }: PersonalDataHubProps) {
     setSelectedActions(prev => {
       if (prev.includes(actionId)) return prev;
       const newActions = [...prev, actionId];
-      // Update custom order if set
       if (actionPrefs.customOrder) {
         setCustomOrder(newActions);
       }
+      saveDashboardShortcuts(newActions); // Save to database
       return newActions;
     });
-  }, [actionPrefs.customOrder, setCustomOrder]);
+  }, [actionPrefs.customOrder, setCustomOrder, saveDashboardShortcuts]);
 
   const removeActionFromOverview = useCallback((actionId: string) => {
     setSelectedActions(prev => {
       const newActions = prev.filter(id => id !== actionId);
-      // Update custom order if set
       if (actionPrefs.customOrder) {
         setCustomOrder(newActions);
       }
+      saveDashboardShortcuts(newActions); // Save to database
       return newActions;
     });
-  }, [actionPrefs.customOrder, setCustomOrder]);
+  }, [actionPrefs.customOrder, setCustomOrder, saveDashboardShortcuts]);
 
   const handleShortcutClick = useCallback((actionId: string) => {
     // Record usage for smart sorting
