@@ -448,6 +448,7 @@ export function PersonalDataHub({ userId }: PersonalDataHubProps) {
   const getDefaultWidgetOrder = useCallback((actions: string[]) => {
     const shortcutWidgets = actions.map(id => `shortcut-${id}`);
     return [
+      'shortcuts-header', // Draggable header with controls
       ...shortcutWidgets,
       'stat-today', 'stat-streak', 'stat-items',
       'widget-atlas-brief', 'widget-wellness', 'widget-focus',
@@ -490,12 +491,23 @@ export function PersonalDataHub({ userId }: PersonalDataHubProps) {
             const actions = savedActions ? JSON.parse(savedActions) : ['tasks', 'goals', 'habits', 'email', 'photos', 'finance'];
             const shortcutWidgets = actions.map((id: string) => `shortcut-${id}`);
             
-            // Replace 'shortcuts' with individual shortcut widgets
+            // Replace 'shortcuts' with shortcuts-header + individual shortcut widgets
             const shortcutsIndex = order.indexOf('shortcuts');
             order = [
               ...order.slice(0, shortcutsIndex),
+              'shortcuts-header',
               ...shortcutWidgets,
               ...order.slice(shortcutsIndex + 1)
+            ];
+          }
+          
+          // Ensure shortcuts-header exists if there are shortcut widgets
+          if (!order.includes('shortcuts-header') && order.some(id => id.startsWith('shortcut-'))) {
+            const firstShortcutIndex = order.findIndex(id => id.startsWith('shortcut-'));
+            order = [
+              ...order.slice(0, firstShortcutIndex),
+              'shortcuts-header',
+              ...order.slice(firstShortcutIndex)
             ];
           }
           
@@ -1802,6 +1814,56 @@ export function PersonalDataHub({ userId }: PersonalDataHubProps) {
   // Widget config with column spans
   function getWidgetConfig(widgetId: string): { content: React.ReactNode; colSpan: string } | null {
     switch (widgetId) {
+      // Shortcuts header with controls - full width
+      case 'shortcuts-header':
+        if (sortedActions.length === 0) return null;
+        return {
+          colSpan: 'col-span-6',
+          content: (
+            <div className="flex items-center justify-between">
+              <h3 className="text-[10px] font-mono text-muted-foreground">MY SHORTCUTS</h3>
+              <div className="flex items-center gap-1">
+                <TooltipProvider>
+                  <Tooltip>
+                    <TooltipTrigger asChild>
+                      <Button 
+                        variant="ghost" 
+                        size="icon" 
+                        className="h-5 w-5"
+                        onClick={handleAtlasOptimize}
+                      >
+                        <Sparkles size={10} className="text-primary" />
+                      </Button>
+                    </TooltipTrigger>
+                    <TooltipContent side="bottom" className="text-xs">
+                      Atlas: Optimize by usage
+                    </TooltipContent>
+                  </Tooltip>
+                </TooltipProvider>
+                {!actionPrefs.autoSortByUsage && (
+                  <TooltipProvider>
+                    <Tooltip>
+                      <TooltipTrigger asChild>
+                        <Button 
+                          variant="ghost" 
+                          size="icon" 
+                          className="h-5 w-5"
+                          onClick={handleResetToAutoSort}
+                        >
+                          <RefreshCw size={10} className="text-muted-foreground" />
+                        </Button>
+                      </TooltipTrigger>
+                      <TooltipContent side="bottom" className="text-xs">
+                        Reset to auto-sort
+                      </TooltipContent>
+                    </Tooltip>
+                  </TooltipProvider>
+                )}
+              </div>
+            </div>
+          )
+        };
+
       // Stat cards - 2 columns each
       case 'stat-today':
         return {
