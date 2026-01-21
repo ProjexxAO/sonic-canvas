@@ -36,9 +36,10 @@ import {
   Moon,
   Plug
 } from 'lucide-react';
-import { PersonalConnectorsPanel } from '@/components/personal/PersonalConnectorsPanel';
+import { PersonalConnectorsPanel, PersonalDashboardView } from '@/components/personal';
 import { format } from 'date-fns';
 import { cn } from '@/lib/utils';
+import { LayoutDashboard } from 'lucide-react';
 
 export default function PersonalHub() {
   const navigate = useNavigate();
@@ -61,7 +62,7 @@ export default function PersonalHub() {
     stats,
   } = usePersonalHub();
 
-  const [activeTab, setActiveTab] = useState('overview');
+  const [activeTab, setActiveTab] = useState('dashboard');
   const [newItemTitle, setNewItemTitle] = useState('');
   const [newItemType, setNewItemType] = useState<ItemType>('task');
 
@@ -288,10 +289,11 @@ export default function PersonalHub() {
         {/* Main Content Tabs - Executive Style */}
         <Tabs value={activeTab} onValueChange={setActiveTab} className="space-y-6">
           <TabsList className={cn(
-            "grid w-full grid-cols-6 p-1 h-12",
+            "grid w-full grid-cols-7 p-1 h-12",
             theme === 'dark' ? "bg-card/40" : "bg-white/60 shadow-sm"
           )}>
             {[
+              { value: 'dashboard', icon: LayoutDashboard, label: 'Dashboard' },
               { value: 'overview', icon: BarChart3, label: 'Overview' },
               { value: 'connect', icon: Plug, label: 'Connect' },
               { value: 'tasks', icon: CheckSquare, label: 'Tasks' },
@@ -309,6 +311,11 @@ export default function PersonalHub() {
               </TabsTrigger>
             ))}
           </TabsList>
+
+          {/* Dashboard Tab - Customizable Widgets */}
+          <TabsContent value="dashboard">
+            <PersonalDashboardView userId={user?.id} />
+          </TabsContent>
 
           {/* Overview Tab */}
           <TabsContent value="overview" className="space-y-6">
