@@ -1564,6 +1564,13 @@ export function PersonalDataHub({ userId }: PersonalDataHubProps) {
               </Card>
             </div>
 
+            {/* New Widgets Row - Atlas Brief, Wellness, Focus (Mobile) */}
+            <div className="space-y-3">
+              <AtlasDailyBrief compact />
+              <WellnessWidget compact />
+              <FocusTimerWidget compact />
+            </div>
+
             {/* Quick Add Task */}
             <div className="flex gap-2">
               <Input
@@ -1616,6 +1623,12 @@ export function PersonalDataHub({ userId }: PersonalDataHubProps) {
                 </div>
               </div>
             )}
+
+            {/* Enhanced Visualizations (Mobile) */}
+            <div className="space-y-3">
+              <HabitStreakChart />
+              <GoalProgressTimeline />
+            </div>
 
             {/* Goals */}
             {goals.length > 0 && (
