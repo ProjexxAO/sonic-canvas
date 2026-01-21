@@ -124,10 +124,10 @@ export function NotificationSettingsPanel({ className, compact = false }: Notifi
           "border",
           !settings?.allowNotifications && "opacity-60"
         )}>
-          <CollapsibleTrigger className="w-full">
-            <CardHeader className="py-3 px-4">
-              <div className="flex items-center justify-between">
-                <div className="flex items-center gap-3">
+          <CardHeader className="py-3 px-4">
+            <div className="flex items-center justify-between">
+              <CollapsibleTrigger asChild>
+                <div className="flex items-center gap-3 cursor-pointer flex-1">
                   <div className={cn("p-2 rounded-lg", config.bgColor)}>
                     <Icon size={16} className={config.color} />
                   </div>
@@ -146,29 +146,28 @@ export function NotificationSettingsPanel({ className, compact = false }: Notifi
                     </p>
                   </div>
                 </div>
-                <div className="flex items-center gap-2">
-                  {hubType !== 'personal' && (
-                    <div 
-                      onClick={(e) => e.stopPropagation()}
-                      className="flex items-center gap-2"
-                    >
-                      <Switch
-                        checked={settings?.allowNotifications ?? true}
-                        onCheckedChange={(checked) => {
-                          if (checked) {
-                            unblockHubNotifications(hubType);
-                          } else {
-                            blockHubNotifications(hubType);
-                          }
-                        }}
-                      />
-                    </div>
-                  )}
-                  {isExpanded ? <ChevronDown size={14} /> : <ChevronRight size={14} />}
-                </div>
+              </CollapsibleTrigger>
+              <div className="flex items-center gap-2">
+                {hubType !== 'personal' && (
+                  <Switch
+                    checked={settings?.allowNotifications ?? true}
+                    onCheckedChange={(checked) => {
+                      if (checked) {
+                        unblockHubNotifications(hubType);
+                      } else {
+                        blockHubNotifications(hubType);
+                      }
+                    }}
+                  />
+                )}
+                <CollapsibleTrigger asChild>
+                  <div className="cursor-pointer p-1 hover:bg-muted/50 rounded">
+                    {isExpanded ? <ChevronDown size={14} /> : <ChevronRight size={14} />}
+                  </div>
+                </CollapsibleTrigger>
               </div>
-            </CardHeader>
-          </CollapsibleTrigger>
+            </div>
+          </CardHeader>
 
           <CollapsibleContent>
             <CardContent className="pt-0 pb-3 px-4">

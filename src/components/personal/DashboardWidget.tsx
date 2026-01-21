@@ -1,4 +1,4 @@
-import { memo } from 'react';
+import { memo, useState, useRef } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { 
   CreditCard, 
@@ -24,15 +24,18 @@ import {
   ExternalLink,
   Briefcase,
   Users,
-  ChevronRight
+  ChevronRight,
+  Loader2
 } from 'lucide-react';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
 import { Badge } from '@/components/ui/badge';
+import { Input } from '@/components/ui/input';
 import { cn } from '@/lib/utils';
 import { DashboardWidget as DashboardWidgetType, WidgetType } from '@/hooks/usePersonalDashboard';
 import { useTheme } from 'next-themes';
 import { useCrossHubAccess } from '@/hooks/useCrossHubAccess';
+import { toast } from 'sonner';
 
 const WIDGET_ICONS: Record<WidgetType, typeof CreditCard> = {
   'bank-balance': CreditCard,
@@ -157,7 +160,12 @@ function DashboardWidgetComponent({
   isDragging,
   dragHandleProps
 }: DashboardWidgetProps) {
+  const navigate = useNavigate();
   const { theme } = useTheme();
+  const [taskInput, setTaskInput] = useState('');
+  const [emailTo, setEmailTo] = useState('');
+  const [isLoading, setIsLoading] = useState(false);
+  const fileInputRef = useRef<HTMLInputElement>(null);
   const Icon = WIDGET_ICONS[widget.type];
   const color = WIDGET_COLORS[widget.type];
 
@@ -291,10 +299,172 @@ function DashboardWidgetComponent({
       
       case 'quick-add-task':
         return (
-          <Button variant="outline" className="w-full h-12 gap-2">
-            <Plus className="h-4 w-4" />
-            Add New Task
-          </Button>
+          <div className="space-y-2">
+            <div className="flex gap-2">
+              <Input
+                placeholder="Add a quick task..."
+                value={taskInput}
+                onChange={(e) => setTaskInput(e.target.value)}
+                className="h-9 text-sm"
+                onKeyDown={(e) => {
+                  if (e.key === 'Enter' && taskInput.trim()) {
+                    toast.success(`Task added: ${taskInput}`);
+                    setTaskInput('');
+                  }
+                }}
+              />
+              <Button 
+                size="sm" 
+                className="h-9 px-3"
+                disabled={!taskInput.trim()}
+                onClick={() => {
+                  if (taskInput.trim()) {
+                    toast.success(`Task added: ${taskInput}`);
+                    setTaskInput('');
+                  }
+                }}
+              >
+                <Plus className="h-4 w-4" />
+              </Button>
+            </div>
+            <p className="text-[10px] text-muted-foreground text-center">
+              Press Enter or click + to add
+            </p>
+          </div>
+        );
+      
+      case 'quick-email':
+        return (
+          <div className="space-y-2">
+            <Input
+              placeholder="recipient@email.com"
+              type="email"
+              value={emailTo}
+              onChange={(e) => setEmailTo(e.target.value)}
+              className="h-9 text-sm"
+            />
+            <Button 
+              variant="outline" 
+              className="w-full h-9 gap-2"
+              onClick={() => {
+                if (emailTo) {
+                  window.open(`mailto:${emailTo}`, '_blank');
+                  toast.success('Opening email client...');
+                  setEmailTo('');
+                } else {
+                  window.open('mailto:', '_blank');
+                }
+              }}
+            >
+              <Send className="h-3 w-3" />
+              Compose Email
+            </Button>
+          </div>
+        );
+      
+      case 'quick-event':
+        return (
+          <div className="space-y-2">
+            <Button 
+              variant="outline" 
+              className="w-full h-10 gap-2"
+              onClick={() => {
+                window.open('https://calendar.google.com/calendar/r/eventedit', '_blank');
+                toast.success('Opening calendar...');
+              }}
+            >
+              <CalendarPlus className="h-4 w-4" />
+              New Event (Google)
+            </Button>
+            <Button 
+              variant="ghost" 
+              className="w-full h-8 gap-2 text-xs"
+              onClick={() => {
+                window.open('https://outlook.live.com/calendar/0/deeplink/compose', '_blank');
+                toast.success('Opening Outlook calendar...');
+              }}
+            >
+              <Calendar className="h-3 w-3" />
+              New Event (Outlook)
+            </Button>
+          </div>
+        );
+      
+      case 'quick-upload':
+        return (
+          <div className="space-y-2">
+            <input
+              ref={fileInputRef}
+              type="file"
+              multiple
+              accept="image/*,.pdf,.doc,.docx,.txt"
+              onChange={(e) => {
+                if (e.target.files && e.target.files.length > 0) {
+                  toast.success(`${e.target.files.length} file(s) ready to upload`);
+                  // Would connect to actual upload handler
+                }
+              }}
+              className="hidden"
+            />
+            <Button 
+              variant="outline" 
+              className="w-full h-12 gap-2"
+              onClick={() => fileInputRef.current?.click()}
+            >
+              <Upload className="h-4 w-4" />
+              Upload Files
+            </Button>
+            <p className="text-[10px] text-muted-foreground text-center">
+              Images, PDFs, Documents
+            </p>
+          </div>
+        );
+      
+      case 'weather':
+        return (
+          <div className="text-center py-2">
+            <div className="flex items-center justify-center gap-2 mb-2">
+              <CloudSun className="h-10 w-10 text-amber-500" />
+              <span className="text-3xl font-bold">72°F</span>
+            </div>
+            <p className="text-sm text-muted-foreground">Partly Cloudy</p>
+            <Button 
+              variant="link" 
+              className="text-xs mt-1 h-auto p-0"
+              onClick={() => window.open('https://weather.com', '_blank')}
+            >
+              View full forecast →
+            </Button>
+          </div>
+        );
+      
+      case 'notes-recent':
+        return (
+          <div className="space-y-2">
+            {['Meeting notes - Q4 planning', 'Shopping list', 'Book recommendations'].map((note, i) => (
+              <div 
+                key={i} 
+                className={cn(
+                  "p-2 rounded-lg cursor-pointer transition-colors",
+                  theme === 'dark' ? "bg-muted/20 hover:bg-muted/40" : "bg-muted/30 hover:bg-muted/50"
+                )}
+                onClick={() => navigate('/personal')}
+              >
+                <div className="flex items-center gap-2">
+                  <FileText className="h-3 w-3 text-muted-foreground" />
+                  <span className="text-sm truncate">{note}</span>
+                </div>
+              </div>
+            ))}
+            <Button 
+              variant="ghost" 
+              className="w-full h-8 text-xs"
+              onClick={() => navigate('/personal')}
+            >
+              <Plus className="h-3 w-3 mr-1" />
+              New Note
+            </Button>
+          </div>
         );
       
       case 'recent-activity':
