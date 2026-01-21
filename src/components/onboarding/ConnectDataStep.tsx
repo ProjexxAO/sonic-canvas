@@ -1,3 +1,4 @@
+import { useState } from 'react';
 import { 
   ChevronLeft, 
   ChevronRight, 
@@ -5,10 +6,25 @@ import {
   Upload,
   Check,
   FileText,
-  Cloud
+  Plug,
+  Mail,
+  Cloud as CloudIcon,
+  Calendar,
+  Loader2
 } from 'lucide-react';
 import { Button } from '@/components/ui/button';
+import { Input } from '@/components/ui/input';
+import { Label } from '@/components/ui/label';
+import {
+  Dialog,
+  DialogContent,
+  DialogDescription,
+  DialogFooter,
+  DialogHeader,
+  DialogTitle,
+} from '@/components/ui/dialog';
 import { cn } from '@/lib/utils';
+import { useDataConnectors, ConnectorPlatform, CONNECTOR_CONFIGS } from '@/hooks/useDataConnectors';
 
 interface ConnectDataStepProps {
   onNext: () => void;
@@ -17,6 +33,7 @@ interface ConnectDataStepProps {
   hasConnectedData: boolean;
   totalDataItems: number;
   onUploadFile: () => void;
+  userId?: string;
 }
 
 export function ConnectDataStep({ 
@@ -25,8 +42,35 @@ export function ConnectDataStep({
   onSkip,
   hasConnectedData,
   totalDataItems,
-  onUploadFile 
+  onUploadFile,
+  userId
 }: ConnectDataStepProps) {
+  const { connectors, initializeConnector, getConnectorStats } = useDataConnectors(userId);
+  const [connectDialog, setConnectDialog] = useState<{ open: boolean; platform: ConnectorPlatform | null }>({ open: false, platform: null });
+  const [email, setEmail] = useState('');
+  const [isConnecting, setIsConnecting] = useState(false);
+
+  const stats = getConnectorStats();
+  const activeConnectors = stats.activeConnectors;
+
+  const handleConnect = (platform: ConnectorPlatform) => {
+    setConnectDialog({ open: true, platform });
+    setEmail('');
+  };
+
+  const handleConfirmConnect = async () => {
+    if (!connectDialog.platform || !email) return;
+    setIsConnecting(true);
+    try {
+      await initializeConnector(connectDialog.platform, { email });
+      setConnectDialog({ open: false, platform: null });
+    } finally {
+      setIsConnecting(false);
+    }
+  };
+
+  const quickConnectors = CONNECTOR_CONFIGS.filter(c => c.available).slice(0, 4);
+  const isConnected = (platform: ConnectorPlatform) => connectors.some(c => c.platform === platform && c.isActive);
   return (
     <div className="h-full flex flex-col animate-fade-in">
       {/* Skip button */}
@@ -97,7 +141,7 @@ export function ConnectDataStep({
             className="w-full h-auto py-4 flex flex-col items-center gap-2 opacity-60"
             disabled
           >
-            <Cloud size={24} className="text-muted-foreground" />
+            <CloudIcon size={24} className="text-muted-foreground" />
             <div className="text-center">
               <p className="font-medium text-muted-foreground">Connect Cloud Services</p>
               <p className="text-xs text-muted-foreground">Gmail, Google Drive (Coming Soon)</p>
