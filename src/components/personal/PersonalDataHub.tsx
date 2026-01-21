@@ -71,6 +71,7 @@ import {
 } from '@/components/ui/dropdown-menu';
 import { usePersonalHub, PersonalItem, PersonalGoal, PersonalHabit } from '@/hooks/usePersonalHub';
 import { useBanking, BankAccount, BankTransaction } from '@/hooks/useBanking';
+import { useUserPhotos, PHOTO_CATEGORIES, SOCIAL_PLATFORMS } from '@/hooks/useUserPhotos';
 import { cn } from '@/lib/utils';
 import { format, isToday, isPast, parseISO } from 'date-fns';
 
@@ -343,7 +344,7 @@ function HabitCard({ habit, onComplete }: { habit: PersonalHabit; onComplete: ()
 }
 
 // Active view type for full-screen sections
-type ActiveView = 'overview' | 'tasks' | 'goals' | 'habits' | 'notes' | 'finance';
+type ActiveView = 'overview' | 'tasks' | 'goals' | 'habits' | 'notes' | 'finance' | 'photos';
 
 export function PersonalDataHub({ userId }: PersonalDataHubProps) {
   const {
@@ -360,12 +361,30 @@ export function PersonalDataHub({ userId }: PersonalDataHubProps) {
     refreshAll: refreshBanking,
   } = useBanking();
 
+  const {
+    photos,
+    isLoading: isPhotosLoading,
+    isUploading,
+    stats: photoStats,
+    uploadMultiplePhotos,
+    toggleFavorite,
+    setCategory,
+    deletePhoto,
+    shareToSocial,
+    getPhotoUrl,
+    getPhotosByCategory,
+    refetch: refetchPhotos,
+  } = useUserPhotos();
+
   const [newTaskTitle, setNewTaskTitle] = useState('');
   const [activeView, setActiveView] = useState<ActiveView>('overview');
+  const [photoCategory, setPhotoCategory] = useState('all');
+  const [selectedPhotos, setSelectedPhotos] = useState<string[]>([]);
   const [selectedActions, setSelectedActions] = useState<string[]>([
     'tasks', 'goals', 'habits', 'email', 'photos', 'finance'
   ]);
   const inputRef = useRef<HTMLInputElement>(null);
+  const fileInputRef = useRef<HTMLInputElement>(null);
 
   const handleQuickAddTask = useCallback(async () => {
     if (!newTaskTitle.trim()) return;
@@ -386,9 +405,23 @@ export function PersonalDataHub({ userId }: PersonalDataHubProps) {
 
   const handleShortcutClick = (actionId: string) => {
     // Navigate to full view for core actions
-    if (['tasks', 'goals', 'habits', 'notes', 'finance'].includes(actionId)) {
+    if (['tasks', 'goals', 'habits', 'notes', 'finance', 'photos'].includes(actionId)) {
       setActiveView(actionId as ActiveView);
     }
+  };
+
+  const handlePhotoUpload = async (e: React.ChangeEvent<HTMLInputElement>) => {
+    if (e.target.files && e.target.files.length > 0) {
+      await uploadMultiplePhotos(e.target.files);
+    }
+  };
+
+  const togglePhotoSelection = (photoId: string) => {
+    setSelectedPhotos(prev => 
+      prev.includes(photoId) 
+        ? prev.filter(id => id !== photoId)
+        : [...prev, photoId]
+    );
   };
 
   const tasks = getItemsByType('task');
@@ -613,6 +646,259 @@ export function PersonalDataHub({ userId }: PersonalDataHubProps) {
                     </Card>
                   ))}
                 </div>
+              </div>
+            )}
+          </div>
+        </ScrollArea>
+      </div>
+    );
+  }
+
+  // Full Photos View
+  if (activeView === 'photos') {
+    const filteredPhotos = getPhotosByCategory(photoCategory);
+    
+    return (
+      <div className="h-full bg-card/90 border border-border rounded-lg shadow-sm overflow-hidden flex flex-col">
+        <div className="px-3 py-2 border-b border-border flex items-center justify-between">
+          <div className="flex items-center gap-2">
+            <Button variant="ghost" size="sm" className="h-6 px-2" onClick={() => setActiveView('overview')}>
+              <ChevronDown size={12} className="rotate-90 mr-1" />
+              Back
+            </Button>
+            <Image size={14} className="text-primary" />
+            <span className="text-xs font-mono text-muted-foreground uppercase">MY PHOTOS</span>
+            <Badge variant="secondary" className="text-[10px]">{photos.length}</Badge>
+          </div>
+          <div className="flex items-center gap-1">
+            <input
+              ref={fileInputRef}
+              type="file"
+              accept="image/*"
+              multiple
+              className="hidden"
+              onChange={handlePhotoUpload}
+            />
+            <Button 
+              variant="outline" 
+              size="sm" 
+              className="h-6 px-2 text-[10px]"
+              onClick={() => fileInputRef.current?.click()}
+              disabled={isUploading}
+            >
+              <Plus size={10} className="mr-1" />
+              Upload
+            </Button>
+            <Button variant="ghost" size="icon" className="h-6 w-6" onClick={() => refetchPhotos()} disabled={isPhotosLoading}>
+              <RefreshCw size={12} className={isPhotosLoading ? 'animate-spin' : ''} />
+            </Button>
+          </div>
+        </div>
+
+        {/* Category Filter */}
+        <div className="px-3 py-2 border-b border-border overflow-x-auto">
+          <div className="flex gap-1.5 pb-1">
+            {PHOTO_CATEGORIES.map(cat => (
+              <Button
+                key={cat.id}
+                variant={photoCategory === cat.id ? 'default' : 'outline'}
+                size="sm"
+                className="h-6 px-2 text-[10px] whitespace-nowrap flex-shrink-0"
+                onClick={() => setPhotoCategory(cat.id)}
+              >
+                {cat.label}
+                {cat.id === 'favorites' && photoStats.favorites > 0 && (
+                  <Badge variant="secondary" className="ml-1 text-[8px] px-1">{photoStats.favorites}</Badge>
+                )}
+              </Button>
+            ))}
+          </div>
+        </div>
+
+        {/* Selected Photos Actions */}
+        {selectedPhotos.length > 0 && (
+          <div className="px-3 py-2 border-b border-border bg-primary/5 flex items-center justify-between">
+            <span className="text-xs text-primary">{selectedPhotos.length} selected</span>
+            <div className="flex items-center gap-1">
+              <DropdownMenu>
+                <DropdownMenuTrigger asChild>
+                  <Button variant="outline" size="sm" className="h-6 px-2 text-[10px]">
+                    Share to...
+                  </Button>
+                </DropdownMenuTrigger>
+                <DropdownMenuContent align="end" className="bg-popover border-border">
+                  <DropdownMenuLabel className="text-[10px]">Social Platforms</DropdownMenuLabel>
+                  {SOCIAL_PLATFORMS.map(platform => (
+                    <DropdownMenuItem
+                      key={platform.id}
+                      className="text-xs"
+                      onClick={() => {
+                        selectedPhotos.forEach(id => shareToSocial(id, platform.id));
+                        setSelectedPhotos([]);
+                      }}
+                    >
+                      <div 
+                        className="w-3 h-3 rounded-full mr-2"
+                        style={{ backgroundColor: platform.color }}
+                      />
+                      {platform.label}
+                    </DropdownMenuItem>
+                  ))}
+                </DropdownMenuContent>
+              </DropdownMenu>
+              <Button
+                variant="ghost"
+                size="sm"
+                className="h-6 px-2 text-[10px]"
+                onClick={() => setSelectedPhotos([])}
+              >
+                Clear
+              </Button>
+            </div>
+          </div>
+        )}
+
+        <ScrollArea className="flex-1">
+          <div className="p-3">
+            {filteredPhotos.length > 0 ? (
+              <div className="grid grid-cols-3 gap-2">
+                {filteredPhotos.map(photo => (
+                  <div
+                    key={photo.id}
+                    className={cn(
+                      "relative aspect-square rounded-lg overflow-hidden border-2 transition-all cursor-pointer group",
+                      selectedPhotos.includes(photo.id) 
+                        ? "border-primary ring-2 ring-primary/20" 
+                        : "border-transparent hover:border-border"
+                    )}
+                    onClick={() => togglePhotoSelection(photo.id)}
+                  >
+                    <img
+                      src={getPhotoUrl(photo)}
+                      alt={photo.file_name}
+                      className="w-full h-full object-cover"
+                    />
+                    
+                    {/* Selection indicator */}
+                    <div className={cn(
+                      "absolute top-1 left-1 w-5 h-5 rounded-full border-2 flex items-center justify-center transition-all",
+                      selectedPhotos.includes(photo.id) 
+                        ? "bg-primary border-primary" 
+                        : "bg-background/80 border-border opacity-0 group-hover:opacity-100"
+                    )}>
+                      {selectedPhotos.includes(photo.id) && (
+                        <CheckCircle2 size={12} className="text-primary-foreground" />
+                      )}
+                    </div>
+
+                    {/* Favorite indicator */}
+                    {photo.is_favorite && (
+                      <Heart size={12} className="absolute top-1 right-1 text-red-500 fill-red-500" />
+                    )}
+
+                    {/* Shared indicator */}
+                    {photo.shared_to.length > 0 && (
+                      <div className="absolute bottom-1 left-1 flex gap-0.5">
+                        {photo.shared_to.slice(0, 3).map(platform => (
+                          <div
+                            key={platform}
+                            className="w-3 h-3 rounded-full"
+                            style={{ 
+                              backgroundColor: SOCIAL_PLATFORMS.find(p => p.id === platform)?.color || 'gray' 
+                            }}
+                          />
+                        ))}
+                      </div>
+                    )}
+
+                    {/* Hover actions */}
+                    <div className="absolute inset-0 bg-black/50 opacity-0 group-hover:opacity-100 transition-opacity flex items-center justify-center gap-2">
+                      <Button
+                        variant="secondary"
+                        size="icon"
+                        className="h-7 w-7"
+                        onClick={(e) => {
+                          e.stopPropagation();
+                          toggleFavorite(photo.id, photo.is_favorite);
+                        }}
+                      >
+                        <Heart size={12} className={photo.is_favorite ? "fill-red-500 text-red-500" : ""} />
+                      </Button>
+                      <DropdownMenu>
+                        <DropdownMenuTrigger asChild>
+                          <Button
+                            variant="secondary"
+                            size="icon"
+                            className="h-7 w-7"
+                            onClick={(e) => e.stopPropagation()}
+                          >
+                            <MoreHorizontal size={12} />
+                          </Button>
+                        </DropdownMenuTrigger>
+                        <DropdownMenuContent align="center" className="bg-popover border-border">
+                          <DropdownMenuSub>
+                            <DropdownMenuSubTrigger className="text-xs">
+                              Set Category
+                            </DropdownMenuSubTrigger>
+                            <DropdownMenuPortal>
+                              <DropdownMenuSubContent className="bg-popover border-border">
+                                {PHOTO_CATEGORIES.filter(c => c.id !== 'all' && c.id !== 'favorites' && c.id !== 'recent').map(cat => (
+                                  <DropdownMenuItem
+                                    key={cat.id}
+                                    className="text-xs"
+                                    onClick={() => setCategory(photo.id, cat.id)}
+                                  >
+                                    {cat.label}
+                                  </DropdownMenuItem>
+                                ))}
+                              </DropdownMenuSubContent>
+                            </DropdownMenuPortal>
+                          </DropdownMenuSub>
+                          <DropdownMenuSub>
+                            <DropdownMenuSubTrigger className="text-xs">
+                              Share to...
+                            </DropdownMenuSubTrigger>
+                            <DropdownMenuPortal>
+                              <DropdownMenuSubContent className="bg-popover border-border">
+                                {SOCIAL_PLATFORMS.map(platform => (
+                                  <DropdownMenuItem
+                                    key={platform.id}
+                                    className="text-xs"
+                                    onClick={() => shareToSocial(photo.id, platform.id)}
+                                  >
+                                    {platform.label}
+                                  </DropdownMenuItem>
+                                ))}
+                              </DropdownMenuSubContent>
+                            </DropdownMenuPortal>
+                          </DropdownMenuSub>
+                          <DropdownMenuSeparator />
+                          <DropdownMenuItem
+                            className="text-xs text-destructive"
+                            onClick={() => deletePhoto(photo.id)}
+                          >
+                            <Trash2 size={12} className="mr-2" />
+                            Delete
+                          </DropdownMenuItem>
+                        </DropdownMenuContent>
+                      </DropdownMenu>
+                    </div>
+                  </div>
+                ))}
+              </div>
+            ) : (
+              <div className="text-center py-12">
+                <Image size={48} className="mx-auto mb-3 text-muted-foreground/30" />
+                <p className="text-sm text-muted-foreground">No photos in this category</p>
+                <Button
+                  variant="outline"
+                  size="sm"
+                  className="mt-3"
+                  onClick={() => fileInputRef.current?.click()}
+                >
+                  <Plus size={14} className="mr-1" />
+                  Upload Photos
+                </Button>
               </div>
             )}
           </div>
