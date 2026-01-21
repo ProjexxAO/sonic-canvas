@@ -30,6 +30,23 @@ export class VoiceIntentParser {
     'csuite': '/atlas',
     'executive dashboard': '/atlas',
     
+    // Data Hubs
+    'personal hub': '/personal',
+    'personal': '/personal',
+    'my hub': '/personal',
+    'my data': '/personal',
+    'personal data': '/personal',
+    'group hub': '/group',
+    'group': '/group',
+    'team hub': '/group',
+    'team': '/group',
+    'groups': '/group',
+    'shared hub': '/group',
+    'c-suite hub': '/atlas',
+    'csuite hub': '/atlas',
+    'enterprise hub': '/atlas',
+    'executive hub': '/atlas',
+    
     // Import
     'import': '/import',
     'import agents': '/import',
