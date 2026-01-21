@@ -669,9 +669,8 @@ export function PersonalDataHub({ userId }: PersonalDataHubProps) {
       <div className="h-full bg-card/90 border border-border rounded-lg shadow-sm overflow-hidden flex flex-col">
         <div className="px-3 py-2 border-b border-border flex items-center justify-between">
           <div className="flex items-center gap-2">
-            <Button variant="ghost" size="sm" className="h-6 px-2" onClick={() => setActiveView('overview')}>
-              <ChevronDown size={12} className="rotate-90 mr-1" />
-              Back
+            <Button variant="ghost" size="icon" className="h-6 w-6" onClick={() => setActiveView('overview')}>
+              <ChevronDown size={14} className="rotate-90" />
             </Button>
             <DollarSign size={14} className="text-primary" />
             <span className="text-xs font-mono text-muted-foreground uppercase">MY FINANCES</span>
@@ -871,9 +870,8 @@ export function PersonalDataHub({ userId }: PersonalDataHubProps) {
       <div className="h-full bg-card/90 border border-border rounded-lg shadow-sm overflow-hidden flex flex-col">
         <div className="px-3 py-2 border-b border-border flex items-center justify-between">
           <div className="flex items-center gap-2">
-            <Button variant="ghost" size="sm" className="h-6 px-2" onClick={() => setActiveView('overview')}>
-              <ChevronDown size={12} className="rotate-90 mr-1" />
-              Back
+            <Button variant="ghost" size="icon" className="h-6 w-6" onClick={() => setActiveView('overview')}>
+              <ChevronDown size={14} className="rotate-90" />
             </Button>
             <Globe size={14} className="text-primary" />
             <span className="text-xs font-mono text-muted-foreground uppercase">WEB SEARCH</span>
@@ -1008,9 +1006,8 @@ export function PersonalDataHub({ userId }: PersonalDataHubProps) {
       <div className="h-full bg-card/90 border border-border rounded-lg shadow-sm overflow-hidden flex flex-col">
         <div className="px-3 py-2 border-b border-border flex items-center justify-between">
           <div className="flex items-center gap-2">
-            <Button variant="ghost" size="sm" className="h-6 px-2" onClick={() => setActiveView('overview')}>
-              <ChevronDown size={12} className="rotate-90 mr-1" />
-              Back
+            <Button variant="ghost" size="icon" className="h-6 w-6" onClick={() => setActiveView('overview')}>
+              <ChevronDown size={14} className="rotate-90" />
             </Button>
             <Image size={14} className="text-primary" />
             <span className="text-xs font-mono text-muted-foreground uppercase">MY PHOTOS</span>
@@ -1259,9 +1256,8 @@ export function PersonalDataHub({ userId }: PersonalDataHubProps) {
       <div className="h-full bg-card/90 border border-border rounded-lg shadow-sm overflow-hidden flex flex-col">
         <div className="px-3 py-2 border-b border-border flex items-center justify-between">
           <div className="flex items-center gap-2">
-            <Button variant="ghost" size="sm" className="h-6 px-2" onClick={() => setActiveView('overview')}>
-              <ChevronDown size={12} className="rotate-90 mr-1" />
-              Back
+            <Button variant="ghost" size="icon" className="h-6 w-6" onClick={() => setActiveView('overview')}>
+              <ChevronDown size={14} className="rotate-90" />
             </Button>
             <CheckSquare size={14} className="text-primary" />
             <span className="text-xs font-mono text-muted-foreground uppercase">ALL TASKS</span>
@@ -1338,9 +1334,8 @@ export function PersonalDataHub({ userId }: PersonalDataHubProps) {
       <div className="h-full bg-card/90 border border-border rounded-lg shadow-sm overflow-hidden flex flex-col">
         <div className="px-3 py-2 border-b border-border flex items-center justify-between">
           <div className="flex items-center gap-2">
-            <Button variant="ghost" size="sm" className="h-6 px-2" onClick={() => setActiveView('overview')}>
-              <ChevronDown size={12} className="rotate-90 mr-1" />
-              Back
+            <Button variant="ghost" size="icon" className="h-6 w-6" onClick={() => setActiveView('overview')}>
+              <ChevronDown size={14} className="rotate-90" />
             </Button>
             <Target size={14} className="text-primary" />
             <span className="text-xs font-mono text-muted-foreground uppercase">ALL GOALS</span>
@@ -1370,9 +1365,8 @@ export function PersonalDataHub({ userId }: PersonalDataHubProps) {
       <div className="h-full bg-card/90 border border-border rounded-lg shadow-sm overflow-hidden flex flex-col">
         <div className="px-3 py-2 border-b border-border flex items-center justify-between">
           <div className="flex items-center gap-2">
-            <Button variant="ghost" size="sm" className="h-6 px-2" onClick={() => setActiveView('overview')}>
-              <ChevronDown size={12} className="rotate-90 mr-1" />
-              Back
+            <Button variant="ghost" size="icon" className="h-6 w-6" onClick={() => setActiveView('overview')}>
+              <ChevronDown size={14} className="rotate-90" />
             </Button>
             <TrendingUp size={14} className="text-primary" />
             <span className="text-xs font-mono text-muted-foreground uppercase">ALL HABITS</span>
