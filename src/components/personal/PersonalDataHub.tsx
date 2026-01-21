@@ -114,7 +114,8 @@ function PersonalQuickAction({
   color, 
   onClick,
   badge,
-  onRemove
+  onRemove,
+  url
 }: { 
   icon: typeof CheckSquare; 
   label: string; 
@@ -123,11 +124,20 @@ function PersonalQuickAction({
   onClick: () => void;
   badge?: string;
   onRemove?: () => void;
+  url?: string;
 }) {
+  const handleClick = () => {
+    if (url) {
+      window.open(url, '_blank', 'noopener,noreferrer');
+    } else {
+      onClick();
+    }
+  };
+
   return (
     <div className="relative group">
       <button
-        onClick={onClick}
+        onClick={handleClick}
         className="flex flex-col items-center justify-center p-2 rounded-lg border border-border bg-card/50 hover:bg-card transition-colors min-w-[60px] w-full"
       >
         <div 
@@ -146,6 +156,9 @@ function PersonalQuickAction({
           <Badge variant="outline" className="text-[7px] mt-0.5 px-1 py-0 h-3">
             {badge}
           </Badge>
+        )}
+        {url && (
+          <ExternalLink size={8} className="absolute top-1 right-1 text-muted-foreground opacity-0 group-hover:opacity-100 transition-opacity" />
         )}
       </button>
       {onRemove && (
@@ -514,7 +527,14 @@ export function PersonalDataHub({ userId }: PersonalDataHubProps) {
                     count={action.count}
                     badge={action.badge}
                     color={action.color} 
-                    onClick={() => {}} 
+                    onClick={() => {
+                      // Scroll to the relevant section
+                      const sectionId = `section-${action.id}`;
+                      const element = document.getElementById(sectionId);
+                      if (element) {
+                        element.scrollIntoView({ behavior: 'smooth', block: 'start' });
+                      }
+                    }} 
                     onRemove={() => removeActionFromOverview(action.id)}
                   />
                 ))}
@@ -524,7 +544,8 @@ export function PersonalDataHub({ userId }: PersonalDataHubProps) {
                     icon={action.icon} 
                     label={action.label} 
                     color={action.color} 
-                    onClick={() => action.url && window.open(action.url, '_blank')} 
+                    url={action.url}
+                    onClick={() => {}} 
                     onRemove={() => removeActionFromOverview(action.id)}
                   />
                 ))}
@@ -571,7 +592,7 @@ export function PersonalDataHub({ userId }: PersonalDataHubProps) {
 
           {/* Today's Tasks */}
           {todaysTasks.length > 0 && (
-            <div>
+            <div id="section-tasks">
               <h3 className="text-[10px] font-mono text-muted-foreground mb-2 flex items-center gap-1">
                 <Clock size={10} /> TODAY'S TASKS
               </h3>
@@ -595,7 +616,7 @@ export function PersonalDataHub({ userId }: PersonalDataHubProps) {
 
           {/* Habits Preview */}
           {habits.length > 0 && (
-            <div>
+            <div id="section-habits">
               <h3 className="text-[10px] font-mono text-muted-foreground mb-2 flex items-center gap-1">
                 <Flame size={10} /> DAILY HABITS
               </h3>
@@ -609,7 +630,7 @@ export function PersonalDataHub({ userId }: PersonalDataHubProps) {
 
           {/* Goals Preview */}
           {goals.length > 0 && (
-            <div>
+            <div id="section-goals">
               <h3 className="text-[10px] font-mono text-muted-foreground mb-2 flex items-center gap-1">
                 <Target size={10} /> ACTIVE GOALS
               </h3>
