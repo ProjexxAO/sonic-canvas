@@ -117,7 +117,7 @@ const ALL_QUICK_ACTIONS: QuickActionItem[] = [
   
   // More category
   { id: 'news', icon: Rss, label: 'News', color: 'hsl(35 80% 50%)', category: 'more' },
-  { id: 'weather', icon: Sun, label: 'Weather', color: 'hsl(45 90% 50%)', category: 'more' },
+  { id: 'weather', icon: Sun, label: 'Weather', color: 'hsl(45 90% 50%)', category: 'more', url: 'https://weather.com' },
   { id: 'cloud', icon: Cloud, label: 'Cloud Storage', color: 'hsl(200 60% 50%)', category: 'more' },
 ];
 
@@ -146,11 +146,11 @@ function PersonalQuickAction({
   dragHandleProps?: any;
 }) {
   const handleClick = () => {
-    if (url) {
-      window.open(url, '_blank', 'noopener,noreferrer');
-    } else {
-      onClick();
-    }
+    // Always record usage / internal routing first
+    onClick();
+
+    // Then open external destination if present
+    if (url) window.open(url, '_blank', 'noopener,noreferrer');
   };
 
   return (
