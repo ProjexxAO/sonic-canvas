@@ -1,7 +1,9 @@
 // Personal Data Hub - Dynamic personal interface with user-selected overview items
 // Life, Social, More consolidated into dropdown menu
+// Supports drag-and-drop reordering and Atlas auto-arrange by usage
 
-import { useState, useCallback, useRef, useEffect } from 'react';
+import { useState, useCallback, useRef, useEffect, useMemo } from 'react';
+import { DragDropContext, Droppable, Draggable, DropResult } from '@hello-pangea/dnd';
 import { 
   CheckSquare, 
   Target, 
@@ -49,7 +51,9 @@ import {
   ArrowDownRight,
   PiggyBank,
   LineChart,
-  Banknote
+  Banknote,
+  Sparkles,
+  Move
 } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { ScrollArea } from '@/components/ui/scroll-area';
@@ -69,10 +73,13 @@ import {
   DropdownMenuSubContent,
   DropdownMenuPortal
 } from '@/components/ui/dropdown-menu';
+import { Tooltip, TooltipContent, TooltipProvider, TooltipTrigger } from '@/components/ui/tooltip';
 import { usePersonalHub, PersonalItem, PersonalGoal, PersonalHabit } from '@/hooks/usePersonalHub';
 import { useBanking, BankAccount, BankTransaction } from '@/hooks/useBanking';
 import { useUserPhotos, PHOTO_CATEGORIES, SOCIAL_PLATFORMS } from '@/hooks/useUserPhotos';
+import { useQuickActionPreferences } from '@/hooks/useQuickActionPreferences';
 import { cn } from '@/lib/utils';
+import { toast } from 'sonner';
 import { format, isToday, isPast, parseISO } from 'date-fns';
 
 interface PersonalDataHubProps {
@@ -114,7 +121,7 @@ const ALL_QUICK_ACTIONS: QuickActionItem[] = [
   { id: 'cloud', icon: Cloud, label: 'Cloud Storage', color: 'hsl(200 60% 50%)', category: 'more' },
 ];
 
-// Quick action card for personal actions
+// Quick action card for personal actions with drag support
 function PersonalQuickAction({ 
   icon: Icon, 
   label, 
@@ -123,7 +130,9 @@ function PersonalQuickAction({
   onClick,
   badge,
   onRemove,
-  url
+  url,
+  isDragging,
+  dragHandleProps
 }: { 
   icon: typeof CheckSquare; 
   label: string; 
@@ -133,6 +142,8 @@ function PersonalQuickAction({
   badge?: string;
   onRemove?: () => void;
   url?: string;
+  isDragging?: boolean;
+  dragHandleProps?: any;
 }) {
   const handleClick = () => {
     if (url) {
@@ -143,11 +154,26 @@ function PersonalQuickAction({
   };
 
   return (
-    <div className="relative group">
+    <div className={cn(
+      "relative group",
+      isDragging && "opacity-75 shadow-lg"
+    )}>
       <button
         onClick={handleClick}
-        className="flex flex-col items-center justify-center p-2 rounded-lg border border-border bg-card/50 hover:bg-card transition-colors min-w-[60px] w-full"
+        className={cn(
+          "flex flex-col items-center justify-center p-2 rounded-lg border border-border bg-card/50 hover:bg-card transition-colors min-w-[60px] w-full",
+          isDragging && "ring-2 ring-primary"
+        )}
       >
+        {/* Drag handle */}
+        {dragHandleProps && (
+          <div 
+            {...dragHandleProps}
+            className="absolute top-0.5 left-0.5 opacity-0 group-hover:opacity-100 transition-opacity cursor-grab active:cursor-grabbing"
+          >
+            <GripVertical size={10} className="text-muted-foreground" />
+          </div>
+        )}
         <div 
           className="w-7 h-7 rounded-full flex items-center justify-center mb-0.5"
           style={{ backgroundColor: `${color}20` }}
@@ -376,10 +402,20 @@ export function PersonalDataHub({ userId }: PersonalDataHubProps) {
     refetch: refetchPhotos,
   } = useUserPhotos();
 
+  // Quick action preferences for usage tracking and custom order
+  const {
+    preferences: actionPrefs,
+    recordUsage,
+    setCustomOrder,
+    clearCustomOrder,
+    getSortedActionIds,
+  } = useQuickActionPreferences(userId);
+
   const [newTaskTitle, setNewTaskTitle] = useState('');
   const [activeView, setActiveView] = useState<ActiveView>('overview');
   const [photoCategory, setPhotoCategory] = useState('all');
   const [selectedPhotos, setSelectedPhotos] = useState<string[]>([]);
+  const [isDragMode, setIsDragMode] = useState(false);
   
   // Initialize selectedActions from localStorage
   const [selectedActions, setSelectedActions] = useState<string[]>(() => {
@@ -416,20 +452,35 @@ export function PersonalDataHub({ userId }: PersonalDataHubProps) {
   const addActionToOverview = useCallback((actionId: string) => {
     setSelectedActions(prev => {
       if (prev.includes(actionId)) return prev;
-      return [...prev, actionId];
+      const newActions = [...prev, actionId];
+      // Update custom order if set
+      if (actionPrefs.customOrder) {
+        setCustomOrder(newActions);
+      }
+      return newActions;
     });
-  }, []);
+  }, [actionPrefs.customOrder, setCustomOrder]);
 
   const removeActionFromOverview = useCallback((actionId: string) => {
-    setSelectedActions(prev => prev.filter(id => id !== actionId));
-  }, []);
+    setSelectedActions(prev => {
+      const newActions = prev.filter(id => id !== actionId);
+      // Update custom order if set
+      if (actionPrefs.customOrder) {
+        setCustomOrder(newActions);
+      }
+      return newActions;
+    });
+  }, [actionPrefs.customOrder, setCustomOrder]);
 
-  const handleShortcutClick = (actionId: string) => {
+  const handleShortcutClick = useCallback((actionId: string) => {
+    // Record usage for smart sorting
+    recordUsage(actionId);
+    
     // Navigate to full view for core actions
     if (['tasks', 'goals', 'habits', 'notes', 'finance', 'photos'].includes(actionId)) {
       setActiveView(actionId as ActiveView);
     }
-  };
+  }, [recordUsage]);
 
   const handlePhotoUpload = async (e: React.ChangeEvent<HTMLInputElement>) => {
     if (e.target.files && e.target.files.length > 0) {
@@ -452,7 +503,7 @@ export function PersonalDataHub({ userId }: PersonalDataHubProps) {
   const totalBalance = accounts.reduce((sum, acc) => sum + (acc.current_balance || 0), 0);
 
   // Default quick actions (always visible)
-  const defaultActions = [
+  const defaultActions = useMemo(() => [
     { id: 'tasks', icon: CheckSquare, label: 'Tasks', count: stats.activeTasks, color: 'hsl(350 70% 50%)' },
     { id: 'goals', icon: Target, label: 'Goals', count: stats.activeGoals, color: 'hsl(150 70% 45%)' },
     { id: 'habits', icon: TrendingUp, label: 'Habits', count: stats.activeHabits, color: 'hsl(45 80% 50%)' },
@@ -463,7 +514,62 @@ export function PersonalDataHub({ userId }: PersonalDataHubProps) {
     { id: 'cards', icon: CreditCard, label: 'Cards', color: 'hsl(220 70% 50%)' },
     { id: 'notes', icon: FileText, label: 'Notes', count: notes.length, color: 'hsl(45 70% 50%)' },
     { id: 'saved', icon: Bookmark, label: 'Saved', color: 'hsl(350 60% 50%)' },
-  ];
+  ], [stats, accounts.length, notes.length]);
+
+  // Combine all actions into a lookup map
+  const allActionsMap = useMemo(() => {
+    const map: Record<string, typeof defaultActions[0] | QuickActionItem> = {};
+    defaultActions.forEach(a => { map[a.id] = a; });
+    ALL_QUICK_ACTIONS.forEach(a => { map[a.id] = a; });
+    return map;
+  }, [defaultActions]);
+
+  // Sorted actions based on user preference or usage
+  const sortedActions = useMemo(() => {
+    const sortedIds = actionPrefs.customOrder && !actionPrefs.autoSortByUsage
+      ? actionPrefs.customOrder.filter(id => selectedActions.includes(id))
+      : getSortedActionIds(selectedActions);
+    
+    // Add any new actions not in the sorted list
+    const sortedSet = new Set(sortedIds);
+    selectedActions.forEach(id => {
+      if (!sortedSet.has(id)) sortedIds.push(id);
+    });
+    
+    return sortedIds
+      .map(id => allActionsMap[id])
+      .filter(Boolean);
+  }, [selectedActions, actionPrefs, getSortedActionIds, allActionsMap]);
+
+  // Handle drag end - reorder shortcuts (defined after sortedActions)
+  const handleDragEnd = useCallback((result: DropResult) => {
+    if (!result.destination) return;
+    
+    const items = Array.from(sortedActions);
+    const [reorderedItem] = items.splice(result.source.index, 1);
+    items.splice(result.destination.index, 0, reorderedItem);
+    
+    // Get just the IDs for the new order
+    const newOrder = items.map(item => item.id);
+    setSelectedActions(newOrder);
+    setCustomOrder(newOrder);
+    
+    toast.success('Shortcut order saved');
+  }, [sortedActions, setCustomOrder]);
+
+  // Atlas auto-arrange: sort by usage frequency
+  const handleAtlasOptimize = useCallback(() => {
+    const optimizedOrder = getSortedActionIds(selectedActions);
+    setSelectedActions(optimizedOrder);
+    setCustomOrder(optimizedOrder);
+    toast.success('Atlas optimized your shortcuts based on usage!');
+  }, [selectedActions, getSortedActionIds, setCustomOrder]);
+
+  // Reset to auto-sort by usage
+  const handleResetToAutoSort = useCallback(() => {
+    clearCustomOrder();
+    toast.success('Shortcuts will now auto-sort by usage');
+  }, [clearCustomOrder]);
 
   // Filter visible actions based on selection
   const visibleDefaultActions = defaultActions.filter(a => selectedActions.includes(a.id));
@@ -1193,35 +1299,87 @@ export function PersonalDataHub({ userId }: PersonalDataHubProps) {
       {/* Content - User Selected Items Only */}
       <ScrollArea className="flex-1">
         <div className="p-3 space-y-4">
-          {/* User Selected Quick Actions */}
-          {(visibleDefaultActions.length > 0 || visibleCustomActions.length > 0) && (
+          {/* User Selected Quick Actions with Drag & Drop */}
+          {sortedActions.length > 0 && (
             <div>
-              <h3 className="text-[10px] font-mono text-muted-foreground mb-2">MY SHORTCUTS</h3>
-              <div className="grid grid-cols-4 gap-2">
-                {visibleDefaultActions.map(action => (
-                  <PersonalQuickAction 
-                    key={action.id}
-                    icon={action.icon} 
-                    label={action.label} 
-                    count={action.count}
-                    badge={action.badge}
-                    color={action.color} 
-                    onClick={() => handleShortcutClick(action.id)} 
-                    onRemove={() => removeActionFromOverview(action.id)}
-                  />
-                ))}
-                {visibleCustomActions.map(action => (
-                  <PersonalQuickAction 
-                    key={action.id}
-                    icon={action.icon} 
-                    label={action.label} 
-                    color={action.color} 
-                    url={action.url}
-                    onClick={() => {}} 
-                    onRemove={() => removeActionFromOverview(action.id)}
-                  />
-                ))}
+              <div className="flex items-center justify-between mb-2">
+                <h3 className="text-[10px] font-mono text-muted-foreground">MY SHORTCUTS</h3>
+                <div className="flex items-center gap-1">
+                  <TooltipProvider>
+                    <Tooltip>
+                      <TooltipTrigger asChild>
+                        <Button 
+                          variant="ghost" 
+                          size="icon" 
+                          className="h-5 w-5"
+                          onClick={handleAtlasOptimize}
+                        >
+                          <Sparkles size={10} className="text-primary" />
+                        </Button>
+                      </TooltipTrigger>
+                      <TooltipContent side="bottom" className="text-xs">
+                        Atlas: Optimize by usage
+                      </TooltipContent>
+                    </Tooltip>
+                  </TooltipProvider>
+                  {!actionPrefs.autoSortByUsage && (
+                    <TooltipProvider>
+                      <Tooltip>
+                        <TooltipTrigger asChild>
+                          <Button 
+                            variant="ghost" 
+                            size="icon" 
+                            className="h-5 w-5"
+                            onClick={handleResetToAutoSort}
+                          >
+                            <RefreshCw size={10} className="text-muted-foreground" />
+                          </Button>
+                        </TooltipTrigger>
+                        <TooltipContent side="bottom" className="text-xs">
+                          Reset to auto-sort
+                        </TooltipContent>
+                      </Tooltip>
+                    </TooltipProvider>
+                  )}
+                </div>
               </div>
+              
+              <DragDropContext onDragEnd={handleDragEnd}>
+                <Droppable droppableId="shortcuts" direction="horizontal">
+                  {(provided) => (
+                    <div
+                      ref={provided.innerRef}
+                      {...provided.droppableProps}
+                      className="grid grid-cols-4 gap-2"
+                    >
+                      {sortedActions.map((action, index) => (
+                        <Draggable key={action.id} draggableId={action.id} index={index}>
+                          {(provided, snapshot) => (
+                            <div
+                              ref={provided.innerRef}
+                              {...provided.draggableProps}
+                            >
+                              <PersonalQuickAction 
+                                icon={action.icon} 
+                                label={action.label} 
+                                count={'count' in action ? action.count : undefined}
+                                badge={'badge' in action ? action.badge : undefined}
+                                color={action.color} 
+                                url={'url' in action ? action.url : undefined}
+                                onClick={() => handleShortcutClick(action.id)} 
+                                onRemove={() => removeActionFromOverview(action.id)}
+                                isDragging={snapshot.isDragging}
+                                dragHandleProps={provided.dragHandleProps}
+                              />
+                            </div>
+                          )}
+                        </Draggable>
+                      ))}
+                      {provided.placeholder}
+                    </div>
+                  )}
+                </Droppable>
+              </DragDropContext>
             </div>
           )}
 
