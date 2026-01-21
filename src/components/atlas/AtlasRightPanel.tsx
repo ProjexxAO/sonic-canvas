@@ -111,7 +111,7 @@ export function AtlasRightPanel({
     // Mobile layout - no horizontal resize
     if (isMobile) {
       return (
-        <div className="flex-1 min-w-0 flex flex-col h-full overflow-hidden">
+        <div className="w-full flex flex-col h-full overflow-hidden">
           <Tabs defaultValue="personal-data" className="flex flex-col h-full overflow-hidden">
             {/* Tab Header Row - Simplified for mobile */}
             <div className="flex items-center gap-2 mb-2 flex-shrink-0 overflow-x-auto">
@@ -240,9 +240,9 @@ export function AtlasRightPanel({
       );
     }
 
-    // Desktop/Tablet layout - clean full-width layout
+    // Desktop/Tablet layout - matches C-Suite sizing
     return (
-      <div className="flex-1 min-w-0 flex flex-col h-full overflow-hidden">
+      <div className="w-96 flex-shrink-0 flex flex-col h-full">
         <Tabs defaultValue="personal-data" className="flex flex-col h-full overflow-hidden">
           {/* Tab Header Row */}
           <div className="flex items-center gap-2 mb-3 flex-shrink-0">
@@ -288,8 +288,10 @@ export function AtlasRightPanel({
             </div>
           </div>
 
-          <TabsContent value="personal-data" className="flex-1 mt-0 min-h-0 data-[state=active]:flex data-[state=active]:flex-col">
-            <PersonalDataHub userId={userId} />
+          <TabsContent value="personal-data" className="flex-1 mt-0 min-h-0 overflow-hidden">
+            <div className="flex-1 min-h-0 h-full overflow-auto">
+              <PersonalDataHub userId={userId} />
+            </div>
           </TabsContent>
 
           <TabsContent value="phone" className="flex-1 mt-0 overflow-hidden flex flex-col min-h-0">
