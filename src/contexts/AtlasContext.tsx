@@ -1112,6 +1112,149 @@ export function AtlasProvider({ children }: AtlasProviderProps) {
         return 'Available domains: communications (email, messages), documents (files, reports), events (calendar, meetings), financials (invoices, budgets), tasks (to-dos, projects), knowledge (wiki, policies)';
       },
 
+      // ============= UNIVERSAL HUB ACCESS CONTROLS =============
+
+      // Search across all accessible hubs (Personal, Group, C-Suite)
+      universalSearch: async (params: { query: string; hubs?: string[]; limit?: number }) => {
+        const logId = addLogRef.current('universalSearch', params, 'Searching all hubs...', 'pending');
+        try {
+          const response = await supabase.functions.invoke('atlas-universal-query', {
+            body: {
+              userId: userRef.current?.id,
+              query: params.query,
+              accessibleHubs: params.hubs || ['personal', 'group', 'csuite'],
+            }
+          });
+
+          if (response.error) throw response.error;
+
+          const result = response.data;
+          const sources = result?.sources || [];
+          
+          setActionLogs(prev => prev.map(l =>
+            l.id === logId ? { ...l, result: `Found ${sources.length} items`, status: 'success' } : l
+          ));
+
+          // Return the AI-generated answer with sources
+          const answer = result?.answer || 'No results found';
+          const sourceList = sources.slice(0, 5).map((s: any) => 
+            `• [${s.hubType}/${s.itemType}] ${s.title}`
+          ).join('\n');
+
+          return `${answer}${sources.length > 0 ? `\n\nRelevant items:\n${sourceList}` : ''}`;
+        } catch (error) {
+          const msg = error instanceof Error ? error.message : 'Universal search failed';
+          setActionLogs(prev => prev.map(l =>
+            l.id === logId ? { ...l, result: msg, status: 'error' } : l
+          ));
+          toast.error(msg);
+          return `Error: ${msg}`;
+        }
+      },
+
+      // Get hub access information
+      getHubAccess: () => {
+        addLogRef.current('getHubAccess', {}, 'Hub access listed', 'success');
+        return `You have access to the following data hubs:
+• Personal Hub: Your private tasks, notes, goals, habits, and events
+• Group Hub: Shared workspaces with teams, families, and organizations
+• C-Suite Hub: Enterprise data including communications, documents, financials, and knowledge
+
+Use "search across all hubs for [query]" to find information across all accessible hubs.`;
+      },
+
+      // Get personal hub summary
+      getPersonalHubSummary: async () => {
+        const logId = addLogRef.current('getPersonalHubSummary', {}, 'Fetching summary...', 'pending');
+        try {
+          const { count: itemCount } = await supabase
+            .from('personal_items')
+            .select('*', { count: 'exact', head: true })
+            .eq('user_id', userRef.current?.id)
+            .neq('status', 'deleted');
+
+          const { count: goalCount } = await supabase
+            .from('personal_goals')
+            .select('*', { count: 'exact', head: true })
+            .eq('user_id', userRef.current?.id);
+
+          const { count: habitCount } = await supabase
+            .from('personal_habits')
+            .select('*', { count: 'exact', head: true })
+            .eq('user_id', userRef.current?.id)
+            .eq('is_active', true);
+
+          const { data: recentTasks } = await supabase
+            .from('personal_items')
+            .select('title, status, due_date')
+            .eq('user_id', userRef.current?.id)
+            .eq('item_type', 'task')
+            .neq('status', 'completed')
+            .order('due_date', { ascending: true })
+            .limit(5);
+
+          setActionLogs(prev => prev.map(l =>
+            l.id === logId ? { ...l, result: 'Summary retrieved', status: 'success' } : l
+          ));
+
+          const taskList = (recentTasks || []).map((t: any) => 
+            `• ${t.title}${t.due_date ? ` (due: ${new Date(t.due_date).toLocaleDateString()})` : ''}`
+          ).join('\n');
+
+          return `Personal Hub Summary:
+• ${itemCount || 0} total items
+• ${goalCount || 0} goals
+• ${habitCount || 0} active habits
+
+Upcoming tasks:
+${taskList || 'No upcoming tasks'}`;
+        } catch (error) {
+          const msg = error instanceof Error ? error.message : 'Failed to get summary';
+          setActionLogs(prev => prev.map(l =>
+            l.id === logId ? { ...l, result: msg, status: 'error' } : l
+          ));
+          return `Error: ${msg}`;
+        }
+      },
+
+      // Get group hub summary
+      getGroupHubSummary: async () => {
+        const logId = addLogRef.current('getGroupHubSummary', {}, 'Fetching summary...', 'pending');
+        try {
+          const { data: memberships } = await supabase
+            .from('group_members')
+            .select('group_id, role, group_hubs!inner(name, member_count)')
+            .eq('user_id', userRef.current?.id);
+
+          if (!memberships || memberships.length === 0) {
+            setActionLogs(prev => prev.map(l =>
+              l.id === logId ? { ...l, result: 'No groups', status: 'success' } : l
+            ));
+            return 'You are not a member of any groups yet. Create or join a group to collaborate with others.';
+          }
+
+          const groupList = memberships.map((m: any) => 
+            `• ${m.group_hubs?.name || 'Unknown'} (${m.role}, ${m.group_hubs?.member_count || 1} members)`
+          ).join('\n');
+
+          setActionLogs(prev => prev.map(l =>
+            l.id === logId ? { ...l, result: `${memberships.length} groups`, status: 'success' } : l
+          ));
+
+          return `Group Hub Summary:
+You are a member of ${memberships.length} group(s):
+${groupList}
+
+Use "search groups for [query]" to find shared items across your groups.`;
+        } catch (error) {
+          const msg = error instanceof Error ? error.message : 'Failed to get summary';
+          setActionLogs(prev => prev.map(l =>
+            l.id === logId ? { ...l, result: msg, status: 'error' } : l
+          ));
+          return `Error: ${msg}`;
+        }
+      },
+
       // ============= SHARED DASHBOARD CONTROLS =============
 
       // List all shared dashboards the user has access to
