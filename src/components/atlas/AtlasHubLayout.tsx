@@ -477,7 +477,10 @@ export function AtlasHubLayout({
       </header>
 
       {/* Main Content */}
-      <main className="relative z-10 flex-1 flex overflow-hidden p-6 gap-6">
+      <main className={cn(
+        "relative z-10 flex-1 flex overflow-hidden p-6 gap-6",
+        hubType === 'personal' && "pl-24" // Extra left padding for fixed orb
+      )}>
         {/* Floating Orb for Personal Hub - Top Left Corner */}
         {hubType === 'personal' && (
           <div 
