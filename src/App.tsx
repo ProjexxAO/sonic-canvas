@@ -55,7 +55,8 @@ const App = () => (
                       <Route path="/workspace/tools/:userId?" element={<UserToolPermissions />} />
                       <Route path="/governance" element={<ToolGovernance />} />
                       <Route path="/marketplace" element={<Integrations />} />
-                      <Route path="/personal" element={<PersonalHub />} />
+                <Route path="/personal" element={<PersonalHub />} />
+                <Route path="/group" element={<GroupHub />} />
                       {/* ADD ALL CUSTOM ROUTES ABOVE THE CATCH-ALL "*" ROUTE */}
                       <Route path="*" element={<NotFound />} />
                     </Routes>
