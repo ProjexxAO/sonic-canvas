@@ -790,6 +790,48 @@ export type Database = {
           },
         ]
       }
+      cross_hub_access: {
+        Row: {
+          access_type: Database["public"]["Enums"]["cross_hub_access_type"]
+          allowed_domains: string[] | null
+          created_at: string
+          expires_at: string | null
+          granted_by: string
+          grantee_user_id: string
+          id: string
+          is_active: boolean | null
+          source_hub_id: string | null
+          source_hub_type: Database["public"]["Enums"]["hub_type"]
+          updated_at: string
+        }
+        Insert: {
+          access_type?: Database["public"]["Enums"]["cross_hub_access_type"]
+          allowed_domains?: string[] | null
+          created_at?: string
+          expires_at?: string | null
+          granted_by: string
+          grantee_user_id: string
+          id?: string
+          is_active?: boolean | null
+          source_hub_id?: string | null
+          source_hub_type: Database["public"]["Enums"]["hub_type"]
+          updated_at?: string
+        }
+        Update: {
+          access_type?: Database["public"]["Enums"]["cross_hub_access_type"]
+          allowed_domains?: string[] | null
+          created_at?: string
+          expires_at?: string | null
+          granted_by?: string
+          grantee_user_id?: string
+          id?: string
+          is_active?: boolean | null
+          source_hub_id?: string | null
+          source_hub_type?: Database["public"]["Enums"]["hub_type"]
+          updated_at?: string
+        }
+        Relationships: []
+      }
       csuite_communications: {
         Row: {
           cc_addresses: string[] | null
@@ -1731,6 +1773,275 @@ export type Database = {
           user_id?: string
         }
         Relationships: []
+      }
+      group_activity: {
+        Row: {
+          action: string
+          created_at: string
+          details: Json | null
+          group_id: string
+          id: string
+          target_id: string | null
+          target_type: string | null
+          user_id: string
+        }
+        Insert: {
+          action: string
+          created_at?: string
+          details?: Json | null
+          group_id: string
+          id?: string
+          target_id?: string | null
+          target_type?: string | null
+          user_id: string
+        }
+        Update: {
+          action?: string
+          created_at?: string
+          details?: Json | null
+          group_id?: string
+          id?: string
+          target_id?: string | null
+          target_type?: string | null
+          user_id?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "group_activity_group_id_fkey"
+            columns: ["group_id"]
+            isOneToOne: false
+            referencedRelation: "group_hubs"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      group_hubs: {
+        Row: {
+          created_at: string
+          description: string | null
+          embedding: string | null
+          hub_type: string
+          id: string
+          max_members: number | null
+          member_count: number | null
+          name: string
+          owner_id: string
+          settings: Json | null
+          updated_at: string
+          visibility: string
+        }
+        Insert: {
+          created_at?: string
+          description?: string | null
+          embedding?: string | null
+          hub_type?: string
+          id?: string
+          max_members?: number | null
+          member_count?: number | null
+          name: string
+          owner_id: string
+          settings?: Json | null
+          updated_at?: string
+          visibility?: string
+        }
+        Update: {
+          created_at?: string
+          description?: string | null
+          embedding?: string | null
+          hub_type?: string
+          id?: string
+          max_members?: number | null
+          member_count?: number | null
+          name?: string
+          owner_id?: string
+          settings?: Json | null
+          updated_at?: string
+          visibility?: string
+        }
+        Relationships: []
+      }
+      group_invitations: {
+        Row: {
+          created_at: string
+          email: string
+          expires_at: string
+          group_id: string
+          id: string
+          invite_token: string | null
+          invited_by: string
+          invited_user_id: string | null
+          responded_at: string | null
+          role: Database["public"]["Enums"]["group_role"]
+          status: string
+        }
+        Insert: {
+          created_at?: string
+          email: string
+          expires_at?: string
+          group_id: string
+          id?: string
+          invite_token?: string | null
+          invited_by: string
+          invited_user_id?: string | null
+          responded_at?: string | null
+          role?: Database["public"]["Enums"]["group_role"]
+          status?: string
+        }
+        Update: {
+          created_at?: string
+          email?: string
+          expires_at?: string
+          group_id?: string
+          id?: string
+          invite_token?: string | null
+          invited_by?: string
+          invited_user_id?: string | null
+          responded_at?: string | null
+          role?: Database["public"]["Enums"]["group_role"]
+          status?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "group_invitations_group_id_fkey"
+            columns: ["group_id"]
+            isOneToOne: false
+            referencedRelation: "group_hubs"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      group_items: {
+        Row: {
+          ai_summary: string | null
+          assigned_to: string[] | null
+          completed_at: string | null
+          completed_by: string | null
+          content: string | null
+          created_at: string
+          created_by: string
+          due_date: string | null
+          embedding: string | null
+          group_id: string
+          id: string
+          item_type: string
+          metadata: Json | null
+          priority: string | null
+          reminder_at: string | null
+          status: string | null
+          tags: string[] | null
+          title: string
+          updated_at: string
+        }
+        Insert: {
+          ai_summary?: string | null
+          assigned_to?: string[] | null
+          completed_at?: string | null
+          completed_by?: string | null
+          content?: string | null
+          created_at?: string
+          created_by: string
+          due_date?: string | null
+          embedding?: string | null
+          group_id: string
+          id?: string
+          item_type: string
+          metadata?: Json | null
+          priority?: string | null
+          reminder_at?: string | null
+          status?: string | null
+          tags?: string[] | null
+          title: string
+          updated_at?: string
+        }
+        Update: {
+          ai_summary?: string | null
+          assigned_to?: string[] | null
+          completed_at?: string | null
+          completed_by?: string | null
+          content?: string | null
+          created_at?: string
+          created_by?: string
+          due_date?: string | null
+          embedding?: string | null
+          group_id?: string
+          id?: string
+          item_type?: string
+          metadata?: Json | null
+          priority?: string | null
+          reminder_at?: string | null
+          status?: string | null
+          tags?: string[] | null
+          title?: string
+          updated_at?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "group_items_group_id_fkey"
+            columns: ["group_id"]
+            isOneToOne: false
+            referencedRelation: "group_hubs"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      group_members: {
+        Row: {
+          can_export_data: boolean | null
+          can_invite: boolean | null
+          can_manage_items: boolean | null
+          can_remove_members: boolean | null
+          can_view_analytics: boolean | null
+          created_at: string
+          group_id: string
+          id: string
+          invited_at: string | null
+          invited_by: string | null
+          joined_at: string | null
+          role: Database["public"]["Enums"]["group_role"]
+          updated_at: string
+          user_id: string
+        }
+        Insert: {
+          can_export_data?: boolean | null
+          can_invite?: boolean | null
+          can_manage_items?: boolean | null
+          can_remove_members?: boolean | null
+          can_view_analytics?: boolean | null
+          created_at?: string
+          group_id: string
+          id?: string
+          invited_at?: string | null
+          invited_by?: string | null
+          joined_at?: string | null
+          role?: Database["public"]["Enums"]["group_role"]
+          updated_at?: string
+          user_id: string
+        }
+        Update: {
+          can_export_data?: boolean | null
+          can_invite?: boolean | null
+          can_manage_items?: boolean | null
+          can_remove_members?: boolean | null
+          can_view_analytics?: boolean | null
+          created_at?: string
+          group_id?: string
+          id?: string
+          invited_at?: string | null
+          invited_by?: string | null
+          joined_at?: string | null
+          role?: Database["public"]["Enums"]["group_role"]
+          updated_at?: string
+          user_id?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "group_members_group_id_fkey"
+            columns: ["group_id"]
+            isOneToOne: false
+            referencedRelation: "group_hubs"
+            referencedColumns: ["id"]
+          },
+        ]
       }
       habit_completions: {
         Row: {
@@ -3697,6 +4008,10 @@ export type Database = {
         Args: { p_document_id: string; p_document_type?: string }
         Returns: Json
       }
+      get_effective_tier: {
+        Args: { _user_id: string }
+        Returns: Database["public"]["Enums"]["subscription_tier"]
+      }
       get_governance_rules_by_level: {
         Args: {
           _level: Database["public"]["Enums"]["governance_level"]
@@ -3715,6 +4030,15 @@ export type Database = {
       get_user_tier: {
         Args: { p_user_id: string }
         Returns: Database["public"]["Enums"]["subscription_tier"]
+      }
+      has_cross_hub_access: {
+        Args: {
+          _required_access?: Database["public"]["Enums"]["cross_hub_access_type"]
+          _source_hub_id?: string
+          _source_hub_type: Database["public"]["Enums"]["hub_type"]
+          _user_id: string
+        }
+        Returns: boolean
       }
       has_role: {
         Args: {
@@ -3745,6 +4069,18 @@ export type Database = {
       }
       is_dashboard_member: {
         Args: { _dashboard_id: string; _user_id: string }
+        Returns: boolean
+      }
+      is_group_admin: {
+        Args: { _group_id: string; _user_id: string }
+        Returns: boolean
+      }
+      is_group_member: {
+        Args: { _group_id: string; _user_id: string }
+        Returns: boolean
+      }
+      is_group_owner: {
+        Args: { _group_id: string; _user_id: string }
         Returns: boolean
       }
       is_org_member: {
@@ -3799,7 +4135,9 @@ export type Database = {
         | "messenger"
         | "other"
       compliance_mode: "standard" | "gdpr" | "hipaa" | "enterprise"
+      cross_hub_access_type: "read" | "write" | "admin"
       governance_level: "persona" | "industry" | "workspace" | "user" | "agent"
+      group_role: "owner" | "admin" | "member" | "viewer"
       hub_type: "personal" | "group" | "csuite"
       insight_cadence: "daily" | "weekly" | "monthly" | "manual"
       message_status:
@@ -3972,7 +4310,9 @@ export const Constants = {
         "other",
       ],
       compliance_mode: ["standard", "gdpr", "hipaa", "enterprise"],
+      cross_hub_access_type: ["read", "write", "admin"],
       governance_level: ["persona", "industry", "workspace", "user", "agent"],
+      group_role: ["owner", "admin", "member", "viewer"],
       hub_type: ["personal", "group", "csuite"],
       insight_cadence: ["daily", "weekly", "monthly", "manual"],
       message_status: [
