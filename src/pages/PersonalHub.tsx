@@ -33,8 +33,10 @@ import {
   TrendingUp,
   BarChart3,
   Sun,
-  Moon
+  Moon,
+  Plug
 } from 'lucide-react';
+import { PersonalConnectorsPanel } from '@/components/personal/PersonalConnectorsPanel';
 import { format } from 'date-fns';
 import { cn } from '@/lib/utils';
 
@@ -286,11 +288,12 @@ export default function PersonalHub() {
         {/* Main Content Tabs - Executive Style */}
         <Tabs value={activeTab} onValueChange={setActiveTab} className="space-y-6">
           <TabsList className={cn(
-            "grid w-full grid-cols-5 p-1 h-12",
+            "grid w-full grid-cols-6 p-1 h-12",
             theme === 'dark' ? "bg-card/40" : "bg-white/60 shadow-sm"
           )}>
             {[
               { value: 'overview', icon: BarChart3, label: 'Overview' },
+              { value: 'connect', icon: Plug, label: 'Connect' },
               { value: 'tasks', icon: CheckSquare, label: 'Tasks' },
               { value: 'goals', icon: Target, label: 'Goals' },
               { value: 'habits', icon: Zap, label: 'Habits' },
@@ -472,6 +475,29 @@ export default function PersonalHub() {
                     })}
                   </div>
                 )}
+              </CardContent>
+            </Card>
+          </TabsContent>
+
+          {/* Connect Tab */}
+          <TabsContent value="connect">
+            <Card className={cn(
+              "border-0 shadow-lg backdrop-blur-sm",
+              theme === 'dark' ? "bg-card/40" : "bg-white/80"
+            )}>
+              <CardHeader>
+                <CardTitle className="flex items-center gap-2">
+                  <div className="p-1.5 rounded-lg bg-primary/10">
+                    <Plug className="h-5 w-5 text-primary" />
+                  </div>
+                  Connect Your Data
+                </CardTitle>
+                <CardDescription className="font-mono text-xs">
+                  Link your accounts, services, and files for a unified experience
+                </CardDescription>
+              </CardHeader>
+              <CardContent>
+                <PersonalConnectorsPanel userId={user?.id} />
               </CardContent>
             </Card>
           </TabsContent>
