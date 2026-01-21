@@ -106,8 +106,8 @@ export function AtlasRightPanel({
   // Personal hub has simplified tabs: User's name (data), Phone, Camera, and hub quick access
   if (hubType === 'personal') {
     return (
-      <div className="flex-1 min-w-0 flex flex-col h-full">
-        <Tabs defaultValue="personal-data" className="flex flex-col h-full">
+      <div className="flex-1 min-w-0 flex flex-col h-full overflow-hidden">
+        <Tabs defaultValue="personal-data" className="flex flex-col h-full overflow-hidden">
           {/* Tab Header Row */}
           <div className="flex items-center gap-2 mb-3 flex-shrink-0">
             <TabsList className="flex-1 flex justify-start gap-1 bg-muted/50 border border-border rounded-lg p-1">
@@ -152,10 +152,8 @@ export function AtlasRightPanel({
             </div>
           </div>
 
-          <TabsContent value="personal-data" className="flex-1 mt-0 overflow-hidden flex flex-col min-h-0">
-            <div className="flex-1 min-h-0 overflow-auto">
-              <PersonalDataHub userId={userId} />
-            </div>
+          <TabsContent value="personal-data" className="flex-1 mt-0 min-h-0 data-[state=active]:flex data-[state=active]:flex-col">
+            <PersonalDataHub userId={userId} />
           </TabsContent>
 
           <TabsContent value="phone" className="flex-1 mt-0 overflow-hidden flex flex-col min-h-0">
