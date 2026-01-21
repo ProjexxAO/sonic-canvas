@@ -5,7 +5,7 @@ import { useNavigate } from 'react-router-dom';
 import { useAuth } from '@/hooks/useAuth';
 import { audioEngine } from '@/lib/audioEngine';
 import { supabase } from '@/integrations/supabase/client';
-import { Hexagon, Radio, Mail, Lock, User, ArrowRight, Loader2 } from 'lucide-react';
+import { Hexagon, Radio, Mail, Lock, User, ArrowRight, Loader2, Phone } from 'lucide-react';
 import { toast } from 'sonner';
 import { z } from 'zod';
 
@@ -13,6 +13,10 @@ const authSchema = z.object({
   email: z.string().email('Invalid email format'),
   password: z.string().min(6, 'Password must be at least 6 characters'),
   displayName: z.string().min(2, 'Display name must be at least 2 characters').optional(),
+  phoneNumber: z.string()
+    .regex(/^\+?[1-9]\d{6,14}$/, 'Invalid phone number format (e.g., +1234567890)')
+    .optional()
+    .or(z.literal('')),
 });
 
 export default function Auth() {
@@ -22,6 +26,7 @@ export default function Auth() {
   const [email, setEmail] = useState('');
   const [password, setPassword] = useState('');
   const [displayName, setDisplayName] = useState('');
+  const [phoneNumber, setPhoneNumber] = useState('');
   const [loading, setLoading] = useState(false);
   const [googleLoading, setGoogleLoading] = useState(false);
   const [errors, setErrors] = useState<Record<string, string>>({});
@@ -36,7 +41,7 @@ export default function Auth() {
   const validate = () => {
     try {
       const data = mode === 'signup' 
-        ? { email, password, displayName }
+        ? { email, password, displayName, phoneNumber: phoneNumber || undefined }
         : { email, password };
       authSchema.parse(data);
       setErrors({});
@@ -78,7 +83,7 @@ export default function Auth() {
           navigate('/personal');
         }
       } else {
-        const { error } = await signUp(email, password, displayName);
+        const { error } = await signUp(email, password, displayName, phoneNumber || undefined);
         if (error) {
           if (error.message.includes('already registered')) {
             toast.error('This email is already registered');
@@ -163,22 +168,42 @@ export default function Auth() {
           {/* Form */}
           <form onSubmit={handleSubmit} className="space-y-4">
             {mode === 'signup' && (
-              <div>
-                <label className="text-xs text-muted-foreground mb-1 block">OPERATOR NAME</label>
-                <div className="relative">
-                  <User size={16} className="absolute left-3 top-1/2 -translate-y-1/2 text-muted-foreground" />
-                  <input
-                    type="text"
-                    value={displayName}
-                    onChange={(e) => setDisplayName(e.target.value)}
-                    placeholder="Enter display name"
-                    className="w-full bg-input border border-border rounded px-10 py-2.5 text-sm text-foreground placeholder:text-muted-foreground focus:outline-none focus:border-primary transition-colors"
-                  />
+              <>
+                <div>
+                  <label className="text-xs text-muted-foreground mb-1 block">OPERATOR NAME</label>
+                  <div className="relative">
+                    <User size={16} className="absolute left-3 top-1/2 -translate-y-1/2 text-muted-foreground" />
+                    <input
+                      type="text"
+                      value={displayName}
+                      onChange={(e) => setDisplayName(e.target.value)}
+                      placeholder="Enter display name"
+                      className="w-full bg-input border border-border rounded px-10 py-2.5 text-sm text-foreground placeholder:text-muted-foreground focus:outline-none focus:border-primary transition-colors"
+                    />
+                  </div>
+                  {errors.displayName && (
+                    <p className="text-xs text-destructive mt-1">{errors.displayName}</p>
+                  )}
                 </div>
-                {errors.displayName && (
-                  <p className="text-xs text-destructive mt-1">{errors.displayName}</p>
-                )}
-              </div>
+
+                <div>
+                  <label className="text-xs text-muted-foreground mb-1 block">PHONE NUMBER</label>
+                  <div className="relative">
+                    <Phone size={16} className="absolute left-3 top-1/2 -translate-y-1/2 text-muted-foreground" />
+                    <input
+                      type="tel"
+                      value={phoneNumber}
+                      onChange={(e) => setPhoneNumber(e.target.value)}
+                      placeholder="+1234567890"
+                      className="w-full bg-input border border-border rounded px-10 py-2.5 text-sm text-foreground placeholder:text-muted-foreground focus:outline-none focus:border-primary transition-colors"
+                    />
+                  </div>
+                  <p className="text-[10px] text-muted-foreground mt-1">For Atlas phone sync • SMS notifications</p>
+                  {errors.phoneNumber && (
+                    <p className="text-xs text-destructive mt-1">{errors.phoneNumber}</p>
+                  )}
+                </div>
+              </>
             )}
 
             <div>

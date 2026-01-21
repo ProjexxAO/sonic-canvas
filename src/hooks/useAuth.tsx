@@ -8,7 +8,7 @@ interface AuthContextType {
   user: User | null;
   session: Session | null;
   loading: boolean;
-  signUp: (email: string, password: string, displayName?: string) => Promise<{ error: Error | null }>;
+  signUp: (email: string, password: string, displayName?: string, phoneNumber?: string) => Promise<{ error: Error | null }>;
   signIn: (email: string, password: string) => Promise<{ error: Error | null }>;
   signOut: () => Promise<void>;
 }
@@ -40,20 +40,32 @@ export function AuthProvider({ children }: { children: ReactNode }) {
     return () => subscription.unsubscribe();
   }, []);
 
-  const signUp = async (email: string, password: string, displayName?: string) => {
+  const signUp = async (email: string, password: string, displayName?: string, phoneNumber?: string) => {
     // Redirect to Personal Hub first (people-first approach)
     const redirectUrl = `${window.location.origin}/personal`;
     
-    const { error } = await supabase.auth.signUp({
+    const { data, error } = await supabase.auth.signUp({
       email,
       password,
       options: {
         emailRedirectTo: redirectUrl,
         data: {
-          display_name: displayName || 'Operator'
+          display_name: displayName || 'Operator',
+          phone_number: phoneNumber
         }
       }
     });
+    
+    // If signup succeeded and we have a user, update the profile with phone number
+    if (!error && data.user && phoneNumber) {
+      // Use setTimeout to defer Supabase call (avoid auth deadlock)
+      setTimeout(async () => {
+        await supabase
+          .from('profiles')
+          .update({ phone_number: phoneNumber })
+          .eq('user_id', data.user!.id);
+      }, 0);
+    }
     
     return { error: error as Error | null };
   };
