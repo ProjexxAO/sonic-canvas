@@ -43,13 +43,19 @@ import {
   ChevronDown,
   Settings,
   Star,
-  GripVertical
+  GripVertical,
+  Building2,
+  ArrowUpRight,
+  ArrowDownRight,
+  PiggyBank,
+  LineChart,
+  Banknote
 } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { ScrollArea } from '@/components/ui/scroll-area';
 import { Badge } from '@/components/ui/badge';
 import { Progress } from '@/components/ui/progress';
-import { Card, CardContent } from '@/components/ui/card';
+import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Input } from '@/components/ui/input';
 import { 
   DropdownMenu, 
@@ -64,6 +70,7 @@ import {
   DropdownMenuPortal
 } from '@/components/ui/dropdown-menu';
 import { usePersonalHub, PersonalItem, PersonalGoal, PersonalHabit } from '@/hooks/usePersonalHub';
+import { useBanking, BankAccount, BankTransaction } from '@/hooks/useBanking';
 import { cn } from '@/lib/utils';
 import { format, isToday, isPast, parseISO } from 'date-fns';
 
@@ -336,7 +343,7 @@ function HabitCard({ habit, onComplete }: { habit: PersonalHabit; onComplete: ()
 }
 
 // Active view type for full-screen sections
-type ActiveView = 'overview' | 'tasks' | 'goals' | 'habits' | 'notes';
+type ActiveView = 'overview' | 'tasks' | 'goals' | 'habits' | 'notes' | 'finance';
 
 export function PersonalDataHub({ userId }: PersonalDataHubProps) {
   const {
@@ -344,6 +351,14 @@ export function PersonalDataHub({ userId }: PersonalDataHubProps) {
     createItem, completeItem, deleteItem, completeHabit,
     stats, todaysTasks, overdueTasks, getItemsByType,
   } = usePersonalHub();
+
+  const {
+    accounts,
+    transactions,
+    insights,
+    isLoading: isBankingLoading,
+    refreshAll: refreshBanking,
+  } = useBanking();
 
   const [newTaskTitle, setNewTaskTitle] = useState('');
   const [activeView, setActiveView] = useState<ActiveView>('overview');
@@ -371,7 +386,7 @@ export function PersonalDataHub({ userId }: PersonalDataHubProps) {
 
   const handleShortcutClick = (actionId: string) => {
     // Navigate to full view for core actions
-    if (['tasks', 'goals', 'habits', 'notes'].includes(actionId)) {
+    if (['tasks', 'goals', 'habits', 'notes', 'finance'].includes(actionId)) {
       setActiveView(actionId as ActiveView);
     }
   };
@@ -379,13 +394,16 @@ export function PersonalDataHub({ userId }: PersonalDataHubProps) {
   const tasks = getItemsByType('task');
   const notes = getItemsByType('note');
 
+  // Calculate total balance across all accounts
+  const totalBalance = accounts.reduce((sum, acc) => sum + (acc.current_balance || 0), 0);
+
   // Default quick actions (always visible)
   const defaultActions = [
     { id: 'tasks', icon: CheckSquare, label: 'Tasks', count: stats.activeTasks, color: 'hsl(350 70% 50%)' },
     { id: 'goals', icon: Target, label: 'Goals', count: stats.activeGoals, color: 'hsl(150 70% 45%)' },
     { id: 'habits', icon: TrendingUp, label: 'Habits', count: stats.activeHabits, color: 'hsl(45 80% 50%)' },
     { id: 'email', icon: Mail, label: 'Email', badge: '3', color: 'hsl(200 70% 50%)' },
-    { id: 'finance', icon: DollarSign, label: 'Finance', color: 'hsl(150 70% 45%)' },
+    { id: 'finance', icon: DollarSign, label: 'Finance', count: accounts.length, color: 'hsl(150 70% 45%)' },
     { id: 'photos', icon: Image, label: 'Photos', color: 'hsl(280 60% 55%)' },
     { id: 'wallet', icon: Wallet, label: 'Wallet', color: 'hsl(35 80% 50%)' },
     { id: 'cards', icon: CreditCard, label: 'Cards', color: 'hsl(220 70% 50%)' },
@@ -400,6 +418,208 @@ export function PersonalDataHub({ userId }: PersonalDataHubProps) {
   const lifeActions = ALL_QUICK_ACTIONS.filter(a => a.category === 'life');
   const socialActions = ALL_QUICK_ACTIONS.filter(a => a.category === 'social');
   const moreActions = ALL_QUICK_ACTIONS.filter(a => a.category === 'more');
+
+  // Full Finance View
+  if (activeView === 'finance') {
+    return (
+      <div className="h-full bg-card/90 border border-border rounded-lg shadow-sm overflow-hidden flex flex-col">
+        <div className="px-3 py-2 border-b border-border flex items-center justify-between">
+          <div className="flex items-center gap-2">
+            <Button variant="ghost" size="sm" className="h-6 px-2" onClick={() => setActiveView('overview')}>
+              <ChevronDown size={12} className="rotate-90 mr-1" />
+              Back
+            </Button>
+            <DollarSign size={14} className="text-primary" />
+            <span className="text-xs font-mono text-muted-foreground uppercase">MY FINANCES</span>
+          </div>
+          <Button variant="ghost" size="icon" className="h-6 w-6" onClick={() => refreshBanking()} disabled={isBankingLoading}>
+            <RefreshCw size={12} className={isBankingLoading ? 'animate-spin' : ''} />
+          </Button>
+        </div>
+        <ScrollArea className="flex-1">
+          <div className="p-3 space-y-4">
+            {/* Net Worth Summary */}
+            <Card className="bg-gradient-to-br from-primary/10 to-primary/5 border-primary/20">
+              <CardContent className="p-4">
+                <div className="flex items-center justify-between">
+                  <div>
+                    <p className="text-[10px] text-muted-foreground uppercase">Total Balance</p>
+                    <p className="text-2xl font-bold text-primary">
+                      ${totalBalance.toLocaleString('en-US', { minimumFractionDigits: 2 })}
+                    </p>
+                  </div>
+                  <div className="w-12 h-12 rounded-full bg-primary/20 flex items-center justify-center">
+                    <PiggyBank size={24} className="text-primary" />
+                  </div>
+                </div>
+                <div className="flex items-center gap-4 mt-3">
+                  <div className="flex items-center gap-1 text-xs text-muted-foreground">
+                    <Building2 size={12} />
+                    <span>{accounts.length} Accounts</span>
+                  </div>
+                  {insights.length > 0 && (
+                    <div className="flex items-center gap-1 text-xs text-primary">
+                      <AlertCircle size={12} />
+                      <span>{insights.length} Insights</span>
+                    </div>
+                  )}
+                </div>
+              </CardContent>
+            </Card>
+
+            {/* Quick Financial Categories */}
+            <div className="grid grid-cols-3 gap-2">
+              <Card className="bg-card/50 cursor-pointer hover:bg-card transition-colors">
+                <CardContent className="p-3 text-center">
+                  <Building2 size={20} className="mx-auto mb-1 text-blue-500" />
+                  <p className="text-[10px] font-mono text-muted-foreground">Banks</p>
+                  <p className="text-sm font-semibold">{accounts.filter(a => a.account_type === 'checking' || a.account_type === 'savings').length}</p>
+                </CardContent>
+              </Card>
+              <Card className="bg-card/50 cursor-pointer hover:bg-card transition-colors">
+                <CardContent className="p-3 text-center">
+                  <LineChart size={20} className="mx-auto mb-1 text-green-500" />
+                  <p className="text-[10px] font-mono text-muted-foreground">Investments</p>
+                  <p className="text-sm font-semibold">{accounts.filter(a => a.account_type === 'investment' || a.account_type === 'brokerage').length}</p>
+                </CardContent>
+              </Card>
+              <Card className="bg-card/50 cursor-pointer hover:bg-card transition-colors">
+                <CardContent className="p-3 text-center">
+                  <CreditCard size={20} className="mx-auto mb-1 text-purple-500" />
+                  <p className="text-[10px] font-mono text-muted-foreground">Cards</p>
+                  <p className="text-sm font-semibold">{accounts.filter(a => a.account_type === 'credit').length}</p>
+                </CardContent>
+              </Card>
+            </div>
+
+            {/* Bank Accounts */}
+            <div>
+              <h3 className="text-[10px] font-mono text-muted-foreground mb-2 flex items-center gap-1">
+                <Building2 size={10} /> ACCOUNTS
+              </h3>
+              {accounts.length > 0 ? (
+                <div className="space-y-2">
+                  {accounts.map(account => (
+                    <Card key={account.id} className="bg-card/50">
+                      <CardContent className="p-3">
+                        <div className="flex items-center justify-between">
+                          <div className="flex items-center gap-2">
+                            <div className="w-8 h-8 rounded-full bg-muted flex items-center justify-center">
+                              {account.account_type === 'credit' ? (
+                                <CreditCard size={14} className="text-muted-foreground" />
+                              ) : account.account_type === 'investment' || account.account_type === 'brokerage' ? (
+                                <LineChart size={14} className="text-muted-foreground" />
+                              ) : (
+                                <Building2 size={14} className="text-muted-foreground" />
+                              )}
+                            </div>
+                            <div>
+                              <p className="text-sm font-medium">{account.account_name}</p>
+                              <p className="text-[10px] text-muted-foreground">{account.institution_name}</p>
+                            </div>
+                          </div>
+                          <div className="text-right">
+                            <p className={cn(
+                              "text-sm font-semibold",
+                              (account.current_balance || 0) < 0 ? "text-destructive" : "text-foreground"
+                            )}>
+                              ${(account.current_balance || 0).toLocaleString('en-US', { minimumFractionDigits: 2 })}
+                            </p>
+                            <Badge variant="outline" className="text-[8px]">{account.account_type}</Badge>
+                          </div>
+                        </div>
+                      </CardContent>
+                    </Card>
+                  ))}
+                </div>
+              ) : (
+                <Card className="bg-card/30 border-dashed">
+                  <CardContent className="p-4 text-center">
+                    <Building2 size={24} className="mx-auto mb-2 text-muted-foreground/50" />
+                    <p className="text-xs text-muted-foreground">No accounts connected</p>
+                    <Button variant="outline" size="sm" className="mt-2 text-xs h-7">
+                      <Plus size={12} className="mr-1" />
+                      Connect Account
+                    </Button>
+                  </CardContent>
+                </Card>
+              )}
+            </div>
+
+            {/* Recent Transactions */}
+            <div>
+              <h3 className="text-[10px] font-mono text-muted-foreground mb-2 flex items-center gap-1">
+                <Banknote size={10} /> RECENT TRANSACTIONS
+              </h3>
+              {transactions.length > 0 ? (
+                <div className="space-y-1.5">
+                  {transactions.slice(0, 8).map(tx => (
+                    <div key={tx.id} className="flex items-center justify-between p-2 rounded-lg bg-card/50 border border-border">
+                      <div className="flex items-center gap-2">
+                        <div className={cn(
+                          "w-6 h-6 rounded-full flex items-center justify-center",
+                          tx.amount > 0 ? "bg-green-500/10" : "bg-red-500/10"
+                        )}>
+                          {tx.amount > 0 ? (
+                            <ArrowDownRight size={12} className="text-green-500" />
+                          ) : (
+                            <ArrowUpRight size={12} className="text-red-500" />
+                          )}
+                        </div>
+                        <div>
+                          <p className="text-xs font-medium truncate max-w-[120px]">{tx.merchant_name || tx.description}</p>
+                          <p className="text-[9px] text-muted-foreground">{format(parseISO(tx.transaction_date), 'MMM d')}</p>
+                        </div>
+                      </div>
+                      <p className={cn(
+                        "text-xs font-semibold",
+                        tx.amount > 0 ? "text-green-500" : "text-foreground"
+                      )}>
+                        {tx.amount > 0 ? '+' : ''}${Math.abs(tx.amount).toLocaleString('en-US', { minimumFractionDigits: 2 })}
+                      </p>
+                    </div>
+                  ))}
+                </div>
+              ) : (
+                <p className="text-xs text-muted-foreground text-center py-4">No transactions yet</p>
+              )}
+            </div>
+
+            {/* Financial Insights */}
+            {insights.length > 0 && (
+              <div>
+                <h3 className="text-[10px] font-mono text-muted-foreground mb-2 flex items-center gap-1">
+                  <AlertCircle size={10} /> ATLAS INSIGHTS
+                </h3>
+                <div className="space-y-2">
+                  {insights.slice(0, 3).map(insight => (
+                    <Card key={insight.id} className={cn(
+                      "bg-card/50",
+                      insight.priority === 'high' && "border-destructive/30",
+                      insight.priority === 'medium' && "border-yellow-500/30"
+                    )}>
+                      <CardContent className="p-3">
+                        <div className="flex items-start gap-2">
+                          <AlertCircle size={14} className={cn(
+                            insight.priority === 'high' ? "text-destructive" : 
+                            insight.priority === 'medium' ? "text-yellow-500" : "text-primary"
+                          )} />
+                          <div className="flex-1">
+                            <p className="text-xs font-medium">{insight.title}</p>
+                            <p className="text-[10px] text-muted-foreground mt-0.5">{insight.description}</p>
+                          </div>
+                        </div>
+                      </CardContent>
+                    </Card>
+                  ))}
+                </div>
+              </div>
+            )}
+          </div>
+        </ScrollArea>
+      </div>
+    );
+  }
 
   // Full Tasks View
   if (activeView === 'tasks') {
