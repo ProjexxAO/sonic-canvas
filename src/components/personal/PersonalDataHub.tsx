@@ -443,10 +443,15 @@ export function PersonalDataHub({ userId }: PersonalDataHubProps) {
   const [selectedPhotos, setSelectedPhotos] = useState<string[]>([]);
   const [isDragMode, setIsDragMode] = useState(false);
 
-  // Default section order for overview
-  const DEFAULT_SECTION_ORDER = [
-    'shortcuts', 'stats', 'atlas-widgets', 'quick-add', 
-    'todays-tasks', 'overdue', 'habits', 'visualizations', 'goals'
+  // Default widget order for overview - each individual item
+  const DEFAULT_WIDGET_ORDER = [
+    'shortcuts',
+    'stat-today', 'stat-streak', 'stat-items',
+    'widget-atlas-brief', 'widget-wellness', 'widget-focus',
+    'quick-add',
+    'todays-tasks', 'overdue', 'habits',
+    'viz-habit-streak', 'viz-goal-timeline',
+    'goals'
   ];
   
   // Initialize selectedActions from localStorage
@@ -464,19 +469,19 @@ export function PersonalDataHub({ userId }: PersonalDataHubProps) {
     return ['tasks', 'goals', 'habits', 'email', 'photos', 'finance'];
   });
 
-  // Initialize section order from localStorage
-  const [sectionOrder, setSectionOrder] = useState<string[]>(() => {
+  // Initialize widget order from localStorage
+  const [widgetOrder, setWidgetOrder] = useState<string[]>(() => {
     if (typeof window !== 'undefined' && userId) {
-      const saved = localStorage.getItem(`personal-section-order-${userId}`);
+      const saved = localStorage.getItem(`personal-widget-order-${userId}`);
       if (saved) {
         try {
           return JSON.parse(saved);
         } catch (e) {
-          console.error('Error loading section order:', e);
+          console.error('Error loading widget order:', e);
         }
       }
     }
-    return DEFAULT_SECTION_ORDER;
+    return DEFAULT_WIDGET_ORDER;
   });
   
   const inputRef = useRef<HTMLInputElement>(null);
@@ -489,24 +494,23 @@ export function PersonalDataHub({ userId }: PersonalDataHubProps) {
     }
   }, [selectedActions, userId]);
 
-  // Persist section order to localStorage
+  // Persist widget order to localStorage
   useEffect(() => {
-    if (userId && sectionOrder.length > 0) {
-      localStorage.setItem(`personal-section-order-${userId}`, JSON.stringify(sectionOrder));
+    if (userId && widgetOrder.length > 0) {
+      localStorage.setItem(`personal-widget-order-${userId}`, JSON.stringify(widgetOrder));
     }
-  }, [sectionOrder, userId]);
+  }, [widgetOrder, userId]);
 
-  // Handle section drag end
-  const handleSectionDragEnd = useCallback((result: DropResult) => {
+  // Handle widget drag end
+  const handleWidgetDragEnd = useCallback((result: DropResult) => {
     if (!result.destination) return;
     
-    const items = Array.from(sectionOrder);
+    const items = Array.from(widgetOrder);
     const [reorderedItem] = items.splice(result.source.index, 1);
     items.splice(result.destination.index, 0, reorderedItem);
     
-    setSectionOrder(items);
-    toast.success('Layout updated');
-  }, [sectionOrder]);
+    setWidgetOrder(items);
+  }, [widgetOrder]);
 
   const handleQuickAddTask = useCallback(async () => {
     if (!newTaskTitle.trim()) return;
@@ -1680,28 +1684,29 @@ export function PersonalDataHub({ userId }: PersonalDataHubProps) {
           </div>
         </ScrollArea>
       ) : (
-        // Desktop/Tablet: Single scrollable layout with draggable sections
+        // Desktop/Tablet: Single scrollable layout with individually draggable widgets
         <ScrollArea className="flex-1">
-          <DragDropContext onDragEnd={handleSectionDragEnd}>
-            <Droppable droppableId="overview-sections" direction="vertical">
+          <DragDropContext onDragEnd={handleWidgetDragEnd}>
+            <Droppable droppableId="overview-widgets" direction="vertical">
               {(provided) => (
                 <div 
                   ref={provided.innerRef}
                   {...provided.droppableProps}
-                  className="p-3 space-y-4"
+                  className="p-3 grid grid-cols-6 gap-3 auto-rows-min"
                 >
-                  {sectionOrder.map((sectionId, index) => {
-                    const sectionContent = renderSection(sectionId);
-                    if (!sectionContent) return null;
+                  {widgetOrder.map((widgetId, index) => {
+                    const widgetConfig = getWidgetConfig(widgetId);
+                    if (!widgetConfig || !widgetConfig.content) return null;
                     
                     return (
-                      <Draggable key={sectionId} draggableId={sectionId} index={index}>
+                      <Draggable key={widgetId} draggableId={widgetId} index={index}>
                         {(provided, snapshot) => (
                           <div
                             ref={provided.innerRef}
                             {...provided.draggableProps}
                             className={cn(
                               "relative group",
+                              widgetConfig.colSpan,
                               snapshot.isDragging && "opacity-90 shadow-lg z-50 bg-card rounded-lg"
                             )}
                           >
@@ -1709,13 +1714,13 @@ export function PersonalDataHub({ userId }: PersonalDataHubProps) {
                             <div 
                               {...provided.dragHandleProps}
                               className={cn(
-                                "absolute -left-2 top-2 p-1 rounded cursor-grab active:cursor-grabbing",
+                                "absolute -left-1 top-1 p-0.5 rounded cursor-grab active:cursor-grabbing",
                                 "opacity-0 group-hover:opacity-100 transition-opacity bg-muted/80 hover:bg-muted z-10"
                               )}
                             >
-                              <GripHorizontal size={12} className="text-muted-foreground" />
+                              <GripVertical size={10} className="text-muted-foreground" />
                             </div>
-                            {sectionContent}
+                            {widgetConfig.content}
                           </div>
                         )}
                       </Draggable>
@@ -1731,34 +1736,179 @@ export function PersonalDataHub({ userId }: PersonalDataHubProps) {
     </div>
   );
 
-  // Section renderer
-  function renderSection(sectionId: string): React.ReactNode {
-    switch (sectionId) {
+  // Widget config with column spans
+  function getWidgetConfig(widgetId: string): { content: React.ReactNode; colSpan: string } | null {
+    switch (widgetId) {
+      // Stat cards - 2 columns each
+      case 'stat-today':
+        return {
+          colSpan: 'col-span-2',
+          content: (
+            <Card className="bg-card/50 h-full">
+              <CardContent className="p-3 text-center">
+                <p className="text-2xl font-bold text-primary">{stats.completedToday}</p>
+                <p className="text-[10px] text-muted-foreground">Completed Today</p>
+              </CardContent>
+            </Card>
+          )
+        };
+      case 'stat-streak':
+        return {
+          colSpan: 'col-span-2',
+          content: (
+            <Card className="bg-card/50 h-full">
+              <CardContent className="p-3 text-center">
+                <p className="text-2xl font-bold text-orange-500">{stats.totalStreak}</p>
+                <p className="text-[10px] text-muted-foreground">Day Streak</p>
+              </CardContent>
+            </Card>
+          )
+        };
+      case 'stat-items':
+        return {
+          colSpan: 'col-span-2',
+          content: (
+            <Card className="bg-card/50 h-full">
+              <CardContent className="p-3 text-center">
+                <p className="text-2xl font-bold">{stats.totalItems}</p>
+                <p className="text-[10px] text-muted-foreground">Total Items</p>
+              </CardContent>
+            </Card>
+          )
+        };
+
+      // AI Widgets - 2 columns each
+      case 'widget-atlas-brief':
+        return {
+          colSpan: 'col-span-2',
+          content: <AtlasDailyBrief compact />
+        };
+      case 'widget-wellness':
+        return {
+          colSpan: 'col-span-2',
+          content: <WellnessWidget compact />
+        };
+      case 'widget-focus':
+        return {
+          colSpan: 'col-span-2',
+          content: <FocusTimerWidget compact />
+        };
+
+      // Quick add - full width
+      case 'quick-add':
+        return {
+          colSpan: 'col-span-6',
+          content: (
+            <div className="flex gap-2">
+              <Input
+                ref={inputRef}
+                placeholder="Quick add task..."
+                value={newTaskTitle}
+                onChange={(e) => setNewTaskTitle(e.target.value)}
+                onKeyDown={(e) => e.key === 'Enter' && handleQuickAddTask()}
+                className="h-8 text-sm"
+              />
+              <Button size="sm" className="h-8 px-3" onClick={handleQuickAddTask} disabled={!newTaskTitle.trim()}>
+                <Plus size={14} />
+              </Button>
+            </div>
+          )
+        };
+
+      // Today's tasks - full width
+      case 'todays-tasks':
+        if (todaysTasks.length === 0) return null;
+        return {
+          colSpan: 'col-span-6',
+          content: (
+            <div>
+              <h3 className="text-[10px] font-mono text-muted-foreground mb-2 flex items-center gap-1">
+                <Clock size={10} /> TODAY'S TASKS
+              </h3>
+              <div className="space-y-1.5">
+                {todaysTasks.slice(0, 5).map(task => (
+                  <TaskItem key={task.id} item={task} onComplete={() => completeItem(task.id)} onDelete={() => deleteItem(task.id)} />
+                ))}
+              </div>
+            </div>
+          )
+        };
+
+      // Overdue - full width
+      case 'overdue':
+        if (overdueTasks.length === 0) return null;
+        return {
+          colSpan: 'col-span-6',
+          content: (
+            <div className="p-2 rounded-lg bg-destructive/10 border border-destructive/30">
+              <div className="flex items-center gap-2">
+                <AlertCircle size={12} className="text-destructive" />
+                <span className="text-[10px] text-destructive font-medium">{overdueTasks.length} overdue tasks</span>
+              </div>
+            </div>
+          )
+        };
+
+      // Habits - full width
+      case 'habits':
+        if (habits.length === 0) return null;
+        return {
+          colSpan: 'col-span-6',
+          content: (
+            <div>
+              <h3 className="text-[10px] font-mono text-muted-foreground mb-2 flex items-center gap-1">
+                <Flame size={10} /> DAILY HABITS
+              </h3>
+              <div className="space-y-2">
+                {habits.slice(0, 3).map(habit => (
+                  <HabitCard key={habit.id} habit={habit} onComplete={() => completeHabit(habit.id)} />
+                ))}
+              </div>
+            </div>
+          )
+        };
+
+      // Visualizations - 3 columns each
+      case 'viz-habit-streak':
+        return {
+          colSpan: 'col-span-3',
+          content: <HabitStreakChart />
+        };
+      case 'viz-goal-timeline':
+        return {
+          colSpan: 'col-span-3',
+          content: <GoalProgressTimeline />
+        };
+
+      // Goals - full width
+      case 'goals':
+        if (goals.length === 0) return null;
+        return {
+          colSpan: 'col-span-6',
+          content: (
+            <div>
+              <h3 className="text-[10px] font-mono text-muted-foreground mb-2 flex items-center gap-1">
+                <Target size={10} /> ACTIVE GOALS
+              </h3>
+              <div className="grid grid-cols-2 gap-2">
+                {goals.slice(0, 4).map(goal => (
+                  <GoalCard key={goal.id} goal={goal} />
+                ))}
+              </div>
+            </div>
+          )
+        };
+
+      // Shortcuts section - full width
       case 'shortcuts':
         if (sortedActions.length === 0) return null;
-        return (
-          <div>
-            <div className="flex items-center justify-between mb-2">
-              <h3 className="text-[10px] font-mono text-muted-foreground">MY SHORTCUTS</h3>
-              <div className="flex items-center gap-1">
-                <TooltipProvider>
-                  <Tooltip>
-                    <TooltipTrigger asChild>
-                      <Button 
-                        variant="ghost" 
-                        size="icon" 
-                        className="h-5 w-5"
-                        onClick={handleAtlasOptimize}
-                      >
-                        <Sparkles size={10} className="text-primary" />
-                      </Button>
-                    </TooltipTrigger>
-                    <TooltipContent side="bottom" className="text-xs">
-                      Atlas: Optimize by usage
-                    </TooltipContent>
-                  </Tooltip>
-                </TooltipProvider>
-                {!actionPrefs.autoSortByUsage && (
+        return {
+          colSpan: 'col-span-6',
+          content: (
+            <div>
+              <div className="flex items-center justify-between mb-2">
+                <h3 className="text-[10px] font-mono text-muted-foreground">MY SHORTCUTS</h3>
+                <div className="flex items-center gap-1">
                   <TooltipProvider>
                     <Tooltip>
                       <TooltipTrigger asChild>
@@ -1766,150 +1916,55 @@ export function PersonalDataHub({ userId }: PersonalDataHubProps) {
                           variant="ghost" 
                           size="icon" 
                           className="h-5 w-5"
-                          onClick={handleResetToAutoSort}
+                          onClick={handleAtlasOptimize}
                         >
-                          <RefreshCw size={10} className="text-muted-foreground" />
+                          <Sparkles size={10} className="text-primary" />
                         </Button>
                       </TooltipTrigger>
                       <TooltipContent side="bottom" className="text-xs">
-                        Reset to auto-sort
+                        Atlas: Optimize by usage
                       </TooltipContent>
                     </Tooltip>
                   </TooltipProvider>
-                )}
+                  {!actionPrefs.autoSortByUsage && (
+                    <TooltipProvider>
+                      <Tooltip>
+                        <TooltipTrigger asChild>
+                          <Button 
+                            variant="ghost" 
+                            size="icon" 
+                            className="h-5 w-5"
+                            onClick={handleResetToAutoSort}
+                          >
+                            <RefreshCw size={10} className="text-muted-foreground" />
+                          </Button>
+                        </TooltipTrigger>
+                        <TooltipContent side="bottom" className="text-xs">
+                          Reset to auto-sort
+                        </TooltipContent>
+                      </Tooltip>
+                    </TooltipProvider>
+                  )}
+                </div>
+              </div>
+              <div className="grid grid-cols-4 md:grid-cols-5 lg:grid-cols-6 gap-2">
+                {sortedActions.map((action) => (
+                  <PersonalQuickAction 
+                    key={action.id}
+                    icon={action.icon} 
+                    label={action.label} 
+                    count={'count' in action ? action.count : undefined}
+                    badge={'badge' in action ? action.badge : undefined}
+                    color={action.color} 
+                    url={'url' in action ? action.url : undefined}
+                    onClick={() => handleShortcutClick(action.id)} 
+                    onRemove={() => removeActionFromOverview(action.id)}
+                  />
+                ))}
               </div>
             </div>
-            <div className="grid grid-cols-4 md:grid-cols-5 lg:grid-cols-6 gap-2">
-              {sortedActions.map((action) => (
-                <PersonalQuickAction 
-                  key={action.id}
-                  icon={action.icon} 
-                  label={action.label} 
-                  count={'count' in action ? action.count : undefined}
-                  badge={'badge' in action ? action.badge : undefined}
-                  color={action.color} 
-                  url={'url' in action ? action.url : undefined}
-                  onClick={() => handleShortcutClick(action.id)} 
-                  onRemove={() => removeActionFromOverview(action.id)}
-                />
-              ))}
-            </div>
-          </div>
-        );
-
-      case 'stats':
-        return (
-          <div className="grid grid-cols-3 gap-2">
-            <Card className="bg-card/50">
-              <CardContent className="p-2 text-center">
-                <p className="text-xl font-bold text-primary">{stats.completedToday}</p>
-                <p className="text-[9px] text-muted-foreground">Today</p>
-              </CardContent>
-            </Card>
-            <Card className="bg-card/50">
-              <CardContent className="p-2 text-center">
-                <p className="text-xl font-bold text-orange-500">{stats.totalStreak}</p>
-                <p className="text-[9px] text-muted-foreground">Streak</p>
-              </CardContent>
-            </Card>
-            <Card className="bg-card/50">
-              <CardContent className="p-2 text-center">
-                <p className="text-xl font-bold">{stats.totalItems}</p>
-                <p className="text-[9px] text-muted-foreground">Items</p>
-              </CardContent>
-            </Card>
-          </div>
-        );
-
-      case 'atlas-widgets':
-        return (
-          <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-3">
-            <AtlasDailyBrief compact />
-            <WellnessWidget compact />
-            <FocusTimerWidget compact />
-          </div>
-        );
-
-      case 'quick-add':
-        return (
-          <div className="flex gap-2">
-            <Input
-              ref={inputRef}
-              placeholder="Quick add task..."
-              value={newTaskTitle}
-              onChange={(e) => setNewTaskTitle(e.target.value)}
-              onKeyDown={(e) => e.key === 'Enter' && handleQuickAddTask()}
-              className="h-8 text-sm"
-            />
-            <Button size="sm" className="h-8 px-3" onClick={handleQuickAddTask} disabled={!newTaskTitle.trim()}>
-              <Plus size={14} />
-            </Button>
-          </div>
-        );
-
-      case 'todays-tasks':
-        if (todaysTasks.length === 0) return null;
-        return (
-          <div id="section-tasks">
-            <h3 className="text-[10px] font-mono text-muted-foreground mb-2 flex items-center gap-1">
-              <Clock size={10} /> TODAY'S TASKS
-            </h3>
-            <div className="space-y-1.5">
-              {todaysTasks.slice(0, 5).map(task => (
-                <TaskItem key={task.id} item={task} onComplete={() => completeItem(task.id)} onDelete={() => deleteItem(task.id)} />
-              ))}
-            </div>
-          </div>
-        );
-
-      case 'overdue':
-        if (overdueTasks.length === 0) return null;
-        return (
-          <div className="p-2 rounded-lg bg-destructive/10 border border-destructive/30">
-            <div className="flex items-center gap-2">
-              <AlertCircle size={12} className="text-destructive" />
-              <span className="text-[10px] text-destructive font-medium">{overdueTasks.length} overdue tasks</span>
-            </div>
-          </div>
-        );
-
-      case 'habits':
-        if (habits.length === 0) return null;
-        return (
-          <div id="section-habits">
-            <h3 className="text-[10px] font-mono text-muted-foreground mb-2 flex items-center gap-1">
-              <Flame size={10} /> DAILY HABITS
-            </h3>
-            <div className="space-y-2">
-              {habits.slice(0, 3).map(habit => (
-                <HabitCard key={habit.id} habit={habit} onComplete={() => completeHabit(habit.id)} />
-              ))}
-            </div>
-          </div>
-        );
-
-      case 'visualizations':
-        return (
-          <div className="grid grid-cols-1 md:grid-cols-2 gap-3">
-            <HabitStreakChart />
-            <GoalProgressTimeline />
-          </div>
-        );
-
-      case 'goals':
-        if (goals.length === 0) return null;
-        return (
-          <div id="section-goals">
-            <h3 className="text-[10px] font-mono text-muted-foreground mb-2 flex items-center gap-1">
-              <Target size={10} /> ACTIVE GOALS
-            </h3>
-            <div className="grid grid-cols-2 gap-2">
-              {goals.slice(0, 4).map(goal => (
-                <GoalCard key={goal.id} goal={goal} />
-              ))}
-            </div>
-          </div>
-        );
+          )
+        };
 
       default:
         return null;
