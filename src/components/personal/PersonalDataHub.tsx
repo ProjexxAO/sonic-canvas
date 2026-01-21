@@ -1,9 +1,10 @@
 // Personal Data Hub - Dynamic personal interface with user-selected overview items
 // Life, Social, More consolidated into dropdown menu
-// Supports drag-and-drop reordering and Atlas auto-arrange by usage
+// Supports drag-and-drop reordering, Atlas auto-arrange by usage, and resizable panels
 
 import { useState, useCallback, useRef, useEffect, useMemo } from 'react';
 import { DragDropContext, Droppable, Draggable, DropResult } from '@hello-pangea/dnd';
+import { Panel, PanelGroup, PanelResizeHandle } from 'react-resizable-panels';
 import { 
   CheckSquare, 
   Target, 
@@ -54,6 +55,7 @@ import {
   Banknote,
   Sparkles,
   Move,
+  GripHorizontal,
   Search,
   Globe,
   Loader2,
@@ -1505,192 +1507,211 @@ export function PersonalDataHub({ userId }: PersonalDataHubProps) {
         </div>
       </div>
 
-      {/* Content - User Selected Items Only */}
-      <ScrollArea className="flex-1">
-        <div className="p-3 space-y-4">
-          {/* User Selected Quick Actions with Drag & Drop */}
-          {sortedActions.length > 0 && (
-            <div>
-              <div className="flex items-center justify-between mb-2">
-                <h3 className="text-[10px] font-mono text-muted-foreground">MY SHORTCUTS</h3>
-                <div className="flex items-center gap-1">
-                  <TooltipProvider>
-                    <Tooltip>
-                      <TooltipTrigger asChild>
-                        <Button 
-                          variant="ghost" 
-                          size="icon" 
-                          className="h-5 w-5"
-                          onClick={handleAtlasOptimize}
-                        >
-                          <Sparkles size={10} className="text-primary" />
-                        </Button>
-                      </TooltipTrigger>
-                      <TooltipContent side="bottom" className="text-xs">
-                        Atlas: Optimize by usage
-                      </TooltipContent>
-                    </Tooltip>
-                  </TooltipProvider>
-                  {!actionPrefs.autoSortByUsage && (
-                    <TooltipProvider>
-                      <Tooltip>
-                        <TooltipTrigger asChild>
-                          <Button 
-                            variant="ghost" 
-                            size="icon" 
-                            className="h-5 w-5"
-                            onClick={handleResetToAutoSort}
-                          >
-                            <RefreshCw size={10} className="text-muted-foreground" />
-                          </Button>
-                        </TooltipTrigger>
-                        <TooltipContent side="bottom" className="text-xs">
-                          Reset to auto-sort
-                        </TooltipContent>
-                      </Tooltip>
-                    </TooltipProvider>
-                  )}
-                </div>
-              </div>
-              
-              <DragDropContext onDragEnd={handleDragEnd}>
-                <Droppable droppableId="shortcuts" direction="horizontal">
-                  {(provided) => (
-                    <div
-                      ref={provided.innerRef}
-                      {...provided.droppableProps}
-                      className="grid grid-cols-4 gap-2"
-                    >
-                      {sortedActions.map((action, index) => (
-                        <Draggable key={action.id} draggableId={action.id} index={index}>
-                          {(provided, snapshot) => (
-                            <div
-                              ref={provided.innerRef}
-                              {...provided.draggableProps}
+      {/* Content - Resizable Panels */}
+      <PanelGroup direction="vertical" className="flex-1 min-h-0">
+        {/* Shortcuts Panel */}
+        <Panel defaultSize={30} minSize={15} maxSize={50}>
+          <ScrollArea className="h-full">
+            <div className="p-3">
+              {/* User Selected Quick Actions with Drag & Drop */}
+              {sortedActions.length > 0 && (
+                <div>
+                  <div className="flex items-center justify-between mb-2">
+                    <h3 className="text-[10px] font-mono text-muted-foreground">MY SHORTCUTS</h3>
+                    <div className="flex items-center gap-1">
+                      <TooltipProvider>
+                        <Tooltip>
+                          <TooltipTrigger asChild>
+                            <Button 
+                              variant="ghost" 
+                              size="icon" 
+                              className="h-5 w-5"
+                              onClick={handleAtlasOptimize}
                             >
-                              <PersonalQuickAction 
-                                icon={action.icon} 
-                                label={action.label} 
-                                count={'count' in action ? action.count : undefined}
-                                badge={'badge' in action ? action.badge : undefined}
-                                color={action.color} 
-                                url={'url' in action ? action.url : undefined}
-                                onClick={() => handleShortcutClick(action.id)} 
-                                onRemove={() => removeActionFromOverview(action.id)}
-                                isDragging={snapshot.isDragging}
-                                dragHandleProps={provided.dragHandleProps}
-                              />
-                            </div>
-                          )}
-                        </Draggable>
-                      ))}
-                      {provided.placeholder}
+                              <Sparkles size={10} className="text-primary" />
+                            </Button>
+                          </TooltipTrigger>
+                          <TooltipContent side="bottom" className="text-xs">
+                            Atlas: Optimize by usage
+                          </TooltipContent>
+                        </Tooltip>
+                      </TooltipProvider>
+                      {!actionPrefs.autoSortByUsage && (
+                        <TooltipProvider>
+                          <Tooltip>
+                            <TooltipTrigger asChild>
+                              <Button 
+                                variant="ghost" 
+                                size="icon" 
+                                className="h-5 w-5"
+                                onClick={handleResetToAutoSort}
+                              >
+                                <RefreshCw size={10} className="text-muted-foreground" />
+                              </Button>
+                            </TooltipTrigger>
+                            <TooltipContent side="bottom" className="text-xs">
+                              Reset to auto-sort
+                            </TooltipContent>
+                          </Tooltip>
+                        </TooltipProvider>
+                      )}
                     </div>
-                  )}
-                </Droppable>
-              </DragDropContext>
-            </div>
-          )}
+                  </div>
+                  
+                  <DragDropContext onDragEnd={handleDragEnd}>
+                    <Droppable droppableId="shortcuts" direction="horizontal">
+                      {(provided) => (
+                        <div
+                          ref={provided.innerRef}
+                          {...provided.droppableProps}
+                          className="grid grid-cols-4 gap-2"
+                        >
+                          {sortedActions.map((action, index) => (
+                            <Draggable key={action.id} draggableId={action.id} index={index}>
+                              {(provided, snapshot) => (
+                                <div
+                                  ref={provided.innerRef}
+                                  {...provided.draggableProps}
+                                >
+                                  <PersonalQuickAction 
+                                    icon={action.icon} 
+                                    label={action.label} 
+                                    count={'count' in action ? action.count : undefined}
+                                    badge={'badge' in action ? action.badge : undefined}
+                                    color={action.color} 
+                                    url={'url' in action ? action.url : undefined}
+                                    onClick={() => handleShortcutClick(action.id)} 
+                                    onRemove={() => removeActionFromOverview(action.id)}
+                                    isDragging={snapshot.isDragging}
+                                    dragHandleProps={provided.dragHandleProps}
+                                  />
+                                </div>
+                              )}
+                            </Draggable>
+                          ))}
+                          {provided.placeholder}
+                        </div>
+                      )}
+                    </Droppable>
+                  </DragDropContext>
+                </div>
+              )}
 
-          {/* Stats Summary */}
-          <div className="grid grid-cols-3 gap-2">
-            <Card className="bg-card/50">
-              <CardContent className="p-2 text-center">
-                <p className="text-xl font-bold text-primary">{stats.completedToday}</p>
-                <p className="text-[9px] text-muted-foreground">Today</p>
-              </CardContent>
-            </Card>
-            <Card className="bg-card/50">
-              <CardContent className="p-2 text-center">
-                <p className="text-xl font-bold text-orange-500">{stats.totalStreak}</p>
-                <p className="text-[9px] text-muted-foreground">Streak</p>
-              </CardContent>
-            </Card>
-            <Card className="bg-card/50">
-              <CardContent className="p-2 text-center">
-                <p className="text-xl font-bold">{stats.totalItems}</p>
-                <p className="text-[9px] text-muted-foreground">Items</p>
-              </CardContent>
-            </Card>
+              {/* Stats Summary */}
+              <div className="grid grid-cols-3 gap-2 mt-3">
+                <Card className="bg-card/50">
+                  <CardContent className="p-2 text-center">
+                    <p className="text-xl font-bold text-primary">{stats.completedToday}</p>
+                    <p className="text-[9px] text-muted-foreground">Today</p>
+                  </CardContent>
+                </Card>
+                <Card className="bg-card/50">
+                  <CardContent className="p-2 text-center">
+                    <p className="text-xl font-bold text-orange-500">{stats.totalStreak}</p>
+                    <p className="text-[9px] text-muted-foreground">Streak</p>
+                  </CardContent>
+                </Card>
+                <Card className="bg-card/50">
+                  <CardContent className="p-2 text-center">
+                    <p className="text-xl font-bold">{stats.totalItems}</p>
+                    <p className="text-[9px] text-muted-foreground">Items</p>
+                  </CardContent>
+                </Card>
+              </div>
+            </div>
+          </ScrollArea>
+        </Panel>
+
+        {/* Resize Handle */}
+        <PanelResizeHandle className="h-2 flex items-center justify-center group cursor-row-resize hover:bg-muted/50 transition-colors">
+          <div className="flex items-center gap-0.5">
+            <GripHorizontal size={14} className="text-muted-foreground group-hover:text-primary transition-colors" />
           </div>
+        </PanelResizeHandle>
 
-          {/* Quick Add Task */}
-          <div className="flex gap-2">
-            <Input
-              ref={inputRef}
-              placeholder="Quick add task..."
-              value={newTaskTitle}
-              onChange={(e) => setNewTaskTitle(e.target.value)}
-              onKeyDown={(e) => e.key === 'Enter' && handleQuickAddTask()}
-              className="h-8 text-sm"
-            />
-            <Button size="sm" className="h-8 px-3" onClick={handleQuickAddTask} disabled={!newTaskTitle.trim()}>
-              <Plus size={14} />
-            </Button>
-          </div>
-
-          {/* Today's Tasks */}
-          {todaysTasks.length > 0 && (
-            <div id="section-tasks">
-              <h3 className="text-[10px] font-mono text-muted-foreground mb-2 flex items-center gap-1">
-                <Clock size={10} /> TODAY'S TASKS
-              </h3>
-              <div className="space-y-1.5">
-                {todaysTasks.slice(0, 5).map(task => (
-                  <TaskItem key={task.id} item={task} onComplete={() => completeItem(task.id)} onDelete={() => deleteItem(task.id)} />
-                ))}
+        {/* Main Content Panel */}
+        <Panel defaultSize={70} minSize={30}>
+          <ScrollArea className="h-full">
+            <div className="p-3 space-y-4">
+              {/* Quick Add Task */}
+              <div className="flex gap-2">
+                <Input
+                  ref={inputRef}
+                  placeholder="Quick add task..."
+                  value={newTaskTitle}
+                  onChange={(e) => setNewTaskTitle(e.target.value)}
+                  onKeyDown={(e) => e.key === 'Enter' && handleQuickAddTask()}
+                  className="h-8 text-sm"
+                />
+                <Button size="sm" className="h-8 px-3" onClick={handleQuickAddTask} disabled={!newTaskTitle.trim()}>
+                  <Plus size={14} />
+                </Button>
               </div>
-            </div>
-          )}
 
-          {/* Overdue Warning */}
-          {overdueTasks.length > 0 && (
-            <div className="p-2 rounded-lg bg-destructive/10 border border-destructive/30">
-              <div className="flex items-center gap-2">
-                <AlertCircle size={12} className="text-destructive" />
-                <span className="text-[10px] text-destructive font-medium">{overdueTasks.length} overdue tasks</span>
-              </div>
-            </div>
-          )}
+              {/* Today's Tasks */}
+              {todaysTasks.length > 0 && (
+                <div id="section-tasks">
+                  <h3 className="text-[10px] font-mono text-muted-foreground mb-2 flex items-center gap-1">
+                    <Clock size={10} /> TODAY'S TASKS
+                  </h3>
+                  <div className="space-y-1.5">
+                    {todaysTasks.slice(0, 5).map(task => (
+                      <TaskItem key={task.id} item={task} onComplete={() => completeItem(task.id)} onDelete={() => deleteItem(task.id)} />
+                    ))}
+                  </div>
+                </div>
+              )}
 
-          {/* Habits Preview */}
-          {habits.length > 0 && (
-            <div id="section-habits">
-              <h3 className="text-[10px] font-mono text-muted-foreground mb-2 flex items-center gap-1">
-                <Flame size={10} /> DAILY HABITS
-              </h3>
-              <div className="space-y-2">
-                {habits.slice(0, 3).map(habit => (
-                  <HabitCard key={habit.id} habit={habit} onComplete={() => completeHabit(habit.id)} />
-                ))}
-              </div>
-            </div>
-          )}
+              {/* Overdue Warning */}
+              {overdueTasks.length > 0 && (
+                <div className="p-2 rounded-lg bg-destructive/10 border border-destructive/30">
+                  <div className="flex items-center gap-2">
+                    <AlertCircle size={12} className="text-destructive" />
+                    <span className="text-[10px] text-destructive font-medium">{overdueTasks.length} overdue tasks</span>
+                  </div>
+                </div>
+              )}
 
-          {/* Goals Preview */}
-          {goals.length > 0 && (
-            <div id="section-goals">
-              <h3 className="text-[10px] font-mono text-muted-foreground mb-2 flex items-center gap-1">
-                <Target size={10} /> ACTIVE GOALS
-              </h3>
-              <div className="grid grid-cols-2 gap-2">
-                {goals.slice(0, 4).map(goal => (
-                  <GoalCard key={goal.id} goal={goal} />
-                ))}
-              </div>
-            </div>
-          )}
+              {/* Habits Preview */}
+              {habits.length > 0 && (
+                <div id="section-habits">
+                  <h3 className="text-[10px] font-mono text-muted-foreground mb-2 flex items-center gap-1">
+                    <Flame size={10} /> DAILY HABITS
+                  </h3>
+                  <div className="space-y-2">
+                    {habits.slice(0, 3).map(habit => (
+                      <HabitCard key={habit.id} habit={habit} onComplete={() => completeHabit(habit.id)} />
+                    ))}
+                  </div>
+                </div>
+              )}
 
-          {/* Empty state */}
-          {visibleDefaultActions.length === 0 && visibleCustomActions.length === 0 && (
-            <div className="text-center py-8 text-muted-foreground">
-              <Star size={32} className="mx-auto mb-2 opacity-50" />
-              <p className="text-sm">No shortcuts added yet</p>
-              <p className="text-xs mt-1">Use the "Add" button to customize your overview</p>
+              {/* Goals Preview */}
+              {goals.length > 0 && (
+                <div id="section-goals">
+                  <h3 className="text-[10px] font-mono text-muted-foreground mb-2 flex items-center gap-1">
+                    <Target size={10} /> ACTIVE GOALS
+                  </h3>
+                  <div className="grid grid-cols-2 gap-2">
+                    {goals.slice(0, 4).map(goal => (
+                      <GoalCard key={goal.id} goal={goal} />
+                    ))}
+                  </div>
+                </div>
+              )}
+
+              {/* Empty state */}
+              {visibleDefaultActions.length === 0 && visibleCustomActions.length === 0 && (
+                <div className="text-center py-8 text-muted-foreground">
+                  <Star size={32} className="mx-auto mb-2 opacity-50" />
+                  <p className="text-sm">No shortcuts added yet</p>
+                  <p className="text-xs mt-1">Use the "Add" button to customize your overview</p>
+                </div>
+              )}
             </div>
-          )}
-        </div>
-      </ScrollArea>
+          </ScrollArea>
+        </Panel>
+      </PanelGroup>
     </div>
   );
 }
