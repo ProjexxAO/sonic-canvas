@@ -335,6 +335,9 @@ function HabitCard({ habit, onComplete }: { habit: PersonalHabit; onComplete: ()
   );
 }
 
+// Active view type for full-screen sections
+type ActiveView = 'overview' | 'tasks' | 'goals' | 'habits' | 'notes';
+
 export function PersonalDataHub({ userId }: PersonalDataHubProps) {
   const {
     items, goals, habits, isLoading, refetch,
@@ -343,6 +346,7 @@ export function PersonalDataHub({ userId }: PersonalDataHubProps) {
   } = usePersonalHub();
 
   const [newTaskTitle, setNewTaskTitle] = useState('');
+  const [activeView, setActiveView] = useState<ActiveView>('overview');
   const [selectedActions, setSelectedActions] = useState<string[]>([
     'tasks', 'goals', 'habits', 'email', 'photos', 'finance'
   ]);
@@ -363,6 +367,13 @@ export function PersonalDataHub({ userId }: PersonalDataHubProps) {
 
   const removeActionFromOverview = (actionId: string) => {
     setSelectedActions(selectedActions.filter(id => id !== actionId));
+  };
+
+  const handleShortcutClick = (actionId: string) => {
+    // Navigate to full view for core actions
+    if (['tasks', 'goals', 'habits', 'notes'].includes(actionId)) {
+      setActiveView(actionId as ActiveView);
+    }
   };
 
   const tasks = getItemsByType('task');
@@ -389,6 +400,147 @@ export function PersonalDataHub({ userId }: PersonalDataHubProps) {
   const lifeActions = ALL_QUICK_ACTIONS.filter(a => a.category === 'life');
   const socialActions = ALL_QUICK_ACTIONS.filter(a => a.category === 'social');
   const moreActions = ALL_QUICK_ACTIONS.filter(a => a.category === 'more');
+
+  // Full Tasks View
+  if (activeView === 'tasks') {
+    return (
+      <div className="h-full bg-card/90 border border-border rounded-lg shadow-sm overflow-hidden flex flex-col">
+        <div className="px-3 py-2 border-b border-border flex items-center justify-between">
+          <div className="flex items-center gap-2">
+            <Button variant="ghost" size="sm" className="h-6 px-2" onClick={() => setActiveView('overview')}>
+              <ChevronDown size={12} className="rotate-90 mr-1" />
+              Back
+            </Button>
+            <CheckSquare size={14} className="text-primary" />
+            <span className="text-xs font-mono text-muted-foreground uppercase">ALL TASKS</span>
+            <Badge variant="secondary" className="text-[10px]">{tasks.length}</Badge>
+          </div>
+          <Button variant="ghost" size="icon" className="h-6 w-6" onClick={() => refetch()} disabled={isLoading}>
+            <RefreshCw size={12} className={isLoading ? 'animate-spin' : ''} />
+          </Button>
+        </div>
+        <ScrollArea className="flex-1">
+          <div className="p-3 space-y-3">
+            {/* Quick Add */}
+            <div className="flex gap-2">
+              <Input
+                ref={inputRef}
+                placeholder="Add a new task..."
+                value={newTaskTitle}
+                onChange={(e) => setNewTaskTitle(e.target.value)}
+                onKeyDown={(e) => e.key === 'Enter' && handleQuickAddTask()}
+                className="h-8 text-sm"
+              />
+              <Button size="sm" className="h-8 px-3" onClick={handleQuickAddTask} disabled={!newTaskTitle.trim()}>
+                <Plus size={14} />
+              </Button>
+            </div>
+            
+            {/* Overdue */}
+            {overdueTasks.length > 0 && (
+              <div>
+                <h3 className="text-[10px] font-mono text-destructive mb-2 flex items-center gap-1">
+                  <AlertCircle size={10} /> OVERDUE ({overdueTasks.length})
+                </h3>
+                <div className="space-y-1.5">
+                  {overdueTasks.map(task => (
+                    <TaskItem key={task.id} item={task} onComplete={() => completeItem(task.id)} onDelete={() => deleteItem(task.id)} />
+                  ))}
+                </div>
+              </div>
+            )}
+            
+            {/* Active Tasks */}
+            <div>
+              <h3 className="text-[10px] font-mono text-muted-foreground mb-2">ACTIVE TASKS</h3>
+              <div className="space-y-1.5">
+                {tasks.filter(t => t.status !== 'completed').map(task => (
+                  <TaskItem key={task.id} item={task} onComplete={() => completeItem(task.id)} onDelete={() => deleteItem(task.id)} />
+                ))}
+                {tasks.filter(t => t.status !== 'completed').length === 0 && (
+                  <p className="text-xs text-muted-foreground text-center py-4">No active tasks</p>
+                )}
+              </div>
+            </div>
+            
+            {/* Completed */}
+            {tasks.filter(t => t.status === 'completed').length > 0 && (
+              <div>
+                <h3 className="text-[10px] font-mono text-muted-foreground mb-2">COMPLETED</h3>
+                <div className="space-y-1.5">
+                  {tasks.filter(t => t.status === 'completed').slice(0, 5).map(task => (
+                    <TaskItem key={task.id} item={task} onComplete={() => completeItem(task.id)} onDelete={() => deleteItem(task.id)} />
+                  ))}
+                </div>
+              </div>
+            )}
+          </div>
+        </ScrollArea>
+      </div>
+    );
+  }
+
+  // Full Goals View
+  if (activeView === 'goals') {
+    return (
+      <div className="h-full bg-card/90 border border-border rounded-lg shadow-sm overflow-hidden flex flex-col">
+        <div className="px-3 py-2 border-b border-border flex items-center justify-between">
+          <div className="flex items-center gap-2">
+            <Button variant="ghost" size="sm" className="h-6 px-2" onClick={() => setActiveView('overview')}>
+              <ChevronDown size={12} className="rotate-90 mr-1" />
+              Back
+            </Button>
+            <Target size={14} className="text-primary" />
+            <span className="text-xs font-mono text-muted-foreground uppercase">ALL GOALS</span>
+            <Badge variant="secondary" className="text-[10px]">{goals.length}</Badge>
+          </div>
+        </div>
+        <ScrollArea className="flex-1">
+          <div className="p-3 space-y-3">
+            {goals.length > 0 ? (
+              <div className="grid grid-cols-2 gap-2">
+                {goals.map(goal => (
+                  <GoalCard key={goal.id} goal={goal} />
+                ))}
+              </div>
+            ) : (
+              <p className="text-xs text-muted-foreground text-center py-8">No goals yet</p>
+            )}
+          </div>
+        </ScrollArea>
+      </div>
+    );
+  }
+
+  // Full Habits View
+  if (activeView === 'habits') {
+    return (
+      <div className="h-full bg-card/90 border border-border rounded-lg shadow-sm overflow-hidden flex flex-col">
+        <div className="px-3 py-2 border-b border-border flex items-center justify-between">
+          <div className="flex items-center gap-2">
+            <Button variant="ghost" size="sm" className="h-6 px-2" onClick={() => setActiveView('overview')}>
+              <ChevronDown size={12} className="rotate-90 mr-1" />
+              Back
+            </Button>
+            <TrendingUp size={14} className="text-primary" />
+            <span className="text-xs font-mono text-muted-foreground uppercase">ALL HABITS</span>
+            <Badge variant="secondary" className="text-[10px]">{habits.length}</Badge>
+          </div>
+        </div>
+        <ScrollArea className="flex-1">
+          <div className="p-3 space-y-2">
+            {habits.length > 0 ? (
+              habits.map(habit => (
+                <HabitCard key={habit.id} habit={habit} onComplete={() => completeHabit(habit.id)} />
+              ))
+            ) : (
+              <p className="text-xs text-muted-foreground text-center py-8">No habits yet</p>
+            )}
+          </div>
+        </ScrollArea>
+      </div>
+    );
+  }
 
   return (
     <div className="h-full bg-card/90 border border-border rounded-lg shadow-sm overflow-hidden flex flex-col">
@@ -527,14 +679,7 @@ export function PersonalDataHub({ userId }: PersonalDataHubProps) {
                     count={action.count}
                     badge={action.badge}
                     color={action.color} 
-                    onClick={() => {
-                      // Scroll to the relevant section
-                      const sectionId = `section-${action.id}`;
-                      const element = document.getElementById(sectionId);
-                      if (element) {
-                        element.scrollIntoView({ behavior: 'smooth', block: 'start' });
-                      }
-                    }} 
+                    onClick={() => handleShortcutClick(action.id)} 
                     onRemove={() => removeActionFromOverview(action.id)}
                   />
                 ))}
