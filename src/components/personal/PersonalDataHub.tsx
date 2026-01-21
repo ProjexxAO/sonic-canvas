@@ -1390,7 +1390,7 @@ export function PersonalDataHub({ userId }: PersonalDataHubProps) {
   }
 
   return (
-    <div className="flex-1 min-h-0 h-full bg-card/90 border border-border rounded-lg shadow-sm overflow-hidden flex flex-col">
+    <div className="h-full bg-card/90 border border-border rounded-lg shadow-sm overflow-hidden flex flex-col">
       {/* Header with dropdown */}
       <div className="px-3 py-2 border-b border-border flex items-center justify-between">
         <div className="flex items-center gap-2">

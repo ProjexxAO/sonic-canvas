@@ -288,10 +288,8 @@ export function AtlasRightPanel({
             </div>
           </div>
 
-          <TabsContent value="personal-data" className="flex-1 mt-0 min-h-0 overflow-hidden">
-            <div className="flex-1 min-h-0 h-full overflow-auto">
-              <PersonalDataHub userId={userId} />
-            </div>
+          <TabsContent value="personal-data" className="flex-1 mt-0 min-h-0 overflow-hidden flex flex-col">
+            <PersonalDataHub userId={userId} />
           </TabsContent>
 
           <TabsContent value="phone" className="flex-1 mt-0 overflow-hidden flex flex-col min-h-0">
