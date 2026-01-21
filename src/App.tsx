@@ -19,6 +19,7 @@ import UserToolPermissions from "./pages/UserToolPermissions";
 import ToolGovernance from "./pages/ToolGovernance";
 import Integrations from "./pages/Integrations";
 import PersonalHub from "./pages/PersonalHub";
+import GroupHub from "./pages/GroupHub";
 import NotFound from "./pages/NotFound";
 const queryClient = new QueryClient();
 
