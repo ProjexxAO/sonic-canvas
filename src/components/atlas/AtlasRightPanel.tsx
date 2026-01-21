@@ -1,6 +1,6 @@
 // Atlas Right Panel - Context-aware layout for Personal vs Enterprise hubs
 import React, { useRef, useCallback } from 'react';
-import { Activity, Database, Search, Sparkles, Brain, Shield, User, Camera, Phone, Bell, Upload, Image } from 'lucide-react';
+import { Activity, Database, Search, Sparkles, Brain, Shield, User, Camera, Phone, Bell, Upload, Image, Settings } from 'lucide-react';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
 import { ScrollArea } from '@/components/ui/scroll-area';
 import { Button } from '@/components/ui/button';
@@ -272,7 +272,7 @@ export function AtlasRightPanel({
                 value="notifications" 
                 className="flex items-center gap-1 text-[10px] font-mono data-[state=active]:bg-background data-[state=active]:shadow-sm px-3 relative"
               >
-                <Bell size={12} />
+                <Settings size={12} />
                 Settings
                 {unreadCount > 0 && (
                   <Badge variant="destructive" className="ml-1 text-[8px] px-1 py-0 h-3.5">
