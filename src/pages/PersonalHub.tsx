@@ -1,6 +1,7 @@
 // Personal Hub - Uses unified Data Hub interface for consistent UX
 // People-first approach: This is the primary landing page after auth
 
+import { useState, useEffect } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { useAuth } from '@/hooks/useAuth';
 import { useTheme } from 'next-themes';
@@ -13,17 +14,42 @@ import {
   Sun,
   Moon,
   Hexagon,
-  Radio
+  Radio,
+  ShieldCheck,
+  Clock
 } from 'lucide-react';
 import { CSuiteDataHub } from '@/components/csuite/CSuiteDataHub';
 import { useSubscription } from '@/hooks/useSubscription';
 import { cn } from '@/lib/utils';
+import { supabase } from '@/integrations/supabase/client';
+import { format } from 'date-fns';
+import { Tooltip, TooltipContent, TooltipTrigger } from '@/components/ui/tooltip';
 
 export default function PersonalHub() {
   const navigate = useNavigate();
   const { user, loading: authLoading } = useAuth();
   const { tier } = useSubscription();
   const { theme, setTheme } = useTheme();
+  const [hubCreatedAt, setHubCreatedAt] = useState<string | null>(null);
+
+  // Fetch personal hub creation timestamp
+  useEffect(() => {
+    async function fetchHubAccess() {
+      if (!user?.id) return;
+      
+      const { data } = await supabase
+        .from('hub_access')
+        .select('granted_at')
+        .eq('user_id', user.id)
+        .eq('hub_type', 'personal')
+        .single();
+      
+      if (data?.granted_at) {
+        setHubCreatedAt(data.granted_at);
+      }
+    }
+    fetchHubAccess();
+  }, [user?.id]);
 
   // Redirect if not authenticated
   if (!authLoading && !user) {
@@ -90,6 +116,38 @@ export default function PersonalHub() {
                     Your Life Command Center
                   </p>
                 </div>
+                
+                {/* Verified Hub Badge */}
+                {hubCreatedAt && (
+                  <Tooltip>
+                    <TooltipTrigger asChild>
+                      <div className={cn(
+                        "flex items-center gap-1.5 px-2.5 py-1 rounded-full text-xs font-medium cursor-help",
+                        theme === 'dark'
+                          ? "bg-emerald-500/10 text-emerald-400 border border-emerald-500/20"
+                          : "bg-emerald-50 text-emerald-600 border border-emerald-200"
+                      )}>
+                        <ShieldCheck className="h-3.5 w-3.5" />
+                        <span>Verified</span>
+                      </div>
+                    </TooltipTrigger>
+                    <TooltipContent side="bottom" className="max-w-xs">
+                      <div className="flex flex-col gap-1">
+                        <div className="flex items-center gap-1.5 font-medium">
+                          <ShieldCheck className="h-4 w-4 text-emerald-500" />
+                          Verified Personal Hub
+                        </div>
+                        <p className="text-xs text-muted-foreground">
+                          This is your unique, secure personal hub. Only one personal hub can exist per user.
+                        </p>
+                        <div className="flex items-center gap-1.5 text-xs text-muted-foreground mt-1 pt-1 border-t border-border/50">
+                          <Clock className="h-3 w-3" />
+                          Created: {format(new Date(hubCreatedAt), 'MMM d, yyyy \'at\' h:mm a')}
+                        </div>
+                      </div>
+                    </TooltipContent>
+                  </Tooltip>
+                )}
               </div>
             </div>
             
