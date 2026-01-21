@@ -478,16 +478,16 @@ export function AtlasHubLayout({
 
       {/* Main Content */}
       <main className="relative z-10 flex-1 flex overflow-hidden p-6 gap-6">
-        {/* Left Side - Visualizer */}
+        {/* Left Side - Visualizer (smaller for personal hub) */}
         <div className={cn(
-          "flex items-center justify-center relative",
-          hubType === 'personal' ? "w-48 flex-shrink-0" : "flex-1"
+          "flex items-center justify-center relative flex-shrink-0",
+          hubType === 'personal' ? "w-40" : "flex-1"
         )}>
           {/* Central Orb - Half size for personal hub */}
           <div 
             className={cn(
               "relative",
-              hubType === 'personal' ? "w-36 h-36" : "w-72 h-72"
+              hubType === 'personal' ? "w-32 h-32" : "w-72 h-72"
             )}
             style={{ 
               transform: `scale(${1 + (conversation.isSpeaking ? outputVolume : inputVolume) * 0.08})`,
@@ -511,7 +511,7 @@ export function AtlasHubLayout({
             <div 
               className={cn(
                 "absolute rounded-full border-2",
-                hubType === 'personal' ? "inset-2" : "inset-4",
+                hubType === 'personal' ? "inset-1" : "inset-4",
                 isConnected && conversation.isSpeaking && "border-secondary animate-spin"
               )}
               style={{ 
@@ -526,7 +526,7 @@ export function AtlasHubLayout({
             <div
               className={cn(
                 "absolute rounded-full border border-border flex items-center justify-center overflow-hidden",
-                hubType === 'personal' ? "inset-4" : "inset-8",
+                hubType === 'personal' ? "inset-2" : "inset-8",
                 !isConnected && !isConnecting && "cursor-pointer hover:border-primary/50 transition-colors",
                 theme === 'dark' 
                   ? "bg-[hsl(240_10%_6%/0.9)]" 
@@ -569,38 +569,58 @@ export function AtlasHubLayout({
                   />
                 </div>
                 
-                {/* Center text */}
+                {/* Center text - smaller for personal hub */}
                 {!isConnected && !isConnecting && (
-                  <span className="text-xs font-mono text-muted-foreground uppercase tracking-widest">
-                    Tap to Activate
+                  <span className={cn(
+                    "font-mono text-muted-foreground uppercase tracking-widest text-center",
+                    hubType === 'personal' ? "text-[8px]" : "text-xs"
+                  )}>
+                    {hubType === 'personal' ? 'Tap' : 'Tap to Activate'}
                   </span>
                 )}
                 {isConnecting && (
-                  <span className="text-xs font-mono text-primary uppercase tracking-widest animate-pulse">
-                    Connecting...
+                  <span className={cn(
+                    "font-mono text-primary uppercase tracking-widest animate-pulse",
+                    hubType === 'personal' ? "text-[8px]" : "text-xs"
+                  )}>
+                    {hubType === 'personal' ? '...' : 'Connecting...'}
                   </span>
                 )}
               </div>
             </div>
           </div>
 
-          {/* Voice Controls */}
-          <div className="absolute bottom-0 left-1/2 -translate-x-1/2">
-            <div className="flex justify-center gap-3">
-              {isConnected && (
-                <>
-                  <Button onClick={toggleMute} variant="outline" className="gap-2 font-mono">
-                    {isMuted ? <VolumeX className="w-4 h-4" /> : <Volume2 className="w-4 h-4" />}
-                    {isMuted ? "UNMUTE" : "MUTE"}
-                  </Button>
-                  <Button onClick={stopConversation} variant="destructive" className="gap-2 font-mono">
-                    <MicOff className="w-4 h-4" />
-                    DEACTIVATE
-                  </Button>
-                </>
-              )}
+          {/* Voice Controls - Compact for personal hub */}
+          {hubType !== 'personal' && (
+            <div className="absolute bottom-0 left-1/2 -translate-x-1/2">
+              <div className="flex justify-center gap-3">
+                {isConnected && (
+                  <>
+                    <Button onClick={toggleMute} variant="outline" className="gap-2 font-mono">
+                      {isMuted ? <VolumeX className="w-4 h-4" /> : <Volume2 className="w-4 h-4" />}
+                      {isMuted ? "UNMUTE" : "MUTE"}
+                    </Button>
+                    <Button onClick={stopConversation} variant="destructive" className="gap-2 font-mono">
+                      <MicOff className="w-4 h-4" />
+                      DEACTIVATE
+                    </Button>
+                  </>
+                )}
+              </div>
             </div>
-          </div>
+          )}
+          
+          {/* Compact controls for personal hub */}
+          {hubType === 'personal' && isConnected && (
+            <div className="absolute -bottom-2 left-1/2 -translate-x-1/2 flex gap-1">
+              <Button onClick={toggleMute} variant="ghost" size="icon" className="h-6 w-6">
+                {isMuted ? <VolumeX className="w-3 h-3" /> : <Volume2 className="w-3 h-3" />}
+              </Button>
+              <Button onClick={stopConversation} variant="ghost" size="icon" className="h-6 w-6 text-destructive">
+                <MicOff className="w-3 h-3" />
+              </Button>
+            </div>
+          )}
         </div>
 
         {/* Right Panel */}
