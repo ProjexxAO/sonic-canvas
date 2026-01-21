@@ -1,7 +1,7 @@
 // Personal Data Hub - Dynamic personal interface with user-selected overview items
 // Life, Social, More consolidated into dropdown menu
 
-import { useState, useCallback, useRef } from 'react';
+import { useState, useCallback, useRef, useEffect } from 'react';
 import { 
   CheckSquare, 
   Target, 
@@ -380,11 +380,31 @@ export function PersonalDataHub({ userId }: PersonalDataHubProps) {
   const [activeView, setActiveView] = useState<ActiveView>('overview');
   const [photoCategory, setPhotoCategory] = useState('all');
   const [selectedPhotos, setSelectedPhotos] = useState<string[]>([]);
-  const [selectedActions, setSelectedActions] = useState<string[]>([
-    'tasks', 'goals', 'habits', 'email', 'photos', 'finance'
-  ]);
+  
+  // Initialize selectedActions from localStorage
+  const [selectedActions, setSelectedActions] = useState<string[]>(() => {
+    if (typeof window !== 'undefined' && userId) {
+      const saved = localStorage.getItem(`personal-shortcuts-${userId}`);
+      if (saved) {
+        try {
+          return JSON.parse(saved);
+        } catch (e) {
+          console.error('Error loading shortcuts:', e);
+        }
+      }
+    }
+    return ['tasks', 'goals', 'habits', 'email', 'photos', 'finance'];
+  });
+  
   const inputRef = useRef<HTMLInputElement>(null);
   const fileInputRef = useRef<HTMLInputElement>(null);
+
+  // Persist selectedActions to localStorage whenever it changes
+  useEffect(() => {
+    if (userId && selectedActions.length > 0) {
+      localStorage.setItem(`personal-shortcuts-${userId}`, JSON.stringify(selectedActions));
+    }
+  }, [selectedActions, userId]);
 
   const handleQuickAddTask = useCallback(async () => {
     if (!newTaskTitle.trim()) return;
@@ -393,15 +413,16 @@ export function PersonalDataHub({ userId }: PersonalDataHubProps) {
     inputRef.current?.focus();
   }, [newTaskTitle, createItem]);
 
-  const addActionToOverview = (actionId: string) => {
-    if (!selectedActions.includes(actionId)) {
-      setSelectedActions([...selectedActions, actionId]);
-    }
-  };
+  const addActionToOverview = useCallback((actionId: string) => {
+    setSelectedActions(prev => {
+      if (prev.includes(actionId)) return prev;
+      return [...prev, actionId];
+    });
+  }, []);
 
-  const removeActionFromOverview = (actionId: string) => {
-    setSelectedActions(selectedActions.filter(id => id !== actionId));
-  };
+  const removeActionFromOverview = useCallback((actionId: string) => {
+    setSelectedActions(prev => prev.filter(id => id !== actionId));
+  }, []);
 
   const handleShortcutClick = (actionId: string) => {
     // Navigate to full view for core actions
