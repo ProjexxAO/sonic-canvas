@@ -39,72 +39,65 @@ export function HubQuickAccess({ className }: HubQuickAccessProps) {
   const groupCount = hubInvitations.filter(g => g.sourceHubType === 'group').length;
   const csuiteCount = hubInvitations.filter(g => g.sourceHubType === 'csuite').length + invitedDashboards.length;
 
+  // Don't render anything if no invitations
+  if (!isLoading && groupCount === 0 && csuiteCount === 0) {
+    return null;
+  }
+
   return (
     <TooltipProvider>
       <div className={cn("flex items-center gap-1", className)}>
-        {/* Group Hub Button */}
-        <Tooltip>
-          <TooltipTrigger asChild>
-            <Button
-              variant="ghost"
-              size="sm"
-              className={cn(
-                "h-7 px-2 text-[10px] font-mono relative",
-                groupCount > 0 ? "text-emerald-500" : "text-muted-foreground"
-              )}
-              onClick={() => navigate('/group')}
-            >
-              <Users size={12} className="mr-1" />
-              Group
-              {groupCount > 0 && (
+        {/* Group Hub Button - only show if invited */}
+        {groupCount > 0 && (
+          <Tooltip>
+            <TooltipTrigger asChild>
+              <Button
+                variant="ghost"
+                size="sm"
+                className="h-7 px-2 text-[10px] font-mono relative text-emerald-500"
+                onClick={() => navigate('/group')}
+              >
+                <Users size={12} className="mr-1" />
+                Group
                 <Badge 
                   variant="secondary" 
                   className="ml-1 text-[8px] px-1 py-0 h-3.5 bg-emerald-500/20 text-emerald-500"
                 >
                   {groupCount}
                 </Badge>
-              )}
-            </Button>
-          </TooltipTrigger>
-          <TooltipContent side="bottom" className="text-xs">
-            {groupCount > 0 
-              ? `${groupCount} group hub${groupCount > 1 ? 's' : ''} available`
-              : 'No group hub invitations'
-            }
-          </TooltipContent>
-        </Tooltip>
+              </Button>
+            </TooltipTrigger>
+            <TooltipContent side="bottom" className="text-xs">
+              {groupCount} group hub{groupCount > 1 ? 's' : ''} available
+            </TooltipContent>
+          </Tooltip>
+        )}
 
-        {/* C-Suite Hub Button */}
-        <Tooltip>
-          <TooltipTrigger asChild>
-            <Button
-              variant="ghost"
-              size="sm"
-              className={cn(
-                "h-7 px-2 text-[10px] font-mono relative",
-                csuiteCount > 0 ? "text-purple-500" : "text-muted-foreground"
-              )}
-              onClick={() => navigate('/atlas')}
-            >
-              <Briefcase size={12} className="mr-1" />
-              Executive
-              {csuiteCount > 0 && (
+        {/* C-Suite Hub Button - only show if invited */}
+        {csuiteCount > 0 && (
+          <Tooltip>
+            <TooltipTrigger asChild>
+              <Button
+                variant="ghost"
+                size="sm"
+                className="h-7 px-2 text-[10px] font-mono relative text-purple-500"
+                onClick={() => navigate('/atlas')}
+              >
+                <Briefcase size={12} className="mr-1" />
+                Executive
                 <Badge 
                   variant="secondary" 
                   className="ml-1 text-[8px] px-1 py-0 h-3.5 bg-purple-500/20 text-purple-500"
                 >
                   {csuiteCount}
                 </Badge>
-              )}
-            </Button>
-          </TooltipTrigger>
-          <TooltipContent side="bottom" className="text-xs">
-            {csuiteCount > 0 
-              ? `${csuiteCount} executive dashboard${csuiteCount > 1 ? 's' : ''} available`
-              : 'No executive dashboard invitations'
-            }
-          </TooltipContent>
-        </Tooltip>
+              </Button>
+            </TooltipTrigger>
+            <TooltipContent side="bottom" className="text-xs">
+              {csuiteCount} executive dashboard{csuiteCount > 1 ? 's' : ''} available
+            </TooltipContent>
+          </Tooltip>
+        )}
 
         {/* View All Link */}
         {totalInvites > 0 && (
