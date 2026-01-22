@@ -96,6 +96,7 @@ import { FocusTimerWidget } from './FocusTimerWidget';
 import { HabitStreakChart } from './HabitStreakChart';
 import { GoalProgressTimeline } from './GoalProgressTimeline';
 import { SmartCalendar } from './SmartCalendar';
+import { SmartNudgesWidget } from './SmartNudgesWidget';
 
 interface PersonalDataHubProps {
   userId: string | undefined;
@@ -453,6 +454,7 @@ export function PersonalDataHub({ userId }: PersonalDataHubProps) {
       'shortcuts-header', // Draggable header with controls
       ...shortcutWidgets,
       'stat-today', 'stat-streak', 'stat-items',
+      'widget-nudges',
       'widget-atlas-brief', 'widget-wellness', 'widget-focus',
       'widget-calendar',
       'quick-add',
@@ -1926,6 +1928,11 @@ export function PersonalDataHub({ userId }: PersonalDataHubProps) {
         return {
           colSpan: 'col-span-6',
           content: <SmartCalendar compact />
+        };
+      case 'widget-nudges':
+        return {
+          colSpan: 'col-span-6',
+          content: <SmartNudgesWidget compact />
         };
 
       // Quick add - full width
