@@ -226,7 +226,7 @@ function PersonalQuickAction({
           onClick={(e) => { e.stopPropagation(); onRemove(); }}
           className="absolute -top-1 -right-1 w-4 h-4 bg-destructive text-destructive-foreground rounded-full opacity-0 group-hover:opacity-100 transition-opacity flex items-center justify-center"
         >
-          <Trash2 size={8} />
+          <X size={8} />
         </button>
       )}
     </div>
