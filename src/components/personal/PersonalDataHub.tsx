@@ -106,6 +106,9 @@ import { IntegrationQuickActions, IntegrationSurfaceSummary } from './Integratio
 import { UnifiedInbox } from './UnifiedInbox';
 import { ConnectPlatformDialog } from '@/components/communications/ConnectPlatformDialog';
 import { useDataConnectors, ConnectorPlatform } from '@/hooks/useDataConnectors';
+import { WidgetCreatorDialog } from './WidgetCreatorDialog';
+import { CustomWidgetRenderer } from './CustomWidgetRenderer';
+import { useCustomWidgets } from '@/hooks/useCustomWidgets';
 
 interface PersonalDataHubProps {
   userId: string | undefined;
@@ -454,6 +457,10 @@ export function PersonalDataHub({ userId }: PersonalDataHubProps) {
     clearCustomOrder,
     getSortedActionIds,
   } = useQuickActionPreferences(userId);
+
+  // Custom widgets
+  const { widgets: customWidgets, deleteWidget: deleteCustomWidget, refetch: refetchWidgets } = useCustomWidgets();
+  const [showWidgetCreator, setShowWidgetCreator] = useState(false);
 
   const [newTaskTitle, setNewTaskTitle] = useState('');
   const [activeView, setActiveView] = useState<ActiveView>('overview');
@@ -1939,6 +1946,12 @@ export function PersonalDataHub({ userId }: PersonalDataHubProps) {
           </DragDropContext>
         </ScrollArea>
       )}
+      {/* Widget Creator Dialog */}
+      <WidgetCreatorDialog 
+        open={showWidgetCreator} 
+        onOpenChange={setShowWidgetCreator}
+        onWidgetCreated={refetchWidgets}
+      />
     </div>
   );
 
@@ -1990,6 +2003,23 @@ export function PersonalDataHub({ userId }: PersonalDataHubProps) {
                     </Tooltip>
                   </TooltipProvider>
                 )}
+                <TooltipProvider>
+                  <Tooltip>
+                    <TooltipTrigger asChild>
+                      <Button 
+                        variant="ghost" 
+                        size="icon" 
+                        className="h-5 w-5"
+                        onClick={() => setShowWidgetCreator(true)}
+                      >
+                        <Wand2 size={10} className="text-purple-500" />
+                      </Button>
+                    </TooltipTrigger>
+                    <TooltipContent side="bottom" className="text-xs">
+                      Create custom widget with Atlas
+                    </TooltipContent>
+                  </Tooltip>
+                </TooltipProvider>
               </div>
             </div>
           )
