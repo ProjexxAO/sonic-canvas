@@ -1733,9 +1733,11 @@ export function PersonalDataHub({ userId }: PersonalDataHubProps) {
           onNavigate={(view) => {
             if (view === 'tasks') setActiveView('tasks');
             else if (view === 'goals') setActiveView('goals');
-            else if (view === 'wellness' || view === 'calendar') setActiveView('habits');
+            else if (view === 'habits') setActiveView('habits');
+            else if (view === 'calendar') setActiveView('calendar');
             setIsSimpleMode(false);
           }}
+          onCreateWidget={() => setShowWidgetCreator(true)}
         />
         {/* Toggle to Advanced View */}
         <button
@@ -1744,6 +1746,12 @@ export function PersonalDataHub({ userId }: PersonalDataHubProps) {
         >
           Advanced View
         </button>
+        
+        {/* Widget Creator Dialog - needs to be accessible in simple mode */}
+        <WidgetCreatorDialog
+          open={showWidgetCreator}
+          onOpenChange={setShowWidgetCreator}
+        />
       </div>
     );
   }

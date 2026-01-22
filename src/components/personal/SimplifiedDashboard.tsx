@@ -6,7 +6,6 @@ import { useMemo } from 'react';
 import { 
   CheckSquare, 
   Target, 
-  Heart, 
   Calendar, 
   Sparkles,
   ChevronRight,
@@ -14,13 +13,12 @@ import {
   Moon,
   Sunrise,
   Plus,
-  MessageCircle,
-  Mic
+  Wand2,
+  Flame
 } from 'lucide-react';
 import { Card, CardContent } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
 import { Badge } from '@/components/ui/badge';
-// Progress imported for future use
 import { ScrollArea } from '@/components/ui/scroll-area';
 import { usePersonalHub } from '@/hooks/usePersonalHub';
 import { useAuth } from '@/hooks/useAuth';
@@ -32,6 +30,7 @@ interface SimplifiedDashboardProps {
   userId: string | undefined;
   onOpenFullDashboard?: () => void;
   onNavigate?: (view: string) => void;
+  onCreateWidget?: () => void;
 }
 
 // Get time-based greeting
@@ -174,7 +173,8 @@ function QuickStatsRow({
 export function SimplifiedDashboard({ 
   userId, 
   onOpenFullDashboard,
-  onNavigate 
+  onNavigate,
+  onCreateWidget
 }: SimplifiedDashboardProps) {
   const { user } = useAuth();
   const isMobile = useIsMobile();
@@ -238,40 +238,37 @@ export function SimplifiedDashboard({
   const priorityCards = useMemo(() => {
     const cards = [];
     
-    // Tasks - always show if there are any
-    if (stats.tasksToday > 0) {
-      cards.push({
-        id: 'tasks',
-        icon: CheckSquare,
-        title: 'Tasks',
-        subtitle: `${stats.tasksToday} due today`,
-        value: stats.tasksToday,
-        color: 'hsl(var(--primary))',
-        highlight: stats.tasksToday > 3
-      });
-    }
-    
-    // Goals - show if active
-    if (stats.activeGoals > 0) {
-      cards.push({
-        id: 'goals',
-        icon: Target,
-        title: 'Goals',
-        subtitle: 'Track your progress',
-        value: stats.activeGoals,
-        color: 'hsl(200 70% 50%)',
-        highlight: false
-      });
-    }
-    
-    // Wellness - always available
+    // Tasks - always show
     cards.push({
-      id: 'wellness',
-      icon: Heart,
-      title: 'Wellness',
-      subtitle: 'How are you feeling?',
-      color: 'hsl(350 70% 55%)',
+      id: 'tasks',
+      icon: CheckSquare,
+      title: 'Tasks',
+      subtitle: stats.tasksToday > 0 ? `${stats.tasksToday} due today` : 'All caught up!',
+      value: stats.tasksToday > 0 ? stats.tasksToday : undefined,
+      color: 'hsl(var(--primary))',
+      highlight: stats.tasksToday > 3
+    });
+    
+    // Goals - always show
+    cards.push({
+      id: 'goals',
+      icon: Target,
+      title: 'Goals',
+      subtitle: stats.activeGoals > 0 ? 'Track your progress' : 'Set a new goal',
+      value: stats.activeGoals > 0 ? stats.activeGoals : undefined,
+      color: 'hsl(200 70% 50%)',
       highlight: false
+    });
+    
+    // Habits - show streak info
+    cards.push({
+      id: 'habits',
+      icon: Flame,
+      title: 'Habits',
+      subtitle: stats.habitStreak > 0 ? `${stats.habitStreak} day streak!` : 'Build your routine',
+      value: stats.habitStreak > 0 ? stats.habitStreak : undefined,
+      color: 'hsl(25 90% 55%)',
+      highlight: stats.habitStreak >= 7
     });
     
     // Calendar - always useful
@@ -281,6 +278,16 @@ export function SimplifiedDashboard({
       title: 'Calendar',
       subtitle: "What's coming up",
       color: 'hsl(260 70% 55%)',
+      highlight: false
+    });
+    
+    // Create Widget - AI widget builder
+    cards.push({
+      id: 'create-widget',
+      icon: Wand2,
+      title: 'Create Widget',
+      subtitle: 'Build with AI',
+      color: 'hsl(280 80% 60%)',
       highlight: false
     });
     
@@ -362,7 +369,13 @@ export function SimplifiedDashboard({
                 value={card.value}
                 color={card.color}
                 highlight={card.highlight}
-                onClick={() => onNavigate?.(card.id)}
+                onClick={() => {
+                  if (card.id === 'create-widget') {
+                    onCreateWidget?.();
+                  } else {
+                    onNavigate?.(card.id);
+                  }
+                }}
               />
             ))}
           </div>
@@ -380,35 +393,6 @@ export function SimplifiedDashboard({
           )}
         </div>
       </ScrollArea>
-
-      {/* Floating Atlas Button - Fixed at Bottom */}
-      <div className={cn(
-        "fixed bottom-6 left-1/2 -translate-x-1/2 z-50",
-        "flex items-center gap-3"
-      )}>
-        <Button
-          size="lg"
-          className={cn(
-            "h-16 px-8 rounded-full shadow-2xl",
-            "bg-gradient-to-r from-primary to-primary/80",
-            "hover:scale-105 active:scale-95 transition-transform",
-            "text-lg font-semibold"
-          )}
-        >
-          <MessageCircle size={24} className="mr-3" />
-          Ask Atlas
-        </Button>
-        <Button
-          size="lg"
-          variant="outline"
-          className={cn(
-            "h-16 w-16 rounded-full shadow-xl",
-            "hover:scale-105 active:scale-95 transition-transform"
-          )}
-        >
-          <Mic size={24} />
-        </Button>
-      </div>
     </div>
   );
 }
