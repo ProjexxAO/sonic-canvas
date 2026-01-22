@@ -108,7 +108,7 @@ import { UnifiedInbox } from './UnifiedInbox';
 import { ConnectPlatformDialog } from '@/components/communications/ConnectPlatformDialog';
 import { useDataConnectors, ConnectorPlatform } from '@/hooks/useDataConnectors';
 import { WidgetCreatorDialog } from './WidgetCreatorDialog';
-import { CustomWidgetRenderer } from './CustomWidgetRenderer';
+import { AgentWidgetRenderer } from './AgentWidgetRenderer';
 import { useCustomWidgets } from '@/hooks/useCustomWidgets';
 
 interface PersonalDataHubProps {
@@ -2285,7 +2285,7 @@ export function PersonalDataHub({ userId }: PersonalDataHubProps) {
           return {
             colSpan: colSpanClass,
             content: (
-              <CustomWidgetRenderer 
+              <AgentWidgetRenderer 
                 widget={customWidget}
                 onDelete={() => {
                   deleteCustomWidget(customWidget.id);
