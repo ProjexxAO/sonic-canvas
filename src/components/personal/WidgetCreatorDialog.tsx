@@ -220,9 +220,9 @@ export function WidgetCreatorDialog({ open, onOpenChange, onWidgetCreated }: Wid
 
           {/* Step: Preview */}
           {step === 'preview' && generatedWidget && (
-            <div className="flex flex-col">
-              <ScrollArea className="max-h-[320px]">
-                <div className="space-y-4 pr-2">
+            <div className="flex flex-col h-full max-h-[60vh]">
+              <ScrollArea className="flex-1 min-h-0">
+                <div className="space-y-4 pr-4">
                   {/* Widget Preview Card */}
                   <div className="p-4 rounded-lg border border-border bg-card">
                     <div className="flex items-start justify-between mb-3">
