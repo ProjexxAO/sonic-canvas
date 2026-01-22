@@ -6,6 +6,30 @@ const corsHeaders = {
   'Access-Control-Allow-Headers': 'authorization, x-client-info, apikey, content-type',
 };
 
+// Retry helper for transient network errors
+async function withRetry<T>(
+  fn: () => Promise<T>,
+  maxRetries = 3,
+  delayMs = 1000
+): Promise<T> {
+  let lastError: Error | null = null;
+  for (let attempt = 0; attempt < maxRetries; attempt++) {
+    try {
+      return await fn();
+    } catch (error) {
+      lastError = error instanceof Error ? error : new Error(String(error));
+      const isTransient = lastError.message.includes('SSL') || 
+                          lastError.message.includes('handshake') ||
+                          lastError.message.includes('connection') ||
+                          lastError.message.includes('network');
+      if (!isTransient || attempt === maxRetries - 1) throw lastError;
+      console.log(`Retry ${attempt + 1}/${maxRetries} after transient error: ${lastError.message}`);
+      await new Promise(r => setTimeout(r, delayMs * (attempt + 1)));
+    }
+  }
+  throw lastError;
+}
+
 interface Task {
   id: string;
   user_id: string;
@@ -55,25 +79,27 @@ Respond in JSON format:
   "next_steps": "What remains to be done if not complete"
 }`;
 
-    const response = await fetch('https://ai.gateway.lovable.dev/v1/chat/completions', {
-      method: 'POST',
-      headers: {
-        'Content-Type': 'application/json',
-        'Authorization': `Bearer ${lovableApiKey}`,
-      },
-      body: JSON.stringify({
-        model: 'google/gemini-2.5-flash',
-        messages: [
-          { role: 'system', content: 'You are Atlas, an AI task processor. Respond only with valid JSON.' },
-          { role: 'user', content: taskPrompt }
-        ],
-        temperature: 0.3,
-      }),
+    const response = await withRetry(async () => {
+      const res = await fetch('https://ai.gateway.lovable.dev/v1/chat/completions', {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+          'Authorization': `Bearer ${lovableApiKey}`,
+        },
+        body: JSON.stringify({
+          model: 'google/gemini-2.5-flash',
+          messages: [
+            { role: 'system', content: 'You are Atlas, an AI task processor. Respond only with valid JSON.' },
+            { role: 'user', content: taskPrompt }
+          ],
+          temperature: 0.3,
+        }),
+      });
+      if (!res.ok) {
+        throw new Error(`AI request failed: ${res.status}`);
+      }
+      return res;
     });
-
-    if (!response.ok) {
-      throw new Error(`AI request failed: ${response.status}`);
-    }
 
     const aiResult = await response.json();
     const content = aiResult.choices?.[0]?.message?.content || '';
