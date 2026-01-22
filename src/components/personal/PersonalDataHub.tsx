@@ -48,6 +48,7 @@ import {
   Star,
   GripVertical,
   Building2,
+  Wand2,
   ArrowUpRight,
   ArrowDownRight,
   PiggyBank,
