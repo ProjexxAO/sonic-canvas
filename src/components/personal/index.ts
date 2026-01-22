@@ -18,6 +18,4 @@ export { GoalProgressTimeline } from './GoalProgressTimeline';
 export { SmartCalendar } from './SmartCalendar';
 export { SmartNudgesWidget } from './SmartNudgesWidget';
 export { LifeBalancePanel } from './LifeBalancePanel';
-
-// New Feature Panels
-export { IntegrationMarketplacePanel } from './IntegrationMarketplacePanel';
+export { IntegrationsTab } from './IntegrationsTab';
