@@ -1,6 +1,6 @@
 // Atlas Right Panel - Context-aware layout for Personal vs Enterprise hubs
 import React, { useRef, useCallback } from 'react';
-import { Activity, Database, Search, Sparkles, Brain, Shield, User, Camera, Phone, Bell, Upload, Image, Settings } from 'lucide-react';
+import { Activity, Database, Search, Sparkles, Brain, Shield, User, Camera, Phone, Bell, Upload, Image, Settings, Plug } from 'lucide-react';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
 import { ScrollArea } from '@/components/ui/scroll-area';
 import { Button } from '@/components/ui/button';
@@ -12,6 +12,7 @@ import { PersonalDataHub } from '@/components/personal/PersonalDataHub';
 import { PhonePanel } from '@/components/personal/PhonePanel';
 import { HubQuickAccess } from '@/components/personal/HubQuickAccess';
 import { NotificationSettingsPanel } from '@/components/personal/NotificationSettingsPanel';
+import { IntegrationsTab } from '@/components/personal/IntegrationsTab';
 import { KnowledgeDiscoveryPanel } from './KnowledgeDiscoveryPanel';
 import { VeracityEvaluationPanel } from './VeracityEvaluationPanel';
 import { AgentTask } from '@/hooks/useAgentOrchestration';
@@ -138,10 +139,17 @@ export function AtlasRightPanel({
                   Camera
                 </TabsTrigger>
                 <TabsTrigger 
+                  value="integrations" 
+                  className="flex items-center gap-1 text-[10px] font-mono data-[state=active]:bg-background data-[state=active]:shadow-sm px-2"
+                >
+                  <Plug size={12} />
+                  Apps
+                </TabsTrigger>
+                <TabsTrigger 
                   value="notifications" 
                   className="flex items-center gap-1 text-[10px] font-mono data-[state=active]:bg-background data-[state=active]:shadow-sm px-2 relative"
                 >
-                  <Bell size={12} />
+                  <Settings size={12} />
                   {unreadCount > 0 && (
                     <Badge variant="destructive" className="ml-1 text-[8px] px-1 py-0 h-3.5">
                       {unreadCount}
@@ -230,6 +238,10 @@ export function AtlasRightPanel({
               </div>
             </TabsContent>
 
+            <TabsContent value="integrations" className="flex-1 mt-0 overflow-hidden flex flex-col min-h-0">
+              <IntegrationsTab hubContext="personal" />
+            </TabsContent>
+
             <TabsContent value="notifications" className="flex-1 mt-0 overflow-hidden flex flex-col min-h-0">
               <div className="flex-1 min-h-0 bg-card/90 border border-border rounded-lg overflow-hidden">
                 <NotificationSettingsPanel />
@@ -267,6 +279,13 @@ export function AtlasRightPanel({
               >
                 <Camera size={12} />
                 Camera
+              </TabsTrigger>
+              <TabsTrigger 
+                value="integrations" 
+                className="flex items-center gap-1 text-[10px] font-mono data-[state=active]:bg-background data-[state=active]:shadow-sm px-3"
+              >
+                <Plug size={12} />
+                Apps
               </TabsTrigger>
               <TabsTrigger 
                 value="notifications" 
@@ -383,6 +402,10 @@ export function AtlasRightPanel({
                 </div>
               </ScrollArea>
             </div>
+          </TabsContent>
+
+          <TabsContent value="integrations" className="flex-1 mt-0 overflow-hidden flex flex-col min-h-0">
+            <IntegrationsTab hubContext="personal" />
           </TabsContent>
 
           <TabsContent value="notifications" className="flex-1 mt-0 overflow-hidden flex flex-col min-h-0">

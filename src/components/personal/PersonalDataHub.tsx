@@ -99,7 +99,6 @@ import { SmartCalendar } from './SmartCalendar';
 import { SmartNudgesWidget } from './SmartNudgesWidget';
 import { LifeBalancePanel } from './LifeBalancePanel';
 import { UniversalOrchestrationPanel } from '@/components/atlas/UniversalOrchestrationPanel';
-import { IntegrationMarketplacePanel } from './IntegrationMarketplacePanel';
 
 interface PersonalDataHubProps {
   userId: string | undefined;
@@ -458,7 +457,6 @@ export function PersonalDataHub({ userId }: PersonalDataHubProps) {
       ...shortcutWidgets,
       'stat-today', 'stat-streak', 'stat-items',
       'widget-orchestration', // Universal Atlas Orchestration
-      'widget-integrations', // Integration marketplace (only new widget - others merged into existing)
       'widget-nudges',
       'widget-life-balance',
       'widget-atlas-brief', 'widget-wellness', 'widget-focus',
@@ -485,11 +483,7 @@ export function PersonalDataHub({ userId }: PersonalDataHubProps) {
   const [selectedActions, setSelectedActions] = useState<string[]>(['tasks', 'goals', 'habits', 'email', 'photos', 'finance']);
   
   // Sync local state from database preferences
-  // Define new feature widgets that should be migrated to existing users
-  // Only Integration Marketplace - others merged into existing components (Focus Timer has ADHD mode now)
-  const NEW_FEATURE_WIDGETS = useMemo(() => [
-    'widget-integrations'
-  ], []);
+  // No new feature widgets to migrate - integrations moved to tab panel
 
   useEffect(() => {
     if (!isPrefsLoading) {
@@ -522,19 +516,9 @@ export function PersonalDataHub({ userId }: PersonalDataHubProps) {
           needsSave = true;
         }
         
-        // Migrate: Add new feature widgets if they don't exist in saved order
-        const missingWidgets = NEW_FEATURE_WIDGETS.filter(w => !order.includes(w));
-        if (missingWidgets.length > 0) {
-          // Insert after widget-orchestration or at a sensible position
-          const orchestrationIndex = order.indexOf('widget-orchestration');
-          const insertIndex = orchestrationIndex !== -1 ? orchestrationIndex + 1 : order.indexOf('widget-nudges');
-          const finalInsertIndex = insertIndex !== -1 ? insertIndex : order.length;
-          
-          order = [
-            ...order.slice(0, finalInsertIndex),
-            ...missingWidgets,
-            ...order.slice(finalInsertIndex)
-          ];
+        // Remove widget-integrations if it exists (moved to tab panel)
+        if (order.includes('widget-integrations')) {
+          order = order.filter(id => id !== 'widget-integrations');
           needsSave = true;
         }
         
@@ -550,7 +534,7 @@ export function PersonalDataHub({ userId }: PersonalDataHubProps) {
       
       setSelectedActions(dashboardPrefs.selected_shortcuts);
     }
-  }, [isPrefsLoading, dashboardPrefs.widget_order, dashboardPrefs.selected_shortcuts, NEW_FEATURE_WIDGETS]);
+  }, [isPrefsLoading, dashboardPrefs.widget_order, dashboardPrefs.selected_shortcuts]);
   
   // Sync widget order when selectedActions changes (add new shortcuts, remove old ones)
   useEffect(() => {
@@ -1987,15 +1971,6 @@ export function PersonalDataHub({ userId }: PersonalDataHubProps) {
         return {
           colSpan: 'col-span-6',
           content: <UniversalOrchestrationPanel compact />
-        };
-      case 'widget-integrations':
-        return {
-          colSpan: 'col-span-6',
-          content: <IntegrationMarketplacePanel compact onRemove={() => removeWidget('widget-integrations')} />
-        };
-        return {
-          colSpan: 'col-span-3',
-          content: <IntegrationMarketplacePanel compact onRemove={() => removeWidget('widget-integrations')} />
         };
 
       // Quick add - full width
