@@ -59,7 +59,8 @@ import {
   Search,
   Globe,
   Loader2,
-  Link as LinkIcon
+  Link as LinkIcon,
+  Plug
 } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { ScrollArea } from '@/components/ui/scroll-area';
@@ -86,6 +87,7 @@ import { useUserPhotos, PHOTO_CATEGORIES, SOCIAL_PLATFORMS } from '@/hooks/useUs
 import { useQuickActionPreferences } from '@/hooks/useQuickActionPreferences';
 import { useDashboardPreferences } from '@/hooks/useDashboardPreferences';
 import { useIsMobile } from '@/hooks/use-mobile';
+import { useIntegrationSurfaces } from '@/hooks/useIntegrationSurfaces';
 import { supabase } from '@/integrations/supabase/client';
 import { cn } from '@/lib/utils';
 import { toast } from 'sonner';
@@ -99,6 +101,7 @@ import { SmartCalendar } from './SmartCalendar';
 import { SmartNudgesWidget } from './SmartNudgesWidget';
 import { LifeBalancePanel } from './LifeBalancePanel';
 import { UniversalOrchestrationPanel } from '@/components/atlas/UniversalOrchestrationPanel';
+import { IntegrationQuickActions, IntegrationSurfaceSummary } from './IntegrationSurfaceWidget';
 
 interface PersonalDataHubProps {
   userId: string | undefined;
@@ -455,6 +458,7 @@ export function PersonalDataHub({ userId }: PersonalDataHubProps) {
     return [
       'shortcuts-header', // Draggable header with controls
       ...shortcutWidgets,
+      'widget-connected-apps', // Connected integrations quick actions
       'stat-today', 'stat-streak', 'stat-items',
       'widget-orchestration', // Universal Atlas Orchestration
       'widget-nudges',
@@ -1972,6 +1976,22 @@ export function PersonalDataHub({ userId }: PersonalDataHubProps) {
           colSpan: 'col-span-6',
           content: <UniversalOrchestrationPanel compact />
         };
+      
+      // Connected apps - shows integrations as quick actions
+      case 'widget-connected-apps':
+        return {
+          colSpan: 'col-span-6',
+          content: (
+            <div>
+              <div className="flex items-center justify-between mb-2">
+                <h3 className="text-[10px] font-mono text-muted-foreground flex items-center gap-1">
+                  <Plug size={10} /> CONNECTED APPS
+                </h3>
+              </div>
+              <IntegrationQuickActions hubType="personal" maxItems={8} />
+            </div>
+          )
+        };
 
       // Quick add - full width
       case 'quick-add':
@@ -2001,9 +2021,12 @@ export function PersonalDataHub({ userId }: PersonalDataHubProps) {
           colSpan: 'col-span-6',
           content: (
             <div>
-              <h3 className="text-[10px] font-mono text-muted-foreground mb-2 flex items-center gap-1">
-                <Clock size={10} /> TODAY'S TASKS
-              </h3>
+              <div className="flex items-center justify-between mb-2">
+                <h3 className="text-[10px] font-mono text-muted-foreground flex items-center gap-1">
+                  <Clock size={10} /> TODAY'S TASKS
+                </h3>
+                <IntegrationSurfaceSummary surface="tasks" hubType="personal" />
+              </div>
               <div className="space-y-1.5">
                 {todaysTasks.slice(0, 5).map(task => (
                   <TaskItem key={task.id} item={task} onComplete={() => completeItem(task.id)} onDelete={() => deleteItem(task.id)} />
