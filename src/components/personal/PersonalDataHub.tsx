@@ -596,6 +596,48 @@ export function PersonalDataHub({ userId }: PersonalDataHubProps) {
     });
   }, [selectedActions, isPrefsLoading]);
   
+  // Sync custom widgets to widget order when they're loaded or created
+  useEffect(() => {
+    if (isPrefsLoading || !customWidgets) return;
+    
+    setWidgetOrder(prevOrder => {
+      const currentCustomWidgets = prevOrder.filter(id => id.startsWith('custom-widget-'));
+      const expectedCustomWidgets = customWidgets.map(w => `custom-widget-${w.id}`);
+      
+      const currentSet = new Set(currentCustomWidgets);
+      const expectedSet = new Set(expectedCustomWidgets);
+      
+      const toAdd = expectedCustomWidgets.filter(id => !currentSet.has(id));
+      const toRemove = currentCustomWidgets.filter(id => !expectedSet.has(id));
+      
+      if (toAdd.length === 0 && toRemove.length === 0) {
+        return prevOrder;
+      }
+      
+      // Remove deleted custom widgets
+      let newOrder = prevOrder.filter(id => !toRemove.includes(id));
+      
+      // Add new custom widgets at the end (before goals section)
+      if (toAdd.length > 0) {
+        const goalsIndex = newOrder.indexOf('goals');
+        if (goalsIndex !== -1) {
+          newOrder = [
+            ...newOrder.slice(0, goalsIndex),
+            ...toAdd,
+            ...newOrder.slice(goalsIndex)
+          ];
+        } else {
+          newOrder = [...newOrder, ...toAdd];
+        }
+        
+        // Save updated order to database
+        saveDashboardWidgetOrder(newOrder);
+      }
+      
+      return newOrder;
+    });
+  }, [customWidgets, isPrefsLoading, saveDashboardWidgetOrder]);
+  
   const inputRef = useRef<HTMLInputElement>(null);
   const fileInputRef = useRef<HTMLInputElement>(null);
 
@@ -2227,6 +2269,33 @@ export function PersonalDataHub({ userId }: PersonalDataHubProps) {
             )
           };
         }
+        
+        // Handle custom widgets created with Atlas (format: 'custom-widget-{id}')
+        if (widgetId.startsWith('custom-widget-')) {
+          const customWidgetId = widgetId.replace('custom-widget-', '');
+          const customWidget = customWidgets?.find(w => w.id === customWidgetId);
+          if (!customWidget) return null;
+          
+          // Determine column span based on widget layout (colSpan is a number 1-6)
+          const layoutColSpan = customWidget.layout?.colSpan || 3;
+          const colSpanClass = layoutColSpan >= 5 ? 'col-span-6' 
+            : layoutColSpan >= 3 ? 'col-span-3' 
+            : 'col-span-2';
+          
+          return {
+            colSpan: colSpanClass,
+            content: (
+              <CustomWidgetRenderer 
+                widget={customWidget}
+                onDelete={() => {
+                  deleteCustomWidget(customWidget.id);
+                  removeWidget(widgetId);
+                }}
+              />
+            )
+          };
+        }
+        
         return null;
     }
   }
