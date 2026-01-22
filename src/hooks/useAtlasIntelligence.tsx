@@ -203,7 +203,53 @@ export function useAtlasIntelligence() {
   const [heldMessages, setHeldMessages] = useState<UnifiedMessage[]>([]);
   const [inferredMood, setInferredMood] = useState<InferredMood | null>(null);
 
-  // Load saved state from localStorage
+  // Fetch real communications from database
+  const fetchRealMessages = useCallback(async () => {
+    if (!user?.id) return;
+    
+    try {
+      // Fetch from csuite_communications table (synced emails)
+      const { data: commsData, error } = await supabase
+        .from('csuite_communications')
+        .select('*')
+        .eq('user_id', user.id)
+        .order('sent_at', { ascending: false })
+        .limit(100);
+      
+      if (error) {
+        console.error('Error fetching communications:', error);
+        return;
+      }
+      
+      if (commsData && commsData.length > 0) {
+        // Convert database records to UnifiedMessage format
+        const messages: UnifiedMessage[] = commsData.map(comm => ({
+          id: comm.id,
+          platform: 'email' as const,
+          sender: comm.from_address || 'Unknown',
+          subject: comm.subject || undefined,
+          preview: comm.content?.substring(0, 200) || '',
+          fullContent: comm.content || undefined,
+          timestamp: new Date(comm.sent_at || comm.created_at),
+          isRead: false, // Would need a read status field
+          category: 'work' as MessageCategory, // Would categorize with AI
+          hubType: 'personal' as HubType,
+          urgencyScore: 50,
+          sentiment: 'neutral' as const,
+        }));
+        
+        setUnifiedInbox(messages);
+        return;
+      }
+    } catch (e) {
+      console.error('Error fetching real messages:', e);
+    }
+    
+    // Fallback to mock messages if no real data
+    setUnifiedInbox(generateMockMessages());
+  }, [user?.id]);
+
+  // Load saved state from localStorage and fetch messages
   useEffect(() => {
     if (!user) return;
     
@@ -238,9 +284,9 @@ export function useAtlasIntelligence() {
       }
     }
     
-    // Load mock messages
-    setUnifiedInbox(generateMockMessages());
-  }, [user]);
+    // Fetch real messages from database (falls back to mock if none)
+    fetchRealMessages();
+  }, [user, fetchRealMessages]);
 
   // Listen for mood updates from Atlas voice agent
   useEffect(() => {
