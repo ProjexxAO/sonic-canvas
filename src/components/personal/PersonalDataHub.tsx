@@ -98,6 +98,7 @@ import { GoalProgressTimeline } from './GoalProgressTimeline';
 import { SmartCalendar } from './SmartCalendar';
 import { SmartNudgesWidget } from './SmartNudgesWidget';
 import { LifeBalancePanel } from './LifeBalancePanel';
+import { UniversalOrchestrationPanel } from '@/components/atlas/UniversalOrchestrationPanel';
 
 interface PersonalDataHubProps {
   userId: string | undefined;
@@ -455,6 +456,7 @@ export function PersonalDataHub({ userId }: PersonalDataHubProps) {
       'shortcuts-header', // Draggable header with controls
       ...shortcutWidgets,
       'stat-today', 'stat-streak', 'stat-items',
+      'widget-orchestration', // Universal Atlas Orchestration
       'widget-nudges',
       'widget-life-balance',
       'widget-atlas-brief', 'widget-wellness', 'widget-focus',
@@ -1940,6 +1942,11 @@ export function PersonalDataHub({ userId }: PersonalDataHubProps) {
         return {
           colSpan: 'col-span-6',
           content: <LifeBalancePanel compact />
+        };
+      case 'widget-orchestration':
+        return {
+          colSpan: 'col-span-6',
+          content: <UniversalOrchestrationPanel compact />
         };
 
       // Quick add - full width
