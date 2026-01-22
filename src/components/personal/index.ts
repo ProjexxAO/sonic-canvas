@@ -19,3 +19,4 @@ export { SmartCalendar } from './SmartCalendar';
 export { SmartNudgesWidget } from './SmartNudgesWidget';
 export { LifeBalancePanel } from './LifeBalancePanel';
 export { IntegrationsTab } from './IntegrationsTab';
+export { IntegrationSurfaceWidget, IntegrationQuickActions, IntegrationSurfaceSummary } from './IntegrationSurfaceWidget';
