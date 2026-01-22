@@ -15,3 +15,4 @@ export { WellnessWidget } from './WellnessWidget';
 export { FocusTimerWidget } from './FocusTimerWidget';
 export { HabitStreakChart } from './HabitStreakChart';
 export { GoalProgressTimeline } from './GoalProgressTimeline';
+export { SmartCalendar } from './SmartCalendar';
