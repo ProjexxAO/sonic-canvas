@@ -801,6 +801,40 @@ export function AtlasProvider({ children }: AtlasProviderProps) {
         return `Displayed ${toastType} notification: ${params.title}`;
       },
 
+      // Evaluate user mood based on conversation cues
+      evaluateUserMood: (params: { mood: string; reasoning?: string }) => {
+        const moodMap: Record<string, string> = {
+          'great': 'great', 'excellent': 'great', 'amazing': 'great', 'fantastic': 'great',
+          'good': 'good', 'fine': 'good', 'well': 'good', 'nice': 'good',
+          'okay': 'okay', 'ok': 'okay', 'alright': 'okay', 'meh': 'okay', 'neutral': 'okay',
+          'low': 'low', 'tired': 'low', 'down': 'low', 'sad': 'low',
+          'struggling': 'struggling', 'bad': 'struggling', 'stressed': 'struggling', 'overwhelmed': 'struggling', 'terrible': 'struggling',
+        };
+        
+        const normalizedMood = moodMap[params.mood.toLowerCase()] || 'okay';
+        
+        // Dispatch event to update mood in the intelligence layer
+        window.dispatchEvent(new CustomEvent('atlas-mood-update', {
+          detail: { 
+            mood: normalizedMood, 
+            reasoning: params.reasoning || `Evaluated during conversation: ${params.mood}`,
+            source: 'conversation'
+          }
+        }));
+        
+        addLogRef.current('evaluateUserMood', params, `Mood: ${normalizedMood}`, 'success');
+        toast.info(`Atlas noted your mood: ${normalizedMood}`);
+        return `I've noted that you seem to be feeling ${normalizedMood}. ${params.reasoning ? `(${params.reasoning})` : ''} This helps me provide better support.`;
+      },
+
+      // Get current wellness status
+      getWellnessStatus: () => {
+        // Dispatch event to request wellness data
+        window.dispatchEvent(new CustomEvent('atlas-request-wellness'));
+        addLogRef.current('getWellnessStatus', {}, 'Wellness status requested', 'success');
+        return 'Checking your wellness status based on activity patterns...';
+      },
+
       // System status (use refs for stability)
       getSystemStatus: () => {
         addLogRef.current('getSystemStatus', {}, 'Status retrieved', 'success');
