@@ -491,11 +491,20 @@ export function PersonalDataHub({ userId }: PersonalDataHubProps) {
   const [selectedActions, setSelectedActions] = useState<string[]>(['tasks', 'goals', 'habits', 'email', 'photos', 'finance']);
   
   // Sync local state from database preferences
+  // Define new feature widgets that should be migrated to existing users
+  const NEW_FEATURE_WIDGETS = useMemo(() => [
+    'widget-agent-builder',
+    'widget-auto-scheduler', 
+    'widget-focus-modes',
+    'widget-integrations'
+  ], []);
+
   useEffect(() => {
     if (!isPrefsLoading) {
       // Apply widget order from database, or migrate old format
       if (dashboardPrefs.widget_order.length > 0) {
         let order = [...dashboardPrefs.widget_order];
+        let needsSave = false;
         
         // Migrate from old 'shortcuts' format
         if (order.includes('shortcuts')) {
@@ -507,7 +516,7 @@ export function PersonalDataHub({ userId }: PersonalDataHubProps) {
             ...shortcutWidgets,
             ...order.slice(shortcutsIndex + 1)
           ];
-          saveDashboardWidgetOrder(order);
+          needsSave = true;
         }
         
         // Ensure shortcuts-header exists
@@ -518,6 +527,27 @@ export function PersonalDataHub({ userId }: PersonalDataHubProps) {
             'shortcuts-header',
             ...order.slice(firstShortcutIndex)
           ];
+          needsSave = true;
+        }
+        
+        // Migrate: Add new feature widgets if they don't exist in saved order
+        const missingWidgets = NEW_FEATURE_WIDGETS.filter(w => !order.includes(w));
+        if (missingWidgets.length > 0) {
+          // Insert after widget-orchestration or at a sensible position
+          const orchestrationIndex = order.indexOf('widget-orchestration');
+          const insertIndex = orchestrationIndex !== -1 ? orchestrationIndex + 1 : order.indexOf('widget-nudges');
+          const finalInsertIndex = insertIndex !== -1 ? insertIndex : order.length;
+          
+          order = [
+            ...order.slice(0, finalInsertIndex),
+            ...missingWidgets,
+            ...order.slice(finalInsertIndex)
+          ];
+          needsSave = true;
+        }
+        
+        if (needsSave) {
+          saveDashboardWidgetOrder(order);
         }
         
         setWidgetOrder(order);
@@ -528,7 +558,7 @@ export function PersonalDataHub({ userId }: PersonalDataHubProps) {
       
       setSelectedActions(dashboardPrefs.selected_shortcuts);
     }
-  }, [isPrefsLoading, dashboardPrefs.widget_order, dashboardPrefs.selected_shortcuts]);
+  }, [isPrefsLoading, dashboardPrefs.widget_order, dashboardPrefs.selected_shortcuts, NEW_FEATURE_WIDGETS]);
   
   // Sync widget order when selectedActions changes (add new shortcuts, remove old ones)
   useEffect(() => {
