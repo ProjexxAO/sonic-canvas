@@ -47,6 +47,7 @@ import { useBanking } from '@/hooks/useBanking';
 import { cn } from '@/lib/utils';
 import { supabase } from '@/integrations/supabase/client';
 import { toast } from 'sonner';
+import { useAuth } from '@/hooks/useAuth';
 
 interface AgentWidgetRendererProps {
   widget: CustomWidget;
@@ -90,6 +91,7 @@ export function AgentWidgetRenderer({
   onEdit, 
   onDelete 
 }: AgentWidgetRendererProps) {
+  const { user } = useAuth();
   const { items: tasks, goals, habits, createItem, updateItem } = usePersonalHub();
   const { accounts, transactions } = useBanking();
   
@@ -137,6 +139,7 @@ export function AgentWidgetRenderer({
       const { data, error } = await supabase.functions.invoke('atlas-orchestrator', {
         body: {
           action: 'widget_initialize',
+          userId: user?.id,
           widgetConfig: {
             name: widget.name,
             description: widget.description,
@@ -209,7 +212,8 @@ export function AgentWidgetRenderer({
       context.habits = {
         total: habits.length,
         completedToday: habits.filter(h => h.last_completed_at?.split('T')[0] === today).length,
-        items: habits.slice(0, 3).map(h => ({ id: h.id, name: h.name, streak: h.current_streak })),
+        // Cast defensively here to avoid type mismatches from mixed upstream shapes
+        items: habits.slice(0, 3).map((h: any) => ({ id: h.id, name: h.name ?? h.title, streak: h.current_streak })),
       };
     }
     
@@ -260,6 +264,7 @@ export function AgentWidgetRenderer({
       const { data, error } = await supabase.functions.invoke('atlas-orchestrator', {
         body: {
           action: 'widget_execute',
+          userId: user?.id,
           widgetConfig: {
             name: widget.name,
             description: widget.description,

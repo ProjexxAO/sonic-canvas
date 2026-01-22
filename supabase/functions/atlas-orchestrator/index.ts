@@ -61,6 +61,44 @@ serve(async (req) => {
     
     const supabase = createClient(supabaseUrl, supabaseKey);
 
+    // Helper: call Lovable AI gateway with consistent error handling
+    const callAIGateway = async (messages: Array<{ role: string; content: string }>) => {
+      const aiResponse = await fetch('https://ai.gateway.lovable.dev/v1/chat/completions', {
+        method: 'POST',
+        headers: {
+          'Authorization': `Bearer ${lovableApiKey}`,
+          'Content-Type': 'application/json',
+        },
+        body: JSON.stringify({
+          model: 'google/gemini-3-flash-preview',
+          messages,
+        }),
+      });
+
+      if (!aiResponse.ok) {
+        // Mirror existing behavior used by `chat`
+        if (aiResponse.status === 429) {
+          return { status: 429, body: { error: 'Rate limit exceeded. Please try again later.' } };
+        }
+        if (aiResponse.status === 402) {
+          return { status: 402, body: { error: 'Usage credits exhausted. Please add credits.' } };
+        }
+        const errorText = await aiResponse.text();
+        console.error('AI gateway error:', aiResponse.status, errorText);
+        return { status: 500, body: { error: 'AI gateway error' } };
+      }
+
+      const aiData = await aiResponse.json();
+      const response = aiData?.choices?.[0]?.message?.content ?? '';
+      return { status: 200, body: { response } };
+    };
+
+    // Helper: resolve userId for request. For widget actions we require userId explicitly.
+    // (Auth helper methods are not available in this edge runtime typing; callers must pass userId.)
+    const resolveRequestUserId = async (): Promise<string | null> => {
+      return userId || null;
+    };
+
     // =============================================
     // UI PREFERENCES ACTIONS
     // =============================================
@@ -417,6 +455,95 @@ Respond naturally and helpfully. If the user references something from a previou
         response,
         hasContext: conversationContext.length > 0
       }), {
+        headers: { ...corsHeaders, 'Content-Type': 'application/json' },
+      });
+    }
+
+    // =============================================
+    // WIDGET AGENT ACTIONS (Agent Widgets)
+    // =============================================
+
+    if (action === 'widget_initialize') {
+      const effectiveUserId = await resolveRequestUserId();
+      if (!effectiveUserId) {
+        return new Response(JSON.stringify({ error: 'Unauthorized' }), {
+          status: 401,
+          headers: { ...corsHeaders, 'Content-Type': 'application/json' },
+        });
+      }
+
+      const widgetConfig = body.widgetConfig || {};
+      const widgetContext = body.context || {};
+      const message = body.message || query || `Initialize widget: ${widgetConfig?.name || 'Agent Widget'}`;
+
+      const systemPrompt = `You are an Agent Widget inside Atlas OS.
+You will speak concisely and stay aligned with the widget's purpose.
+
+Widget name: ${widgetConfig?.name || 'Agent Widget'}
+Widget purpose: ${widgetConfig?.purpose || widgetConfig?.description || 'Assist the user'}
+Capabilities: ${(widgetConfig?.capabilities || []).join(', ') || 'general assistance'}
+Data sources: ${(widgetConfig?.dataSources || []).join(', ') || 'none'}
+Agent chain: ${(widgetConfig?.agentChain || []).join(', ') || 'not specified'}
+
+Rules:
+- Do NOT mention internal systems, database, or authentication.
+- Provide a short welcome plus a single suggested first command.
+`;
+
+      const result = await callAIGateway([
+        { role: 'system', content: systemPrompt },
+        { role: 'user', content: `${message}\n\nContext:\n${JSON.stringify(widgetContext)}` },
+      ]);
+
+      return new Response(JSON.stringify(result.body), {
+        status: result.status,
+        headers: { ...corsHeaders, 'Content-Type': 'application/json' },
+      });
+    }
+
+    if (action === 'widget_execute') {
+      const effectiveUserId = await resolveRequestUserId();
+      if (!effectiveUserId) {
+        return new Response(JSON.stringify({ error: 'Unauthorized' }), {
+          status: 401,
+          headers: { ...corsHeaders, 'Content-Type': 'application/json' },
+        });
+      }
+
+      const widgetConfig = body.widgetConfig || {};
+      const widgetContext = body.context || {};
+      const conversationHistory = Array.isArray(body.conversationHistory) ? body.conversationHistory : [];
+      const message = body.message || query || '';
+
+      const systemPrompt = `You are an Agent Widget inside Atlas OS, acting as a mini-orchestrator.
+
+Widget name: ${widgetConfig?.name || 'Agent Widget'}
+Widget purpose: ${widgetConfig?.purpose || widgetConfig?.description || 'Assist the user'}
+Capabilities: ${(widgetConfig?.capabilities || []).join(', ') || 'general assistance'}
+Data sources: ${(widgetConfig?.dataSources || []).join(', ') || 'none'}
+Agent chain: ${(widgetConfig?.agentChain || []).join(', ') || 'not specified'}
+
+You MUST:
+- Produce an actionable response tailored to the user's request and the widget's purpose.
+- When appropriate, output a short numbered plan (max 5 steps).
+- Ask ONE clarifying question only if required to proceed.
+
+You MUST NOT:
+- Mention internal tooling, storage/auth, or implementation details.
+`;
+
+      const messages = [
+        { role: 'system', content: systemPrompt },
+        // Provide compact context
+        { role: 'user', content: `Widget context (read-only):\n${JSON.stringify(widgetContext)}` },
+        ...conversationHistory,
+        { role: 'user', content: message },
+      ];
+
+      const result = await callAIGateway(messages);
+
+      return new Response(JSON.stringify(result.body), {
+        status: result.status,
         headers: { ...corsHeaders, 'Content-Type': 'application/json' },
       });
     }
