@@ -268,13 +268,49 @@ export function ConnectPlatformDialog({
     setStep('authorize');
   };
 
-  const handleAuthorize = () => {
+  const handleAuthorize = async () => {
+    if (!selectedPlatform) return;
+    
+    // For Google platforms (gmail, gdrive, calendar), use real OAuth
+    const googlePlatforms = ['gmail', 'gdrive', 'calendar'];
+    if (googlePlatforms.includes(selectedPlatform.id)) {
+      setIsLoading(true);
+      try {
+        // Call the OAuth initiate edge function
+        const { supabase } = await import('@/integrations/supabase/client');
+        const { data, error } = await supabase.functions.invoke('google-oauth-initiate', {
+          body: { platform: selectedPlatform.id },
+        });
+        
+        if (error) {
+          console.error('OAuth initiate error:', error);
+          toast.error('Failed to start OAuth flow');
+          setIsLoading(false);
+          return;
+        }
+        
+        if (data?.auth_url) {
+          // Redirect to Google OAuth
+          window.location.href = data.auth_url;
+          return; // Page will redirect
+        } else {
+          toast.error('Failed to get OAuth URL');
+          setIsLoading(false);
+        }
+      } catch (error) {
+        console.error('OAuth error:', error);
+        toast.error('Failed to connect');
+        setIsLoading(false);
+      }
+      return;
+    }
+    
+    // For non-Google platforms, use the simulated flow
     if (!email.includes('@')) {
       toast.error('Please enter a valid email address');
       return;
     }
     setIsLoading(true);
-    // Simulate OAuth flow - in production this would redirect to OAuth provider
     setTimeout(() => {
       setIsLoading(false);
       setStep('success');
@@ -500,31 +536,46 @@ export function ConnectPlatformDialog({
                 </div>
               </div>
 
-              <div className="space-y-3">
-                <div className="space-y-2">
-                  <Label htmlFor="email">Email Address *</Label>
-                  <Input
-                    id="email"
-                    type="email"
-                    placeholder={`your.email@${selectedPlatform.id === 'gmail' ? 'gmail.com' : 'outlook.com'}`}
-                    value={email}
-                    onChange={(e) => setEmail(e.target.value)}
-                    disabled={isLoading}
-                  />
+              {/* For Google platforms, show OAuth-specific message */}
+              {['gmail', 'gdrive', 'calendar'].includes(selectedPlatform.id) ? (
+                <div className="space-y-3">
+                  <div className="p-4 rounded-lg bg-blue-500/10 border border-blue-500/20">
+                    <p className="text-sm font-medium text-blue-600 dark:text-blue-400">
+                      You'll be redirected to Google to authorize access
+                    </p>
+                    <p className="text-xs text-muted-foreground mt-1">
+                      Sign in with your Google account and grant the requested permissions.
+                      You'll be redirected back here when complete.
+                    </p>
+                  </div>
                 </div>
+              ) : (
+                <div className="space-y-3">
+                  <div className="space-y-2">
+                    <Label htmlFor="email">Email Address *</Label>
+                    <Input
+                      id="email"
+                      type="email"
+                      placeholder={`your.email@${selectedPlatform.id === 'gmail' ? 'gmail.com' : 'outlook.com'}`}
+                      value={email}
+                      onChange={(e) => setEmail(e.target.value)}
+                      disabled={isLoading}
+                    />
+                  </div>
 
-                <div className="space-y-2">
-                  <Label htmlFor="accountName">Account Label (optional)</Label>
-                  <Input
-                    id="accountName"
-                    type="text"
-                    placeholder="e.g., Work Email, Personal"
-                    value={accountName}
-                    onChange={(e) => setAccountName(e.target.value)}
-                    disabled={isLoading}
-                  />
+                  <div className="space-y-2">
+                    <Label htmlFor="accountName">Account Label (optional)</Label>
+                    <Input
+                      id="accountName"
+                      type="text"
+                      placeholder="e.g., Work Email, Personal"
+                      value={accountName}
+                      onChange={(e) => setAccountName(e.target.value)}
+                      disabled={isLoading}
+                    />
+                  </div>
                 </div>
-              </div>
+              )}
 
               <div className="space-y-2 p-3 rounded-lg bg-muted/50">
                 <p className="text-xs font-medium">Atlas will request access to:</p>
@@ -547,6 +598,11 @@ export function ConnectPlatformDialog({
                     <>
                       <Loader2 size={16} className="mr-2 animate-spin" />
                       Connecting...
+                    </>
+                  ) : ['gmail', 'gdrive', 'calendar'].includes(selectedPlatform.id) ? (
+                    <>
+                      Sign in with Google
+                      <ExternalLink size={14} className="ml-2" />
                     </>
                   ) : (
                     <>
