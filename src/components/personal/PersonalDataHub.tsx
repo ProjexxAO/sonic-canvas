@@ -1975,6 +1975,11 @@ export function PersonalDataHub({ userId }: PersonalDataHubProps) {
                               <button
                                 onClick={(e) => {
                                   e.stopPropagation();
+                                  // For custom widgets, also deactivate in database
+                                  if (widget.id.startsWith('custom-widget-')) {
+                                    const customWidgetId = widget.id.replace('custom-widget-', '');
+                                    deleteCustomWidget(customWidgetId);
+                                  }
                                   removeWidget(widget.id);
                                 }}
                                 className="p-0.5 rounded bg-muted/80 hover:bg-destructive/20 hover:text-destructive transition-colors"
