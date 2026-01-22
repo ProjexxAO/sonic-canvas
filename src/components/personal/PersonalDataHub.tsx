@@ -99,6 +99,10 @@ import { SmartCalendar } from './SmartCalendar';
 import { SmartNudgesWidget } from './SmartNudgesWidget';
 import { LifeBalancePanel } from './LifeBalancePanel';
 import { UniversalOrchestrationPanel } from '@/components/atlas/UniversalOrchestrationPanel';
+import { AgentBuilderPanel } from './AgentBuilderPanel';
+import { FocusModesPanel } from './FocusModesPanel';
+import { IntegrationMarketplacePanel } from './IntegrationMarketplacePanel';
+import { AutoSchedulerPanel } from './AutoSchedulerPanel';
 
 interface PersonalDataHubProps {
   userId: string | undefined;
@@ -457,6 +461,10 @@ export function PersonalDataHub({ userId }: PersonalDataHubProps) {
       ...shortcutWidgets,
       'stat-today', 'stat-streak', 'stat-items',
       'widget-orchestration', // Universal Atlas Orchestration
+      'widget-agent-builder', // No-code agent builder
+      'widget-auto-scheduler', // Auto-rescheduling calendar
+      'widget-focus-modes', // ADHD/Focus modes
+      'widget-integrations', // Integration marketplace
       'widget-nudges',
       'widget-life-balance',
       'widget-atlas-brief', 'widget-wellness', 'widget-focus',
@@ -603,6 +611,16 @@ export function PersonalDataHub({ userId }: PersonalDataHubProps) {
       return newActions;
     });
   }, [actionPrefs.customOrder, setCustomOrder, saveDashboardShortcuts]);
+
+  // Remove a widget from the dashboard
+  const removeWidget = useCallback((widgetId: string) => {
+    setWidgetOrder(prev => {
+      const newOrder = prev.filter(id => id !== widgetId);
+      saveDashboardWidgetOrder(newOrder);
+      return newOrder;
+    });
+    toast.success('Widget removed from dashboard');
+  }, [saveDashboardWidgetOrder]);
 
   const handleShortcutClick = useCallback((actionId: string) => {
     // Record usage for smart sorting
@@ -1947,6 +1965,26 @@ export function PersonalDataHub({ userId }: PersonalDataHubProps) {
         return {
           colSpan: 'col-span-6',
           content: <UniversalOrchestrationPanel compact />
+        };
+      case 'widget-agent-builder':
+        return {
+          colSpan: 'col-span-3',
+          content: <AgentBuilderPanel compact onRemove={() => removeWidget('widget-agent-builder')} />
+        };
+      case 'widget-auto-scheduler':
+        return {
+          colSpan: 'col-span-3',
+          content: <AutoSchedulerPanel compact onRemove={() => removeWidget('widget-auto-scheduler')} />
+        };
+      case 'widget-focus-modes':
+        return {
+          colSpan: 'col-span-3',
+          content: <FocusModesPanel compact onRemove={() => removeWidget('widget-focus-modes')} />
+        };
+      case 'widget-integrations':
+        return {
+          colSpan: 'col-span-3',
+          content: <IntegrationMarketplacePanel compact onRemove={() => removeWidget('widget-integrations')} />
         };
 
       // Quick add - full width
