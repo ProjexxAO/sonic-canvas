@@ -64,10 +64,19 @@ export function WellnessWidget({ className, compact = false }: WellnessWidgetPro
   const [energyLevel, setEnergyLevel] = useState<number>(3);
   const [isAnalyzing, setIsAnalyzing] = useState(false);
 
-  // Check stress on mount
+  // Check stress and auto-evaluate mood on mount (passive evaluation)
   useEffect(() => {
     checkStressLevels();
-  }, [checkStressLevels]);
+    
+    // Auto-infer mood if not already set for today
+    if (!inferredMood) {
+      // Small delay to let stress data load first
+      const timer = setTimeout(() => {
+        inferMoodFromActivity();
+      }, 500);
+      return () => clearTimeout(timer);
+    }
+  }, [checkStressLevels, inferredMood, inferMoodFromActivity]);
 
   // Life balance areas (calculated based on activity)
   const lifeAreas: LifeArea[] = [
