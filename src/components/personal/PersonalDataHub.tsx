@@ -1815,20 +1815,6 @@ export function PersonalDataHub({ userId }: PersonalDataHubProps) {
               <FocusTimerWidget compact />
             </div>
 
-            {/* Quick Add Task */}
-            <div className="flex gap-2">
-              <Input
-                ref={inputRef}
-                placeholder="Quick add task..."
-                value={newTaskTitle}
-                onChange={(e) => setNewTaskTitle(e.target.value)}
-                onKeyDown={(e) => e.key === 'Enter' && handleQuickAddTask()}
-                className="h-8 text-sm"
-              />
-              <Button size="sm" className="h-8 px-3" onClick={handleQuickAddTask} disabled={!newTaskTitle.trim()}>
-                <Plus size={14} />
-              </Button>
-            </div>
 
             {/* Today's Tasks */}
             {todaysTasks.length > 0 && (
