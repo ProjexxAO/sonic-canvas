@@ -1,4 +1,5 @@
 // Smart Calendar Component - Unified cross-hub calendar with predictive scheduling
+// Now includes Atlas Life tab for work-life balance management
 import React, { useState, useMemo } from 'react';
 import { 
   Calendar as CalendarIcon, 
@@ -16,7 +17,13 @@ import {
   Eye,
   EyeOff,
   Brain,
-  Layers
+  Layers,
+  Heart,
+  Plane,
+  DollarSign,
+  Check,
+  Dumbbell,
+  Moon
 } from 'lucide-react';
 import { 
   format, 
@@ -41,7 +48,10 @@ import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogTrigger } from 
 import { Input } from '@/components/ui/input';
 import { Textarea } from '@/components/ui/textarea';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
+import { Progress } from '@/components/ui/progress';
 import { useSmartCalendar, UnifiedEvent, FocusBlock, SchedulingSuggestion, EventType } from '@/hooks/useSmartCalendar';
+import { useAtlasLifeManager, AutoBlockSuggestion } from '@/hooks/useAtlasLifeManager';
+import { useFinancialIntelligence } from '@/hooks/useFinancialIntelligence';
 import { toast } from 'sonner';
 
 interface SmartCalendarProps {
@@ -320,10 +330,14 @@ export function SmartCalendar({ className, compact = false }: SmartCalendarProps
         
         {/* Tabs */}
         <Tabs value={activeTab} onValueChange={setActiveTab} className="flex-1 flex flex-col min-h-0">
-          <TabsList className="grid grid-cols-4 mb-3">
+          <TabsList className="grid grid-cols-5 mb-3">
             <TabsTrigger value="calendar" className="text-xs">
               <CalendarIcon size={12} className="mr-1" />
               Calendar
+            </TabsTrigger>
+            <TabsTrigger value="life" className="text-xs">
+              <Heart size={12} className="mr-1" />
+              Atlas Life
             </TabsTrigger>
             <TabsTrigger value="focus" className="text-xs">
               <Brain size={12} className="mr-1" />
@@ -587,6 +601,11 @@ export function SmartCalendar({ className, compact = false }: SmartCalendarProps
             </ScrollArea>
           </TabsContent>
           
+          {/* Atlas Life Tab */}
+          <TabsContent value="life" className="flex-1 min-h-0 mt-0">
+            <AtlasLifeTab />
+          </TabsContent>
+          
           {/* Insights Tab */}
           <TabsContent value="insights" className="flex-1 min-h-0 mt-0">
             <ScrollArea className="h-full pr-2">
@@ -705,6 +724,254 @@ function SuggestionCard({ suggestion }: { suggestion: SchedulingSuggestion }) {
         </div>
       </CardContent>
     </Card>
+  );
+}
+
+// Atlas Life Tab - Work-Life Balance and Financial Intelligence
+function AtlasLifeTab() {
+  const {
+    workLifeBalance,
+    autoBlockSuggestions,
+    vacationPlans,
+    acceptAutoBlock,
+    analyzeWorkLifeBalance,
+    isAnalyzing
+  } = useAtlasLifeManager();
+  
+  const {
+    financialHealth,
+    investmentSuggestions,
+    getAffordableDestinations,
+    isAnalyzing: isAnalyzingFinance
+  } = useFinancialIntelligence();
+
+  const handleAcceptBlock = async (suggestion: AutoBlockSuggestion) => {
+    const success = await acceptAutoBlock(suggestion);
+    if (success) {
+      toast.success(`Blocked ${suggestion.activity.name}`);
+    } else {
+      toast.error('Failed to block time');
+    }
+  };
+
+  const { affordable, reachable } = getAffordableDestinations(7, 1);
+
+  return (
+    <ScrollArea className="h-full pr-2">
+      <div className="space-y-4">
+        {/* Work-Life Balance Score */}
+        {workLifeBalance && (
+          <Card className="border-border/50 bg-card/50">
+            <CardHeader className="pb-2">
+              <CardTitle className="text-sm flex items-center justify-between">
+                <span className="flex items-center gap-2">
+                  <Heart size={14} className="text-pink-400" />
+                  Work-Life Balance
+                </span>
+                <Badge variant="outline" className={cn(
+                  "text-[10px]",
+                  workLifeBalance.balanceScore >= 70 ? "border-green-500/30 text-green-400" :
+                  workLifeBalance.balanceScore >= 50 ? "border-amber-500/30 text-amber-400" : 
+                  "border-red-500/30 text-red-400"
+                )}>
+                  {workLifeBalance.balanceScore}% Score
+                </Badge>
+              </CardTitle>
+            </CardHeader>
+            <CardContent className="space-y-3">
+              <Progress value={workLifeBalance.balanceScore} className="h-2" />
+              
+              <div className="grid grid-cols-2 gap-3 text-xs">
+                <div className="p-2 rounded bg-muted/30">
+                  <div className="text-muted-foreground">Work Hours</div>
+                  <div className="font-medium">{Math.round(workLifeBalance.weeklyWorkHours)}h/week</div>
+                </div>
+                <div className="p-2 rounded bg-muted/30">
+                  <div className="text-muted-foreground">Personal Time</div>
+                  <div className="font-medium">{Math.round(workLifeBalance.weeklyPersonalHours)}h/week</div>
+                </div>
+              </div>
+
+              {/* Alerts */}
+              {workLifeBalance.alerts.length > 0 && (
+                <div className="space-y-2">
+                  {workLifeBalance.alerts.slice(0, 2).map(alert => (
+                    <div key={alert.id} className={cn(
+                      "p-2 rounded text-xs",
+                      alert.severity === 'critical' ? "bg-red-500/10 border border-red-500/20" :
+                      alert.severity === 'warning' ? "bg-amber-500/10 border border-amber-500/20" :
+                      "bg-blue-500/10 border border-blue-500/20"
+                    )}>
+                      <div className="flex items-center gap-1.5 font-medium">
+                        <AlertTriangle size={12} className={
+                          alert.severity === 'critical' ? "text-red-400" :
+                          alert.severity === 'warning' ? "text-amber-400" : "text-blue-400"
+                        } />
+                        {alert.message}
+                      </div>
+                      <p className="text-muted-foreground text-[10px] mt-1">{alert.suggestedAction}</p>
+                    </div>
+                  ))}
+                </div>
+              )}
+            </CardContent>
+          </Card>
+        )}
+
+        {/* Auto-Block Suggestions */}
+        {autoBlockSuggestions.length > 0 && (
+          <Card className="border-border/50 bg-card/50">
+            <CardHeader className="pb-2">
+              <CardTitle className="text-sm flex items-center gap-2">
+                <Zap size={14} className="text-primary" />
+                Atlas Auto-Block Suggestions
+              </CardTitle>
+            </CardHeader>
+            <CardContent className="space-y-2">
+              {autoBlockSuggestions.slice(0, 3).map(suggestion => (
+                <div key={suggestion.id} className="p-2 rounded bg-primary/10 border border-primary/20 flex items-center justify-between">
+                  <div>
+                    <div className="text-xs font-medium flex items-center gap-1.5">
+                      {suggestion.activity.category === 'fitness' && <Dumbbell size={12} className="text-green-400" />}
+                      {suggestion.activity.category === 'family' && <Heart size={12} className="text-pink-400" />}
+                      {suggestion.activity.category === 'rest' && <Moon size={12} className="text-indigo-400" />}
+                      {suggestion.activity.name}
+                    </div>
+                    <div className="text-[10px] text-muted-foreground mt-0.5">
+                      {format(suggestion.suggestedSlot.start, 'EEE, MMM d')} • {format(suggestion.suggestedSlot.start, 'h:mm a')}
+                    </div>
+                    <div className="text-[9px] text-muted-foreground italic mt-0.5">{suggestion.reason}</div>
+                  </div>
+                  <Button 
+                    size="sm" 
+                    className="h-7 text-xs"
+                    onClick={() => handleAcceptBlock(suggestion)}
+                  >
+                    <Check size={12} className="mr-1" />
+                    Block
+                  </Button>
+                </div>
+              ))}
+            </CardContent>
+          </Card>
+        )}
+
+        {/* Financial Intelligence for Vacations */}
+        {financialHealth && (
+          <Card className="border-border/50 bg-card/50">
+            <CardHeader className="pb-2">
+              <CardTitle className="text-sm flex items-center gap-2">
+                <DollarSign size={14} className="text-green-400" />
+                Vacation Budget Intelligence
+              </CardTitle>
+            </CardHeader>
+            <CardContent className="space-y-3">
+              <div className="grid grid-cols-2 gap-3 text-xs">
+                <div className="p-2 rounded bg-green-500/10 border border-green-500/20">
+                  <div className="text-muted-foreground">Available for Travel</div>
+                  <div className="font-medium text-green-400">
+                    ${financialHealth.availableFunds.toLocaleString('en-US', { maximumFractionDigits: 0 })}
+                  </div>
+                </div>
+                <div className="p-2 rounded bg-muted/30">
+                  <div className="text-muted-foreground">Financial Health</div>
+                  <div className="font-medium">{financialHealth.healthScore}%</div>
+                </div>
+              </div>
+
+              {/* Affordable Now */}
+              {affordable.length > 0 && (
+                <div>
+                  <div className="text-[10px] font-mono text-muted-foreground mb-2 flex items-center gap-1">
+                    <Check size={10} className="text-green-400" /> AFFORDABLE NOW (7 days)
+                  </div>
+                  <div className="flex flex-wrap gap-1.5">
+                    {affordable.slice(0, 4).map(dest => (
+                      <Badge key={dest.destination} variant="outline" className="text-[9px] bg-green-500/10 border-green-500/20">
+                        <Plane size={8} className="mr-1" />
+                        {dest.destination} ~${dest.estimatedCost.toLocaleString()}
+                      </Badge>
+                    ))}
+                  </div>
+                </div>
+              )}
+
+              {/* Reachable Soon */}
+              {reachable.length > 0 && (
+                <div>
+                  <div className="text-[10px] font-mono text-muted-foreground mb-2 flex items-center gap-1">
+                    <Target size={10} className="text-amber-400" /> SAVE FOR (next 6 months)
+                  </div>
+                  <div className="space-y-1.5">
+                    {reachable.slice(0, 3).map(dest => (
+                      <div key={dest.destination} className="flex items-center justify-between text-xs p-1.5 rounded bg-amber-500/5 border border-amber-500/10">
+                        <span className="flex items-center gap-1">
+                          <Plane size={10} className="text-amber-400" />
+                          {dest.destination}
+                        </span>
+                        <span className="text-muted-foreground">
+                          ~{Math.ceil(dest.daysToSave / 30)} months
+                        </span>
+                      </div>
+                    ))}
+                  </div>
+                </div>
+              )}
+
+              {/* Investment Suggestions */}
+              {investmentSuggestions.length > 0 && (
+                <div className="pt-2 border-t border-border">
+                  <div className="text-[10px] font-mono text-muted-foreground mb-2">
+                    ATLAS INVESTMENT GUIDANCE
+                  </div>
+                  {investmentSuggestions.slice(0, 2).map(suggestion => (
+                    <div key={suggestion.id} className="p-2 rounded bg-muted/30 text-xs mb-2">
+                      <div className="font-medium flex items-center gap-1.5">
+                        {suggestion.priority === 'high' && <Zap size={10} className="text-primary" />}
+                        {suggestion.title}
+                      </div>
+                      <p className="text-muted-foreground text-[10px] mt-0.5">{suggestion.description}</p>
+                      <div className="flex items-center gap-2 mt-1">
+                        <Badge variant="outline" className="text-[8px]">
+                          ${suggestion.suggestedAmount.toFixed(0)}/mo
+                        </Badge>
+                        <span className="text-[9px] text-muted-foreground">{suggestion.vehicle}</span>
+                      </div>
+                    </div>
+                  ))}
+                </div>
+              )}
+            </CardContent>
+          </Card>
+        )}
+
+        {/* Vacation Plans */}
+        {vacationPlans.length > 0 && (
+          <Card className="border-border/50 bg-card/50">
+            <CardHeader className="pb-2">
+              <CardTitle className="text-sm flex items-center gap-2">
+                <Plane size={14} className="text-cyan-400" />
+                Planned Vacations
+              </CardTitle>
+            </CardHeader>
+            <CardContent className="space-y-2">
+              {vacationPlans.map(plan => (
+                <div key={plan.id} className="p-2 rounded bg-cyan-500/10 border border-cyan-500/20">
+                  <div className="text-xs font-medium">{plan.destination || 'Upcoming Trip'}</div>
+                  <div className="text-[10px] text-muted-foreground">
+                    {format(plan.startDate, 'MMM d')} - {format(plan.endDate, 'MMM d, yyyy')}
+                    <span className="ml-2">({plan.totalDays} days, {plan.workDaysAffected} work days)</span>
+                  </div>
+                  <Badge variant="outline" className="text-[8px] mt-1">
+                    {plan.status.replace('_', ' ')}
+                  </Badge>
+                </div>
+              ))}
+            </CardContent>
+          </Card>
+        )}
+      </div>
+    </ScrollArea>
   );
 }
 

@@ -17,3 +17,4 @@ export { HabitStreakChart } from './HabitStreakChart';
 export { GoalProgressTimeline } from './GoalProgressTimeline';
 export { SmartCalendar } from './SmartCalendar';
 export { SmartNudgesWidget } from './SmartNudgesWidget';
+export { LifeBalancePanel } from './LifeBalancePanel';
