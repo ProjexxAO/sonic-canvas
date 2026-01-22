@@ -60,7 +60,8 @@ import {
   Globe,
   Loader2,
   Link as LinkIcon,
-  Plug
+  Plug,
+  X
 } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { ScrollArea } from '@/components/ui/scroll-area';
@@ -1904,15 +1905,26 @@ export function PersonalDataHub({ userId }: PersonalDataHubProps) {
                               snapshot.isDragging && "opacity-90 shadow-lg z-50 bg-card rounded-lg"
                             )}
                           >
-                            {/* Drag handle */}
-                            <div 
-                              {...provided.dragHandleProps}
-                              className={cn(
-                                "absolute -left-1 top-1 p-0.5 rounded cursor-grab active:cursor-grabbing",
-                                "opacity-0 group-hover:opacity-100 transition-opacity bg-muted/80 hover:bg-muted z-10"
-                              )}
-                            >
-                              <GripVertical size={10} className="text-muted-foreground" />
+                            {/* Widget controls */}
+                            <div className="absolute -left-1 top-1 flex items-center gap-0.5 opacity-0 group-hover:opacity-100 transition-opacity z-10">
+                              {/* Drag handle */}
+                              <div 
+                                {...provided.dragHandleProps}
+                                className="p-0.5 rounded cursor-grab active:cursor-grabbing bg-muted/80 hover:bg-muted"
+                              >
+                                <GripVertical size={10} className="text-muted-foreground" />
+                              </div>
+                              {/* Remove button */}
+                              <button
+                                onClick={(e) => {
+                                  e.stopPropagation();
+                                  removeWidget(widget.id);
+                                }}
+                                className="p-0.5 rounded bg-muted/80 hover:bg-destructive/20 hover:text-destructive transition-colors"
+                                title="Remove widget"
+                              >
+                                <X size={10} className="text-muted-foreground hover:text-destructive" />
+                              </button>
                             </div>
                             {widget.config!.content}
                           </div>
