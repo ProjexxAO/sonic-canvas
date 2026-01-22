@@ -1276,6 +1276,66 @@ export type Database = {
         }
         Relationships: []
       }
+      custom_widgets: {
+        Row: {
+          agent_chain: string[] | null
+          ai_capabilities: Json | null
+          config: Json
+          created_at: string
+          created_by_atlas: boolean | null
+          data_sources: string[] | null
+          description: string | null
+          generation_prompt: string | null
+          id: string
+          is_active: boolean | null
+          layout: Json | null
+          name: string
+          style: Json | null
+          updated_at: string
+          user_id: string
+          version: number | null
+          widget_type: string
+        }
+        Insert: {
+          agent_chain?: string[] | null
+          ai_capabilities?: Json | null
+          config?: Json
+          created_at?: string
+          created_by_atlas?: boolean | null
+          data_sources?: string[] | null
+          description?: string | null
+          generation_prompt?: string | null
+          id?: string
+          is_active?: boolean | null
+          layout?: Json | null
+          name: string
+          style?: Json | null
+          updated_at?: string
+          user_id: string
+          version?: number | null
+          widget_type?: string
+        }
+        Update: {
+          agent_chain?: string[] | null
+          ai_capabilities?: Json | null
+          config?: Json
+          created_at?: string
+          created_by_atlas?: boolean | null
+          data_sources?: string[] | null
+          description?: string | null
+          generation_prompt?: string | null
+          id?: string
+          is_active?: boolean | null
+          layout?: Json | null
+          name?: string
+          style?: Json | null
+          updated_at?: string
+          user_id?: string
+          version?: number | null
+          widget_type?: string
+        }
+        Relationships: []
+      }
       dashboard_activity: {
         Row: {
           action: string
