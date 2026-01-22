@@ -220,128 +220,130 @@ export function WidgetCreatorDialog({ open, onOpenChange, onWidgetCreated }: Wid
 
           {/* Step: Preview */}
           {step === 'preview' && generatedWidget && (
-            <ScrollArea className="max-h-[400px]">
-              <div className="space-y-4">
-                {/* Widget Preview Card */}
-                <div className="p-4 rounded-lg border border-border bg-card">
-                  <div className="flex items-start justify-between mb-3">
-                    <div>
-                      <h4 className="font-semibold text-foreground">{generatedWidget.name}</h4>
-                      <p className="text-xs text-muted-foreground mt-0.5">{generatedWidget.description}</p>
+            <div className="flex flex-col">
+              <ScrollArea className="max-h-[320px]">
+                <div className="space-y-4 pr-2">
+                  {/* Widget Preview Card */}
+                  <div className="p-4 rounded-lg border border-border bg-card">
+                    <div className="flex items-start justify-between mb-3">
+                      <div>
+                        <h4 className="font-semibold text-foreground">{generatedWidget.name}</h4>
+                        <p className="text-xs text-muted-foreground mt-0.5">{generatedWidget.description}</p>
+                      </div>
+                      {(() => {
+                        const info = getTypeInfo(generatedWidget.widget_type);
+                        const Icon = info.icon;
+                        return (
+                          <div className={cn("p-2 rounded-lg bg-muted", info.color)}>
+                            <Icon size={16} />
+                          </div>
+                        );
+                      })()}
                     </div>
-                    {(() => {
-                      const info = getTypeInfo(generatedWidget.widget_type);
-                      const Icon = info.icon;
-                      return (
-                        <div className={cn("p-2 rounded-lg bg-muted", info.color)}>
-                          <Icon size={16} />
+
+                    {/* Widget Type Badge */}
+                    <div className="flex flex-wrap gap-1.5 mb-3">
+                      <Badge variant="secondary" className="text-[9px]">
+                        {getTypeInfo(generatedWidget.widget_type).label}
+                      </Badge>
+                      {generatedWidget.config.displayType && (
+                        <Badge variant="outline" className="text-[9px]">
+                          {generatedWidget.config.displayType}
+                        </Badge>
+                      )}
+                      {generatedWidget.ai_capabilities?.enabled && (
+                        <Badge className="text-[9px] bg-purple-500/20 text-purple-500">
+                          <Brain size={8} className="mr-1" />
+                          AI Powered
+                        </Badge>
+                      )}
+                    </div>
+
+                    {/* Data Sources */}
+                    {generatedWidget.data_sources.length > 0 && (
+                      <div className="mb-3">
+                        <div className="flex items-center gap-1 text-[10px] text-muted-foreground mb-1">
+                          <Database size={10} />
+                          Data Sources
                         </div>
-                      );
-                    })()}
+                        <div className="flex flex-wrap gap-1">
+                          {generatedWidget.data_sources.map((source) => (
+                            <Badge key={source} variant="outline" className="text-[9px] capitalize">
+                              {source}
+                            </Badge>
+                          ))}
+                        </div>
+                      </div>
+                    )}
+
+                    {/* AI Capabilities */}
+                    {generatedWidget.ai_capabilities?.capabilities?.length > 0 && (
+                      <div className="mb-3">
+                        <div className="flex items-center gap-1 text-[10px] text-muted-foreground mb-1">
+                          <Brain size={10} />
+                          AI Capabilities
+                        </div>
+                        <div className="flex flex-wrap gap-1">
+                          {generatedWidget.ai_capabilities.capabilities.map((cap: string) => (
+                            <Badge key={cap} className="text-[9px] bg-primary/20 text-primary capitalize">
+                              {cap}
+                            </Badge>
+                          ))}
+                        </div>
+                      </div>
+                    )}
+
+                    {/* Agents */}
+                    {generatedWidget.agent_chain?.length > 0 && (
+                      <div className="mb-3">
+                        <div className="flex items-center gap-1 text-[10px] text-muted-foreground mb-1">
+                          <Bot size={10} />
+                          Orchestrated Agents
+                        </div>
+                        <div className="flex flex-wrap gap-1">
+                          {generatedWidget.agent_chain.map((agent) => (
+                            <Badge key={agent} variant="secondary" className="text-[9px] capitalize">
+                              {agent.replace(/-/g, ' ')}
+                            </Badge>
+                          ))}
+                        </div>
+                      </div>
+                    )}
+
+                    {/* Layout */}
+                    <div className="flex items-center gap-1 text-[10px] text-muted-foreground">
+                      <Palette size={10} />
+                      Width: {generatedWidget.layout.colSpan} columns
+                      {generatedWidget.style.color && (
+                        <span className="ml-2 capitalize">• {generatedWidget.style.color} accent</span>
+                      )}
+                    </div>
                   </div>
 
-                  {/* Widget Type Badge */}
-                  <div className="flex flex-wrap gap-1.5 mb-3">
-                    <Badge variant="secondary" className="text-[9px]">
-                      {getTypeInfo(generatedWidget.widget_type).label}
-                    </Badge>
-                    {generatedWidget.config.displayType && (
-                      <Badge variant="outline" className="text-[9px]">
-                        {generatedWidget.config.displayType}
-                      </Badge>
-                    )}
-                    {generatedWidget.ai_capabilities?.enabled && (
-                      <Badge className="text-[9px] bg-purple-500/20 text-purple-500">
-                        <Brain size={8} className="mr-1" />
-                        AI Powered
-                      </Badge>
-                    )}
-                  </div>
-
-                  {/* Data Sources */}
-                  {generatedWidget.data_sources.length > 0 && (
-                    <div className="mb-3">
-                      <div className="flex items-center gap-1 text-[10px] text-muted-foreground mb-1">
-                        <Database size={10} />
-                        Data Sources
+                  {/* Atlas Explanation */}
+                  <div className="p-3 rounded-lg bg-primary/5 border border-primary/20">
+                    <div className="flex items-start gap-2">
+                      <Sparkles size={14} className="text-primary mt-0.5" />
+                      <div>
+                        <p className="text-[10px] font-medium text-primary mb-1">Atlas says:</p>
+                        <p className="text-xs text-muted-foreground">{generatedWidget.explanation}</p>
                       </div>
-                      <div className="flex flex-wrap gap-1">
-                        {generatedWidget.data_sources.map((source) => (
-                          <Badge key={source} variant="outline" className="text-[9px] capitalize">
-                            {source}
-                          </Badge>
-                        ))}
-                      </div>
-                    </div>
-                  )}
-
-                  {/* AI Capabilities */}
-                  {generatedWidget.ai_capabilities?.capabilities?.length > 0 && (
-                    <div className="mb-3">
-                      <div className="flex items-center gap-1 text-[10px] text-muted-foreground mb-1">
-                        <Brain size={10} />
-                        AI Capabilities
-                      </div>
-                      <div className="flex flex-wrap gap-1">
-                        {generatedWidget.ai_capabilities.capabilities.map((cap: string) => (
-                          <Badge key={cap} className="text-[9px] bg-primary/20 text-primary capitalize">
-                            {cap}
-                          </Badge>
-                        ))}
-                      </div>
-                    </div>
-                  )}
-
-                  {/* Agents */}
-                  {generatedWidget.agent_chain?.length > 0 && (
-                    <div className="mb-3">
-                      <div className="flex items-center gap-1 text-[10px] text-muted-foreground mb-1">
-                        <Bot size={10} />
-                        Orchestrated Agents
-                      </div>
-                      <div className="flex flex-wrap gap-1">
-                        {generatedWidget.agent_chain.map((agent) => (
-                          <Badge key={agent} variant="secondary" className="text-[9px] capitalize">
-                            {agent.replace(/-/g, ' ')}
-                          </Badge>
-                        ))}
-                      </div>
-                    </div>
-                  )}
-
-                  {/* Layout */}
-                  <div className="flex items-center gap-1 text-[10px] text-muted-foreground">
-                    <Palette size={10} />
-                    Width: {generatedWidget.layout.colSpan} columns
-                    {generatedWidget.style.color && (
-                      <span className="ml-2 capitalize">• {generatedWidget.style.color} accent</span>
-                    )}
-                  </div>
-                </div>
-
-                {/* Atlas Explanation */}
-                <div className="p-3 rounded-lg bg-primary/5 border border-primary/20">
-                  <div className="flex items-start gap-2">
-                    <Sparkles size={14} className="text-primary mt-0.5" />
-                    <div>
-                      <p className="text-[10px] font-medium text-primary mb-1">Atlas says:</p>
-                      <p className="text-xs text-muted-foreground">{generatedWidget.explanation}</p>
                     </div>
                   </div>
                 </div>
+              </ScrollArea>
 
-                {/* Actions */}
-                <div className="flex gap-2">
-                  <Button variant="outline" onClick={() => setStep('prompt')} className="flex-1">
-                    Refine
-                  </Button>
-                  <Button onClick={handleCreate} className="flex-1">
-                    <CheckCircle2 size={14} className="mr-2" />
-                    Add to Dashboard
-                  </Button>
-                </div>
+              {/* Actions - Fixed at bottom, always visible */}
+              <div className="flex gap-2 pt-4 mt-4 border-t border-border">
+                <Button variant="outline" onClick={() => setStep('prompt')} className="flex-1">
+                  Refine
+                </Button>
+                <Button onClick={handleCreate} className="flex-1">
+                  <CheckCircle2 size={14} className="mr-2" />
+                  Add to Dashboard
+                </Button>
               </div>
-            </ScrollArea>
+            </div>
           )}
 
           {/* Step: Created */}
