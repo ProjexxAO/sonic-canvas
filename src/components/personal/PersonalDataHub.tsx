@@ -95,6 +95,7 @@ import { WellnessWidget } from './WellnessWidget';
 import { FocusTimerWidget } from './FocusTimerWidget';
 import { HabitStreakChart } from './HabitStreakChart';
 import { GoalProgressTimeline } from './GoalProgressTimeline';
+import { SmartCalendar } from './SmartCalendar';
 
 interface PersonalDataHubProps {
   userId: string | undefined;
@@ -385,7 +386,7 @@ function HabitCard({ habit, onComplete }: { habit: PersonalHabit; onComplete: ()
 }
 
 // Active view type for full-screen sections
-type ActiveView = 'overview' | 'tasks' | 'goals' | 'habits' | 'notes' | 'finance' | 'photos' | 'search';
+type ActiveView = 'overview' | 'tasks' | 'goals' | 'habits' | 'notes' | 'finance' | 'photos' | 'search' | 'calendar';
 
 // Search result type
 interface SearchResult {
@@ -453,6 +454,7 @@ export function PersonalDataHub({ userId }: PersonalDataHubProps) {
       ...shortcutWidgets,
       'stat-today', 'stat-streak', 'stat-items',
       'widget-atlas-brief', 'widget-wellness', 'widget-focus',
+      'widget-calendar',
       'quick-add',
       'todays-tasks', 'overdue', 'habits',
       'viz-habit-streak', 'viz-goal-timeline',
@@ -601,7 +603,7 @@ export function PersonalDataHub({ userId }: PersonalDataHubProps) {
     recordUsage(actionId);
     
     // Navigate to full view for core actions
-    if (['tasks', 'goals', 'habits', 'notes', 'finance', 'photos', 'search'].includes(actionId)) {
+    if (['tasks', 'goals', 'habits', 'notes', 'finance', 'photos', 'search', 'calendar'].includes(actionId)) {
       setActiveView(actionId as ActiveView);
     }
   }, [recordUsage]);
@@ -689,6 +691,7 @@ export function PersonalDataHub({ userId }: PersonalDataHubProps) {
     { id: 'tasks', icon: CheckSquare, label: 'Tasks', count: stats.activeTasks, color: 'hsl(350 70% 50%)' },
     { id: 'goals', icon: Target, label: 'Goals', count: stats.activeGoals, color: 'hsl(150 70% 45%)' },
     { id: 'habits', icon: TrendingUp, label: 'Habits', count: stats.activeHabits, color: 'hsl(45 80% 50%)' },
+    { id: 'calendar', icon: Calendar, label: 'Calendar', color: 'hsl(220 70% 55%)' },
     { id: 'email', icon: Mail, label: 'Email', badge: '3', color: 'hsl(200 70% 50%)' },
     { id: 'finance', icon: DollarSign, label: 'Finance', count: accounts.length, color: 'hsl(150 70% 45%)' },
     { id: 'photos', icon: Image, label: 'Photos', color: 'hsl(280 60% 55%)' },
@@ -1486,6 +1489,26 @@ export function PersonalDataHub({ userId }: PersonalDataHubProps) {
     );
   }
 
+  // Full Calendar View
+  if (activeView === 'calendar') {
+    return (
+      <div className="h-full bg-card/90 border border-border rounded-lg shadow-sm overflow-hidden flex flex-col">
+        <div className="px-3 py-2 border-b border-border flex items-center justify-between">
+          <div className="flex items-center gap-2">
+            <Button variant="ghost" size="icon" className="h-6 w-6" onClick={() => setActiveView('overview')}>
+              <ChevronDown size={14} className="rotate-90" />
+            </Button>
+            <Calendar size={14} className="text-primary" />
+            <span className="text-xs font-mono text-muted-foreground uppercase">SMART CALENDAR</span>
+          </div>
+        </div>
+        <div className="flex-1 p-3 overflow-hidden">
+          <SmartCalendar className="h-full" />
+        </div>
+      </div>
+    );
+  }
+
   return (
     <div className="h-full bg-card/90 border border-border rounded-lg shadow-sm overflow-hidden flex flex-col">
       {/* Header with dropdown */}
@@ -1898,6 +1921,11 @@ export function PersonalDataHub({ userId }: PersonalDataHubProps) {
         return {
           colSpan: 'col-span-2',
           content: <FocusTimerWidget compact />
+        };
+      case 'widget-calendar':
+        return {
+          colSpan: 'col-span-6',
+          content: <SmartCalendar compact />
         };
 
       // Quick add - full width
