@@ -596,38 +596,54 @@ export function PersonalDataHub({ userId }: PersonalDataHubProps) {
     });
   }, [selectedActions, isPrefsLoading]);
   
+  // Track which custom widgets have been manually added to avoid duplicates
+  const addedCustomWidgetsRef = useRef<Set<string>>(new Set());
+  
   // Sync custom widgets to widget order when they're loaded or created
+  // Only ADD new widgets, never re-add removed ones
   useEffect(() => {
     if (isPrefsLoading || !customWidgets) return;
     
     setWidgetOrder(prevOrder => {
-      const currentCustomWidgets = prevOrder.filter(id => id.startsWith('custom-widget-'));
-      const expectedCustomWidgets = customWidgets.map(w => `custom-widget-${w.id}`);
+      const currentCustomWidgetIds = new Set(
+        prevOrder.filter(id => id.startsWith('custom-widget-'))
+      );
       
-      const currentSet = new Set(currentCustomWidgets);
-      const expectedSet = new Set(expectedCustomWidgets);
+      // Only add widgets that are:
+      // 1. Active in the database (in customWidgets)
+      // 2. Not already in the current order
+      // 3. Not already tracked as added (prevents race conditions)
+      const newWidgetsToAdd = customWidgets
+        .map(w => `custom-widget-${w.id}`)
+        .filter(id => !currentCustomWidgetIds.has(id) && !addedCustomWidgetsRef.current.has(id));
       
-      const toAdd = expectedCustomWidgets.filter(id => !currentSet.has(id));
-      const toRemove = currentCustomWidgets.filter(id => !expectedSet.has(id));
+      // Remove custom widgets that are no longer active in database
+      const activeCustomWidgetIds = new Set(customWidgets.map(w => `custom-widget-${w.id}`));
+      const toRemove = prevOrder.filter(
+        id => id.startsWith('custom-widget-') && !activeCustomWidgetIds.has(id)
+      );
       
-      if (toAdd.length === 0 && toRemove.length === 0) {
+      if (newWidgetsToAdd.length === 0 && toRemove.length === 0) {
         return prevOrder;
       }
       
       // Remove deleted custom widgets
       let newOrder = prevOrder.filter(id => !toRemove.includes(id));
       
-      // Add new custom widgets at the end (before goals section)
-      if (toAdd.length > 0) {
+      // Add new custom widgets
+      if (newWidgetsToAdd.length > 0) {
+        // Track these as added
+        newWidgetsToAdd.forEach(id => addedCustomWidgetsRef.current.add(id));
+        
         const goalsIndex = newOrder.indexOf('goals');
         if (goalsIndex !== -1) {
           newOrder = [
             ...newOrder.slice(0, goalsIndex),
-            ...toAdd,
+            ...newWidgetsToAdd,
             ...newOrder.slice(goalsIndex)
           ];
         } else {
-          newOrder = [...newOrder, ...toAdd];
+          newOrder = [...newOrder, ...newWidgetsToAdd];
         }
         
         // Save updated order to database
