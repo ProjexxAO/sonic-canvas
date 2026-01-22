@@ -18,3 +18,9 @@ export { GoalProgressTimeline } from './GoalProgressTimeline';
 export { SmartCalendar } from './SmartCalendar';
 export { SmartNudgesWidget } from './SmartNudgesWidget';
 export { LifeBalancePanel } from './LifeBalancePanel';
+
+// New Feature Panels
+export { AgentBuilderPanel } from './AgentBuilderPanel';
+export { FocusModesPanel } from './FocusModesPanel';
+export { IntegrationMarketplacePanel } from './IntegrationMarketplacePanel';
+export { AutoSchedulerPanel } from './AutoSchedulerPanel';
