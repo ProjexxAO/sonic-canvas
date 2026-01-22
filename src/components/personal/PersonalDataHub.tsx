@@ -102,6 +102,9 @@ import { SmartNudgesWidget } from './SmartNudgesWidget';
 import { LifeBalancePanel } from './LifeBalancePanel';
 import { UniversalOrchestrationPanel } from '@/components/atlas/UniversalOrchestrationPanel';
 import { IntegrationQuickActions, IntegrationSurfaceSummary } from './IntegrationSurfaceWidget';
+import { UnifiedInbox } from './UnifiedInbox';
+import { ConnectPlatformDialog } from '@/components/communications/ConnectPlatformDialog';
+import { useDataConnectors, ConnectorPlatform } from '@/hooks/useDataConnectors';
 
 interface PersonalDataHubProps {
   userId: string | undefined;
@@ -392,7 +395,7 @@ function HabitCard({ habit, onComplete }: { habit: PersonalHabit; onComplete: ()
 }
 
 // Active view type for full-screen sections
-type ActiveView = 'overview' | 'tasks' | 'goals' | 'habits' | 'notes' | 'finance' | 'photos' | 'search' | 'calendar';
+type ActiveView = 'overview' | 'tasks' | 'goals' | 'habits' | 'notes' | 'finance' | 'photos' | 'search' | 'calendar' | 'email';
 
 // Search result type
 interface SearchResult {
@@ -436,6 +439,12 @@ export function PersonalDataHub({ userId }: PersonalDataHubProps) {
     refetch: refetchPhotos,
   } = useUserPhotos();
 
+  // Data connectors for email and other integrations
+  const {
+    connectors,
+    initializeConnector,
+  } = useDataConnectors(userId);
+
   // Quick action preferences for usage tracking and custom order
   const {
     preferences: actionPrefs,
@@ -450,6 +459,7 @@ export function PersonalDataHub({ userId }: PersonalDataHubProps) {
   const [photoCategory, setPhotoCategory] = useState('all');
   const [selectedPhotos, setSelectedPhotos] = useState<string[]>([]);
   const [isDragMode, setIsDragMode] = useState(false);
+  const [showConnectEmailDialog, setShowConnectEmailDialog] = useState(false);
 
   // Default widget order for overview - each individual item is draggable
   // Shortcuts are individual widgets prefixed with 'shortcut-'
@@ -637,7 +647,7 @@ export function PersonalDataHub({ userId }: PersonalDataHubProps) {
     recordUsage(actionId);
     
     // Navigate to full view for core actions
-    if (['tasks', 'goals', 'habits', 'notes', 'finance', 'photos', 'search', 'calendar'].includes(actionId)) {
+    if (['tasks', 'goals', 'habits', 'notes', 'finance', 'photos', 'search', 'calendar', 'email'].includes(actionId)) {
       setActiveView(actionId as ActiveView);
     }
   }, [recordUsage]);
@@ -1539,6 +1549,91 @@ export function PersonalDataHub({ userId }: PersonalDataHubProps) {
         <div className="flex-1 p-3 overflow-hidden">
           <SmartCalendar className="h-full" />
         </div>
+      </div>
+    );
+  }
+
+  // Email / Unified Inbox view
+  if (activeView === 'email') {
+    const hasEmailConnector = connectors.some(c => 
+      ['gmail', 'outlook'].includes(c.platform) && c.isActive
+    );
+    
+    return (
+      <div className="h-full bg-card/90 border border-border rounded-lg shadow-sm overflow-hidden flex flex-col">
+        <div className="px-3 py-2 border-b border-border flex items-center justify-between">
+          <div className="flex items-center gap-2">
+            <Button variant="ghost" size="icon" className="h-6 w-6" onClick={() => setActiveView('overview')}>
+              <ChevronDown size={14} className="rotate-90" />
+            </Button>
+            <Mail size={14} className="text-primary" />
+            <span className="text-xs font-mono text-muted-foreground uppercase">UNIFIED INBOX</span>
+            {hasEmailConnector && (
+              <Badge variant="secondary" className="text-[10px]">Connected</Badge>
+            )}
+          </div>
+          <div className="flex items-center gap-1">
+            {hasEmailConnector && (
+              <Button 
+                variant="ghost" 
+                size="sm" 
+                className="h-6 px-2 text-[10px]"
+                onClick={async () => {
+                  toast.loading('Syncing emails...');
+                  const { error } = await supabase.functions.invoke('gmail-sync');
+                  if (error) {
+                    toast.error('Sync failed');
+                  } else {
+                    toast.success('Emails synced!');
+                    window.location.reload();
+                  }
+                }}
+              >
+                <RefreshCw size={10} className="mr-1" />
+                Sync
+              </Button>
+            )}
+            <Button 
+              variant="ghost" 
+              size="sm" 
+              className="h-6 px-2 text-[10px]"
+              onClick={() => setShowConnectEmailDialog(true)}
+            >
+              <Plug size={10} className="mr-1" />
+              {hasEmailConnector ? 'Add Account' : 'Connect Email'}
+            </Button>
+          </div>
+        </div>
+        <div className="flex-1 overflow-hidden">
+          {hasEmailConnector ? (
+            <UnifiedInbox className="h-full" hubFilter="personal" />
+          ) : (
+            <div className="flex flex-col items-center justify-center h-full p-6 text-center">
+              <div className="w-16 h-16 rounded-full bg-primary/10 flex items-center justify-center mb-4">
+                <Mail size={28} className="text-primary" />
+              </div>
+              <h3 className="text-lg font-semibold mb-2">Connect Your Email</h3>
+              <p className="text-sm text-muted-foreground mb-4 max-w-sm">
+                Connect Gmail or Outlook to see all your messages in one unified inbox, 
+                with smart categorization powered by Atlas.
+              </p>
+              <Button onClick={() => setShowConnectEmailDialog(true)}>
+                <Plug size={14} className="mr-2" />
+                Connect Email Account
+              </Button>
+            </div>
+          )}
+        </div>
+        
+        {/* Connect Email Dialog */}
+        <ConnectPlatformDialog
+          open={showConnectEmailDialog}
+          onOpenChange={setShowConnectEmailDialog}
+          onConnect={async (platformId, email, accountName) => {
+            await initializeConnector(platformId as ConnectorPlatform, { email, name: accountName });
+            setShowConnectEmailDialog(false);
+          }}
+        />
       </div>
     );
   }
