@@ -2192,7 +2192,6 @@ export function PersonalDataHub({ userId }: PersonalDataHubProps) {
                 color={action.color} 
                 url={'url' in action ? action.url : undefined}
                 onClick={() => handleShortcutClick(action.id)} 
-                onRemove={() => removeActionFromOverview(action.id)}
               />
             )
           };
