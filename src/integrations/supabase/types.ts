@@ -2390,6 +2390,36 @@ export type Database = {
           },
         ]
       }
+      oauth_states: {
+        Row: {
+          created_at: string
+          expires_at: string
+          id: string
+          platform: string
+          redirect_uri: string | null
+          state: string
+          user_id: string
+        }
+        Insert: {
+          created_at?: string
+          expires_at: string
+          id?: string
+          platform: string
+          redirect_uri?: string | null
+          state: string
+          user_id: string
+        }
+        Update: {
+          created_at?: string
+          expires_at?: string
+          id?: string
+          platform?: string
+          redirect_uri?: string | null
+          state?: string
+          user_id?: string
+        }
+        Relationships: []
+      }
       organization_members: {
         Row: {
           created_at: string
@@ -4133,6 +4163,7 @@ export type Database = {
         }
         Returns: boolean
       }
+      cleanup_expired_oauth_states: { Args: never; Returns: undefined }
       compute_agent_tool_permissions: {
         Args: { _agent_id: string; _user_id?: string; _workspace_id?: string }
         Returns: {
