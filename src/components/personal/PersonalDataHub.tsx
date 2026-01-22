@@ -697,6 +697,12 @@ export function PersonalDataHub({ userId }: PersonalDataHubProps) {
     // Record usage for smart sorting
     recordUsage(actionId);
     
+    // Open widget creator for create-widget action
+    if (actionId === 'create-widget') {
+      setShowWidgetCreator(true);
+      return;
+    }
+    
     // Navigate to full view for core actions
     if (['tasks', 'goals', 'habits', 'notes', 'finance', 'photos', 'search', 'calendar', 'email'].includes(actionId)) {
       setActiveView(actionId as ActiveView);
@@ -783,6 +789,7 @@ export function PersonalDataHub({ userId }: PersonalDataHubProps) {
 
   // Default quick actions (always visible)
   const defaultActions = useMemo(() => [
+    { id: 'create-widget', icon: Wand2, label: 'Create Widget', color: 'hsl(280 80% 60%)', badge: 'AI' },
     { id: 'tasks', icon: CheckSquare, label: 'Tasks', count: stats.activeTasks, color: 'hsl(350 70% 50%)' },
     { id: 'goals', icon: Target, label: 'Goals', count: stats.activeGoals, color: 'hsl(150 70% 45%)' },
     { id: 'habits', icon: TrendingUp, label: 'Habits', count: stats.activeHabits, color: 'hsl(45 80% 50%)' },
