@@ -110,6 +110,7 @@ import { useDataConnectors, ConnectorPlatform } from '@/hooks/useDataConnectors'
 import { WidgetCreatorDialog } from './WidgetCreatorDialog';
 import { AgentWidgetRenderer } from './AgentWidgetRenderer';
 import { useCustomWidgets } from '@/hooks/useCustomWidgets';
+import { SimplifiedDashboard } from './SimplifiedDashboard';
 
 interface PersonalDataHubProps {
   userId: string | undefined;
@@ -469,6 +470,16 @@ export function PersonalDataHub({ userId }: PersonalDataHubProps) {
   const [selectedPhotos, setSelectedPhotos] = useState<string[]>([]);
   const [isDragMode, setIsDragMode] = useState(false);
   const [showConnectEmailDialog, setShowConnectEmailDialog] = useState(false);
+  const [isSimpleMode, setIsSimpleMode] = useState(() => {
+    // Check localStorage for saved preference, default to simple mode for new users
+    const saved = localStorage.getItem('dashboard-simple-mode');
+    return saved !== null ? saved === 'true' : true; // Default to simple mode
+  });
+  
+  // Save simple mode preference
+  useEffect(() => {
+    localStorage.setItem('dashboard-simple-mode', String(isSimpleMode));
+  }, [isSimpleMode]);
 
   // Default widget order for overview - each individual item is draggable
   // Shortcuts are individual widgets prefixed with 'shortcut-'
@@ -1712,6 +1723,31 @@ export function PersonalDataHub({ userId }: PersonalDataHubProps) {
     );
   }
 
+  // Simple Mode - clean, minimal dashboard for universal accessibility
+  if (isSimpleMode) {
+    return (
+      <div className="h-full bg-card/90 border border-border rounded-lg shadow-sm overflow-hidden flex flex-col relative">
+        <SimplifiedDashboard 
+          userId={userId}
+          onOpenFullDashboard={() => setIsSimpleMode(false)}
+          onNavigate={(view) => {
+            if (view === 'tasks') setActiveView('tasks');
+            else if (view === 'goals') setActiveView('goals');
+            else if (view === 'wellness' || view === 'calendar') setActiveView('habits');
+            setIsSimpleMode(false);
+          }}
+        />
+        {/* Toggle to Advanced View */}
+        <button
+          onClick={() => setIsSimpleMode(false)}
+          className="absolute top-3 right-3 text-[10px] text-muted-foreground hover:text-foreground transition-colors underline underline-offset-2"
+        >
+          Advanced View
+        </button>
+      </div>
+    );
+  }
+
   return (
     <div className="h-full bg-card/90 border border-border rounded-lg shadow-sm overflow-hidden flex flex-col">
       {/* Header with dropdown */}
@@ -1719,6 +1755,13 @@ export function PersonalDataHub({ userId }: PersonalDataHubProps) {
         <div className="flex items-center gap-2">
           <LayoutDashboard size={14} className="text-primary" />
           <span className="text-xs font-mono text-muted-foreground uppercase">MY OVERVIEW</span>
+          {/* Simple Mode Toggle */}
+          <button
+            onClick={() => setIsSimpleMode(true)}
+            className="text-[9px] text-primary hover:text-primary/80 transition-colors px-2 py-0.5 rounded-full bg-primary/10 hover:bg-primary/20"
+          >
+            Simple View
+          </button>
         </div>
         
         <div className="flex items-center gap-1">
