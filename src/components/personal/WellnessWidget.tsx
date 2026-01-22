@@ -1,4 +1,4 @@
-// Wellness Widget - Mood check-in and stress monitoring
+// Wellness Widget - Mood check-in and stress monitoring with Atlas AI evaluation
 import { useState, useCallback, useEffect } from 'react';
 import { 
   Heart, 
@@ -13,28 +13,19 @@ import {
   Minus,
   RefreshCw,
   ChevronDown,
-  ChevronUp
+  ChevronUp,
+  Sparkles,
+  Brain
 } from 'lucide-react';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
 import { Badge } from '@/components/ui/badge';
 import { Progress } from '@/components/ui/progress';
 import { cn } from '@/lib/utils';
-import { useAtlasIntelligence, type StressIndicator } from '@/hooks/useAtlasIntelligence';
+import { useAtlasIntelligence, type StressIndicator, type MoodLevel, type InferredMood } from '@/hooks/useAtlasIntelligence';
 import { useAuth } from '@/hooks/useAuth';
-import { format, isToday, parseISO } from 'date-fns';
+import { format } from 'date-fns';
 import { toast } from 'sonner';
-
-// Mood types
-type MoodLevel = 'great' | 'good' | 'okay' | 'low' | 'struggling';
-
-interface MoodEntry {
-  id: string;
-  mood: MoodLevel;
-  note?: string;
-  timestamp: Date;
-  energyLevel: number; // 1-5
-}
 
 // Life balance area
 interface LifeArea {
@@ -60,23 +51,18 @@ interface WellnessWidgetProps {
 
 export function WellnessWidget({ className, compact = false }: WellnessWidgetProps) {
   const { user } = useAuth();
-  const { stressIndicator, checkStressLevels, boundaryInsights } = useAtlasIntelligence();
+  const { 
+    stressIndicator, 
+    checkStressLevels, 
+    boundaryInsights,
+    inferredMood,
+    inferMoodFromActivity,
+    setManualMood,
+  } = useAtlasIntelligence();
   
-  const [todaysMood, setTodaysMood] = useState<MoodEntry | null>(null);
   const [isExpanded, setIsExpanded] = useState(!compact);
   const [energyLevel, setEnergyLevel] = useState<number>(3);
-
-  // Load today's mood from localStorage
-  useEffect(() => {
-    if (user?.id) {
-      const key = `mood-${user.id}-${format(new Date(), 'yyyy-MM-dd')}`;
-      const stored = localStorage.getItem(key);
-      if (stored) {
-        const parsed = JSON.parse(stored);
-        setTodaysMood({ ...parsed, timestamp: new Date(parsed.timestamp) });
-      }
-    }
-  }, [user?.id]);
+  const [isAnalyzing, setIsAnalyzing] = useState(false);
 
   // Check stress on mount
   useEffect(() => {
@@ -91,23 +77,27 @@ export function WellnessWidget({ className, compact = false }: WellnessWidgetPro
     { id: 'rest', name: 'Rest', icon: <Moon size={12} />, score: 55, trend: 'stable' },
   ];
 
+  // Handle Atlas mood analysis
+  const handleAtlasAnalysis = useCallback(async () => {
+    setIsAnalyzing(true);
+    try {
+      const result = inferMoodFromActivity();
+      toast.success(`Atlas analyzed your mood: ${MOOD_CONFIG[result.mood].label}`, {
+        description: result.reasoning,
+      });
+    } catch (error) {
+      toast.error('Failed to analyze mood');
+    } finally {
+      setIsAnalyzing(false);
+    }
+  }, [inferMoodFromActivity]);
+
+  // Handle manual mood check
   const handleMoodCheck = useCallback((mood: MoodLevel) => {
     if (!user?.id) return;
-
-    const entry: MoodEntry = {
-      id: `mood-${Date.now()}`,
-      mood,
-      energyLevel,
-      timestamp: new Date(),
-    };
-
-    // Save to localStorage
-    const key = `mood-${user.id}-${format(new Date(), 'yyyy-MM-dd')}`;
-    localStorage.setItem(key, JSON.stringify(entry));
-    setTodaysMood(entry);
-
-    toast.success(`Mood logged: ${MOOD_CONFIG[mood].label}`);
-  }, [user?.id, energyLevel]);
+    setManualMood(mood);
+    toast.success(`Mood set: ${MOOD_CONFIG[mood].label}`);
+  }, [user?.id, setManualMood]);
 
   const getStressColor = (level: StressIndicator['level']) => {
     switch (level) {
@@ -126,6 +116,14 @@ export function WellnessWidget({ className, compact = false }: WellnessWidgetPro
     }
   };
 
+  const getSourceBadge = (source: InferredMood['source']) => {
+    switch (source) {
+      case 'activity': return { label: 'Activity', icon: <Brain size={8} /> };
+      case 'conversation': return { label: 'Atlas', icon: <Sparkles size={8} /> };
+      case 'manual': return { label: 'You', icon: null };
+    }
+  };
+
   const averageBalance = Math.round(lifeAreas.reduce((sum, a) => sum + a.score, 0) / lifeAreas.length);
 
   if (compact) {
@@ -139,16 +137,26 @@ export function WellnessWidget({ className, compact = false }: WellnessWidgetPro
               </div>
               <span className="text-xs font-medium">Wellness</span>
             </div>
-            {todaysMood && (
-              <div className={cn("flex items-center gap-1", MOOD_CONFIG[todaysMood.mood].color)}>
-                {MOOD_CONFIG[todaysMood.mood].icon}
+            {inferredMood && (
+              <div className={cn("flex items-center gap-1", MOOD_CONFIG[inferredMood.mood].color)}>
+                {MOOD_CONFIG[inferredMood.mood].icon}
               </div>
             )}
           </div>
           
-          {!todaysMood ? (
-            <div className="flex gap-1">
-              {(['great', 'good', 'okay', 'low'] as MoodLevel[]).map((mood) => (
+          {!inferredMood ? (
+            <div className="flex gap-1 items-center">
+              <Button
+                variant="ghost"
+                size="sm"
+                className="h-7 text-[10px] gap-1"
+                onClick={handleAtlasAnalysis}
+                disabled={isAnalyzing}
+              >
+                <Sparkles size={10} />
+                {isAnalyzing ? 'Analyzing...' : 'Ask Atlas'}
+              </Button>
+              {(['great', 'okay', 'low'] as MoodLevel[]).map((mood) => (
                 <Button
                   key={mood}
                   variant="ghost"
@@ -180,22 +188,46 @@ export function WellnessWidget({ className, compact = false }: WellnessWidgetPro
             </div>
             Wellness Check
           </CardTitle>
-          <Button 
-            variant="ghost" 
-            size="icon" 
-            className="h-6 w-6"
-            onClick={() => setIsExpanded(!isExpanded)}
-          >
-            {isExpanded ? <ChevronUp size={12} /> : <ChevronDown size={12} />}
-          </Button>
+          <div className="flex items-center gap-1">
+            <Button 
+              variant="ghost" 
+              size="icon" 
+              className="h-6 w-6"
+              onClick={handleAtlasAnalysis}
+              disabled={isAnalyzing}
+              title="Ask Atlas to evaluate your mood"
+            >
+              <Sparkles size={10} className={isAnalyzing ? "animate-spin" : ""} />
+            </Button>
+            <Button 
+              variant="ghost" 
+              size="icon" 
+              className="h-6 w-6"
+              onClick={() => setIsExpanded(!isExpanded)}
+            >
+              {isExpanded ? <ChevronUp size={12} /> : <ChevronDown size={12} />}
+            </Button>
+          </div>
         </div>
       </CardHeader>
 
       <CardContent className="pt-0">
-        {/* Mood Check-in */}
-        {!todaysMood ? (
+        {/* Mood Display or Check-in */}
+        {!inferredMood ? (
           <div className="mb-3">
-            <p className="text-[10px] text-muted-foreground mb-2">How are you feeling today?</p>
+            <div className="flex items-center justify-between mb-2">
+              <p className="text-[10px] text-muted-foreground">How are you feeling?</p>
+              <Button
+                variant="outline"
+                size="sm"
+                className="h-6 text-[9px] gap-1"
+                onClick={handleAtlasAnalysis}
+                disabled={isAnalyzing}
+              >
+                <Brain size={10} />
+                {isAnalyzing ? 'Analyzing...' : 'Let Atlas Evaluate'}
+              </Button>
+            </div>
             <div className="flex gap-2 justify-center">
               {(['great', 'good', 'okay', 'low', 'struggling'] as MoodLevel[]).map((mood) => (
                 <Button
@@ -236,21 +268,62 @@ export function WellnessWidget({ className, compact = false }: WellnessWidgetPro
             </div>
           </div>
         ) : (
-          <div className="mb-3 p-2 rounded-lg bg-muted/30 flex items-center justify-between">
-            <div className="flex items-center gap-2">
-              <div className={cn("text-xl", MOOD_CONFIG[todaysMood.mood].color)}>
-                {MOOD_CONFIG[todaysMood.mood].icon}
+          <div className="mb-3 p-2 rounded-lg bg-muted/30">
+            <div className="flex items-center justify-between">
+              <div className="flex items-center gap-2">
+                <div className={cn("text-xl", MOOD_CONFIG[inferredMood.mood].color)}>
+                  {MOOD_CONFIG[inferredMood.mood].icon}
+                </div>
+                <div>
+                  <div className="flex items-center gap-1">
+                    <p className="text-xs font-medium">{MOOD_CONFIG[inferredMood.mood].label}</p>
+                    <Badge variant="outline" className="text-[8px] px-1 py-0 h-4 gap-0.5">
+                      {getSourceBadge(inferredMood.source).icon}
+                      {getSourceBadge(inferredMood.source).label}
+                    </Badge>
+                  </div>
+                  <p className="text-[10px] text-muted-foreground">
+                    {inferredMood.source === 'conversation' ? 'Evaluated by Atlas' : 
+                     inferredMood.source === 'activity' ? 'Based on activity' :
+                     `Set at ${format(inferredMood.timestamp, 'h:mm a')}`}
+                  </p>
+                </div>
               </div>
-              <div>
-                <p className="text-xs font-medium">{MOOD_CONFIG[todaysMood.mood].label}</p>
-                <p className="text-[10px] text-muted-foreground">
-                  Logged at {format(todaysMood.timestamp, 'h:mm a')}
-                </p>
+              <div className="flex flex-col items-end gap-1">
+                <Badge variant="secondary" className="text-[9px]">
+                  {inferredMood.confidence}% confident
+                </Badge>
+                <Button
+                  variant="ghost"
+                  size="sm"
+                  className="h-5 text-[9px] px-1"
+                  onClick={handleAtlasAnalysis}
+                  disabled={isAnalyzing}
+                >
+                  <RefreshCw size={8} className={cn("mr-1", isAnalyzing && "animate-spin")} />
+                  Re-evaluate
+                </Button>
               </div>
             </div>
-            <div className="flex items-center gap-1">
-              <Battery size={12} className="text-muted-foreground" />
-              <span className="text-xs">{todaysMood.energyLevel}/5</span>
+            {inferredMood.reasoning && (
+              <p className="text-[9px] text-muted-foreground mt-1 italic">
+                "{inferredMood.reasoning}"
+              </p>
+            )}
+            {/* Quick mood override buttons */}
+            <div className="flex gap-1 mt-2 pt-2 border-t border-border">
+              <span className="text-[9px] text-muted-foreground mr-1">Override:</span>
+              {(['great', 'good', 'okay', 'low', 'struggling'] as MoodLevel[]).map((mood) => (
+                <Button
+                  key={mood}
+                  variant={inferredMood.mood === mood ? "secondary" : "ghost"}
+                  size="sm"
+                  className={cn("h-5 w-5 p-0", MOOD_CONFIG[mood].color)}
+                  onClick={() => handleMoodCheck(mood)}
+                >
+                  {MOOD_CONFIG[mood].icon}
+                </Button>
+              ))}
             </div>
           </div>
         )}

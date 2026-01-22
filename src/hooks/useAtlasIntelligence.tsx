@@ -72,6 +72,18 @@ export interface BoundaryInsight {
   dismissed: boolean;
 }
 
+// Mood types for Atlas inference
+export type MoodLevel = 'great' | 'good' | 'okay' | 'low' | 'struggling';
+
+// Atlas-inferred mood with confidence
+export interface InferredMood {
+  mood: MoodLevel;
+  confidence: number; // 0-100
+  source: 'activity' | 'conversation' | 'manual';
+  reasoning?: string;
+  timestamp: Date;
+}
+
 const DEFAULT_FOCUS_MODES: FocusMode[] = [
   {
     id: 'family-time',
@@ -189,6 +201,7 @@ export function useAtlasIntelligence() {
   const [boundaryInsights, setBoundaryInsights] = useState<BoundaryInsight[]>([]);
   const [isLoading, setIsLoading] = useState(false);
   const [heldMessages, setHeldMessages] = useState<UnifiedMessage[]>([]);
+  const [inferredMood, setInferredMood] = useState<InferredMood | null>(null);
 
   // Load saved state from localStorage
   useEffect(() => {
@@ -228,6 +241,29 @@ export function useAtlasIntelligence() {
     // Load mock messages
     setUnifiedInbox(generateMockMessages());
   }, [user]);
+
+  // Listen for mood updates from Atlas voice agent
+  useEffect(() => {
+    const handleMoodUpdate = (event: CustomEvent<{ mood: MoodLevel; reasoning?: string; source: string }>) => {
+      const { mood, reasoning, source } = event.detail;
+      if (source === 'conversation') {
+        const inferred: InferredMood = {
+          mood,
+          confidence: 85,
+          source: 'conversation',
+          reasoning: reasoning || 'evaluated through conversation with Atlas',
+          timestamp: new Date(),
+        };
+        setInferredMood(inferred);
+        if (user?.id) {
+          localStorage.setItem(`atlas-inferred-mood-${user.id}`, JSON.stringify(inferred));
+        }
+      }
+    };
+
+    window.addEventListener('atlas-mood-update', handleMoodUpdate as EventListener);
+    return () => window.removeEventListener('atlas-mood-update', handleMoodUpdate as EventListener);
+  }, [user?.id]);
 
   // Categorize message using simple heuristics (would use AI in production)
   const categorizeMessage = useCallback((message: Partial<UnifiedMessage>): MessageCategory => {
@@ -511,6 +547,167 @@ export function useAtlasIntelligence() {
     });
   }, [unifiedInbox, activeFocusMode, shouldShowInPersonalHub]);
 
+  // Infer mood from activity patterns (stress, message volume, time of day)
+  const inferMoodFromActivity = useCallback((): InferredMood => {
+    const now = new Date();
+    const hour = now.getHours();
+    const isWeekend = now.getDay() === 0 || now.getDay() === 6;
+    
+    // Get stress level from current indicator
+    const stress = stressIndicator?.level || 'low';
+    const messageVolume = stressIndicator?.messageVolume || 0;
+    const checkFrequency = stressIndicator?.checkFrequency || 0;
+    
+    // Count urgent/negative messages
+    const urgentCount = unifiedInbox.filter(m => m.urgencyScore >= 80 && !m.isRead).length;
+    const negativeCount = unifiedInbox.filter(m => m.sentiment === 'negative').length;
+    const positiveCount = unifiedInbox.filter(m => m.sentiment === 'positive').length;
+    
+    // Calculate mood score (0-100, higher is better)
+    let moodScore = 70; // Start neutral-positive
+    let reasoning: string[] = [];
+    
+    // Stress impact
+    if (stress === 'critical') {
+      moodScore -= 30;
+      reasoning.push('high stress detected');
+    } else if (stress === 'high') {
+      moodScore -= 20;
+      reasoning.push('elevated stress');
+    } else if (stress === 'moderate') {
+      moodScore -= 10;
+    }
+    
+    // Message volume impact
+    if (messageVolume > 30) {
+      moodScore -= 15;
+      reasoning.push('high message volume');
+    } else if (messageVolume > 15) {
+      moodScore -= 5;
+    }
+    
+    // Urgent items impact
+    if (urgentCount > 3) {
+      moodScore -= 15;
+      reasoning.push(`${urgentCount} urgent items pending`);
+    } else if (urgentCount > 0) {
+      moodScore -= 5;
+    }
+    
+    // Sentiment balance
+    if (negativeCount > positiveCount) {
+      moodScore -= 10;
+      reasoning.push('negative message sentiment');
+    } else if (positiveCount > negativeCount + 2) {
+      moodScore += 10;
+      reasoning.push('positive communications');
+    }
+    
+    // Time factors
+    if (hour >= 22 || hour < 6) {
+      moodScore -= 5;
+      reasoning.push('late/early hours');
+    }
+    
+    // Weekend work penalty
+    if (isWeekend && unifiedInbox.filter(m => m.category === 'work' && !m.isRead).length > 0) {
+      moodScore -= 10;
+      reasoning.push('working on weekend');
+    }
+    
+    // Check frequency (compulsive checking)
+    if (checkFrequency > 15) {
+      moodScore -= 10;
+      reasoning.push('frequent checking');
+    }
+    
+    // Map score to mood level
+    let mood: MoodLevel;
+    if (moodScore >= 80) mood = 'great';
+    else if (moodScore >= 65) mood = 'good';
+    else if (moodScore >= 45) mood = 'okay';
+    else if (moodScore >= 25) mood = 'low';
+    else mood = 'struggling';
+    
+    // Confidence based on data availability
+    const confidence = Math.min(90, 40 + (messageVolume > 0 ? 20 : 0) + (stressIndicator ? 20 : 0) + (checkFrequency > 0 ? 10 : 0));
+    
+    const inferred: InferredMood = {
+      mood,
+      confidence,
+      source: 'activity',
+      reasoning: reasoning.length > 0 ? reasoning.join(', ') : 'based on current activity patterns',
+      timestamp: now,
+    };
+    
+    setInferredMood(inferred);
+    
+    // Save to localStorage
+    if (user?.id) {
+      localStorage.setItem(`atlas-inferred-mood-${user.id}`, JSON.stringify(inferred));
+    }
+    
+    return inferred;
+  }, [stressIndicator, unifiedInbox, user?.id]);
+
+  // Update mood from Atlas voice conversation (called by Atlas client tool)
+  const updateMoodFromConversation = useCallback((mood: MoodLevel, reasoning?: string) => {
+    const inferred: InferredMood = {
+      mood,
+      confidence: 85, // High confidence from direct conversation
+      source: 'conversation',
+      reasoning: reasoning || 'evaluated through conversation with Atlas',
+      timestamp: new Date(),
+    };
+    
+    setInferredMood(inferred);
+    
+    if (user?.id) {
+      localStorage.setItem(`atlas-inferred-mood-${user.id}`, JSON.stringify(inferred));
+    }
+    
+    return inferred;
+  }, [user?.id]);
+
+  // Set mood manually (user override)
+  const setManualMood = useCallback((mood: MoodLevel) => {
+    const inferred: InferredMood = {
+      mood,
+      confidence: 100, // User knows best
+      source: 'manual',
+      reasoning: 'set manually by user',
+      timestamp: new Date(),
+    };
+    
+    setInferredMood(inferred);
+    
+    if (user?.id) {
+      localStorage.setItem(`atlas-inferred-mood-${user.id}`, JSON.stringify(inferred));
+    }
+    
+    return inferred;
+  }, [user?.id]);
+
+  // Load saved inferred mood on mount
+  useEffect(() => {
+    if (!user?.id) return;
+    
+    const savedMood = localStorage.getItem(`atlas-inferred-mood-${user.id}`);
+    if (savedMood) {
+      try {
+        const parsed = JSON.parse(savedMood);
+        // Only use if from today
+        const savedDate = new Date(parsed.timestamp);
+        const today = new Date();
+        if (savedDate.toDateString() === today.toDateString()) {
+          setInferredMood({ ...parsed, timestamp: new Date(parsed.timestamp) });
+        }
+      } catch (e) {
+        console.error('Error loading inferred mood:', e);
+      }
+    }
+  }, [user?.id]);
+
   return {
     // State
     unifiedInbox,
@@ -521,6 +718,7 @@ export function useAtlasIntelligence() {
     boundaryInsights,
     heldMessages,
     isLoading,
+    inferredMood,
     
     // Actions
     generateDailyBrief,
@@ -530,6 +728,9 @@ export function useAtlasIntelligence() {
     generateContextAwareDraft,
     dismissInsight,
     categorizeMessage,
+    inferMoodFromActivity,
+    updateMoodFromConversation,
+    setManualMood,
     
     // Helpers
     getInboxSummary,
