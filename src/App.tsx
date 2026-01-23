@@ -23,6 +23,8 @@ import GroupHub from "./pages/GroupHub";
 import Help from "./pages/Help";
 import TermsOfService from "./pages/TermsOfService";
 import PrivacyPolicy from "./pages/PrivacyPolicy";
+import About from "./pages/About";
+import Enterprise from "./pages/Enterprise";
 import NotFound from "./pages/NotFound";
 const queryClient = new QueryClient();
 
@@ -64,6 +66,8 @@ const App = () => (
                 <Route path="/help" element={<Help />} />
                 <Route path="/terms-of-service" element={<TermsOfService />} />
                 <Route path="/privacy-policy" element={<PrivacyPolicy />} />
+                <Route path="/about" element={<About />} />
+                <Route path="/enterprise" element={<Enterprise />} />
                       {/* ADD ALL CUSTOM ROUTES ABOVE THE CATCH-ALL "*" ROUTE */}
                       <Route path="*" element={<NotFound />} />
                     </Routes>
