@@ -16,7 +16,6 @@ import {
   LogIn,
   LogOut,
   Download,
-  MessageCircle,
   Wrench,
   Shield,
   Plug,
@@ -148,15 +147,6 @@ export default function Header({ onToggleAudio, audioEnabled, user, onSignOut }:
           {audioEnabled ? <Volume2 size={18} /> : <VolumeX size={18} />}
         </HeaderButton>
         
-        <HeaderButton
-          entityName="Atlas Dashboard"
-          onClick={() => navigate('/atlas')}
-          title="Atlas Voice Agent"
-          importance="high"
-          className="p-2 text-primary hover:text-primary/80 transition-colors"
-        >
-          <MessageCircle size={18} />
-        </HeaderButton>
         
         {/* Data Hubs Navigation */}
         <div className="hidden md:flex items-center gap-1 px-2 py-1 bg-muted/30 rounded-md">
@@ -179,7 +169,7 @@ export default function Header({ onToggleAudio, audioEnabled, user, onSignOut }:
           <HeaderButton
             entityName="Enterprise Hub"
             onClick={() => navigate('/atlas')}
-            title="Enterprise Data Hub"
+            title="Enterprise Hub"
             className="p-2 text-muted-foreground hover:text-primary transition-colors"
           >
             <Briefcase size={16} />

@@ -242,7 +242,7 @@ export function InvitedDashboardsPanel({ className, compact = false }: InvitedDa
                 variant="ghost" 
                 size="sm" 
                 className="w-full text-xs mt-2"
-                onClick={() => navigate('/personal?tab=dashboard')}
+                onClick={() => navigate('/personal?section=invites')}
               >
                 View all {hubInvitations.length + invitedDashboards.length} invitations
               </Button>
@@ -338,7 +338,7 @@ export function InvitedDashboardsPanel({ className, compact = false }: InvitedDa
                 onClick={() => navigate(config.route)}
               >
                 <config.icon className="h-3.5 w-3.5" />
-                {key === 'csuite' ? 'Executive' : key.charAt(0).toUpperCase() + key.slice(1)}
+                {key === 'csuite' ? 'Enterprise' : key.charAt(0).toUpperCase() + key.slice(1)}
               </Button>
             ))}
           </div>

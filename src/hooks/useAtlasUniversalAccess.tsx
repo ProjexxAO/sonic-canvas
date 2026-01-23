@@ -417,7 +417,7 @@ export function useAtlasUniversalAccess() {
 
     const summary: HubSummary = {
       hubType: 'csuite',
-      hubName: 'C-Suite Data Hub',
+      hubName: 'Enterprise Hub',
       totalItems: allResults.length,
       recentActivity: allResults.filter(r => {
         const created = new Date(r.createdAt);
