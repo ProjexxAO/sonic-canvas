@@ -252,9 +252,9 @@ export function AtlasRightPanel({
       );
     }
 
-    // Desktop/Tablet layout - fills remaining space after orb
+    // Desktop/Tablet layout - consistent fixed width like Enterprise/Group hubs
     return (
-      <div className="flex-1 flex flex-col h-full min-w-0">
+      <div className="w-96 flex-shrink-0 flex flex-col h-full">
         <Tabs defaultValue="personal-data" className="flex flex-col h-full overflow-hidden">
           {/* Tab Header Row */}
           <div className="flex items-center gap-2 mb-3 flex-shrink-0">
