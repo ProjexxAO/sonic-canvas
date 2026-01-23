@@ -495,10 +495,10 @@ export function AtlasHubLayout({
         </div>
       </header>
 
-      {/* Main Content */}
-      <main className="relative z-10 flex-1 flex overflow-hidden">
+      {/* Main Content - Full height minus header and footer */}
+      <main className="relative z-10 flex-1 flex overflow-hidden h-[calc(100vh-8rem)]">
         {/* Left Side - Fixed Orb Visualizer with Solar System (absolutely positioned to stay centered) */}
-        <div className="hidden md:flex items-center justify-center fixed left-0 top-0 bottom-0 w-1/2 lg:w-[55%] pointer-events-none z-0">
+        <div className="hidden md:flex items-center justify-center fixed left-0 top-[4rem] bottom-[4rem] w-1/2 lg:w-[55%] pointer-events-none z-0">
           {/* Solar System Background with Orbiting Planets */}
           <SolarSystemBackground theme={theme} />
 
@@ -599,7 +599,7 @@ export function AtlasHubLayout({
           </div>
 
           {/* Voice Controls */}
-          <div className="absolute bottom-24 left-1/2 -translate-x-1/2 pointer-events-auto">
+          <div className="absolute bottom-8 left-1/2 -translate-x-1/2 pointer-events-auto">
             <div className="flex justify-center gap-3">
               {isConnected && (
                 <>
@@ -618,7 +618,7 @@ export function AtlasHubLayout({
         </div>
 
         {/* Right Panel - Scrollable dashboard area (full height, offset for fixed left side) */}
-        <div className="flex-1 overflow-y-auto p-6 md:ml-[50%] lg:ml-[55%] h-[calc(100vh-7rem)] flex flex-col">
+        <div className="flex-1 overflow-y-auto p-4 md:p-6 md:ml-[50%] lg:ml-[55%] h-full flex flex-col">
           <AtlasRightPanel
           hubType={hubType}
           groupId={groupId}
