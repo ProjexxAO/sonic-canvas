@@ -62,7 +62,7 @@ interface AgentMessage {
   content: string;
   timestamp: Date;
   action?: {
-    type: 'task_created' | 'task_completed' | 'goal_created' | 'habit_created' | 'analysis_complete' | 'automation_triggered';
+    type: 'task_created' | 'task_completed' | 'goal_created' | 'habit_created' | 'analysis_complete' | 'automation_triggered' | 'workflow_created' | 'email_monitor_created' | 'notification_sent' | 'reminder_scheduled' | 'event_scheduled';
     data?: any;
   };
 }
@@ -311,7 +311,7 @@ export function AgentWidgetRenderer({
             toast.success('Goal created successfully!');
             break;
           case 'update_goal_progress':
-            action = { type: 'goal_created' }; // Reuse for progress updates
+            action = { type: 'goal_created' };
             useDataRefreshStore.getState().triggerRefresh('personal_goals', 'widget-goal-updated');
             toast.success('Goal progress updated!');
             break;
@@ -321,9 +321,51 @@ export function AgentWidgetRenderer({
             toast.success('Habit created successfully!');
             break;
           case 'complete_habit':
-            action = { type: 'habit_created' }; // Reuse for completions
+            action = { type: 'habit_created' };
             useDataRefreshStore.getState().triggerRefresh('personal_habits', 'widget-habit-completed');
             toast.success(`Habit completed! Streak: ${actionResult.newStreak}`);
+            break;
+          // NEW AUTOMATION ACTIONS
+          case 'create_workflow':
+            action = { type: 'workflow_created', data: actionResult.workflow };
+            useDataRefreshStore.getState().triggerRefresh('all', 'widget-workflow-created');
+            toast.success(`Workflow "${actionResult.workflow?.name}" created and activated!`, {
+              description: 'Your automation is now running.',
+              duration: 5000,
+            });
+            break;
+          case 'create_email_monitor':
+            action = { type: 'email_monitor_created', data: actionResult.workflow };
+            useDataRefreshStore.getState().triggerRefresh('all', 'widget-email-monitor-created');
+            toast.success('Email monitor activated!', {
+              description: 'You\'ll be notified when matching emails arrive.',
+              duration: 5000,
+            });
+            break;
+          case 'create_automation':
+            action = { type: 'automation_triggered', data: actionResult.automation };
+            useDataRefreshStore.getState().triggerRefresh('all', 'widget-automation-created');
+            toast.success(`Automation "${actionResult.automation?.name}" created!`, {
+              description: 'Your automation is now active.',
+              duration: 5000,
+            });
+            break;
+          case 'send_notification':
+            action = { type: 'notification_sent', data: actionResult.notification };
+            toast.success('Notification sent!');
+            break;
+          case 'schedule_reminder':
+            action = { type: 'reminder_scheduled', data: actionResult.reminder };
+            useDataRefreshStore.getState().triggerRefresh('personal_items', 'widget-reminder-created');
+            toast.success('Reminder scheduled!', {
+              description: `You'll be reminded at ${new Date(actionResult.reminder?.reminder_at).toLocaleString()}`,
+              duration: 5000,
+            });
+            break;
+          case 'schedule_event':
+            action = { type: 'event_scheduled', data: actionResult.event };
+            useDataRefreshStore.getState().triggerRefresh('all', 'widget-event-created');
+            toast.success(`Event "${actionResult.event?.title}" scheduled!`);
             break;
           default:
             if (actionResult.type === 'analysis') {
@@ -345,6 +387,20 @@ export function AgentWidgetRenderer({
         } else if (lowerResponse.includes('completed') || lowerResponse.includes('marked as done')) {
           action = { type: 'task_completed' };
           useDataRefreshStore.getState().triggerRefresh('personal_items', 'widget-task-completed');
+        } else if (lowerResponse.includes('workflow') || lowerResponse.includes('🔄')) {
+          action = { type: 'workflow_created' };
+          useDataRefreshStore.getState().triggerRefresh('all', 'widget-workflow-created');
+        } else if (lowerResponse.includes('automation') || lowerResponse.includes('⚡')) {
+          action = { type: 'automation_triggered' };
+          useDataRefreshStore.getState().triggerRefresh('all', 'widget-automation-created');
+        } else if (lowerResponse.includes('email monitor') || lowerResponse.includes('📧')) {
+          action = { type: 'email_monitor_created' };
+          useDataRefreshStore.getState().triggerRefresh('all', 'widget-email-monitor-created');
+        } else if (lowerResponse.includes('reminder') || lowerResponse.includes('⏰')) {
+          action = { type: 'reminder_scheduled' };
+          useDataRefreshStore.getState().triggerRefresh('personal_items', 'widget-reminder-created');
+        } else if (lowerResponse.includes('notification') || lowerResponse.includes('🔔')) {
+          action = { type: 'notification_sent' };
         } else if (lowerResponse.includes('analysis') || lowerResponse.includes('analyzed')) {
           action = { type: 'analysis_complete' };
         }
