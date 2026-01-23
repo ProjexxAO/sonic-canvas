@@ -85,6 +85,8 @@ export class VoiceIntentParser {
     'terms of service': '/terms-of-service',
     'privacy': '/privacy-policy',
     'privacy policy': '/privacy-policy',
+    'about': '/about',
+    'about us': '/about',
   };
 
   // Sector keywords for agent filtering
