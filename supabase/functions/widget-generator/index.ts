@@ -12,6 +12,91 @@ interface GenerateWidgetRequest {
   existingWidgets?: string[];
 }
 
+// Complete life domain coverage
+const ALL_DATA_SOURCES = [
+  // Core productivity
+  "tasks", "goals", "habits", "calendar", "email", "documents", "notes",
+  // Finance & commerce
+  "finance", "banking", "investments", "shopping", "subscriptions", "expenses",
+  // Health & wellness
+  "health", "fitness", "nutrition", "sleep", "meditation", "mental-health",
+  // Social & relationships
+  "contacts", "relationships", "social-media", "messages",
+  // Entertainment & leisure
+  "entertainment", "music", "movies", "books", "podcasts", "gaming",
+  // Travel & transportation
+  "travel", "flights", "hotels", "transportation", "maps",
+  // Home & lifestyle
+  "home", "smart-home", "groceries", "recipes", "pets", "plants",
+  // Learning & development
+  "learning", "courses", "skills", "languages", "certifications",
+  // Work & career
+  "work", "meetings", "projects", "clients", "networking",
+  // Media & files
+  "photos", "videos", "files", "cloud-storage",
+  // External integrations
+  "custom-api", "webhooks", "iot-devices", "external-services"
+];
+
+// Agent types that can be orchestrated for each domain
+const DOMAIN_AGENTS: Record<string, string[]> = {
+  // Productivity agents
+  "tasks": ["task-optimizer", "priority-analyzer", "deadline-tracker"],
+  "goals": ["goal-coach", "milestone-tracker", "accountability-partner"],
+  "habits": ["habit-coach", "streak-keeper", "behavior-analyst"],
+  "calendar": ["schedule-optimizer", "meeting-coordinator", "time-analyst"],
+  
+  // Finance agents
+  "finance": ["financial-advisor", "budget-analyst", "expense-tracker"],
+  "banking": ["account-monitor", "fraud-detector", "balance-tracker"],
+  "investments": ["portfolio-manager", "market-analyst", "risk-assessor"],
+  "shopping": ["deal-finder", "price-tracker", "purchase-advisor"],
+  
+  // Health agents
+  "health": ["health-monitor", "symptom-tracker", "wellness-coach"],
+  "fitness": ["fitness-coach", "workout-planner", "performance-tracker"],
+  "nutrition": ["nutrition-advisor", "meal-planner", "calorie-tracker"],
+  "sleep": ["sleep-analyst", "circadian-optimizer", "rest-coach"],
+  "meditation": ["mindfulness-guide", "stress-reducer", "focus-coach"],
+  
+  // Social agents
+  "contacts": ["contact-manager", "relationship-tracker", "network-analyzer"],
+  "relationships": ["relationship-coach", "connection-reminder", "social-planner"],
+  "social-media": ["social-curator", "engagement-tracker", "content-scheduler"],
+  
+  // Entertainment agents
+  "entertainment": ["entertainment-curator", "recommendation-engine"],
+  "music": ["music-curator", "playlist-generator", "discovery-agent"],
+  "movies": ["movie-recommender", "watchlist-manager"],
+  "books": ["reading-advisor", "book-recommender", "reading-tracker"],
+  
+  // Travel agents
+  "travel": ["travel-planner", "itinerary-builder", "destination-advisor"],
+  "flights": ["flight-tracker", "deal-hunter", "booking-optimizer"],
+  "hotels": ["accommodation-finder", "review-analyzer"],
+  
+  // Home agents
+  "home": ["home-manager", "maintenance-tracker", "inventory-keeper"],
+  "smart-home": ["device-controller", "automation-builder", "energy-optimizer"],
+  "groceries": ["grocery-planner", "list-manager", "stock-tracker"],
+  "recipes": ["recipe-curator", "meal-suggester", "cooking-assistant"],
+  "pets": ["pet-care-tracker", "vet-reminder", "feeding-scheduler"],
+  
+  // Learning agents
+  "learning": ["learning-coach", "study-planner", "knowledge-tracker"],
+  "courses": ["course-recommender", "progress-tracker", "certification-planner"],
+  "skills": ["skill-assessor", "development-coach", "practice-scheduler"],
+  
+  // Work agents
+  "work": ["productivity-coach", "focus-optimizer", "work-life-balancer"],
+  "meetings": ["meeting-summarizer", "action-item-tracker", "agenda-preparer"],
+  "projects": ["project-manager", "milestone-tracker", "team-coordinator"],
+  "clients": ["client-manager", "communication-tracker", "opportunity-spotter"],
+  
+  // General
+  "default": ["general-assistant", "data-analyzer", "insight-generator"]
+};
+
 serve(async (req) => {
   if (req.method === "OPTIONS") {
     return new Response(null, { headers: corsHeaders });
@@ -25,20 +110,28 @@ serve(async (req) => {
       throw new Error("LOVABLE_API_KEY is not configured");
     }
 
-    const systemPrompt = `You are Atlas, an AI orchestrator that helps users create custom dashboard widgets. 
-You analyze user requests and generate widget configurations that can display data, provide AI assistance, or automate actions.
+    const systemPrompt = `You are Atlas, a universal AI orchestrator with command of 144,000 specialized agents. Users can create widgets to manage ANY aspect of their lives through their Personal Dashboard.
 
-Available data sources the user has connected: ${availableDataSources.join(', ') || 'none yet'}
-${existingWidgets?.length ? `User's existing widgets: ${existingWidgets.join(', ')}` : ''}
+The Personal Dashboard is the user's LIFE OPERATING SYSTEM. They should be able to:
+- Track and manage ANYTHING (health, finances, relationships, travel, learning, entertainment, home, work...)
+- Automate ANY process they can describe
+- Monitor ANY data source
+- Get AI assistance for ANY life domain
 
-Your task is to:
-1. Understand what the user wants to track, visualize, or automate
-2. Determine the best widget type and configuration
-3. Identify which data sources to connect
-4. Suggest AI capabilities if the widget would benefit from them
-5. Recommend agents from the orchestration system if needed
+Available data sources: ${ALL_DATA_SOURCES.join(', ')}
+User's connected sources: ${availableDataSources.join(', ') || 'starting fresh'}
+${existingWidgets?.length ? `Existing widgets: ${existingWidgets.join(', ')}` : ''}
 
-Be creative but practical. Focus on actionable, useful widgets.`;
+YOUR MISSION:
+1. Understand EXACTLY what the user wants to manage, track, or automate
+2. Create a widget that genuinely helps them with that aspect of their life
+3. Connect relevant data sources (even if not yet connected - we'll prompt for connection)
+4. Assign appropriate AI agents from your 144,000 agent fleet
+5. Enable automation capabilities for background processing
+
+THINK EXPANSIVELY - if a user says "help me plan my vacation", create a travel-focused widget with flight, hotel, budget, and itinerary capabilities. If they say "track my workouts", create a comprehensive fitness widget.
+
+BE PROACTIVE - suggest additional capabilities that would make the widget more useful.`;
 
     const response = await fetch("https://ai.gateway.lovable.dev/v1/chat/completions", {
       method: "POST",
@@ -57,86 +150,106 @@ Be creative but practical. Focus on actionable, useful widgets.`;
             type: "function",
             function: {
               name: "create_widget",
-              description: "Create a custom dashboard widget based on user requirements",
+              description: "Create a custom dashboard widget for any life domain",
               parameters: {
                 type: "object",
                 properties: {
                   name: { 
                     type: "string", 
-                    description: "Short, descriptive widget name (2-4 words)" 
+                    description: "Short, descriptive widget name (2-5 words)" 
                   },
                   description: { 
                     type: "string", 
-                    description: "Brief description of what the widget does" 
+                    description: "What this widget helps the user accomplish" 
                   },
                   widget_type: { 
                     type: "string", 
                     enum: ["data-display", "ai-assistant", "automation", "hybrid"],
-                    description: "The primary type of widget"
+                    description: "Primary widget type. Use 'hybrid' for interactive widgets with AI and automation."
                   },
                   display_type: {
                     type: "string",
-                    enum: ["chart", "list", "metric", "card", "timeline", "kanban"],
-                    description: "How to display the data"
+                    enum: ["chart", "list", "metric", "card", "timeline", "kanban", "calendar", "map", "dashboard"],
+                    description: "Visual layout type"
                   },
                   chart_type: {
                     type: "string",
-                    enum: ["bar", "line", "pie", "area", "radial"],
-                    description: "Type of chart if display_type is chart"
+                    enum: ["bar", "line", "pie", "area", "radial", "scatter", "heatmap"],
+                    description: "Chart style if display_type is chart"
                   },
                   data_sources: {
                     type: "array",
                     items: { 
                       type: "string",
-                      enum: ["tasks", "goals", "habits", "finance", "calendar", "email", "documents", "photos", "custom-api"]
+                      enum: ALL_DATA_SOURCES
                     },
-                    description: "Data sources to connect"
+                    description: "All relevant data domains for this widget"
                   },
                   ai_enabled: {
                     type: "boolean",
-                    description: "Whether to enable AI capabilities"
+                    description: "Enable AI agent capabilities"
                   },
                   ai_capabilities: {
                     type: "array",
                     items: { type: "string" },
-                    description: "List of AI capabilities (e.g., 'summarize', 'predict', 'suggest', 'analyze')"
+                    description: "Specific AI capabilities: analyze, predict, recommend, summarize, plan, track, alert, automate, coach, optimize"
                   },
                   ai_prompt: {
                     type: "string",
-                    description: "System prompt for AI-powered widgets"
+                    description: "Detailed system prompt for the widget's AI personality and capabilities"
                   },
                   agents: {
                     type: "array",
                     items: { type: "string" },
-                    description: "Agent types to orchestrate (e.g., 'financial-analyst', 'task-optimizer', 'wellness-coach')"
+                    description: "Specific agents to assign from the 144k fleet"
+                  },
+                  automation_triggers: {
+                    type: "array",
+                    items: { type: "string" },
+                    description: "Events that trigger automated actions (e.g., 'new_email', 'low_balance', 'missed_workout')"
+                  },
+                  automation_actions: {
+                    type: "array",
+                    items: { type: "string" },
+                    description: "Actions the widget can perform automatically"
                   },
                   aggregation: {
                     type: "string",
-                    enum: ["sum", "count", "average", "min", "max"],
-                    description: "How to aggregate data"
+                    enum: ["sum", "count", "average", "min", "max", "trend", "comparison"],
+                    description: "Data aggregation method"
                   },
                   col_span: {
                     type: "number",
-                    description: "Widget width (1-6 columns)"
+                    description: "Widget width (1-6 columns, 4+ for complex widgets)"
+                  },
+                  row_span: {
+                    type: "number",
+                    description: "Widget height in rows (1-4)"
                   },
                   icon: {
                     type: "string",
-                    description: "Lucide icon name for the widget"
+                    description: "Lucide icon name"
                   },
                   color: {
                     type: "string",
-                    description: "Accent color (e.g., 'blue', 'green', 'purple')"
+                    enum: ["blue", "green", "purple", "orange", "pink", "cyan", "yellow", "red", "emerald", "indigo"],
+                    description: "Accent color"
                   },
                   refresh_interval: {
                     type: "number",
-                    description: "Auto-refresh interval in seconds (0 for manual)"
+                    description: "Auto-refresh in seconds (0=manual, 60=minute, 300=5min, 3600=hour)"
+                  },
+                  quick_actions: {
+                    type: "array",
+                    items: { type: "string" },
+                    description: "One-click actions available in the widget"
                   },
                   explanation: {
                     type: "string",
-                    description: "Brief explanation of why this widget design was chosen"
+                    description: "How this widget will help the user manage this aspect of their life"
                   }
                 },
-                required: ["name", "description", "widget_type", "data_sources", "col_span", "explanation"],
+                required: ["name", "description", "widget_type", "data_sources", "ai_enabled", "col_span", "explanation"],
                 additionalProperties: false
               }
             }
@@ -172,6 +285,15 @@ Be creative but practical. Focus on actionable, useful widgets.`;
     }
 
     const widgetConfig = JSON.parse(toolCall.function.arguments);
+    
+    // Enrich agents based on data sources if not specified
+    let agents = widgetConfig.agents || [];
+    if (agents.length === 0 && widgetConfig.data_sources?.length > 0) {
+      for (const source of widgetConfig.data_sources.slice(0, 3)) {
+        const domainAgents = DOMAIN_AGENTS[source] || DOMAIN_AGENTS.default;
+        agents.push(...domainAgents.slice(0, 2));
+      }
+    }
 
     // Transform to our widget schema
     const widget = {
@@ -183,24 +305,30 @@ Be creative but practical. Focus on actionable, useful widgets.`;
         chartType: widgetConfig.chart_type,
         aggregation: widgetConfig.aggregation,
         refreshInterval: widgetConfig.refresh_interval || 0,
+        automationTriggers: widgetConfig.automation_triggers || [],
+        automationActions: widgetConfig.automation_actions || [],
+        quickActions: widgetConfig.quick_actions || [],
       },
       data_sources: widgetConfig.data_sources,
       ai_capabilities: {
-        enabled: widgetConfig.ai_enabled || false,
+        enabled: widgetConfig.ai_enabled !== false, // Default to enabled
         systemPrompt: widgetConfig.ai_prompt,
         capabilities: widgetConfig.ai_capabilities || [],
-        agents: widgetConfig.agents || [],
+        agents: agents,
       },
       layout: {
         colSpan: Math.min(Math.max(widgetConfig.col_span || 2, 1), 6),
+        rowSpan: widgetConfig.row_span || 1,
       },
       style: {
         icon: widgetConfig.icon,
         color: widgetConfig.color,
       },
       explanation: widgetConfig.explanation,
-      agent_chain: widgetConfig.agents || [],
+      agent_chain: agents,
     };
+
+    console.log(`Generated widget "${widget.name}" with ${agents.length} agents for domains: ${widgetConfig.data_sources?.join(', ')}`);
 
     return new Response(JSON.stringify({ widget, success: true }), {
       headers: { ...corsHeaders, "Content-Type": "application/json" },
