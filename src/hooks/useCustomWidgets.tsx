@@ -10,15 +10,75 @@ export type WidgetType =
   | 'hybrid';         // Combination
 
 export type DataSource = 
+  // Core productivity
   | 'tasks'
   | 'goals'
   | 'habits'
-  | 'finance'
   | 'calendar'
   | 'email'
   | 'documents'
+  | 'notes'
+  // Finance & commerce
+  | 'finance'
+  | 'banking'
+  | 'investments'
+  | 'shopping'
+  | 'subscriptions'
+  | 'expenses'
+  // Health & wellness
+  | 'health'
+  | 'fitness'
+  | 'nutrition'
+  | 'sleep'
+  | 'meditation'
+  | 'mental-health'
+  // Social & relationships
+  | 'contacts'
+  | 'relationships'
+  | 'social-media'
+  | 'messages'
+  // Entertainment & leisure
+  | 'entertainment'
+  | 'music'
+  | 'movies'
+  | 'books'
+  | 'podcasts'
+  | 'gaming'
+  // Travel & transportation
+  | 'travel'
+  | 'flights'
+  | 'hotels'
+  | 'transportation'
+  | 'maps'
+  // Home & lifestyle
+  | 'home'
+  | 'smart-home'
+  | 'groceries'
+  | 'recipes'
+  | 'pets'
+  | 'plants'
+  // Learning & development
+  | 'learning'
+  | 'courses'
+  | 'skills'
+  | 'languages'
+  | 'certifications'
+  // Work & career
+  | 'work'
+  | 'meetings'
+  | 'projects'
+  | 'clients'
+  | 'networking'
+  // Media & files
   | 'photos'
-  | 'custom-api';
+  | 'videos'
+  | 'files'
+  | 'cloud-storage'
+  // External integrations
+  | 'custom-api'
+  | 'webhooks'
+  | 'iot-devices'
+  | 'external-services';
 
 export interface WidgetConfig {
   displayType?: 'chart' | 'list' | 'metric' | 'card' | 'timeline' | 'kanban';

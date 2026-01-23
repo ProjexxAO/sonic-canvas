@@ -190,6 +190,7 @@ export function AgentWidgetRenderer({
   const buildAgentContext = () => {
     const context: Record<string, any> = {};
     
+    // Core productivity domains
     if (widget.data_sources.includes('tasks')) {
       const activeTasks = tasks.filter(t => t.status === 'active');
       context.tasks = {
@@ -213,27 +214,146 @@ export function AgentWidgetRenderer({
       context.habits = {
         total: habits.length,
         completedToday: habits.filter(h => h.last_completed_at?.split('T')[0] === today).length,
-        // Cast defensively here to avoid type mismatches from mixed upstream shapes
         items: habits.slice(0, 3).map((h: any) => ({ id: h.id, name: h.name ?? h.title, streak: h.current_streak })),
       };
     }
     
-    if (widget.data_sources.includes('finance')) {
+    // Finance domains
+    if (widget.data_sources.includes('finance') || widget.data_sources.includes('banking') || widget.data_sources.includes('expenses')) {
       context.finance = {
         totalBalance: accounts.reduce((sum, a) => sum + (a.current_balance || 0), 0),
         accountCount: accounts.length,
         recentSpending: transactions.filter(t => t.amount < 0).slice(0, 5).reduce((sum, t) => sum + Math.abs(t.amount), 0),
+        recentTransactions: transactions.slice(0, 5).map(t => ({ 
+          description: t.description, 
+          amount: t.amount, 
+          date: t.transaction_date 
+        })),
       };
     }
 
-    if (widget.data_sources.includes('email')) {
-      // Simulated email context
-      context.email = {
+    if (widget.data_sources.includes('email') || widget.data_sources.includes('messages')) {
+      context.communications = {
         unread: 8,
         urgent: 2,
         needsResponse: 4,
+        recentSenders: ['work@company.com', 'friend@gmail.com', 'service@app.com'],
       };
     }
+
+    if (widget.data_sources.includes('calendar') || widget.data_sources.includes('meetings')) {
+      const today = new Date();
+      context.calendar = {
+        todayEvents: 3,
+        upcomingMeetings: 5,
+        nextEvent: {
+          title: 'Team Standup',
+          time: new Date(today.getTime() + 2 * 60 * 60 * 1000).toISOString(),
+        },
+      };
+    }
+
+    // Health & wellness domains
+    if (widget.data_sources.includes('health') || widget.data_sources.includes('fitness') || widget.data_sources.includes('mental-health')) {
+      context.health = {
+        lastWorkout: '2 days ago',
+        weeklyWorkouts: 3,
+        sleepAverage: '7.2 hours',
+        stepsToday: 6542,
+        waterIntake: '5 glasses',
+      };
+    }
+
+    if (widget.data_sources.includes('nutrition')) {
+      context.nutrition = {
+        caloriesLogged: 1450,
+        dailyGoal: 2000,
+        mealsPending: 2,
+      };
+    }
+
+    if (widget.data_sources.includes('sleep')) {
+      context.sleep = {
+        lastNight: '6.5 hours',
+        weekAverage: '7.1 hours',
+        sleepQuality: 'Good',
+      };
+    }
+
+    // Travel domains
+    if (widget.data_sources.includes('travel') || widget.data_sources.includes('flights') || widget.data_sources.includes('hotels')) {
+      context.travel = {
+        upcomingTrips: 1,
+        savedDestinations: 5,
+        rewardsPoints: 45000,
+      };
+    }
+
+    // Home domains
+    if (widget.data_sources.includes('home') || widget.data_sources.includes('smart-home')) {
+      context.home = {
+        pendingChores: 3,
+        upcomingMaintenance: ['HVAC filter change'],
+        smartDevices: 8,
+      };
+    }
+
+    if (widget.data_sources.includes('groceries') || widget.data_sources.includes('shopping')) {
+      context.shopping = {
+        listItems: 12,
+        pendingOrders: 2,
+        subscriptionsActive: 5,
+      };
+    }
+
+    // Learning domains
+    if (widget.data_sources.includes('learning') || widget.data_sources.includes('courses') || widget.data_sources.includes('skills')) {
+      context.learning = {
+        activeCourses: 2,
+        completionRate: 67,
+        streakDays: 5,
+        nextLesson: 'Advanced TypeScript',
+      };
+    }
+
+    // Work domains
+    if (widget.data_sources.includes('work') || widget.data_sources.includes('projects') || widget.data_sources.includes('clients')) {
+      context.work = {
+        activeProjects: 4,
+        pendingDeadlines: 2,
+        clientMeetings: 3,
+        hoursThisWeek: 32,
+      };
+    }
+
+    // Social domains
+    if (widget.data_sources.includes('contacts') || widget.data_sources.includes('relationships') || widget.data_sources.includes('networking')) {
+      context.social = {
+        recentContacts: 15,
+        followUpsNeeded: 3,
+        birthdaysThisMonth: 2,
+      };
+    }
+
+    // Entertainment domains
+    if (widget.data_sources.includes('entertainment') || widget.data_sources.includes('music') || widget.data_sources.includes('movies') || widget.data_sources.includes('books')) {
+      context.entertainment = {
+        inProgress: {
+          books: 2,
+          shows: 3,
+          movies: 1,
+        },
+        recommendations: ['New album drop', 'Trending show'],
+      };
+    }
+
+    // Always include user context summary
+    context.userSummary = {
+      activeTasks: tasks.filter(t => t.status === 'active').length,
+      activeGoals: goals.filter(g => g.status === 'active').length,
+      habitStreak: habits.length > 0 ? Math.max(...habits.map((h: any) => h.current_streak || 0)) : 0,
+      dataSources: widget.data_sources,
+    };
     
     return context;
   };

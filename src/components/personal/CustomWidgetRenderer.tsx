@@ -22,7 +22,42 @@ import {
   Check,
   AlertCircle,
   Clock,
-  ExternalLink
+  ExternalLink,
+  Heart,
+  Dumbbell,
+  Apple,
+  Moon,
+  Smile,
+  Users,
+  MessageSquare,
+  Plane,
+  Hotel,
+  Car,
+  Map,
+  Home,
+  Lightbulb,
+  ShoppingCart,
+  UtensilsCrossed,
+  Dog,
+  Leaf,
+  GraduationCap,
+  BookOpen,
+  Languages,
+  Award,
+  Briefcase,
+  Video,
+  Music,
+  Film,
+  Headphones,
+  Gamepad2,
+  Cloud,
+  Wifi,
+  Webhook,
+  Globe,
+  CreditCard,
+  TrendingUp as Investments,
+  Receipt,
+  type LucideIcon
 } from 'lucide-react';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
@@ -67,16 +102,82 @@ interface AIInsight {
   suggestions?: string[];
 }
 
-const DATA_SOURCE_ICONS: Record<DataSource, React.ElementType> = {
+// Comprehensive icon mapping for all life domains
+const DATA_SOURCE_ICONS: Partial<Record<DataSource, LucideIcon>> = {
+  // Core productivity
   tasks: CheckSquare,
   goals: Target,
   habits: Flame,
-  finance: DollarSign,
   calendar: Calendar,
   email: Mail,
   documents: FileText,
+  notes: FileText,
+  // Finance
+  finance: DollarSign,
+  banking: CreditCard,
+  investments: Investments,
+  shopping: ShoppingCart,
+  subscriptions: Receipt,
+  expenses: Receipt,
+  // Health
+  health: Heart,
+  fitness: Dumbbell,
+  nutrition: Apple,
+  sleep: Moon,
+  meditation: Smile,
+  'mental-health': Brain,
+  // Social
+  contacts: Users,
+  relationships: Heart,
+  'social-media': Globe,
+  messages: MessageSquare,
+  // Entertainment
+  entertainment: Sparkles,
+  music: Music,
+  movies: Film,
+  books: BookOpen,
+  podcasts: Headphones,
+  gaming: Gamepad2,
+  // Travel
+  travel: Plane,
+  flights: Plane,
+  hotels: Hotel,
+  transportation: Car,
+  maps: Map,
+  // Home
+  home: Home,
+  'smart-home': Lightbulb,
+  groceries: ShoppingCart,
+  recipes: UtensilsCrossed,
+  pets: Dog,
+  plants: Leaf,
+  // Learning
+  learning: GraduationCap,
+  courses: BookOpen,
+  skills: Award,
+  languages: Languages,
+  certifications: Award,
+  // Work
+  work: Briefcase,
+  meetings: Calendar,
+  projects: Target,
+  clients: Users,
+  networking: Users,
+  // Media
   photos: ImageIcon,
+  videos: Video,
+  files: FileText,
+  'cloud-storage': Cloud,
+  // Integrations
   'custom-api': Zap,
+  webhooks: Webhook,
+  'iot-devices': Wifi,
+  'external-services': Globe,
+};
+
+// Helper to get icon with fallback
+const getDataSourceIcon = (source: DataSource): LucideIcon => {
+  return DATA_SOURCE_ICONS[source] || Zap;
 };
 
 const WIDGET_TYPE_ICONS = {
@@ -130,7 +231,7 @@ export function CustomWidgetRenderer({
     : ICON_COLOR_MAP.purple;
 
   const primaryDataSource = widget.data_sources[0];
-  const DataIcon = primaryDataSource ? DATA_SOURCE_ICONS[primaryDataSource] : Brain;
+  const DataIcon = primaryDataSource ? getDataSourceIcon(primaryDataSource) : Brain;
 
   // Aggregate data based on data sources
   const aggregatedData = useMemo(() => {
