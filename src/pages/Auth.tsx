@@ -1,13 +1,14 @@
 // Atlas Sonic OS - Authentication Page
 
-import { useState, useEffect } from 'react';
+import { useState, useEffect, useRef } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { useAuth } from '@/hooks/useAuth';
 import { audioEngine } from '@/lib/audioEngine';
 import { supabase } from '@/integrations/supabase/client';
-import { Hexagon, Radio, Mail, Lock, User, ArrowRight, Loader2, Phone } from 'lucide-react';
+import { Hexagon, Radio, Mail, Lock, User, ArrowRight, Loader2, Phone, ShieldCheck } from 'lucide-react';
 import { toast } from 'sonner';
 import { z } from 'zod';
+import { Turnstile, type TurnstileInstance } from '@marsidev/react-turnstile';
 
 const authSchema = z.object({
   email: z.string().email('Invalid email format'),
@@ -30,6 +31,26 @@ export default function Auth() {
   const [loading, setLoading] = useState(false);
   const [googleLoading, setGoogleLoading] = useState(false);
   const [errors, setErrors] = useState<Record<string, string>>({});
+  const [turnstileToken, setTurnstileToken] = useState<string | null>(null);
+  const [turnstileVerified, setTurnstileVerified] = useState(false);
+  const [verifyingTurnstile, setVerifyingTurnstile] = useState(false);
+  const turnstileRef = useRef<TurnstileInstance>(null);
+  const [turnstileSiteKey, setTurnstileSiteKey] = useState<string>('');
+
+  // Fetch Turnstile site key on mount
+  useEffect(() => {
+    const fetchSiteKey = async () => {
+      try {
+        const { data } = await supabase.functions.invoke('turnstile-config');
+        if (data?.siteKey) {
+          setTurnstileSiteKey(data.siteKey);
+        }
+      } catch (err) {
+        console.error('Failed to fetch Turnstile config:', err);
+      }
+    };
+    fetchSiteKey();
+  }, []);
 
   // Redirect if already logged in - Personal Hub first (people-first approach)
   useEffect(() => {
@@ -60,9 +81,52 @@ export default function Auth() {
     }
   };
 
+  const verifyTurnstile = async (token: string): Promise<boolean> => {
+    setVerifyingTurnstile(true);
+    try {
+      const { data, error } = await supabase.functions.invoke('verify-turnstile', {
+        body: { token }
+      });
+      
+      if (error || !data?.success) {
+        console.error('Turnstile verification failed:', error || data);
+        return false;
+      }
+      return true;
+    } catch (err) {
+      console.error('Turnstile verification error:', err);
+      return false;
+    } finally {
+      setVerifyingTurnstile(false);
+    }
+  };
+
+  const handleTurnstileSuccess = async (token: string) => {
+    setTurnstileToken(token);
+    const verified = await verifyTurnstile(token);
+    setTurnstileVerified(verified);
+    if (verified) {
+      audioEngine.playSuccess();
+    }
+  };
+
+  const handleTurnstileError = () => {
+    setTurnstileToken(null);
+    setTurnstileVerified(false);
+    toast.error('Human verification failed. Please try again.');
+    audioEngine.playError();
+  };
+
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
     if (!validate()) return;
+    
+    // Require Turnstile verification for signup
+    if (mode === 'signup' && !turnstileVerified) {
+      toast.error('Please complete human verification first');
+      audioEngine.playError();
+      return;
+    }
     
     setLoading(true);
     audioEngine.playClick();
@@ -77,6 +141,9 @@ export default function Auth() {
             toast.error(error.message);
           }
           audioEngine.playError();
+          // Reset Turnstile on error
+          turnstileRef.current?.reset();
+          setTurnstileVerified(false);
         } else {
           audioEngine.playSuccess();
           toast.success('Access granted');
@@ -91,6 +158,9 @@ export default function Auth() {
             toast.error(error.message);
           }
           audioEngine.playError();
+          // Reset Turnstile on error
+          turnstileRef.current?.reset();
+          setTurnstileVerified(false);
         } else {
           audioEngine.playSuccess();
           toast.success('Operator registered successfully');
@@ -240,9 +310,47 @@ export default function Auth() {
               )}
             </div>
 
+            {/* Turnstile Human Verification - Only show for signup */}
+            {mode === 'signup' && turnstileSiteKey && (
+              <div className="space-y-2">
+                <label className="text-xs text-muted-foreground mb-1 flex items-center gap-1">
+                  <ShieldCheck size={12} />
+                  HUMAN VERIFICATION
+                </label>
+                <div className="flex justify-center">
+                  <Turnstile
+                    ref={turnstileRef}
+                    siteKey={turnstileSiteKey}
+                    onSuccess={handleTurnstileSuccess}
+                    onError={handleTurnstileError}
+                    onExpire={() => {
+                      setTurnstileToken(null);
+                      setTurnstileVerified(false);
+                    }}
+                    options={{
+                      theme: 'dark',
+                      size: 'normal',
+                    }}
+                  />
+                </div>
+                {verifyingTurnstile && (
+                  <p className="text-xs text-muted-foreground text-center flex items-center justify-center gap-1">
+                    <Loader2 size={12} className="animate-spin" />
+                    Verifying...
+                  </p>
+                )}
+                {turnstileVerified && (
+                  <p className="text-xs text-primary text-center flex items-center justify-center gap-1">
+                    <ShieldCheck size={12} />
+                    Human verified
+                  </p>
+                )}
+              </div>
+            )}
+
             <button
               type="submit"
-              disabled={loading || googleLoading}
+              disabled={loading || googleLoading || (mode === 'signup' && !turnstileVerified)}
               className="w-full cyber-btn flex items-center justify-center gap-2 py-3"
             >
               {loading ? (
@@ -307,6 +415,9 @@ export default function Auth() {
               onClick={() => {
                 setMode(mode === 'signin' ? 'signup' : 'signin');
                 setErrors({});
+                setTurnstileVerified(false);
+                setTurnstileToken(null);
+                turnstileRef.current?.reset();
                 audioEngine.playHover();
               }}
               className="text-xs text-muted-foreground hover:text-primary transition-colors"
