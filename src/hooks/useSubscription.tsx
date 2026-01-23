@@ -3,9 +3,25 @@
 import { useState, useEffect, useCallback } from 'react';
 import { supabase } from '@/integrations/supabase/client';
 import { useAuth } from './useAuth';
+import {
+  SubscriptionTier,
+  HubType,
+  FeatureKey,
+  AgentClass,
+  TIER_HUB_ACCESS,
+  TIER_AGENT_LIMITS,
+  TIER_FEATURES,
+  TIER_USAGE_LIMITS,
+  canAccessHub as tierCanAccessHub,
+  hasFullHubAccess,
+  canUseFeature,
+  hasFullFeatureAccess,
+  canAllocateAgentClass,
+  getUpgradeTier,
+  getTierLabel,
+} from '@/lib/tierConfig';
 
-export type SubscriptionTier = 'free' | 'personal' | 'team' | 'business' | 'enterprise';
-export type HubType = 'personal' | 'group' | 'csuite';
+export type { SubscriptionTier, HubType, FeatureKey, AgentClass };
 
 interface Subscription {
   id: string;
@@ -41,6 +57,9 @@ export function useSubscription() {
   const [features, setFeatures] = useState<TierFeature[]>([]);
   const [isLoading, setIsLoading] = useState(true);
 
+  // Get the effective tier (from subscription or default to free)
+  const tier: SubscriptionTier = (subscription?.tier as SubscriptionTier) || 'free';
+
   // Fetch subscription data
   useEffect(() => {
     if (!user?.id) {
@@ -73,7 +92,7 @@ export function useSubscription() {
           setSubscription(newSub as unknown as Subscription);
         }
 
-        // Get hub access
+        // Get hub access overrides
         const { data: accessData } = await supabase
           .from('hub_access')
           .select('hub_type, access_level, is_active')
@@ -81,12 +100,12 @@ export function useSubscription() {
 
         setHubAccess((accessData || []) as unknown as HubAccess[]);
 
-        // Get tier features
-        const tier = subData?.tier || 'free';
+        // Get tier features from DB (if any custom overrides)
+        const tierValue = subData?.tier || 'free';
         const { data: featuresData } = await supabase
           .from('tier_features')
           .select('feature_key, is_enabled, usage_limit, description')
-          .eq('tier', tier);
+          .eq('tier', tierValue);
 
         setFeatures((featuresData || []) as unknown as TierFeature[]);
       } catch (error) {
@@ -99,37 +118,69 @@ export function useSubscription() {
     fetchSubscription();
   }, [user?.id]);
 
-  // Check if user can access a hub
+  // Check if user can access a hub (combines tier config + explicit overrides)
   const canAccessHub = useCallback((hubType: HubType): boolean => {
-    if (!subscription) return hubType === 'personal'; // Everyone can access personal
-    
+    // Check explicit override first
     const access = hubAccess.find(h => h.hub_type === hubType);
     if (access?.is_active) return true;
 
-    // Check tier-based access
-    switch (hubType) {
-      case 'personal':
-        return true;
-      case 'group':
-        return ['team', 'business', 'enterprise'].includes(subscription.tier);
-      case 'csuite':
-        return ['business', 'enterprise'].includes(subscription.tier);
-      default:
-        return false;
-    }
-  }, [subscription, hubAccess]);
+    // Fall back to tier-based config
+    return tierCanAccessHub(tier, hubType);
+  }, [tier, hubAccess]);
 
-  // Check if a feature is enabled
-  const hasFeature = useCallback((featureKey: string): boolean => {
-    const feature = features.find(f => f.feature_key === featureKey);
-    return feature?.is_enabled ?? false;
-  }, [features]);
+  // Check if user has full (not limited) hub access
+  const hasFullHub = useCallback((hubType: HubType): boolean => {
+    const access = hubAccess.find(h => h.hub_type === hubType);
+    if (access?.is_active && access.access_level === 'owner') return true;
+    return hasFullHubAccess(tier, hubType);
+  }, [tier, hubAccess]);
+
+  // Check if a feature is enabled (combines tier config + DB overrides)
+  const hasFeature = useCallback((featureKey: FeatureKey): boolean => {
+    // Check DB overrides first
+    const dbFeature = features.find(f => f.feature_key === featureKey);
+    if (dbFeature !== undefined) return dbFeature.is_enabled;
+    
+    // Fall back to tier config
+    return canUseFeature(tier, featureKey);
+  }, [tier, features]);
+
+  // Check if user has full (not limited) feature access
+  const hasFullFeature = useCallback((featureKey: FeatureKey): boolean => {
+    return hasFullFeatureAccess(tier, featureKey);
+  }, [tier]);
 
   // Get feature limit
   const getFeatureLimit = useCallback((featureKey: string): number | null => {
-    const feature = features.find(f => f.feature_key === featureKey);
-    return feature?.usage_limit ?? null;
+    const dbFeature = features.find(f => f.feature_key === featureKey);
+    return dbFeature?.usage_limit ?? null;
   }, [features]);
+
+  // Agent-related checks
+  const getAgentLimits = useCallback(() => {
+    return TIER_AGENT_LIMITS[tier];
+  }, [tier]);
+
+  const canAllocateClass = useCallback((agentClass: AgentClass): boolean => {
+    return canAllocateAgentClass(tier, agentClass);
+  }, [tier]);
+
+  const canOrchestrate = useCallback((): boolean => {
+    return TIER_AGENT_LIMITS[tier].canOrchestrate;
+  }, [tier]);
+
+  const canSwarm = useCallback((): boolean => {
+    return TIER_AGENT_LIMITS[tier].canSwarm;
+  }, [tier]);
+
+  const getSwarmLimit = useCallback((): number => {
+    return TIER_AGENT_LIMITS[tier].swarmLimit;
+  }, [tier]);
+
+  // Usage limits
+  const getUsageLimits = useCallback(() => {
+    return TIER_USAGE_LIMITS[tier];
+  }, [tier]);
 
   // Check AI credits
   const hasAICredits = useCallback((): boolean => {
@@ -157,17 +208,49 @@ export function useSubscription() {
     return false;
   }, [user?.id, subscription, hasAICredits]);
 
+  // Hub limits
+  const getMaxGroups = useCallback((): number => {
+    return TIER_HUB_ACCESS[tier].maxGroups;
+  }, [tier]);
+
+  // Upgrade helpers
+  const nextTier = getUpgradeTier(tier);
+  const canUpgrade = nextTier !== null;
+
   return {
+    // Core subscription data
     subscription,
-    tier: subscription?.tier || 'free',
+    tier,
     hubAccess,
     features,
     isLoading,
+
+    // Hub access
     canAccessHub,
+    hasFullHub,
+    getMaxGroups,
+
+    // Feature access
     hasFeature,
+    hasFullFeature,
     getFeatureLimit,
+
+    // Agent limits
+    getAgentLimits,
+    canAllocateClass,
+    canOrchestrate,
+    canSwarm,
+    getSwarmLimit,
+
+    // Usage limits
+    getUsageLimits,
     hasAICredits,
     remainingAICredits,
     useAICredit,
+
+    // Upgrade helpers
+    nextTier,
+    canUpgrade,
+    getTierLabel: () => getTierLabel(tier),
   };
 }

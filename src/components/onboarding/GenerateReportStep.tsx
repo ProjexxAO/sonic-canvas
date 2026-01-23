@@ -8,10 +8,13 @@ import {
   User,
   DollarSign,
   TrendingUp,
-  Briefcase
+  Briefcase,
+  Lock
 } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { cn } from '@/lib/utils';
+import { SubscriptionTier, TIER_USAGE_LIMITS } from '@/lib/tierConfig';
+import { UpgradePrompt } from '@/components/subscription/UpgradePrompt';
 
 interface GenerateReportStepProps {
   onNext: (persona: string) => void;
@@ -21,6 +24,7 @@ interface GenerateReportStepProps {
   onGenerateReport: (persona: string) => Promise<void>;
   isGenerating: boolean;
   hasData: boolean;
+  tier?: SubscriptionTier;
 }
 
 const QUICK_PERSONAS = [
@@ -37,13 +41,17 @@ export function GenerateReportStep({
   hasGeneratedReport,
   onGenerateReport,
   isGenerating,
-  hasData
+  hasData,
+  tier = 'free'
 }: GenerateReportStepProps) {
   const [selectedPersona, setSelectedPersona] = useState<string | null>(null);
   const [generated, setGenerated] = useState(false);
 
+  const limits = TIER_USAGE_LIMITS[tier];
+  const canGenerateReports = limits.reportsMonthly > 0;
+
   const handleGenerate = async () => {
-    if (!selectedPersona) return;
+    if (!selectedPersona || !canGenerateReports) return;
     await onGenerateReport(selectedPersona);
     setGenerated(true);
   };
@@ -69,7 +77,7 @@ export function GenerateReportStep({
           <StepIndicator step={2} completed />
           <div className="w-8 h-0.5 bg-primary" />
           <StepIndicator step={3} completed />
-72:           <div className="w-8 h-0.5 bg-primary" />
+          <div className="w-8 h-0.5 bg-primary" />
           <StepIndicator step={4} active />
           <div className="w-8 h-0.5 bg-muted" />
           <StepIndicator step={5} />
@@ -79,17 +87,46 @@ export function GenerateReportStep({
 
       {/* Main content */}
       <div className="flex-1 flex flex-col items-center justify-center px-6 max-w-lg mx-auto">
-        <div className="w-16 h-16 rounded-2xl bg-gradient-to-br from-yellow-500/20 to-orange-500/20 flex items-center justify-center mb-6">
+        <div className={cn(
+          "w-16 h-16 rounded-2xl bg-gradient-to-br from-yellow-500/20 to-orange-500/20 flex items-center justify-center mb-6 relative",
+          !canGenerateReports && "opacity-60"
+        )}>
           <Sparkles size={28} className="text-primary" />
+          {!canGenerateReports && (
+            <div className="absolute -bottom-1 -right-1 w-6 h-6 rounded-full bg-muted flex items-center justify-center">
+              <Lock size={12} className="text-muted-foreground" />
+            </div>
+          )}
         </div>
 
         <h2 className="text-2xl font-bold text-foreground mb-3 text-center">
           Generate Your First Report
         </h2>
 
-        <p className="text-muted-foreground text-center mb-8">
-          Choose an executive persona and generate a personalized AI briefing.
+        <p className="text-muted-foreground text-center mb-4">
+          {canGenerateReports 
+            ? 'Choose an executive persona and generate a personalized AI briefing.'
+            : 'AI Reports are available on Pro plans and above.'
+          }
         </p>
+
+        {/* Tier limit info */}
+        {canGenerateReports && (
+          <p className="text-xs text-muted-foreground mb-6">
+            Reports available: <strong className="text-foreground">{limits.reportsMonthly}/month</strong>
+          </p>
+        )}
+
+        {/* Locked state */}
+        {!canGenerateReports && (
+          <div className="w-full mb-6">
+            <UpgradePrompt 
+              currentTier={tier}
+              feature="report_generation"
+              variant="card"
+            />
+          </div>
+        )}
 
         {/* Success state */}
         {generated && (
@@ -102,7 +139,7 @@ export function GenerateReportStep({
         )}
 
         {/* Persona selection */}
-        {!generated && (
+        {canGenerateReports && !generated && (
           <>
             <div className="w-full grid grid-cols-2 gap-3 mb-6">
               {QUICK_PERSONAS.map((persona) => (

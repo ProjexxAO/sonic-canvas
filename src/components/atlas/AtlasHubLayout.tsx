@@ -12,6 +12,7 @@ import { useDashboardAgents } from '@/hooks/useDashboardAgents';
 import { useAtlasConversations } from '@/hooks/useAtlasConversations';
 import { useAgentOrchestration } from '@/hooks/useAgentOrchestration';
 import { useLearningProgress } from '@/hooks/useLearningProgress';
+import { useSubscription } from '@/hooks/useSubscription';
 import { useAudioFeedback } from '@/hooks/useAudioFeedback';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
@@ -105,6 +106,9 @@ export function AtlasHubLayout({
   // Onboarding (only for csuite)
   const onboarding = useOnboarding(user?.id);
   const shouldShowOnboarding = hubType === 'csuite' && (propShowOnboarding ?? onboarding.showOnboarding);
+
+  // Subscription tier
+  const { tier } = useSubscription();
 
   // C-Suite data for onboarding
   const csuiteData = useCSuiteData(user?.id);
@@ -208,6 +212,7 @@ export function AtlasHubLayout({
           onUploadFile={handleOnboardingUpload}
           onGenerateReport={handleOnboardingGenerateReport}
           isGenerating={generatingPersona !== null}
+          tier={tier}
         />
       </>
     );

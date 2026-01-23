@@ -8,6 +8,8 @@ import { useAgentOrchestration } from '@/hooks/useAgentOrchestration';
 import { useDataHubController } from '@/hooks/useDataHubController';
 import { useAtlasLifeManager } from '@/hooks/useAtlasLifeManager';
 import { useFinancialIntelligence } from '@/hooks/useFinancialIntelligence';
+import { useSubscription } from '@/hooks/useSubscription';
+import { TIER_AGENT_LIMITS, SubscriptionTier } from '@/lib/tierConfig';
 import { toast } from 'sonner';
 
 // Agent Fleet Configuration - 144,000 agents organized by domain
@@ -26,13 +28,8 @@ export const AGENT_FLEET_CONFIG = {
     legal: { capacity: 6000, sectors: ['LEGAL', 'CONTRACTS', 'IP', 'REGULATORY'] },
     personal: { capacity: 6000, sectors: ['WELLNESS', 'PRODUCTIVITY', 'LIFE', 'ASSISTANT'] },
   },
-  scalingTiers: {
-    free: { maxAgents: 10, concurrentTasks: 3 },
-    personal: { maxAgents: 100, concurrentTasks: 10 },
-    team: { maxAgents: 1000, concurrentTasks: 50 },
-    business: { maxAgents: 10000, concurrentTasks: 200 },
-    enterprise: { maxAgents: 144000, concurrentTasks: 1000 },
-  }
+  // Legacy scaling tiers - now uses tierConfig.ts
+  scalingTiers: TIER_AGENT_LIMITS,
 };
 
 // Agent orchestration modes
