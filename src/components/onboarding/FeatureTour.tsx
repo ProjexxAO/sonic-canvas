@@ -3,87 +3,88 @@ import {
   ChevronLeft, 
   ChevronRight, 
   X,
-  Mail,
-  FileText,
-  Calendar,
-  DollarSign,
-  CheckSquare,
-  BookOpen,
   User,
+  Users,
+  Building2,
   Sparkles,
   BarChart3,
-  Mic
+  Mic,
+  Bot,
+  Lock
 } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { cn } from '@/lib/utils';
+import { SubscriptionTier } from '@/lib/tierConfig';
 
 interface FeatureTourProps {
   onNext: () => void;
   onBack: () => void;
   onSkip: () => void;
+  tier?: SubscriptionTier;
 }
 
 const TOUR_SLIDES = [
   {
-    id: 'data-hub',
-    title: 'Data Hub',
-    description: 'Connect and manage all your business data in one place. Upload documents, sync emails, and track financials.',
-    icon: BarChart3,
-    features: [
-      { icon: Mail, label: 'Communications', color: 'hsl(200 70% 50%)' },
-      { icon: FileText, label: 'Documents', color: 'hsl(280 70% 50%)' },
-      { icon: Calendar, label: 'Events', color: 'hsl(150 70% 45%)' },
-      { icon: DollarSign, label: 'Financials', color: 'hsl(45 80% 50%)' },
-      { icon: CheckSquare, label: 'Tasks', color: 'hsl(350 70% 50%)' },
-      { icon: BookOpen, label: 'Knowledge', color: 'hsl(220 70% 55%)' },
-    ],
-    gradient: 'from-blue-500/20 to-purple-500/20',
-  },
-  {
-    id: 'personas',
-    title: 'Enterprise Personas',
-    description: 'Choose from 12 enterprise personas, each tailored to focus on what matters most to that role.',
+    id: 'personal-hub',
+    title: 'Personal Hub',
+    description: 'Your private space for managing life. Track tasks, goals, habits, and personal finances all in one place.',
     icon: User,
     features: [
-      { icon: User, label: 'CEO - Strategic overview', color: 'hsl(var(--primary))' },
-      { icon: DollarSign, label: 'CFO - Financial health', color: 'hsl(45 80% 50%)' },
-      { icon: BarChart3, label: 'COO - Operations', color: 'hsl(150 70% 45%)' },
-      { icon: User, label: 'And 9 more...', color: 'hsl(280 70% 50%)' },
+      { icon: BarChart3, label: 'Dashboard & Widgets', color: 'hsl(200 70% 50%)' },
+      { icon: Sparkles, label: 'AI Daily Brief', color: 'hsl(280 70% 50%)' },
+      { icon: Bot, label: 'Personal Agents', color: 'hsl(150 70% 45%)' },
+    ],
+    gradient: 'from-blue-500/20 to-cyan-500/20',
+    availableTiers: ['free', 'pro', 'business', 'enterprise'],
+  },
+  {
+    id: 'group-hub',
+    title: 'Group Hub',
+    description: 'Collaborate with your team, family, or community. Share tasks, events, and documents with role-based access.',
+    icon: Users,
+    features: [
+      { icon: Users, label: 'Team Workspaces', color: 'hsl(var(--primary))' },
+      { icon: BarChart3, label: 'Shared Analytics', color: 'hsl(45 80% 50%)' },
+      { icon: Bot, label: 'Team Agents', color: 'hsl(150 70% 45%)' },
     ],
     gradient: 'from-green-500/20 to-teal-500/20',
+    availableTiers: ['pro', 'business', 'enterprise'],
   },
   {
-    id: 'ai-reports',
-    title: 'AI-Powered Reports',
-    description: 'Generate comprehensive briefings with a single click. Export to PDF, share with your team, or schedule automated reports.',
-    icon: Sparkles,
+    id: 'enterprise-hub',
+    title: 'Enterprise Hub',
+    description: 'Executive-level intelligence. Generate AI reports, orchestrate agent swarms, and access organization-wide insights.',
+    icon: Building2,
     features: [
-      { icon: Sparkles, label: 'One-click generation', color: 'hsl(var(--primary))' },
-      { icon: FileText, label: 'PDF & Markdown export', color: 'hsl(280 70% 50%)' },
-      { icon: BarChart3, label: 'Customizable depth', color: 'hsl(150 70% 45%)' },
+      { icon: Sparkles, label: 'Executive Reports', color: 'hsl(var(--primary))' },
+      { icon: Bot, label: 'Agent Orchestration', color: 'hsl(280 70% 50%)' },
+      { icon: BarChart3, label: 'Universal Search', color: 'hsl(150 70% 45%)' },
     ],
-    gradient: 'from-yellow-500/20 to-orange-500/20',
+    gradient: 'from-purple-500/20 to-pink-500/20',
+    availableTiers: ['business', 'enterprise'],
   },
   {
-    id: 'voice-agent',
-    title: 'Voice-Powered Atlas',
-    description: 'Interact with your data using natural voice commands. Ask questions, search agents, and get instant answers.',
-    icon: Mic,
+    id: 'ai-agents',
+    title: 'AI Agent Fleet',
+    description: 'Atlas deploys specialized AI agents based on your subscription. From basic assistants to elite orchestration.',
+    icon: Bot,
     features: [
-      { icon: Mic, label: 'Voice commands', color: 'hsl(350 70% 50%)' },
-      { icon: Sparkles, label: 'Natural language', color: 'hsl(var(--primary))' },
-      { icon: BarChart3, label: 'Real-time insights', color: 'hsl(200 70% 50%)' },
+      { icon: Bot, label: 'Up to 144,000 Agents', color: 'hsl(350 70% 50%)' },
+      { icon: Sparkles, label: 'Swarm Orchestration', color: 'hsl(var(--primary))' },
+      { icon: Mic, label: 'Voice Control', color: 'hsl(200 70% 50%)' },
     ],
-    gradient: 'from-pink-500/20 to-red-500/20',
+    gradient: 'from-orange-500/20 to-red-500/20',
+    availableTiers: ['free', 'pro', 'business', 'enterprise'],
   },
 ];
 
-export function FeatureTour({ onNext, onBack, onSkip }: FeatureTourProps) {
+export function FeatureTour({ onNext, onBack, onSkip, tier = 'free' }: FeatureTourProps) {
   const [currentSlide, setCurrentSlide] = useState(0);
   
   const slide = TOUR_SLIDES[currentSlide];
   const isLastSlide = currentSlide === TOUR_SLIDES.length - 1;
   const isFirstSlide = currentSlide === 0;
+  const isLocked = !slide.availableTiers.includes(tier);
 
   const handleNext = () => {
     if (isLastSlide) {
@@ -116,17 +117,28 @@ export function FeatureTour({ onNext, onBack, onSkip }: FeatureTourProps) {
 
       {/* Main content */}
       <div className="flex-1 flex flex-col items-center justify-center px-6 max-w-2xl mx-auto">
-        {/* Icon */}
+        {/* Icon with lock overlay if locked */}
         <div className={cn(
-          "w-20 h-20 rounded-2xl flex items-center justify-center mb-6 bg-gradient-to-br",
-          slide.gradient
+          "w-20 h-20 rounded-2xl flex items-center justify-center mb-6 bg-gradient-to-br relative",
+          slide.gradient,
+          isLocked && "opacity-60"
         )}>
           <slide.icon size={36} className="text-primary" />
+          {isLocked && (
+            <div className="absolute -bottom-1 -right-1 w-6 h-6 rounded-full bg-muted flex items-center justify-center">
+              <Lock size={12} className="text-muted-foreground" />
+            </div>
+          )}
         </div>
 
         {/* Title */}
-        <h2 className="text-2xl font-bold text-foreground mb-3 text-center">
+        <h2 className="text-2xl font-bold text-foreground mb-3 text-center flex items-center gap-2">
           {slide.title}
+          {isLocked && (
+            <span className="text-xs font-normal px-2 py-0.5 rounded-full bg-amber-500/10 text-amber-500">
+              Upgrade Required
+            </span>
+          )}
         </h2>
 
         {/* Description */}
@@ -139,7 +151,10 @@ export function FeatureTour({ onNext, onBack, onSkip }: FeatureTourProps) {
           {slide.features.map((feature, idx) => (
             <div
               key={idx}
-              className="flex items-center gap-2 px-3 py-2 rounded-lg bg-card border border-border"
+              className={cn(
+                "flex items-center gap-2 px-3 py-2 rounded-lg bg-card border border-border",
+                isLocked && "opacity-50"
+              )}
             >
               <feature.icon size={14} style={{ color: feature.color }} />
               <span className="text-xs font-medium text-foreground">{feature.label}</span>
@@ -149,18 +164,23 @@ export function FeatureTour({ onNext, onBack, onSkip }: FeatureTourProps) {
 
         {/* Slide indicators */}
         <div className="flex gap-2 mb-8">
-          {TOUR_SLIDES.map((_, idx) => (
-            <button
-              key={idx}
-              onClick={() => setCurrentSlide(idx)}
-              className={cn(
-                "w-2 h-2 rounded-full transition-all",
-                idx === currentSlide
-                  ? "w-6 bg-primary"
-                  : "bg-muted-foreground/30 hover:bg-muted-foreground/50"
-              )}
-            />
-          ))}
+          {TOUR_SLIDES.map((s, idx) => {
+            const slideLocked = !s.availableTiers.includes(tier);
+            return (
+              <button
+                key={idx}
+                onClick={() => setCurrentSlide(idx)}
+                className={cn(
+                  "w-2 h-2 rounded-full transition-all",
+                  idx === currentSlide
+                    ? "w-6 bg-primary"
+                    : slideLocked
+                      ? "bg-muted-foreground/20"
+                      : "bg-muted-foreground/30 hover:bg-muted-foreground/50"
+                )}
+              />
+            );
+          })}
         </div>
       </div>
 

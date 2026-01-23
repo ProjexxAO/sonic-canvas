@@ -6,25 +6,13 @@ import {
   Upload,
   Check,
   FileText,
-  Plug,
-  Mail,
   Cloud as CloudIcon,
-  Calendar,
-  Loader2
+  Lock
 } from 'lucide-react';
 import { Button } from '@/components/ui/button';
-import { Input } from '@/components/ui/input';
-import { Label } from '@/components/ui/label';
-import {
-  Dialog,
-  DialogContent,
-  DialogDescription,
-  DialogFooter,
-  DialogHeader,
-  DialogTitle,
-} from '@/components/ui/dialog';
 import { cn } from '@/lib/utils';
 import { useDataConnectors, ConnectorPlatform, CONNECTOR_CONFIGS } from '@/hooks/useDataConnectors';
+import { SubscriptionTier, TIER_USAGE_LIMITS } from '@/lib/tierConfig';
 
 interface ConnectDataStepProps {
   onNext: () => void;
@@ -34,6 +22,7 @@ interface ConnectDataStepProps {
   totalDataItems: number;
   onUploadFile: () => void;
   userId?: string;
+  tier?: SubscriptionTier;
 }
 
 export function ConnectDataStep({ 
@@ -43,15 +32,16 @@ export function ConnectDataStep({
   hasConnectedData,
   totalDataItems,
   onUploadFile,
-  userId
+  userId,
+  tier = 'free'
 }: ConnectDataStepProps) {
   const { connectors, initializeConnector, getConnectorStats } = useDataConnectors(userId);
   const [connectDialog, setConnectDialog] = useState<{ open: boolean; platform: ConnectorPlatform | null }>({ open: false, platform: null });
   const [email, setEmail] = useState('');
   const [isConnecting, setIsConnecting] = useState(false);
 
+  const limits = TIER_USAGE_LIMITS[tier];
   const stats = getConnectorStats();
-  const activeConnectors = stats.activeConnectors;
 
   const handleConnect = (platform: ConnectorPlatform) => {
     setConnectDialog({ open: true, platform });
@@ -69,8 +59,8 @@ export function ConnectDataStep({
     }
   };
 
-  const quickConnectors = CONNECTOR_CONFIGS.filter(c => c.available).slice(0, 4);
   const isConnected = (platform: ConnectorPlatform) => connectors.some(c => c.platform === platform && c.isActive);
+  
   return (
     <div className="h-full flex flex-col animate-fade-in">
       {/* Skip button */}
@@ -94,8 +84,10 @@ export function ConnectDataStep({
           <StepIndicator step={3} active />
           <div className="w-8 h-0.5 bg-muted" />
           <StepIndicator step={4} />
+          <div className="w-8 h-0.5 bg-muted" />
+          <StepIndicator step={5} />
         </div>
-        <p className="text-xs text-center text-muted-foreground">Step 3 of 4: Connect Your Data</p>
+        <p className="text-xs text-center text-muted-foreground">Step 3 of 5: Connect Your Data</p>
       </div>
 
       {/* Main content */}
@@ -108,9 +100,18 @@ export function ConnectDataStep({
           Connect Your Data
         </h2>
 
-        <p className="text-muted-foreground text-center mb-8">
-          Upload documents to get started. The more data you add, the more insightful your reports will be.
+        <p className="text-muted-foreground text-center mb-4">
+          Upload documents to get started. Atlas will analyze and extract insights.
         </p>
+
+        {/* Tier limits info */}
+        <div className="flex items-center gap-2 text-xs text-muted-foreground mb-6">
+          <span>Document limit: <strong className="text-foreground">{limits.documentsLimit}</strong></span>
+          <span>•</span>
+          <span>Storage: <strong className="text-foreground">{limits.storageGB} GB</strong></span>
+          <span>•</span>
+          <span>Connectors: <strong className="text-foreground">{limits.connectorsLimit}</strong></span>
+        </div>
 
         {/* Status */}
         {totalDataItems > 0 && (
@@ -138,20 +139,33 @@ export function ConnectDataStep({
 
           <Button
             variant="outline"
-            className="w-full h-auto py-4 flex flex-col items-center gap-2 opacity-60"
-            disabled
+            className={cn(
+              "w-full h-auto py-4 flex flex-col items-center gap-2",
+              tier === 'free' && "opacity-60"
+            )}
+            disabled={tier === 'free'}
           >
-            <CloudIcon size={24} className="text-muted-foreground" />
+            <CloudIcon size={24} className={tier === 'free' ? 'text-muted-foreground' : 'text-primary'} />
             <div className="text-center">
-              <p className="font-medium text-muted-foreground">Connect Cloud Services</p>
-              <p className="text-xs text-muted-foreground">Gmail, Google Drive (Coming Soon)</p>
+              <p className={cn("font-medium", tier === 'free' && "text-muted-foreground")}>
+                Connect Cloud Services
+              </p>
+              <p className="text-xs text-muted-foreground">
+                {tier === 'free' ? (
+                  <span className="flex items-center gap-1 justify-center">
+                    <Lock size={10} /> Upgrade to Pro
+                  </span>
+                ) : (
+                  'Gmail, Google Drive'
+                )}
+              </p>
             </div>
           </Button>
         </div>
 
         {/* Tip */}
         <div className="text-xs text-muted-foreground text-center bg-muted/50 rounded-lg p-3">
-          <strong>Tip:</strong> You can always add more data later from the Data tab.
+          <strong>Tip:</strong> You can always add more data later from your Dashboard.
         </div>
       </div>
 
@@ -162,8 +176,8 @@ export function ConnectDataStep({
           Back
         </Button>
 
-        <Button onClick={onNext} disabled={totalDataItems === 0}>
-          Continue
+        <Button onClick={onNext}>
+          {totalDataItems > 0 ? 'Continue' : 'Skip for now'}
           <ChevronRight size={16} className="ml-1" />
         </Button>
       </div>
