@@ -39,6 +39,7 @@ import {
 import { CustomWidget, DataSource } from '@/hooks/useCustomWidgets';
 import { usePersonalHub } from '@/hooks/usePersonalHub';
 import { useBanking } from '@/hooks/useBanking';
+import { useDataRefreshStore } from '@/hooks/useDataRefresh';
 import { cn } from '@/lib/utils';
 import { supabase } from '@/integrations/supabase/client';
 import { toast } from 'sonner';
@@ -305,6 +306,8 @@ Focus on being actionable and specific. Provide real insights based on the data.
     const task = tasks.find(t => t.id === itemId);
     if (task) {
       await updateItem(itemId, { status: 'completed' });
+      // Trigger data refresh so other components update
+      useDataRefreshStore.getState().triggerRefresh('personal_items', 'widget-item-completed');
       toast.success('Task completed!');
     } else {
       toast.success(action || 'Action completed!');

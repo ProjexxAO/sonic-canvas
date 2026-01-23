@@ -237,6 +237,474 @@ serve(async (req) => {
       });
     }
 
+    // =============================================
+    // PERSONAL HUB ACTIONS (Tasks, Goals, Habits)
+    // =============================================
+
+    // Create personal item (task, note, goal, habit, etc.)
+    if (action === 'create_personal_item') {
+      const { itemType, title, content, metadata, tags, priority, dueDate, reminderAt, recurrenceRule } = body;
+      
+      const { data, error } = await supabase
+        .from('personal_items')
+        .insert({
+          user_id: userId,
+          item_type: itemType || 'task',
+          title,
+          content: content || null,
+          metadata: metadata || {},
+          tags: tags || [],
+          status: 'active',
+          priority: priority || 'medium',
+          due_date: dueDate || null,
+          reminder_at: reminderAt || null,
+          recurrence_rule: recurrenceRule || null,
+        })
+        .select()
+        .single();
+
+      if (error) throw error;
+
+      return new Response(JSON.stringify({ 
+        success: true, 
+        item: data,
+        message: `${itemType || 'Task'} "${title}" created`
+      }), {
+        headers: { ...corsHeaders, 'Content-Type': 'application/json' },
+      });
+    }
+
+    // Update personal item
+    if (action === 'update_personal_item') {
+      const { itemId, updates } = body;
+      
+      const updateData: Record<string, any> = { ...updates, updated_at: new Date().toISOString() };
+      
+      // Handle completion
+      if (updates.status === 'completed') {
+        updateData.completed_at = new Date().toISOString();
+      }
+
+      const { data, error } = await supabase
+        .from('personal_items')
+        .update(updateData)
+        .eq('id', itemId)
+        .eq('user_id', userId)
+        .select()
+        .single();
+
+      if (error) throw error;
+
+      return new Response(JSON.stringify({ 
+        success: true, 
+        item: data,
+        message: 'Item updated'
+      }), {
+        headers: { ...corsHeaders, 'Content-Type': 'application/json' },
+      });
+    }
+
+    // Complete personal item
+    if (action === 'complete_personal_item') {
+      const { itemId, itemTitle } = body;
+      
+      let targetId = itemId;
+      
+      // Find by title if no ID provided
+      if (!targetId && itemTitle) {
+        const { data: items } = await supabase
+          .from('personal_items')
+          .select('id, title')
+          .eq('user_id', userId)
+          .eq('status', 'active')
+          .ilike('title', `%${itemTitle}%`)
+          .limit(1);
+        
+        if (items && items.length > 0) {
+          targetId = items[0].id;
+        }
+      }
+
+      if (!targetId) {
+        return new Response(JSON.stringify({ 
+          success: false, 
+          error: 'Item not found'
+        }), {
+          status: 404,
+          headers: { ...corsHeaders, 'Content-Type': 'application/json' },
+        });
+      }
+
+      const { data, error } = await supabase
+        .from('personal_items')
+        .update({ 
+          status: 'completed', 
+          completed_at: new Date().toISOString(),
+          updated_at: new Date().toISOString()
+        })
+        .eq('id', targetId)
+        .eq('user_id', userId)
+        .select()
+        .single();
+
+      if (error) throw error;
+
+      return new Response(JSON.stringify({ 
+        success: true, 
+        item: data,
+        message: `"${data.title}" completed`
+      }), {
+        headers: { ...corsHeaders, 'Content-Type': 'application/json' },
+      });
+    }
+
+    // Delete personal item
+    if (action === 'delete_personal_item') {
+      const { itemId, itemTitle } = body;
+      
+      let targetId = itemId;
+      
+      // Find by title if no ID provided
+      if (!targetId && itemTitle) {
+        const { data: items } = await supabase
+          .from('personal_items')
+          .select('id, title')
+          .eq('user_id', userId)
+          .neq('status', 'deleted')
+          .ilike('title', `%${itemTitle}%`)
+          .limit(1);
+        
+        if (items && items.length > 0) {
+          targetId = items[0].id;
+        }
+      }
+
+      if (!targetId) {
+        return new Response(JSON.stringify({ 
+          success: false, 
+          error: 'Item not found'
+        }), {
+          status: 404,
+          headers: { ...corsHeaders, 'Content-Type': 'application/json' },
+        });
+      }
+
+      // Soft delete
+      const { data, error } = await supabase
+        .from('personal_items')
+        .update({ 
+          status: 'deleted',
+          updated_at: new Date().toISOString()
+        })
+        .eq('id', targetId)
+        .eq('user_id', userId)
+        .select()
+        .single();
+
+      if (error) throw error;
+
+      return new Response(JSON.stringify({ 
+        success: true, 
+        message: `"${data.title}" deleted`
+      }), {
+        headers: { ...corsHeaders, 'Content-Type': 'application/json' },
+      });
+    }
+
+    // Get personal items
+    if (action === 'get_personal_items') {
+      const { itemType, status, limit: queryLimit } = body;
+      
+      let query = supabase
+        .from('personal_items')
+        .select('*')
+        .eq('user_id', userId)
+        .neq('status', 'deleted')
+        .order('created_at', { ascending: false })
+        .limit(queryLimit || 50);
+
+      if (itemType) {
+        query = query.eq('item_type', itemType);
+      }
+      if (status) {
+        query = query.eq('status', status);
+      }
+
+      const { data, error } = await query;
+
+      if (error) throw error;
+
+      return new Response(JSON.stringify({ items: data || [] }), {
+        headers: { ...corsHeaders, 'Content-Type': 'application/json' },
+      });
+    }
+
+    // Create personal goal
+    if (action === 'create_personal_goal') {
+      const { title, description, category, targetValue, unit, targetDate } = body;
+      
+      const { data, error } = await supabase
+        .from('personal_goals')
+        .insert({
+          user_id: userId,
+          title,
+          description: description || null,
+          category: category || 'general',
+          target_value: targetValue || null,
+          current_value: 0,
+          unit: unit || null,
+          target_date: targetDate || null,
+          status: 'active',
+        })
+        .select()
+        .single();
+
+      if (error) throw error;
+
+      return new Response(JSON.stringify({ 
+        success: true, 
+        goal: data,
+        message: `Goal "${title}" created`
+      }), {
+        headers: { ...corsHeaders, 'Content-Type': 'application/json' },
+      });
+    }
+
+    // Update goal progress
+    if (action === 'update_goal_progress') {
+      const { goalId, goalTitle, value, increment } = body;
+      
+      let targetId = goalId;
+      let currentGoal: any = null;
+      
+      // Find by title if no ID provided
+      if (!targetId && goalTitle) {
+        const { data: goals } = await supabase
+          .from('personal_goals')
+          .select('*')
+          .eq('user_id', userId)
+          .eq('status', 'active')
+          .ilike('title', `%${goalTitle}%`)
+          .limit(1);
+        
+        if (goals && goals.length > 0) {
+          currentGoal = goals[0];
+          targetId = goals[0].id;
+        }
+      } else if (targetId) {
+        const { data: goal } = await supabase
+          .from('personal_goals')
+          .select('*')
+          .eq('id', targetId)
+          .single();
+        currentGoal = goal;
+      }
+
+      if (!targetId || !currentGoal) {
+        return new Response(JSON.stringify({ 
+          success: false, 
+          error: 'Goal not found'
+        }), {
+          status: 404,
+          headers: { ...corsHeaders, 'Content-Type': 'application/json' },
+        });
+      }
+
+      const newValue = increment 
+        ? (currentGoal.current_value || 0) + increment 
+        : value;
+      
+      const updates: Record<string, any> = { 
+        current_value: newValue,
+        updated_at: new Date().toISOString()
+      };
+      
+      // Check if goal completed
+      if (currentGoal.target_value && newValue >= currentGoal.target_value) {
+        updates.status = 'completed';
+      }
+
+      const { data, error } = await supabase
+        .from('personal_goals')
+        .update(updates)
+        .eq('id', targetId)
+        .eq('user_id', userId)
+        .select()
+        .single();
+
+      if (error) throw error;
+
+      return new Response(JSON.stringify({ 
+        success: true, 
+        goal: data,
+        message: `Goal progress updated to ${newValue}${currentGoal.unit ? ` ${currentGoal.unit}` : ''}`
+      }), {
+        headers: { ...corsHeaders, 'Content-Type': 'application/json' },
+      });
+    }
+
+    // Create personal habit
+    if (action === 'create_personal_habit') {
+      const { name, description, frequency, targetCount } = body;
+      
+      const { data, error } = await supabase
+        .from('personal_habits')
+        .insert({
+          user_id: userId,
+          name,
+          description: description || null,
+          frequency: frequency || 'daily',
+          target_count: targetCount || 1,
+          current_streak: 0,
+          longest_streak: 0,
+          is_active: true,
+        })
+        .select()
+        .single();
+
+      if (error) throw error;
+
+      return new Response(JSON.stringify({ 
+        success: true, 
+        habit: data,
+        message: `Habit "${name}" created`
+      }), {
+        headers: { ...corsHeaders, 'Content-Type': 'application/json' },
+      });
+    }
+
+    // Complete habit for today
+    if (action === 'complete_habit') {
+      const { habitId, habitName } = body;
+      
+      let targetId = habitId;
+      let currentHabit: any = null;
+      
+      // Find by name if no ID provided
+      if (!targetId && habitName) {
+        const { data: habits } = await supabase
+          .from('personal_habits')
+          .select('*')
+          .eq('user_id', userId)
+          .eq('is_active', true)
+          .ilike('name', `%${habitName}%`)
+          .limit(1);
+        
+        if (habits && habits.length > 0) {
+          currentHabit = habits[0];
+          targetId = habits[0].id;
+        }
+      } else if (targetId) {
+        const { data: habit } = await supabase
+          .from('personal_habits')
+          .select('*')
+          .eq('id', targetId)
+          .single();
+        currentHabit = habit;
+      }
+
+      if (!targetId || !currentHabit) {
+        return new Response(JSON.stringify({ 
+          success: false, 
+          error: 'Habit not found'
+        }), {
+          status: 404,
+          headers: { ...corsHeaders, 'Content-Type': 'application/json' },
+        });
+      }
+
+      // Insert completion record
+      await supabase
+        .from('habit_completions')
+        .insert({
+          habit_id: targetId,
+          user_id: userId,
+        });
+
+      // Update streak
+      const newStreak = (currentHabit.current_streak || 0) + 1;
+      const { data, error } = await supabase
+        .from('personal_habits')
+        .update({
+          current_streak: newStreak,
+          longest_streak: Math.max(newStreak, currentHabit.longest_streak || 0),
+          last_completed_at: new Date().toISOString(),
+        })
+        .eq('id', targetId)
+        .eq('user_id', userId)
+        .select()
+        .single();
+
+      if (error) throw error;
+
+      return new Response(JSON.stringify({ 
+        success: true, 
+        habit: data,
+        message: `${currentHabit.name} completed! 🎯 ${newStreak} day streak`
+      }), {
+        headers: { ...corsHeaders, 'Content-Type': 'application/json' },
+      });
+    }
+
+    // Get personal summary (tasks, goals, habits)
+    if (action === 'get_personal_summary') {
+      // Fetch all personal data in parallel
+      const [itemsResult, goalsResult, habitsResult] = await Promise.all([
+        supabase
+          .from('personal_items')
+          .select('*')
+          .eq('user_id', userId)
+          .eq('status', 'active')
+          .order('created_at', { ascending: false })
+          .limit(20),
+        supabase
+          .from('personal_goals')
+          .select('*')
+          .eq('user_id', userId)
+          .eq('status', 'active')
+          .order('created_at', { ascending: false })
+          .limit(10),
+        supabase
+          .from('personal_habits')
+          .select('*')
+          .eq('user_id', userId)
+          .eq('is_active', true)
+          .order('created_at', { ascending: false })
+          .limit(10),
+      ]);
+
+      const tasks = (itemsResult.data || []).filter(i => i.item_type === 'task');
+      const goals = goalsResult.data || [];
+      const habits = habitsResult.data || [];
+
+      // Find today's tasks
+      const today = new Date().toISOString().split('T')[0];
+      const todaysTasks = tasks.filter(t => t.due_date?.startsWith(today));
+      const overdueTasks = tasks.filter(t => t.due_date && t.due_date < today);
+
+      return new Response(JSON.stringify({ 
+        summary: {
+          tasks: {
+            total: tasks.length,
+            today: todaysTasks.length,
+            overdue: overdueTasks.length,
+            items: tasks.slice(0, 5),
+          },
+          goals: {
+            total: goals.length,
+            items: goals.slice(0, 5),
+          },
+          habits: {
+            total: habits.length,
+            totalStreak: habits.reduce((sum, h) => sum + (h.current_streak || 0), 0),
+            items: habits.slice(0, 5),
+          },
+        }
+      }), {
+        headers: { ...corsHeaders, 'Content-Type': 'application/json' },
+      });
+    }
+
     // Sync tasks from long-term memory using AI extraction
     if (action === 'sync_memory_tasks') {
       // Fetch recent memory messages

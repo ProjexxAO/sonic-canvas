@@ -10,6 +10,7 @@ import { useAuth } from '@/hooks/useAuth';
 import { useDashboardAgents } from '@/hooks/useDashboardAgents';
 import { useDataHubController, getDomainKeyFromName, getTabFromName, getPersonaFromName } from '@/hooks/useDataHubController';
 import { useWakeWordDetection, WakeWordStatus, WakeWordName } from '@/hooks/useWakeWordDetection';
+import { useDataRefreshStore } from '@/hooks/useDataRefresh';
 import { atlasUIClientTools } from '@/lib/atlasUIBridge';
 import { supabase } from '@/integrations/supabase/client';
 import { toast } from 'sonner';
@@ -417,33 +418,33 @@ export function AtlasProvider({ children }: AtlasProviderProps) {
         }
       },
 
-      // Create task
-      createTask: async (params: { title: string; description?: string; priority?: string; taskType?: string }) => {
+      // Create task (uses personal_items for dashboard sync)
+      createTask: async (params: { title: string; description?: string; priority?: string; taskType?: string; dueDate?: string }) => {
         const logId = addLogRef.current('createTask', params, 'Creating task...', 'pending');
         try {
+          // Create in personal_items for dashboard visibility
           const response = await supabase.functions.invoke('atlas-orchestrator', {
             body: { 
-              action: 'create_task', 
+              action: 'create_personal_item', 
               userId: userRef.current?.id,
-              taskData: {
-                task_title: params.title,
-                task_description: params.description || '',
-                task_priority: params.priority || 'medium',
-                task_type: params.taskType || 'assistance',
-                orchestration_mode: 'hybrid',
-                assigned_agents: [],
-                input_data: {},
-                agent_suggestions: [],
-              }
+              itemType: 'task',
+              title: params.title,
+              content: params.description || '',
+              priority: params.priority || 'medium',
+              dueDate: params.dueDate,
+              metadata: { taskType: params.taskType || 'assistance' },
             }
           });
           
           if (response.error) throw response.error;
           
-          const task = response.data?.task;
+          const item = response.data?.item;
+          
+          // Trigger data refresh so dashboard updates
+          useDataRefreshStore.getState().triggerRefresh('personal_items', 'atlas-createTask');
           
           setActionLogs(prev => prev.map(l => 
-            l.id === logId ? { ...l, result: `Created: ${task?.task_title || params.title}`, status: 'success' } : l
+            l.id === logId ? { ...l, result: `Created: ${item?.title || params.title}`, status: 'success' } : l
           ));
           
           toast.success(`Task created: ${params.title}`);
@@ -454,6 +455,218 @@ export function AtlasProvider({ children }: AtlasProviderProps) {
             l.id === logId ? { ...l, result: msg, status: 'error' } : l
           ));
           toast.error('Failed to create task');
+          return `Error: ${msg}`;
+        }
+      },
+
+      // Create personal goal
+      createGoal: async (params: { title: string; description?: string; category?: string; targetValue?: number; unit?: string; targetDate?: string }) => {
+        const logId = addLogRef.current('createGoal', params, 'Creating goal...', 'pending');
+        try {
+          const response = await supabase.functions.invoke('atlas-orchestrator', {
+            body: { 
+              action: 'create_personal_goal', 
+              userId: userRef.current?.id,
+              ...params,
+            }
+          });
+          
+          if (response.error) throw response.error;
+          
+          const goal = response.data?.goal;
+          
+          // Trigger data refresh
+          useDataRefreshStore.getState().triggerRefresh('personal_goals', 'atlas-createGoal');
+          
+          setActionLogs(prev => prev.map(l => 
+            l.id === logId ? { ...l, result: `Created goal: ${goal?.title || params.title}`, status: 'success' } : l
+          ));
+          
+          toast.success(`Goal created: ${params.title}`);
+          return `Goal "${params.title}" has been created.${params.targetValue ? ` Target: ${params.targetValue} ${params.unit || ''}` : ''}`;
+        } catch (error) {
+          const msg = error instanceof Error ? error.message : 'Goal creation failed';
+          setActionLogs(prev => prev.map(l => 
+            l.id === logId ? { ...l, result: msg, status: 'error' } : l
+          ));
+          toast.error('Failed to create goal');
+          return `Error: ${msg}`;
+        }
+      },
+
+      // Update goal progress
+      updateGoalProgress: async (params: { goalId?: string; goalTitle?: string; value?: number; increment?: number }) => {
+        const logId = addLogRef.current('updateGoalProgress', params, 'Updating goal...', 'pending');
+        try {
+          const response = await supabase.functions.invoke('atlas-orchestrator', {
+            body: { 
+              action: 'update_goal_progress', 
+              userId: userRef.current?.id,
+              ...params,
+            }
+          });
+          
+          if (response.error) throw response.error;
+          
+          // Trigger data refresh
+          useDataRefreshStore.getState().triggerRefresh('personal_goals', 'atlas-updateGoalProgress');
+          
+          setActionLogs(prev => prev.map(l => 
+            l.id === logId ? { ...l, result: response.data?.message || 'Goal updated', status: 'success' } : l
+          ));
+          
+          toast.success(response.data?.message || 'Goal progress updated');
+          return response.data?.message || 'Goal progress has been updated.';
+        } catch (error) {
+          const msg = error instanceof Error ? error.message : 'Goal update failed';
+          setActionLogs(prev => prev.map(l => 
+            l.id === logId ? { ...l, result: msg, status: 'error' } : l
+          ));
+          toast.error('Failed to update goal');
+          return `Error: ${msg}`;
+        }
+      },
+
+      // Create personal habit
+      createHabit: async (params: { name: string; description?: string; frequency?: 'daily' | 'weekly' | 'monthly'; targetCount?: number }) => {
+        const logId = addLogRef.current('createHabit', params, 'Creating habit...', 'pending');
+        try {
+          const response = await supabase.functions.invoke('atlas-orchestrator', {
+            body: { 
+              action: 'create_personal_habit', 
+              userId: userRef.current?.id,
+              ...params,
+            }
+          });
+          
+          if (response.error) throw response.error;
+          
+          const habit = response.data?.habit;
+          
+          // Trigger data refresh
+          useDataRefreshStore.getState().triggerRefresh('personal_habits', 'atlas-createHabit');
+          
+          setActionLogs(prev => prev.map(l => 
+            l.id === logId ? { ...l, result: `Created habit: ${habit?.name || params.name}`, status: 'success' } : l
+          ));
+          
+          toast.success(`Habit created: ${params.name}`);
+          return `Habit "${params.name}" has been created. Frequency: ${params.frequency || 'daily'}`;
+        } catch (error) {
+          const msg = error instanceof Error ? error.message : 'Habit creation failed';
+          setActionLogs(prev => prev.map(l => 
+            l.id === logId ? { ...l, result: msg, status: 'error' } : l
+          ));
+          toast.error('Failed to create habit');
+          return `Error: ${msg}`;
+        }
+      },
+
+      // Complete habit for today
+      completeHabit: async (params: { habitId?: string; habitName?: string }) => {
+        const logId = addLogRef.current('completeHabit', params, 'Completing habit...', 'pending');
+        try {
+          const response = await supabase.functions.invoke('atlas-orchestrator', {
+            body: { 
+              action: 'complete_habit', 
+              userId: userRef.current?.id,
+              ...params,
+            }
+          });
+          
+          if (response.error) throw response.error;
+          
+          // Trigger data refresh
+          useDataRefreshStore.getState().triggerRefresh('personal_habits', 'atlas-completeHabit');
+          
+          setActionLogs(prev => prev.map(l => 
+            l.id === logId ? { ...l, result: response.data?.message || 'Habit completed', status: 'success' } : l
+          ));
+          
+          toast.success(response.data?.message || 'Habit completed!');
+          return response.data?.message || 'Great job! Habit marked as complete for today.';
+        } catch (error) {
+          const msg = error instanceof Error ? error.message : 'Habit completion failed';
+          setActionLogs(prev => prev.map(l => 
+            l.id === logId ? { ...l, result: msg, status: 'error' } : l
+          ));
+          toast.error('Failed to complete habit');
+          return `Error: ${msg}`;
+        }
+      },
+
+      // Complete a personal task
+      completePersonalTask: async (params: { taskId?: string; taskTitle?: string }) => {
+        const logId = addLogRef.current('completePersonalTask', params, 'Completing task...', 'pending');
+        try {
+          const response = await supabase.functions.invoke('atlas-orchestrator', {
+            body: { 
+              action: 'complete_personal_item', 
+              userId: userRef.current?.id,
+              itemId: params.taskId,
+              itemTitle: params.taskTitle,
+            }
+          });
+          
+          if (response.error) throw response.error;
+          
+          // Trigger data refresh
+          useDataRefreshStore.getState().triggerRefresh('personal_items', 'atlas-completePersonalTask');
+          
+          setActionLogs(prev => prev.map(l => 
+            l.id === logId ? { ...l, result: response.data?.message || 'Task completed', status: 'success' } : l
+          ));
+          
+          toast.success(response.data?.message || 'Task completed!');
+          return response.data?.message || 'Task marked as complete.';
+        } catch (error) {
+          const msg = error instanceof Error ? error.message : 'Task completion failed';
+          setActionLogs(prev => prev.map(l => 
+            l.id === logId ? { ...l, result: msg, status: 'error' } : l
+          ));
+          toast.error('Failed to complete task');
+          return `Error: ${msg}`;
+        }
+      },
+
+      // Get personal summary (tasks, goals, habits)
+      getPersonalSummary: async () => {
+        const logId = addLogRef.current('getPersonalSummary', {}, 'Fetching summary...', 'pending');
+        try {
+          const response = await supabase.functions.invoke('atlas-orchestrator', {
+            body: { 
+              action: 'get_personal_summary', 
+              userId: userRef.current?.id,
+            }
+          });
+          
+          if (response.error) throw response.error;
+          
+          const summary = response.data?.summary;
+          
+          setActionLogs(prev => prev.map(l => 
+            l.id === logId ? { ...l, result: 'Summary fetched', status: 'success' } : l
+          ));
+          
+          let result = "Here's your personal summary:\n";
+          if (summary?.tasks) {
+            result += `\n📋 Tasks: ${summary.tasks.total} total`;
+            if (summary.tasks.today > 0) result += `, ${summary.tasks.today} due today`;
+            if (summary.tasks.overdue > 0) result += `, ⚠️ ${summary.tasks.overdue} overdue`;
+          }
+          if (summary?.goals) {
+            result += `\n🎯 Goals: ${summary.goals.total} active`;
+          }
+          if (summary?.habits) {
+            result += `\n🔥 Habits: ${summary.habits.total} tracked, ${summary.habits.totalStreak} total streak days`;
+          }
+          
+          return result;
+        } catch (error) {
+          const msg = error instanceof Error ? error.message : 'Failed to fetch summary';
+          setActionLogs(prev => prev.map(l => 
+            l.id === logId ? { ...l, result: msg, status: 'error' } : l
+          ));
           return `Error: ${msg}`;
         }
       },
