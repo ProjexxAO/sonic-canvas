@@ -496,9 +496,9 @@ export function AtlasHubLayout({
       </header>
 
       {/* Main Content */}
-      <main className="relative z-10 flex-1 flex overflow-hidden">
+      <main className="relative z-10 flex-1 flex overflow-hidden h-[calc(100vh-7rem)]">
         {/* Left Side - Fixed Orb Visualizer with Solar System (stays in place during scroll) */}
-        <div className="hidden md:flex items-center justify-center relative flex-shrink-0 flex-1 sticky top-0 self-start h-[calc(100vh-8rem)]">
+        <div className="hidden md:flex items-center justify-center relative flex-shrink-0 flex-1 h-full">
           {/* Solar System Background with Orbiting Planets */}
           <SolarSystemBackground theme={theme} />
 
@@ -617,8 +617,8 @@ export function AtlasHubLayout({
           </div>
         </div>
 
-        {/* Right Panel - Scrollable dashboard area */}
-        <div className="flex-1 overflow-y-auto p-6 md:max-w-md lg:max-w-lg xl:max-w-xl">
+        {/* Right Panel - Scrollable dashboard area (full height) */}
+        <div className="flex-1 overflow-y-auto p-6 md:max-w-md lg:max-w-lg xl:max-w-xl h-full flex flex-col">
           <AtlasRightPanel
           hubType={hubType}
           groupId={groupId}
