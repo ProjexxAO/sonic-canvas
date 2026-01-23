@@ -254,7 +254,7 @@ export function AtlasRightPanel({
 
     // Desktop/Tablet layout - consistent fixed width like Enterprise/Group hubs
     return (
-      <div className="w-96 flex-shrink-0 flex flex-col h-full">
+      <div className="w-full flex flex-col h-full">
         <Tabs defaultValue="personal-data" className="flex flex-col h-full overflow-hidden">
           {/* Tab Header Row */}
           <div className="flex items-center gap-2 mb-3 flex-shrink-0">
@@ -420,7 +420,7 @@ export function AtlasRightPanel({
 
   // Enterprise/Group hubs keep full tabs: Ops, Data, Discover, Verify
   return (
-    <div className="w-96 flex-shrink-0 flex flex-col h-full">
+    <div className="w-full flex flex-col h-full">
       <Tabs defaultValue="operations" className="flex flex-col h-full">
         <TabsList className="w-full grid grid-cols-4 bg-muted/50 border border-border rounded-lg p-1 mb-3 flex-shrink-0">
           <TabsTrigger 

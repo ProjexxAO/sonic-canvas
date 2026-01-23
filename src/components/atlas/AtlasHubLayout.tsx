@@ -496,9 +496,9 @@ export function AtlasHubLayout({
       </header>
 
       {/* Main Content */}
-      <main className="relative z-10 flex-1 flex overflow-hidden p-6 gap-6">
-        {/* Left Side - Central Orb Visualizer with Solar System */}
-        <div className="flex items-center justify-center relative flex-shrink-0 flex-1">
+      <main className="relative z-10 flex-1 flex overflow-hidden">
+        {/* Left Side - Fixed Orb Visualizer with Solar System (stays in place during scroll) */}
+        <div className="hidden md:flex items-center justify-center relative flex-shrink-0 flex-1 sticky top-0 self-start h-[calc(100vh-8rem)]">
           {/* Solar System Background with Orbiting Planets */}
           <SolarSystemBackground theme={theme} />
 
@@ -599,7 +599,7 @@ export function AtlasHubLayout({
           </div>
 
           {/* Voice Controls */}
-          <div className="absolute bottom-4 left-1/2 -translate-x-1/2">
+          <div className="absolute bottom-8 left-1/2 -translate-x-1/2">
             <div className="flex justify-center gap-3">
               {isConnected && (
                 <>
@@ -617,8 +617,9 @@ export function AtlasHubLayout({
           </div>
         </div>
 
-        {/* Right Panel - Fixed width for all hub types */}
-        <AtlasRightPanel
+        {/* Right Panel - Scrollable dashboard area */}
+        <div className="flex-1 overflow-y-auto p-6 md:max-w-md lg:max-w-lg xl:max-w-xl">
+          <AtlasRightPanel
           hubType={hubType}
           groupId={groupId}
           tasks={orchestration.tasks}
@@ -634,7 +635,8 @@ export function AtlasHubLayout({
           userId={user?.id}
           agents={agents}
           agentsLoading={agentsLoading}
-        />
+          />
+        </div>
       </main>
 
       {/* Bottom Bar - Transcript & Text Input */}
