@@ -967,23 +967,56 @@ Respond naturally and helpfully. If the user references something from a previou
       const widgetContext = body.context || {};
       const message = body.message || query || `Initialize widget: ${widgetConfig?.name || 'Agent Widget'}`;
 
+      // Determine what actions this widget can perform based on data sources
+      const dataSources = widgetConfig?.dataSources || [];
+      const capabilities: string[] = [];
+      
+      if (dataSources.includes('tasks')) {
+        capabilities.push('create and manage tasks', 'prioritize your work');
+      }
+      if (dataSources.includes('goals')) {
+        capabilities.push('track goal progress', 'set new goals');
+      }
+      if (dataSources.includes('habits')) {
+        capabilities.push('build habits', 'track streaks');
+      }
+      if (dataSources.includes('finance')) {
+        capabilities.push('analyze spending', 'provide budget insights');
+      }
+      if (dataSources.includes('calendar')) {
+        capabilities.push('manage your schedule');
+      }
+      if (dataSources.includes('email')) {
+        capabilities.push('summarize emails', 'find important messages');
+      }
+
       const systemPrompt = `You are an Agent Widget inside Atlas OS.
 You will speak concisely and stay aligned with the widget's purpose.
 
 Widget name: ${widgetConfig?.name || 'Agent Widget'}
 Widget purpose: ${widgetConfig?.purpose || widgetConfig?.description || 'Assist the user'}
-Capabilities: ${(widgetConfig?.capabilities || []).join(', ') || 'general assistance'}
-Data sources: ${(widgetConfig?.dataSources || []).join(', ') || 'none'}
-Agent chain: ${(widgetConfig?.agentChain || []).join(', ') || 'not specified'}
+User's capabilities through this widget: ${widgetConfig?.capabilities?.join(', ') || 'general assistance'}
+Connected data sources: ${dataSources.join(', ') || 'none'}
 
-Rules:
-- Do NOT mention internal systems, database, or authentication.
-- Provide a short welcome plus a single suggested first command.
+What you can actually DO for the user:
+${capabilities.length > 0 ? capabilities.join(', ') : 'provide general assistance and insights'}
+
+CURRENT USER DATA SNAPSHOT:
+${JSON.stringify(widgetContext, null, 2)}
+
+INSTRUCTIONS:
+1. Provide a brief, personalized welcome (max 2 sentences) based on the widget's purpose.
+2. Reference SPECIFIC items from their actual data if available.
+3. Suggest ONE concrete action they can take right now.
+4. Do NOT mention internal systems, databases, or authentication.
+
+Example good response:
+"Welcome to your Task Tracker! You have 3 high-priority tasks due today. Would you like me to help you tackle 'Review Q4 budget' first?"
 `;
 
       const result = await callAIGateway([
         { role: 'system', content: systemPrompt },
-        { role: 'user', content: `${message}\n\nContext:\n${JSON.stringify(widgetContext)}` },
+        { role: 'user', content: message },
       ]);
 
       return new Response(JSON.stringify(result.body), {
@@ -1006,35 +1039,238 @@ Rules:
       const conversationHistory = Array.isArray(body.conversationHistory) ? body.conversationHistory : [];
       const message = body.message || query || '';
 
-      const systemPrompt = `You are an Agent Widget inside Atlas OS, acting as a mini-orchestrator.
+      // Determine available actions based on widget's data sources
+      const dataSources = widgetConfig?.dataSources || [];
+      const availableActions: string[] = [];
+      
+      if (dataSources.includes('tasks')) {
+        availableActions.push('create_task', 'complete_task', 'list_tasks', 'prioritize_tasks');
+      }
+      if (dataSources.includes('goals')) {
+        availableActions.push('create_goal', 'update_goal_progress', 'list_goals');
+      }
+      if (dataSources.includes('habits')) {
+        availableActions.push('create_habit', 'complete_habit', 'list_habits');
+      }
+      if (dataSources.includes('finance')) {
+        availableActions.push('analyze_spending', 'budget_insights', 'spending_summary');
+      }
+      if (dataSources.includes('calendar')) {
+        availableActions.push('schedule_event', 'list_events', 'check_availability');
+      }
+      if (dataSources.includes('email')) {
+        availableActions.push('summarize_emails', 'draft_email', 'find_emails');
+      }
+
+      const systemPrompt = `You are an Agent Widget inside Atlas OS that can EXECUTE real actions.
 
 Widget name: ${widgetConfig?.name || 'Agent Widget'}
 Widget purpose: ${widgetConfig?.purpose || widgetConfig?.description || 'Assist the user'}
 Capabilities: ${(widgetConfig?.capabilities || []).join(', ') || 'general assistance'}
-Data sources: ${(widgetConfig?.dataSources || []).join(', ') || 'none'}
-Agent chain: ${(widgetConfig?.agentChain || []).join(', ') || 'not specified'}
+Data sources: ${dataSources.join(', ') || 'none'}
 
-You MUST:
-- Produce an actionable response tailored to the user's request and the widget's purpose.
-- When appropriate, output a short numbered plan (max 5 steps).
-- Ask ONE clarifying question only if required to proceed.
+AVAILABLE ACTIONS you can execute:
+${availableActions.length > 0 ? availableActions.join(', ') : 'general_assistance only'}
 
-You MUST NOT:
-- Mention internal tooling, storage/auth, or implementation details.
-`;
+CURRENT USER DATA:
+${JSON.stringify(widgetContext, null, 2)}
+
+CRITICAL INSTRUCTIONS:
+1. Analyze the user's request in context of the widget's PURPOSE.
+2. If the request requires an action, respond with a JSON block containing the action to execute.
+3. Always provide a helpful text response AFTER the JSON action block.
+4. Base your analysis on the ACTUAL DATA provided, not hypothetical data.
+
+ACTION FORMAT (include when executing an action):
+\`\`\`json
+{
+  "action": "action_name",
+  "params": { "key": "value" },
+  "execute": true
+}
+\`\`\`
+
+EXAMPLES:
+- For "create a task to review budget": Include action block with create_task + title
+- For "what are my top priorities?": Analyze the tasks data and summarize
+- For "track my spending": Analyze finance data and provide insights
+
+Be specific, actionable, and reference the user's actual data.`;
 
       const messages = [
         { role: 'system', content: systemPrompt },
-        // Provide compact context
-        { role: 'user', content: `Widget context (read-only):\n${JSON.stringify(widgetContext)}` },
         ...conversationHistory,
         { role: 'user', content: message },
       ];
 
       const result = await callAIGateway(messages);
+      
+      if (result.status !== 200) {
+        return new Response(JSON.stringify(result.body), {
+          status: result.status,
+          headers: { ...corsHeaders, 'Content-Type': 'application/json' },
+        });
+      }
 
-      return new Response(JSON.stringify(result.body), {
-        status: result.status,
+      // Parse response to check for executable actions
+      const responseText = result.body.response || '';
+      let executedAction = null;
+      let actionResult = null;
+
+      // Check for action JSON in response
+      const actionMatch = responseText.match(/```json\s*([\s\S]*?)\s*```/);
+      if (actionMatch) {
+        try {
+          const actionData = JSON.parse(actionMatch[1]);
+          if (actionData.execute && actionData.action) {
+            // Execute the action
+            switch (actionData.action) {
+              case 'create_task':
+                const { data: newTask, error: taskError } = await supabase
+                  .from('personal_items')
+                  .insert({
+                    user_id: effectiveUserId,
+                    item_type: 'task',
+                    title: actionData.params?.title || 'New Task',
+                    content: actionData.params?.description || '',
+                    priority: actionData.params?.priority || 'medium',
+                    status: 'active',
+                  })
+                  .select()
+                  .single();
+                if (!taskError && newTask) {
+                  executedAction = 'create_task';
+                  actionResult = { success: true, task: newTask };
+                }
+                break;
+
+              case 'complete_task':
+                if (actionData.params?.taskId) {
+                  const { error: completeError } = await supabase
+                    .from('personal_items')
+                    .update({ status: 'completed', completed_at: new Date().toISOString() })
+                    .eq('id', actionData.params.taskId)
+                    .eq('user_id', effectiveUserId);
+                  if (!completeError) {
+                    executedAction = 'complete_task';
+                    actionResult = { success: true };
+                  }
+                }
+                break;
+
+              case 'create_goal':
+                const { data: newGoal, error: goalError } = await supabase
+                  .from('personal_goals')
+                  .insert({
+                    user_id: effectiveUserId,
+                    title: actionData.params?.title || 'New Goal',
+                    description: actionData.params?.description || '',
+                    target_value: actionData.params?.target || 100,
+                    current_value: 0,
+                    status: 'active',
+                  })
+                  .select()
+                  .single();
+                if (!goalError && newGoal) {
+                  executedAction = 'create_goal';
+                  actionResult = { success: true, goal: newGoal };
+                }
+                break;
+
+              case 'update_goal_progress':
+                if (actionData.params?.goalId && actionData.params?.progress !== undefined) {
+                  const { error: progressError } = await supabase
+                    .from('personal_goals')
+                    .update({ current_value: actionData.params.progress })
+                    .eq('id', actionData.params.goalId)
+                    .eq('user_id', effectiveUserId);
+                  if (!progressError) {
+                    executedAction = 'update_goal_progress';
+                    actionResult = { success: true };
+                  }
+                }
+                break;
+
+              case 'create_habit':
+                const { data: newHabit, error: habitError } = await supabase
+                  .from('personal_habits')
+                  .insert({
+                    user_id: effectiveUserId,
+                    name: actionData.params?.name || 'New Habit',
+                    description: actionData.params?.description || '',
+                    frequency: actionData.params?.frequency || 'daily',
+                    current_streak: 0,
+                    longest_streak: 0,
+                  })
+                  .select()
+                  .single();
+                if (!habitError && newHabit) {
+                  executedAction = 'create_habit';
+                  actionResult = { success: true, habit: newHabit };
+                }
+                break;
+
+              case 'complete_habit':
+                if (actionData.params?.habitId) {
+                  const { data: habit } = await supabase
+                    .from('personal_habits')
+                    .select('current_streak, longest_streak')
+                    .eq('id', actionData.params.habitId)
+                    .eq('user_id', effectiveUserId)
+                    .single();
+                  
+                  if (habit) {
+                    const newStreak = (habit.current_streak || 0) + 1;
+                    const { error: habitCompleteError } = await supabase
+                      .from('personal_habits')
+                      .update({
+                        last_completed_at: new Date().toISOString(),
+                        current_streak: newStreak,
+                        longest_streak: Math.max(newStreak, habit.longest_streak || 0),
+                      })
+                      .eq('id', actionData.params.habitId)
+                      .eq('user_id', effectiveUserId);
+                    if (!habitCompleteError) {
+                      executedAction = 'complete_habit';
+                      actionResult = { success: true, newStreak };
+                    }
+                  }
+                }
+                break;
+
+              default:
+                // For analysis actions, the response text is the result
+                executedAction = actionData.action;
+                actionResult = { success: true, type: 'analysis' };
+            }
+          }
+        } catch (parseError) {
+          console.log('No valid action JSON found, treating as regular response');
+        }
+      }
+
+      // Clean up the response text (remove the action JSON block for cleaner display)
+      let cleanResponse = responseText.replace(/```json[\s\S]*?```\s*/g, '').trim();
+      
+      // If we executed an action, prepend confirmation
+      if (executedAction && actionResult?.success) {
+        const actionConfirmations: Record<string, string> = {
+          create_task: '✅ Task created! ',
+          complete_task: '✅ Task completed! ',
+          create_goal: '✅ Goal created! ',
+          update_goal_progress: '✅ Progress updated! ',
+          create_habit: '✅ Habit created! ',
+          complete_habit: '✅ Habit completed! ',
+        };
+        cleanResponse = (actionConfirmations[executedAction] || '✅ Action completed! ') + cleanResponse;
+      }
+
+      return new Response(JSON.stringify({ 
+        response: cleanResponse,
+        executedAction,
+        actionResult,
+      }), {
+        status: 200,
         headers: { ...corsHeaders, 'Content-Type': 'application/json' },
       });
     }
