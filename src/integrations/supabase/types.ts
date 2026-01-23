@@ -2793,6 +2793,36 @@ export type Database = {
           },
         ]
       }
+      phone_verification_codes: {
+        Row: {
+          code: string
+          created_at: string | null
+          expires_at: string
+          id: string
+          phone_number: string
+          user_id: string
+          verified: boolean | null
+        }
+        Insert: {
+          code: string
+          created_at?: string | null
+          expires_at: string
+          id?: string
+          phone_number: string
+          user_id: string
+          verified?: boolean | null
+        }
+        Update: {
+          code?: string
+          created_at?: string | null
+          expires_at?: string
+          id?: string
+          phone_number?: string
+          user_id?: string
+          verified?: boolean | null
+        }
+        Relationships: []
+      }
       photo_albums: {
         Row: {
           cover_photo_id: string | null
@@ -2898,8 +2928,14 @@ export type Database = {
           avatar_url: string | null
           created_at: string
           display_name: string | null
+          email_verified: boolean | null
+          email_verified_at: string | null
+          failed_verification_attempts: number | null
           id: string
+          identity_verified: boolean | null
+          identity_verified_at: string | null
           last_active_at: string | null
+          last_verification_attempt: string | null
           locale: string | null
           operator_handle: string | null
           phone_number: string | null
@@ -2908,8 +2944,10 @@ export type Database = {
           preferred_persona: string | null
           status: Database["public"]["Enums"]["user_status"] | null
           timezone: string | null
+          turnstile_verified_at: string | null
           updated_at: string
           user_id: string
+          verification_level: string | null
         }
         Insert: {
           atlas_agent_profile_id?: string | null
@@ -2917,8 +2955,14 @@ export type Database = {
           avatar_url?: string | null
           created_at?: string
           display_name?: string | null
+          email_verified?: boolean | null
+          email_verified_at?: string | null
+          failed_verification_attempts?: number | null
           id?: string
+          identity_verified?: boolean | null
+          identity_verified_at?: string | null
           last_active_at?: string | null
+          last_verification_attempt?: string | null
           locale?: string | null
           operator_handle?: string | null
           phone_number?: string | null
@@ -2927,8 +2971,10 @@ export type Database = {
           preferred_persona?: string | null
           status?: Database["public"]["Enums"]["user_status"] | null
           timezone?: string | null
+          turnstile_verified_at?: string | null
           updated_at?: string
           user_id: string
+          verification_level?: string | null
         }
         Update: {
           atlas_agent_profile_id?: string | null
@@ -2936,8 +2982,14 @@ export type Database = {
           avatar_url?: string | null
           created_at?: string
           display_name?: string | null
+          email_verified?: boolean | null
+          email_verified_at?: string | null
+          failed_verification_attempts?: number | null
           id?: string
+          identity_verified?: boolean | null
+          identity_verified_at?: string | null
           last_active_at?: string | null
+          last_verification_attempt?: string | null
           locale?: string | null
           operator_handle?: string | null
           phone_number?: string | null
@@ -2946,8 +2998,10 @@ export type Database = {
           preferred_persona?: string | null
           status?: Database["public"]["Enums"]["user_status"] | null
           timezone?: string | null
+          turnstile_verified_at?: string | null
           updated_at?: string
           user_id?: string
+          verification_level?: string | null
         }
         Relationships: []
       }
@@ -4061,6 +4115,36 @@ export type Database = {
           },
         ]
       }
+      verification_audit_log: {
+        Row: {
+          created_at: string | null
+          event_type: string
+          id: string
+          ip_address: string | null
+          metadata: Json | null
+          user_agent: string | null
+          user_id: string
+        }
+        Insert: {
+          created_at?: string | null
+          event_type: string
+          id?: string
+          ip_address?: string | null
+          metadata?: Json | null
+          user_agent?: string | null
+          user_id: string
+        }
+        Update: {
+          created_at?: string | null
+          event_type?: string
+          id?: string
+          ip_address?: string | null
+          metadata?: Json | null
+          user_agent?: string | null
+          user_id?: string
+        }
+        Relationships: []
+      }
       widget_update_registry: {
         Row: {
           best_practices: Json | null
@@ -4509,6 +4593,10 @@ export type Database = {
           sector: string
           similarity: number
         }[]
+      }
+      upgrade_verification_level: {
+        Args: { p_user_id: string }
+        Returns: string
       }
     }
     Enums: {
