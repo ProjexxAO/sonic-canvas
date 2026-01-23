@@ -496,8 +496,78 @@ export function AtlasHubLayout({
       </header>
 
       {/* Main Content - Full height minus header and footer */}
-      <main className="relative z-10 flex-1 flex overflow-hidden h-[calc(100vh-8rem)]">
-        {/* Left Side - Fixed Orb Visualizer with Solar System (absolutely positioned to stay centered) */}
+      <main className="relative z-10 flex-1 flex flex-col md:flex-row overflow-hidden h-[calc(100vh-8rem)]">
+        {/* Mobile Compact Orb - Visible only on small screens */}
+        <div className="flex md:hidden items-center justify-center py-4 px-4 flex-shrink-0">
+          <div 
+            className="relative w-20 h-20 cursor-pointer"
+            onClick={() => {
+              if (!isConnected && !isConnecting) {
+                startConversation();
+              }
+            }}
+            style={{ 
+              transform: `scale(${1 + (conversation.isSpeaking ? outputVolume : inputVolume) * 0.05})`,
+              transition: 'transform 0.15s ease-out'
+            }}
+          >
+            <div 
+              className={cn(
+                "absolute inset-0 rounded-full border",
+                isConnected ? "border-primary animate-pulse" : "border-border"
+              )}
+            />
+            <div
+              className={cn(
+                "absolute inset-2 rounded-full border border-border flex items-center justify-center overflow-hidden",
+                theme === 'dark' 
+                  ? "bg-[hsl(240_10%_6%/0.9)]" 
+                  : "bg-gradient-to-br from-[hsl(220_20%_92%)] to-[hsl(220_25%_88%)] shadow-lg"
+              )}
+            >
+              <div 
+                className="absolute w-[85%] h-[85%] rounded-full"
+                style={{
+                  background: theme === 'dark' 
+                    ? `radial-gradient(ellipse at 30% 40%, 
+                        hsl(270 100% ${isConnected ? 45 : 35}% / 0.8) 0%,
+                        hsl(220 100% ${isConnected ? 35 : 28}% / 0.7) 30%,
+                        hsl(280 100% ${isConnected ? 28 : 22}% / 0.6) 60%,
+                        transparent 100%)`
+                    : `radial-gradient(ellipse at 30% 40%, 
+                        hsl(222 70% ${isConnected ? 38 : 35}% / 0.9) 0%,
+                        hsl(201 75% ${isConnected ? 32 : 30}% / 0.8) 25%,
+                        hsl(173 70% ${isConnected ? 28 : 26}% / 0.7) 50%,
+                        hsl(220 25% 85% / 0.5) 100%)`,
+                }}
+              />
+              {!isConnected && !isConnecting && (
+                <span className="text-[8px] font-mono text-muted-foreground uppercase tracking-wider z-10">
+                  TAP
+                </span>
+              )}
+              {isConnecting && (
+                <span className="text-[7px] font-mono text-primary uppercase animate-pulse z-10">
+                  ...
+                </span>
+              )}
+            </div>
+          </div>
+          
+          {/* Mobile Voice Controls */}
+          {isConnected && (
+            <div className="flex items-center gap-2 ml-4">
+              <Button onClick={toggleMute} variant="outline" size="sm" className="h-8 px-2 gap-1 font-mono text-[10px]">
+                {isMuted ? <VolumeX className="w-3 h-3" /> : <Volume2 className="w-3 h-3" />}
+              </Button>
+              <Button onClick={stopConversation} variant="destructive" size="sm" className="h-8 px-2 gap-1 font-mono text-[10px]">
+                <MicOff className="w-3 h-3" />
+              </Button>
+            </div>
+          )}
+        </div>
+
+        {/* Left Side - Fixed Orb Visualizer with Solar System (hidden on mobile) */}
         <div className="hidden md:flex items-center justify-center fixed left-0 top-[4rem] bottom-[4rem] w-1/2 lg:w-[55%] pointer-events-none z-0">
           {/* Solar System Background with Orbiting Planets */}
           <SolarSystemBackground theme={theme} />
@@ -541,7 +611,7 @@ export function AtlasHubLayout({
             <div
               className={cn(
                 "absolute inset-6 rounded-full border border-border flex items-center justify-center overflow-hidden",
-                !isConnected && !isConnecting && "cursor-pointer hover:border-primary/50 transition-colors",
+                !isConnected && !isConnecting && "cursor-pointer hover:border-primary/50 transition-colors pointer-events-auto",
                 theme === 'dark' 
                   ? "bg-[hsl(240_10%_6%/0.9)]" 
                   : "bg-gradient-to-br from-[hsl(220_20%_92%)] to-[hsl(220_25%_88%)] shadow-lg"
@@ -617,8 +687,8 @@ export function AtlasHubLayout({
           </div>
         </div>
 
-        {/* Right Panel - Scrollable dashboard area (full height, offset for fixed left side) */}
-        <div className="flex-1 overflow-y-auto p-4 md:p-6 md:ml-[50%] lg:ml-[55%] h-full flex flex-col">
+        {/* Right Panel - Scrollable dashboard area (full height, offset for fixed left side on desktop) */}
+        <div className="flex-1 overflow-y-auto p-4 md:p-6 md:ml-[50%] lg:ml-[55%] min-h-0 flex flex-col">
           <AtlasRightPanel
           hubType={hubType}
           groupId={groupId}
