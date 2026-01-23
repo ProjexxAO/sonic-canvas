@@ -447,6 +447,148 @@ export function CountUp({
   );
 }
 
+// ============================================================================
+// TYPING INDICATOR - Shows someone is typing
+// ============================================================================
+
+interface TypingIndicatorProps {
+  className?: string;
+  label?: string;
+}
+
+export function TypingIndicator({ className, label }: TypingIndicatorProps) {
+  return (
+    <div className={cn('flex items-center gap-2 text-sm text-muted-foreground', className)}>
+      <div className="flex gap-1">
+        {[0, 1, 2].map((i) => (
+          <span
+            key={i}
+            className="w-1.5 h-1.5 rounded-full bg-muted-foreground ai-thinking-dot"
+            style={{ animationDelay: `${i * 200}ms` }}
+          />
+        ))}
+      </div>
+      {label && <span>{label}</span>}
+    </div>
+  );
+}
+
+// ============================================================================
+// CONFETTI BURST - Celebration animation
+// ============================================================================
+
+interface ConfettiBurstProps {
+  trigger: boolean;
+  colors?: string[];
+  particleCount?: number;
+}
+
+export function ConfettiBurst({
+  trigger,
+  colors = ['hsl(var(--primary))', 'hsl(var(--success))', 'hsl(var(--warning))'],
+  particleCount = 12,
+}: ConfettiBurstProps) {
+  const [isActive, setIsActive] = React.useState(false);
+
+  React.useEffect(() => {
+    if (trigger) {
+      setIsActive(true);
+      const timer = setTimeout(() => setIsActive(false), 1000);
+      return () => clearTimeout(timer);
+    }
+  }, [trigger]);
+
+  if (!isActive) return null;
+
+  return (
+    <div className="fixed inset-0 pointer-events-none z-50 overflow-hidden">
+      {Array.from({ length: particleCount }).map((_, i) => {
+        const angle = (360 / particleCount) * i;
+        const color = colors[i % colors.length];
+        return (
+          <div
+            key={i}
+            className="absolute left-1/2 top-1/2 w-2 h-2 rounded-full"
+            style={{
+              backgroundColor: color,
+              animation: `confetti-burst 1s ease-out forwards`,
+              '--angle': `${angle}deg`,
+              '--distance': `${100 + Math.random() * 100}px`,
+            } as React.CSSProperties}
+          />
+        );
+      })}
+    </div>
+  );
+}
+
+// ============================================================================
+// PULSE DOT - Status indicator with animation
+// ============================================================================
+
+interface PulseDotProps {
+  status: 'online' | 'busy' | 'away' | 'offline';
+  size?: 'sm' | 'md' | 'lg';
+  className?: string;
+}
+
+export function PulseDot({ status, size = 'md', className }: PulseDotProps) {
+  const sizeClasses = {
+    sm: 'w-2 h-2',
+    md: 'w-3 h-3',
+    lg: 'w-4 h-4',
+  };
+
+  const statusClasses = {
+    online: 'bg-success animate-pulse',
+    busy: 'bg-destructive animate-pulse',
+    away: 'bg-warning',
+    offline: 'bg-muted-foreground',
+  };
+
+  return (
+    <span
+      className={cn(
+        'rounded-full inline-block',
+        sizeClasses[size],
+        statusClasses[status],
+        className
+      )}
+    />
+  );
+}
+
+// ============================================================================
+// NOTIFICATION DOT - Attention indicator
+// ============================================================================
+
+interface NotificationDotProps {
+  count?: number;
+  max?: number;
+  className?: string;
+}
+
+export function NotificationDot({ count, max = 99, className }: NotificationDotProps) {
+  if (!count || count <= 0) return null;
+
+  const displayCount = count > max ? `${max}+` : count;
+
+  return (
+    <span
+      className={cn(
+        'absolute -top-1 -right-1 min-w-[18px] h-[18px] px-1',
+        'flex items-center justify-center',
+        'text-[10px] font-bold text-destructive-foreground',
+        'bg-destructive rounded-full',
+        'animate-scale-in',
+        className
+      )}
+    >
+      {displayCount}
+    </span>
+  );
+}
+
 // Export for index
 export const MicroInteractions = {
   Pressable,
@@ -458,4 +600,8 @@ export const MicroInteractions = {
   FocusGlow,
   Reveal,
   CountUp,
+  TypingIndicator,
+  ConfettiBurst,
+  PulseDot,
+  NotificationDot,
 };
