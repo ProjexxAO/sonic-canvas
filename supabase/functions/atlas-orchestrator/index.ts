@@ -61,36 +61,59 @@ serve(async (req) => {
     
     const supabase = createClient(supabaseUrl, supabaseKey);
 
-    // Helper: call Lovable AI gateway with consistent error handling
-    const callAIGateway = async (messages: Array<{ role: string; content: string }>) => {
-      const aiResponse = await fetch('https://ai.gateway.lovable.dev/v1/chat/completions', {
-        method: 'POST',
-        headers: {
-          'Authorization': `Bearer ${lovableApiKey}`,
-          'Content-Type': 'application/json',
-        },
-        body: JSON.stringify({
-          model: 'google/gemini-3-flash-preview',
-          messages,
-        }),
-      });
+    // Helper: call Lovable AI gateway with consistent error handling and retry logic
+    const callAIGateway = async (messages: Array<{ role: string; content: string }>, maxRetries = 2) => {
+      let lastError: string = '';
+      
+      for (let attempt = 0; attempt <= maxRetries; attempt++) {
+        try {
+          const aiResponse = await fetch('https://ai.gateway.lovable.dev/v1/chat/completions', {
+            method: 'POST',
+            headers: {
+              'Authorization': `Bearer ${lovableApiKey}`,
+              'Content-Type': 'application/json',
+            },
+            body: JSON.stringify({
+              model: 'google/gemini-3-flash-preview',
+              messages,
+            }),
+          });
 
-      if (!aiResponse.ok) {
-        // Mirror existing behavior used by `chat`
-        if (aiResponse.status === 429) {
-          return { status: 429, body: { error: 'Rate limit exceeded. Please try again later.' } };
+          if (aiResponse.ok) {
+            const aiData = await aiResponse.json();
+            const response = aiData?.choices?.[0]?.message?.content ?? '';
+            return { status: 200, body: { response } };
+          }
+
+          // Handle specific error codes (don't retry these)
+          if (aiResponse.status === 429) {
+            return { status: 429, body: { error: 'Rate limit exceeded. Please try again later.' } };
+          }
+          if (aiResponse.status === 402) {
+            return { status: 402, body: { error: 'Usage credits exhausted. Please add credits.' } };
+          }
+
+          // For 5xx errors, retry if we have attempts left
+          lastError = await aiResponse.text();
+          console.error(`AI gateway error (attempt ${attempt + 1}/${maxRetries + 1}):`, aiResponse.status, lastError.substring(0, 200));
+          
+          if (attempt < maxRetries && aiResponse.status >= 500) {
+            // Wait before retry with exponential backoff
+            await new Promise(r => setTimeout(r, 1000 * (attempt + 1)));
+            continue;
+          }
+        } catch (fetchError) {
+          lastError = fetchError instanceof Error ? fetchError.message : String(fetchError);
+          console.error(`AI gateway fetch error (attempt ${attempt + 1}/${maxRetries + 1}):`, lastError);
+          
+          if (attempt < maxRetries) {
+            await new Promise(r => setTimeout(r, 1000 * (attempt + 1)));
+            continue;
+          }
         }
-        if (aiResponse.status === 402) {
-          return { status: 402, body: { error: 'Usage credits exhausted. Please add credits.' } };
-        }
-        const errorText = await aiResponse.text();
-        console.error('AI gateway error:', aiResponse.status, errorText);
-        return { status: 500, body: { error: 'AI gateway error' } };
       }
 
-      const aiData = await aiResponse.json();
-      const response = aiData?.choices?.[0]?.message?.content ?? '';
-      return { status: 200, body: { response } };
+      return { status: 500, body: { error: 'AI gateway temporarily unavailable. Please try again.' } };
     };
 
     // Helper: resolve userId for request. For widget actions we require userId explicitly.
