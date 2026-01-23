@@ -216,7 +216,7 @@ export default function Header({ onToggleAudio, audioEnabled, user, onSignOut }:
         
         <HeaderButton
           entityName="Settings"
-          onClick={() => {}}
+          onClick={() => navigate('/personal')}
           title="Settings"
           className="p-2 text-muted-foreground hover:text-foreground transition-colors"
         >
@@ -225,7 +225,7 @@ export default function Header({ onToggleAudio, audioEnabled, user, onSignOut }:
         
         <HeaderButton
           entityName="Help"
-          onClick={() => {}}
+          onClick={() => navigate('/help')}
           title="Help"
           className="p-2 text-muted-foreground hover:text-foreground transition-colors"
         >

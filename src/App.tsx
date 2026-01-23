@@ -20,6 +20,9 @@ import ToolGovernance from "./pages/ToolGovernance";
 import Integrations from "./pages/Integrations";
 import PersonalHub from "./pages/PersonalHub";
 import GroupHub from "./pages/GroupHub";
+import Help from "./pages/Help";
+import TermsOfService from "./pages/TermsOfService";
+import PrivacyPolicy from "./pages/PrivacyPolicy";
 import NotFound from "./pages/NotFound";
 const queryClient = new QueryClient();
 
@@ -58,6 +61,9 @@ const App = () => (
                       <Route path="/marketplace" element={<Integrations />} />
                 <Route path="/personal" element={<PersonalHub />} />
                 <Route path="/group" element={<GroupHub />} />
+                <Route path="/help" element={<Help />} />
+                <Route path="/terms-of-service" element={<TermsOfService />} />
+                <Route path="/privacy-policy" element={<PrivacyPolicy />} />
                       {/* ADD ALL CUSTOM ROUTES ABOVE THE CATCH-ALL "*" ROUTE */}
                       <Route path="*" element={<NotFound />} />
                     </Routes>
