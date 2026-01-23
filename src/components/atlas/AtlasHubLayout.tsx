@@ -496,11 +496,64 @@ export function AtlasHubLayout({
 
       {/* Main Content */}
       <main className="relative z-10 flex-1 flex overflow-hidden p-6 gap-6">
-        {/* Left Side - Central Orb Visualizer (unified for all hub types) */}
+        {/* Left Side - Central Orb Visualizer with Orbiting Planets */}
         <div className="flex items-center justify-center relative flex-shrink-0 flex-1">
-          {/* Central Orb */}
+          {/* Orbiting Planets Container */}
+          <div className="absolute w-[400px] h-[400px]">
+            {/* Orbiting Agents/Planets */}
+            {agents.slice(0, 6).map((agent, index) => {
+              const orbitRadius = 140 + (index % 2) * 30;
+              const orbitDuration = 20 + index * 5;
+              const startAngle = (index / 6) * 360;
+              const planetSize = 12 - index * 1.5;
+              const planetColor = agent.sonicDNA?.color || HUB_CONFIG[hubType].color;
+              
+              return (
+                <div
+                  key={agent.id}
+                  className="absolute left-1/2 top-1/2 -translate-x-1/2 -translate-y-1/2"
+                  style={{
+                    animation: `orbit ${orbitDuration}s linear infinite`,
+                    animationDelay: `${-orbitDuration * (startAngle / 360)}s`,
+                  }}
+                >
+                  <div
+                    className="rounded-full transition-all duration-300 hover:scale-150 cursor-pointer"
+                    style={{
+                      width: `${Math.max(8, planetSize)}px`,
+                      height: `${Math.max(8, planetSize)}px`,
+                      backgroundColor: planetColor,
+                      boxShadow: `0 0 ${planetSize}px ${planetColor}60`,
+                      transform: `translateX(${orbitRadius}px)`,
+                    }}
+                    title={agent.designation}
+                  />
+                </div>
+              );
+            })}
+            
+            {/* Orbit Rings - Visual guides */}
+            <div 
+              className="absolute inset-0 m-auto rounded-full border opacity-20"
+              style={{ 
+                width: '280px', 
+                height: '280px',
+                borderColor: HUB_CONFIG[hubType].color 
+              }}
+            />
+            <div 
+              className="absolute inset-0 m-auto rounded-full border opacity-10"
+              style={{ 
+                width: '340px', 
+                height: '340px',
+                borderColor: HUB_CONFIG[hubType].color 
+              }}
+            />
+          </div>
+
+          {/* Central Orb - Smaller size */}
           <div 
-            className="relative w-72 h-72"
+            className="relative w-52 h-52"
             style={{ 
               transform: `scale(${1 + (conversation.isSpeaking ? outputVolume : inputVolume) * 0.08})`,
               transition: 'transform 0.15s ease-out'
@@ -522,7 +575,7 @@ export function AtlasHubLayout({
             {/* Middle ring */}
             <div 
               className={cn(
-                "absolute inset-4 rounded-full border-2",
+                "absolute inset-3 rounded-full border-2",
                 isConnected && conversation.isSpeaking && "border-secondary animate-spin"
               )}
               style={{ 
@@ -536,7 +589,7 @@ export function AtlasHubLayout({
             {/* Inner circle - Cosmic Orb */}
             <div
               className={cn(
-                "absolute inset-8 rounded-full border border-border flex items-center justify-center overflow-hidden",
+                "absolute inset-6 rounded-full border border-border flex items-center justify-center overflow-hidden",
                 !isConnected && !isConnecting && "cursor-pointer hover:border-primary/50 transition-colors",
                 theme === 'dark' 
                   ? "bg-[hsl(240_10%_6%/0.9)]" 
@@ -581,12 +634,12 @@ export function AtlasHubLayout({
                 
                 {/* Center text */}
                 {!isConnected && !isConnecting && (
-                  <span className="text-xs font-mono text-muted-foreground uppercase tracking-widest text-center">
+                  <span className="text-[10px] font-mono text-muted-foreground uppercase tracking-widest text-center">
                     Tap to Activate
                   </span>
                 )}
                 {isConnecting && (
-                  <span className="text-xs font-mono text-primary uppercase tracking-widest animate-pulse">
+                  <span className="text-[10px] font-mono text-primary uppercase tracking-widest animate-pulse">
                     Connecting...
                   </span>
                 )}
@@ -595,16 +648,16 @@ export function AtlasHubLayout({
           </div>
 
           {/* Voice Controls */}
-          <div className="absolute bottom-0 left-1/2 -translate-x-1/2">
+          <div className="absolute bottom-4 left-1/2 -translate-x-1/2">
             <div className="flex justify-center gap-3">
               {isConnected && (
                 <>
-                  <Button onClick={toggleMute} variant="outline" className="gap-2 font-mono">
-                    {isMuted ? <VolumeX className="w-4 h-4" /> : <Volume2 className="w-4 h-4" />}
+                  <Button onClick={toggleMute} variant="outline" size="sm" className="gap-2 font-mono text-xs">
+                    {isMuted ? <VolumeX className="w-3 h-3" /> : <Volume2 className="w-3 h-3" />}
                     {isMuted ? "UNMUTE" : "MUTE"}
                   </Button>
-                  <Button onClick={stopConversation} variant="destructive" className="gap-2 font-mono">
-                    <MicOff className="w-4 h-4" />
+                  <Button onClick={stopConversation} variant="destructive" size="sm" className="gap-2 font-mono text-xs">
+                    <MicOff className="w-3 h-3" />
                     DEACTIVATE
                   </Button>
                 </>

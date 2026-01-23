@@ -1037,7 +1037,17 @@
   }
 }
 
-/* Moon orbiting around Earth - ~27 day orbit scaled (27 seconds per Earth orbit minute = ~27s) */
+/* Simple orbit animation for planets around central orb */
+@keyframes orbit {
+  0% {
+    transform: translate(-50%, -50%) rotate(0deg);
+  }
+  100% {
+    transform: translate(-50%, -50%) rotate(360deg);
+  }
+}
+
+
 @keyframes moon-around-earth {
   0% {
     transform: rotate(0deg) translateX(20px) rotate(0deg);
