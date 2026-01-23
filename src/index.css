@@ -1,9 +1,11 @@
-@import url('https://fonts.googleapis.com/css2?family=JetBrains+Mono:wght@300;400;500;600;700&family=Orbitron:wght@400;500;600;700;800;900&display=swap');
-@import url("https://fonts.googleapis.com/css2?family=Source+Sans+Pro:wght@400;600;700&display=swap");
-@import url("https://fonts.googleapis.com/css2?family=Source+Serif+Pro:wght@400;600;700&display=swap");
-@import url("https://fonts.googleapis.com/css2?family=Source+Code+Pro:wght@400;700&display=swap");
+/* 
+ * Performance: Fonts are now preloaded in index.html with display=swap
+ * This eliminates render-blocking behavior and improves LCP
+ */
 
 @tailwind base;
+@tailwind components;
+@tailwind utilities;
 @tailwind components;
 @tailwind utilities;
 
@@ -1088,19 +1090,87 @@
 }
 
 /* ============================================
-   ACCESSIBILITY SETTINGS
+   ACCESSIBILITY - WCAG 2.2 AA COMPLIANCE
    ============================================ */
 
-/* Reduced Motion - disable animations */
+/* ===== SKIP LINKS ===== */
+.skip-links-container {
+  position: absolute;
+  top: 0;
+  left: 0;
+  z-index: 10000;
+}
+
+.skip-link {
+  position: absolute;
+  top: -100%;
+  left: 0;
+  padding: 1rem 1.5rem;
+  background: hsl(var(--primary));
+  color: hsl(var(--primary-foreground));
+  font-weight: 600;
+  font-size: 0.875rem;
+  text-decoration: none;
+  border-radius: 0 0 0.5rem 0;
+  transform: translateY(-100%);
+  transition: transform 0.2s ease-out;
+  white-space: nowrap;
+}
+
+.skip-link:focus {
+  transform: translateY(0);
+  top: 0;
+  outline: 3px solid hsl(var(--ring));
+  outline-offset: 2px;
+}
+
+/* ===== SCREEN READER ONLY ===== */
+.sr-only {
+  position: absolute;
+  width: 1px;
+  height: 1px;
+  padding: 0;
+  margin: -1px;
+  overflow: hidden;
+  clip: rect(0, 0, 0, 0);
+  white-space: nowrap;
+  border-width: 0;
+}
+
+/* ===== REDUCED MOTION ===== */
+@media (prefers-reduced-motion: reduce) {
+  *,
+  *::before,
+  *::after {
+    animation-duration: 0.01ms !important;
+    animation-iteration-count: 1 !important;
+    transition-duration: 0.01ms !important;
+    scroll-behavior: auto !important;
+  }
+}
+
 .reduce-motion,
-.reduce-motion * {
+.reduce-motion *,
+.reduce-motion *::before,
+.reduce-motion *::after {
   animation-duration: 0.01ms !important;
   animation-iteration-count: 1 !important;
   transition-duration: 0.01ms !important;
   scroll-behavior: auto !important;
 }
 
-/* High Contrast Mode */
+/* ===== HIGH CONTRAST MODE ===== */
+@media (prefers-contrast: more) {
+  :root {
+    --border: 0 0% 50%;
+    --ring: 0 0% 0%;
+  }
+  .dark {
+    --border: 0 0% 70%;
+    --ring: 0 0% 100%;
+  }
+}
+
 .high-contrast {
   --background: 0 0% 0%;
   --foreground: 0 0% 100%;
@@ -1111,14 +1181,38 @@
   --card-foreground: 0 0% 100%;
 }
 
-.high-contrast .dark {
+.high-contrast.dark {
   --background: 0 0% 0%;
   --foreground: 0 0% 100%;
   --primary: 180 100% 50%;
   --primary-foreground: 0 0% 0%;
 }
 
-/* Dyslexia-Friendly Font */
+/* ===== FOCUS MANAGEMENT ===== */
+html {
+  scroll-padding-top: 80px; /* Account for fixed headers */
+}
+
+*:focus {
+  scroll-margin-top: 100px; /* Ensure focused element not obscured */
+}
+
+:focus-visible {
+  outline: 3px solid hsl(var(--primary));
+  outline-offset: 2px;
+}
+
+/* Remove outline for mouse users, keep for keyboard */
+:focus:not(:focus-visible) {
+  outline: none;
+}
+
+/* Custom focus ring for interactive elements */
+.focus-ring {
+  @apply focus-visible:ring-2 focus-visible:ring-primary focus-visible:ring-offset-2 focus-visible:ring-offset-background;
+}
+
+/* ===== DYSLEXIA-FRIENDLY MODE ===== */
 @font-face {
   font-family: 'OpenDyslexic';
   src: url('https://cdn.jsdelivr.net/npm/open-dyslexic@1.0.3/woff/OpenDyslexic-Regular.woff') format('woff');
@@ -1135,7 +1229,7 @@
   line-height: 1.8 !important;
 }
 
-/* Color Blind Modes */
+/* ===== COLOR BLIND MODES ===== */
 .colorblind-protanopia {
   filter: url('#protanopia-filter');
 }
@@ -1148,23 +1242,263 @@
   filter: url('#tritanopia-filter');
 }
 
-/* Focus visible for keyboard navigation */
-:focus-visible {
-  outline: 2px solid hsl(var(--primary));
-  outline-offset: 2px;
+
+/* ============================================
+   PERFORMANCE OPTIMIZATIONS
+   ============================================ */
+
+/* ===== GPU ACCELERATION ===== */
+.gpu-accelerated {
+  transform: translateZ(0);
+  will-change: transform;
+  backface-visibility: hidden;
 }
 
-/* Skip to main content link */
-.skip-to-main {
-  position: absolute;
-  left: -9999px;
-  z-index: 9999;
-  padding: 1rem;
-  background: hsl(var(--background));
-  color: hsl(var(--foreground));
-  text-decoration: underline;
+/* ===== CONTENT VISIBILITY ===== */
+.content-auto {
+  content-visibility: auto;
+  contain-intrinsic-size: 0 500px;
 }
 
-.skip-to-main:focus {
-  left: 0;
+/* Large list items */
+.virtualized-item {
+  content-visibility: auto;
+  contain-intrinsic-size: 0 80px;
+}
+
+/* Cards in grids */
+.lazy-card {
+  content-visibility: auto;
+  contain-intrinsic-size: 200px 300px;
+}
+
+/* ===== CSS CONTAINMENT ===== */
+.contain-strict {
+  contain: strict;
+}
+
+.contain-layout {
+  contain: layout style;
+}
+
+.contain-paint {
+  contain: paint;
+}
+
+/* ===== WILL-CHANGE HINTS ===== */
+.will-transform {
+  will-change: transform;
+}
+
+.will-opacity {
+  will-change: opacity;
+}
+
+.will-scroll {
+  will-change: scroll-position;
+}
+
+/* Remove will-change after animation completes */
+.animated:not(:hover):not(:focus):not(.animating) {
+  will-change: auto;
+}
+
+
+/* ============================================
+   MOBILE RESPONSIVENESS - TOUCH-FIRST
+   ============================================ */
+
+/* ===== TOUCH TARGETS (48x48px minimum) ===== */
+.touch-target {
+  min-width: 48px;
+  min-height: 48px;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+}
+
+.touch-target-sm {
+  min-width: 44px;
+  min-height: 44px;
+}
+
+/* Ensure buttons meet touch target requirements */
+@media (pointer: coarse) {
+  button,
+  [role="button"],
+  a,
+  input[type="checkbox"],
+  input[type="radio"],
+  select {
+    min-height: 44px;
+    min-width: 44px;
+  }
+  
+  /* Spacing between touch targets */
+  button + button,
+  a + a {
+    margin-left: 8px;
+  }
+}
+
+/* ===== FLUID TYPOGRAPHY ===== */
+:root {
+  /* Fluid scale: min 14px, prefer 1vw + 10px, max 18px */
+  --fluid-xs: clamp(0.75rem, 0.5vw + 0.625rem, 0.875rem);
+  --fluid-sm: clamp(0.875rem, 0.75vw + 0.625rem, 1rem);
+  --fluid-base: clamp(1rem, 1vw + 0.75rem, 1.125rem);
+  --fluid-lg: clamp(1.125rem, 1.25vw + 0.75rem, 1.375rem);
+  --fluid-xl: clamp(1.25rem, 1.5vw + 0.875rem, 1.75rem);
+  --fluid-2xl: clamp(1.5rem, 2vw + 1rem, 2.25rem);
+  --fluid-3xl: clamp(1.875rem, 2.5vw + 1.25rem, 3rem);
+  --fluid-4xl: clamp(2.25rem, 3vw + 1.5rem, 4rem);
+}
+
+.text-fluid-xs { font-size: var(--fluid-xs); }
+.text-fluid-sm { font-size: var(--fluid-sm); }
+.text-fluid-base { font-size: var(--fluid-base); }
+.text-fluid-lg { font-size: var(--fluid-lg); }
+.text-fluid-xl { font-size: var(--fluid-xl); }
+.text-fluid-2xl { font-size: var(--fluid-2xl); }
+.text-fluid-3xl { font-size: var(--fluid-3xl); }
+.text-fluid-4xl { font-size: var(--fluid-4xl); }
+
+/* ===== CONTAINER QUERIES ===== */
+.container-query {
+  container-type: inline-size;
+}
+
+@container (max-width: 400px) {
+  .cq-stack {
+    flex-direction: column;
+  }
+  .cq-hide-sm {
+    display: none;
+  }
+}
+
+@container (min-width: 401px) and (max-width: 600px) {
+  .cq-cols-2 {
+    grid-template-columns: repeat(2, 1fr);
+  }
+}
+
+@container (min-width: 601px) {
+  .cq-cols-3 {
+    grid-template-columns: repeat(3, 1fr);
+  }
+}
+
+/* ===== MOBILE-FIRST BREAKPOINTS ===== */
+/* Extra small devices (phones, 320px and up) */
+@media (min-width: 320px) {
+  .xs\:block { display: block; }
+  .xs\:hidden { display: none; }
+  .xs\:p-2 { padding: 0.5rem; }
+}
+
+/* Small devices (phones, 375px and up) */
+@media (min-width: 375px) {
+  .sm\:grid-cols-2 { grid-template-columns: repeat(2, 1fr); }
+}
+
+/* ===== SAFE AREA INSETS (Notched Devices) ===== */
+@supports (padding: env(safe-area-inset-top)) {
+  .safe-area-top {
+    padding-top: env(safe-area-inset-top);
+  }
+  .safe-area-bottom {
+    padding-bottom: env(safe-area-inset-bottom);
+  }
+  .safe-area-left {
+    padding-left: env(safe-area-inset-left);
+  }
+  .safe-area-right {
+    padding-right: env(safe-area-inset-right);
+  }
+  .safe-area-all {
+    padding: env(safe-area-inset-top) env(safe-area-inset-right) env(safe-area-inset-bottom) env(safe-area-inset-left);
+  }
+}
+
+/* ===== MOBILE ANIMATION OPTIMIZATION ===== */
+@media (max-width: 768px) {
+  /* Simplify animations on mobile */
+  .animate-float {
+    animation-duration: 4s;
+  }
+  
+  /* Reduce shadow complexity */
+  .shadow-lg,
+  .shadow-xl {
+    box-shadow: 0 4px 12px hsl(0 0% 0% / 0.15);
+  }
+  
+  /* Prefer transforms over position changes */
+  .mobile-optimized {
+    transform: translateZ(0);
+  }
+}
+
+/* ===== HOVER STATES FOR TOUCH ===== */
+@media (hover: none) {
+  .hover\:scale-105:hover {
+    transform: none;
+  }
+  
+  /* Use active states instead of hover on touch */
+  .touch-feedback:active {
+    opacity: 0.8;
+    transform: scale(0.98);
+  }
+}
+
+/* ===== PREVENT OVERSCROLL ===== */
+html {
+  overscroll-behavior: none;
+}
+
+body {
+  overscroll-behavior-y: contain;
+}
+
+/* ===== SCROLL SNAP FOR MOBILE ===== */
+.scroll-snap-x {
+  scroll-snap-type: x mandatory;
+  -webkit-overflow-scrolling: touch;
+}
+
+.scroll-snap-y {
+  scroll-snap-type: y mandatory;
+  -webkit-overflow-scrolling: touch;
+}
+
+.snap-start {
+  scroll-snap-align: start;
+}
+
+.snap-center {
+  scroll-snap-align: center;
+}
+
+/* ===== BOTTOM SHEET SAFE ZONE ===== */
+.bottom-sheet-safe {
+  padding-bottom: max(1rem, env(safe-area-inset-bottom));
+}
+
+/* Atlas orb safe zone (matches 96px left padding in hubs) */
+.orb-safe-zone {
+  padding-left: 96px;
+}
+
+@media (max-width: 768px) {
+  .orb-safe-zone {
+    padding-left: 72px;
+  }
+}
+
+@media (max-width: 480px) {
+  .orb-safe-zone {
+    padding-left: 64px;
+  }
 }

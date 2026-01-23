@@ -47,6 +47,30 @@ export {
   CognitiveLoadReducers,
 } from './CognitiveLoadReducers';
 
+// Accessibility Components
+export {
+  AccessibilityProvider,
+  useAccessibility,
+  useAccessibilitySafe,
+  SkipLinks,
+  AccessibleButton,
+  VisuallyHidden,
+  FocusVisible,
+} from '@/components/accessibility';
+
+// Mobile Optimization Components
+export {
+  TouchButton,
+  TouchCard,
+  ResponsiveStack,
+  BottomSheetContainer,
+  ScrollSnapContainer,
+  FluidText,
+  SafeAreaWrapper,
+  HideOnTouch,
+  ShowOnTouch,
+} from '@/components/mobile';
+
 // Design Psychology Constants
 export {
   COLOR_PSYCHOLOGY,

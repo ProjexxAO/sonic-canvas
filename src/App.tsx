@@ -10,6 +10,7 @@ import { useVoiceCommandExecutor } from "@/hooks/useVoiceCommandExecutor";
 import { AtlasProvider } from "@/contexts/AtlasContext";
 import { GlobalAtlasOrb } from "@/components/atlas/GlobalAtlasOrb";
 import { GlobalAccessibilityHandler } from "@/components/personalization/GlobalAccessibilityHandler";
+import { AccessibilityProvider } from "@/components/accessibility";
 import { ErrorBoundary } from "@/components/ErrorBoundary";
 import Index from "./pages/Index";
 import Auth from "./pages/Auth";
@@ -26,6 +27,7 @@ import PrivacyPolicy from "./pages/PrivacyPolicy";
 import About from "./pages/About";
 import Enterprise from "./pages/Enterprise";
 import NotFound from "./pages/NotFound";
+
 const queryClient = new QueryClient();
 
 // Component that uses the voice command executor hook
@@ -45,37 +47,42 @@ const App = () => (
       <QueryClientProvider client={queryClient}>
         <AuthProvider>
           <WorkspacesProvider>
-            <TooltipProvider>
-              <Toaster />
-              <Sonner />
-              <BrowserRouter>
-                <AtlasProvider>
-                  <VoiceCommandHandler />
-                  <GlobalAccessibilityHandler />
-                  <ErrorBoundary>
-                    <Routes>
-                      <Route path="/" element={<Index />} />
-                      <Route path="/auth" element={<Auth />} />
-                      <Route path="/atlas" element={<Atlas />} />
-                      <Route path="/import" element={<ImportAgents />} />
-                      <Route path="/workspace/tools/:userId?" element={<UserToolPermissions />} />
-                      <Route path="/governance" element={<ToolGovernance />} />
-                      <Route path="/marketplace" element={<Integrations />} />
-                <Route path="/personal" element={<PersonalHub />} />
-                <Route path="/group" element={<GroupHub />} />
-                <Route path="/help" element={<Help />} />
-                <Route path="/terms-of-service" element={<TermsOfService />} />
-                <Route path="/privacy-policy" element={<PrivacyPolicy />} />
-                <Route path="/about" element={<About />} />
-                <Route path="/enterprise" element={<Enterprise />} />
-                      {/* ADD ALL CUSTOM ROUTES ABOVE THE CATCH-ALL "*" ROUTE */}
-                      <Route path="*" element={<NotFound />} />
-                    </Routes>
-                  </ErrorBoundary>
-                  <GlobalAtlasOrb />
-                </AtlasProvider>
-              </BrowserRouter>
-            </TooltipProvider>
+            <AccessibilityProvider>
+              <TooltipProvider>
+                <Toaster />
+                <Sonner />
+                <BrowserRouter>
+                  <AtlasProvider>
+                    <VoiceCommandHandler />
+                    <GlobalAccessibilityHandler />
+                    <ErrorBoundary>
+                      {/* Main content with landmark */}
+                      <main id="main-content" tabIndex={-1} className="outline-none">
+                        <Routes>
+                          <Route path="/" element={<Index />} />
+                          <Route path="/auth" element={<Auth />} />
+                          <Route path="/atlas" element={<Atlas />} />
+                          <Route path="/import" element={<ImportAgents />} />
+                          <Route path="/workspace/tools/:userId?" element={<UserToolPermissions />} />
+                          <Route path="/governance" element={<ToolGovernance />} />
+                          <Route path="/marketplace" element={<Integrations />} />
+                          <Route path="/personal" element={<PersonalHub />} />
+                          <Route path="/group" element={<GroupHub />} />
+                          <Route path="/help" element={<Help />} />
+                          <Route path="/terms-of-service" element={<TermsOfService />} />
+                          <Route path="/privacy-policy" element={<PrivacyPolicy />} />
+                          <Route path="/about" element={<About />} />
+                          <Route path="/enterprise" element={<Enterprise />} />
+                          {/* ADD ALL CUSTOM ROUTES ABOVE THE CATCH-ALL "*" ROUTE */}
+                          <Route path="*" element={<NotFound />} />
+                        </Routes>
+                      </main>
+                    </ErrorBoundary>
+                    <GlobalAtlasOrb />
+                  </AtlasProvider>
+                </BrowserRouter>
+              </TooltipProvider>
+            </AccessibilityProvider>
           </WorkspacesProvider>
         </AuthProvider>
       </QueryClientProvider>
