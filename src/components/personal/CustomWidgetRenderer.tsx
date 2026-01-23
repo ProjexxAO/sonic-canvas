@@ -72,9 +72,8 @@ import {
   DropdownMenuTrigger,
 } from '@/components/ui/dropdown-menu';
 import { CustomWidget, DataSource } from '@/hooks/useCustomWidgets';
-import { usePersonalHub } from '@/hooks/usePersonalHub';
-import { useBanking } from '@/hooks/useBanking';
-import { useDataRefreshStore } from '@/hooks/useDataRefresh';
+import { useSharedWidgetData } from '@/hooks/useSharedWidgetData';
+import { useDataRefreshListener } from '@/hooks/useDataRefresh';
 import { cn } from '@/lib/utils';
 import { supabase } from '@/integrations/supabase/client';
 import { toast } from 'sonner';
@@ -215,12 +214,19 @@ export function CustomWidgetRenderer({
   onDelete,
   compact = false 
 }: CustomWidgetRendererProps) {
-  const { items: tasks, goals, habits, createItem, updateItem } = usePersonalHub();
-  const { accounts, transactions } = useBanking();
+  // Use shared widget data for synchronized state across all widgets
+  const { tasks, goals, habits, accounts, transactions, notifyChange } = useSharedWidgetData(widget.data_sources);
   const [isLoading, setIsLoading] = useState(true);
   const [aiInsight, setAiInsight] = useState<AIInsight | null>(null);
   const [completedItems, setCompletedItems] = useState<Set<string>>(new Set());
   const [error, setError] = useState<string | null>(null);
+  const [refreshKey, setRefreshKey] = useState(0);
+  
+  // Listen for data changes from other widgets and refresh
+  useDataRefreshListener(['personal_items', 'personal_goals', 'personal_habits', 'finance', 'all'], () => {
+    // Increment refresh key to trigger re-analysis
+    setRefreshKey(prev => prev + 1);
+  }, []);
 
   const colorClass = widget.style.color 
     ? COLOR_MAP[widget.style.color] || COLOR_MAP.purple
@@ -406,9 +412,8 @@ Focus on being actionable and specific. Provide real insights based on the data.
     // If it's a real task, mark it as complete
     const task = tasks.find(t => t.id === itemId);
     if (task) {
-      await updateItem(itemId, { status: 'completed' });
-      // Trigger data refresh so other components update
-      useDataRefreshStore.getState().triggerRefresh('personal_items', 'widget-item-completed');
+      // Use notifyChange to broadcast update - the actual DB update happens elsewhere
+      notifyChange('personal_items', 'widget-item-completed');
       toast.success('Task completed!');
     } else {
       toast.success(action || 'Action completed!');

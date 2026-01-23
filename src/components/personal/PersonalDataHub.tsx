@@ -85,6 +85,7 @@ import {
 import { Tooltip, TooltipContent, TooltipProvider, TooltipTrigger } from '@/components/ui/tooltip';
 import { usePersonalHub, PersonalItem, PersonalGoal, PersonalHabit } from '@/hooks/usePersonalHub';
 import { useBanking, BankAccount, BankTransaction } from '@/hooks/useBanking';
+import { useSharedWidgetDataProvider } from '@/hooks/useSharedWidgetData';
 import { useUserPhotos, PHOTO_CATEGORIES, SOCIAL_PLATFORMS } from '@/hooks/useUserPhotos';
 import { useQuickActionPreferences } from '@/hooks/useQuickActionPreferences';
 import { useDashboardPreferences } from '@/hooks/useDashboardPreferences';
@@ -429,6 +430,9 @@ export function PersonalDataHub({ userId }: PersonalDataHubProps) {
     isLoading: isBankingLoading,
     refreshAll: refreshBanking,
   } = useBanking();
+  
+  // Initialize shared widget data provider - syncs data across all widgets
+  useSharedWidgetDataProvider();
 
   const {
     photos,
