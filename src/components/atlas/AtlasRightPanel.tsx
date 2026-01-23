@@ -112,7 +112,7 @@ export function AtlasRightPanel({
     // Mobile layout - no horizontal resize
     if (isMobile) {
       return (
-        <div className="w-full flex flex-col h-full overflow-hidden">
+        <div className="w-full flex flex-col h-full min-h-0">
           <Tabs defaultValue="personal-data" className="flex flex-col h-full overflow-hidden">
             {/* Tab Header Row - Simplified for mobile */}
             <div className="flex items-center gap-2 mb-2 flex-shrink-0 overflow-x-auto">
