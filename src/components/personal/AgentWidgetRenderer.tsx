@@ -686,6 +686,25 @@ export function AgentWidgetRenderer({
                     </TooltipContent>
                   </Tooltip>
                 </TooltipProvider>
+                {/* Version badge with update indicator */}
+                <Badge variant="outline" className="text-[8px] px-1">
+                  v{widget.version}
+                </Badge>
+                {widget.update_available && (
+                  <TooltipProvider>
+                    <Tooltip>
+                      <TooltipTrigger>
+                        <Badge className="text-[8px] px-1 bg-amber-500/20 text-amber-500 border-amber-500/30 animate-pulse">
+                          Update v{widget.update_version}
+                        </Badge>
+                      </TooltipTrigger>
+                      <TooltipContent>
+                        <p className="text-xs">New version available with improvements</p>
+                        <p className="text-[10px] text-muted-foreground">Your data is safe during updates</p>
+                      </TooltipContent>
+                    </Tooltip>
+                  </TooltipProvider>
+                )}
               </div>
               <p className="text-[10px] text-muted-foreground">
                 {widget.ai_capabilities.capabilities?.slice(0, 3).join(' • ') || 'AI Assistant'}

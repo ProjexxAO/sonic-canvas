@@ -1280,17 +1280,23 @@ export type Database = {
         Row: {
           agent_chain: string[] | null
           ai_capabilities: Json | null
+          auto_update: boolean | null
           config: Json
           created_at: string
           created_by_atlas: boolean | null
+          data_hash: string | null
           data_sources: string[] | null
           description: string | null
           generation_prompt: string | null
           id: string
           is_active: boolean | null
+          last_update_check: string | null
           layout: Json | null
           name: string
+          security_verified: boolean | null
           style: Json | null
+          update_available: boolean | null
+          update_version: number | null
           updated_at: string
           user_id: string
           version: number | null
@@ -1299,17 +1305,23 @@ export type Database = {
         Insert: {
           agent_chain?: string[] | null
           ai_capabilities?: Json | null
+          auto_update?: boolean | null
           config?: Json
           created_at?: string
           created_by_atlas?: boolean | null
+          data_hash?: string | null
           data_sources?: string[] | null
           description?: string | null
           generation_prompt?: string | null
           id?: string
           is_active?: boolean | null
+          last_update_check?: string | null
           layout?: Json | null
           name: string
+          security_verified?: boolean | null
           style?: Json | null
+          update_available?: boolean | null
+          update_version?: number | null
           updated_at?: string
           user_id: string
           version?: number | null
@@ -1318,17 +1330,23 @@ export type Database = {
         Update: {
           agent_chain?: string[] | null
           ai_capabilities?: Json | null
+          auto_update?: boolean | null
           config?: Json
           created_at?: string
           created_by_atlas?: boolean | null
+          data_hash?: string | null
           data_sources?: string[] | null
           description?: string | null
           generation_prompt?: string | null
           id?: string
           is_active?: boolean | null
+          last_update_check?: string | null
           layout?: Json | null
           name?: string
+          security_verified?: boolean | null
           style?: Json | null
+          update_available?: boolean | null
+          update_version?: number | null
           updated_at?: string
           user_id?: string
           version?: number | null
@@ -4042,6 +4060,135 @@ export type Database = {
             referencedColumns: ["id"]
           },
         ]
+      }
+      widget_update_registry: {
+        Row: {
+          best_practices: Json | null
+          breaking_changes: boolean | null
+          category: string
+          created_at: string
+          deprecated_features: string[] | null
+          id: string
+          improvements: Json | null
+          last_researched_at: string | null
+          latest_version: number
+          migration_script: Json | null
+          min_compatible_version: number | null
+          new_capabilities: string[] | null
+          performance_tips: string[] | null
+          required_data_sources: string[] | null
+          security_notes: string | null
+          source_url: string | null
+          updated_at: string
+          version_name: string | null
+          widget_type: string
+        }
+        Insert: {
+          best_practices?: Json | null
+          breaking_changes?: boolean | null
+          category: string
+          created_at?: string
+          deprecated_features?: string[] | null
+          id?: string
+          improvements?: Json | null
+          last_researched_at?: string | null
+          latest_version?: number
+          migration_script?: Json | null
+          min_compatible_version?: number | null
+          new_capabilities?: string[] | null
+          performance_tips?: string[] | null
+          required_data_sources?: string[] | null
+          security_notes?: string | null
+          source_url?: string | null
+          updated_at?: string
+          version_name?: string | null
+          widget_type: string
+        }
+        Update: {
+          best_practices?: Json | null
+          breaking_changes?: boolean | null
+          category?: string
+          created_at?: string
+          deprecated_features?: string[] | null
+          id?: string
+          improvements?: Json | null
+          last_researched_at?: string | null
+          latest_version?: number
+          migration_script?: Json | null
+          min_compatible_version?: number | null
+          new_capabilities?: string[] | null
+          performance_tips?: string[] | null
+          required_data_sources?: string[] | null
+          security_notes?: string | null
+          source_url?: string | null
+          updated_at?: string
+          version_name?: string | null
+          widget_type?: string
+        }
+        Relationships: []
+      }
+      widget_versions: {
+        Row: {
+          agent_chain: string[] | null
+          ai_capabilities: Json | null
+          change_summary: string | null
+          config: Json
+          created_at: string
+          created_by: string | null
+          data_snapshot: Json | null
+          data_sources: string[] | null
+          generation_prompt: string | null
+          id: string
+          is_current: boolean | null
+          layout: Json | null
+          rollback_available: boolean | null
+          style: Json | null
+          user_id: string
+          version_name: string | null
+          version_number: number
+          widget_id: string
+        }
+        Insert: {
+          agent_chain?: string[] | null
+          ai_capabilities?: Json | null
+          change_summary?: string | null
+          config?: Json
+          created_at?: string
+          created_by?: string | null
+          data_snapshot?: Json | null
+          data_sources?: string[] | null
+          generation_prompt?: string | null
+          id?: string
+          is_current?: boolean | null
+          layout?: Json | null
+          rollback_available?: boolean | null
+          style?: Json | null
+          user_id: string
+          version_name?: string | null
+          version_number?: number
+          widget_id: string
+        }
+        Update: {
+          agent_chain?: string[] | null
+          ai_capabilities?: Json | null
+          change_summary?: string | null
+          config?: Json
+          created_at?: string
+          created_by?: string | null
+          data_snapshot?: Json | null
+          data_sources?: string[] | null
+          generation_prompt?: string | null
+          id?: string
+          is_current?: boolean | null
+          layout?: Json | null
+          rollback_available?: boolean | null
+          style?: Json | null
+          user_id?: string
+          version_name?: string | null
+          version_number?: number
+          widget_id?: string
+        }
+        Relationships: []
       }
       workspace_members: {
         Row: {

@@ -132,6 +132,13 @@ export interface CustomWidget {
   version: number;
   created_at: string;
   updated_at: string;
+  // Version management fields
+  last_update_check?: string;
+  update_available?: boolean;
+  update_version?: number;
+  auto_update?: boolean;
+  data_hash?: string;
+  security_verified?: boolean;
 }
 
 export interface CreateWidgetRequest {
@@ -167,6 +174,13 @@ function parseWidget(row: any): CustomWidget {
     version: row.version ?? 1,
     created_at: row.created_at,
     updated_at: row.updated_at,
+    // Version management fields
+    last_update_check: row.last_update_check,
+    update_available: row.update_available ?? false,
+    update_version: row.update_version,
+    auto_update: row.auto_update ?? false,
+    data_hash: row.data_hash,
+    security_verified: row.security_verified ?? true,
   };
 }
 
