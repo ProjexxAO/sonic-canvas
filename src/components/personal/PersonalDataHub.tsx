@@ -193,7 +193,13 @@ function PersonalQuickAction({
       <button
         onClick={handleClick}
         className={cn(
-          "flex flex-col items-center justify-center p-2 rounded-lg border border-border bg-card/50 hover:bg-card transition-colors min-w-[60px] w-full",
+          // Base styles
+          "flex flex-col items-center justify-center p-2 rounded-lg border border-border bg-card/50 min-w-[60px] w-full",
+          // Psychology-based micro-interactions
+          "transition-all duration-150 ease-out",
+          "hover:bg-card hover:-translate-y-0.5 hover:shadow-sm hover:border-primary/30",
+          "active:translate-y-0 active:scale-[0.98]",
+          // Drag state
           isDragging && "ring-2 ring-primary"
         )}
       >
@@ -207,19 +213,19 @@ function PersonalQuickAction({
           </div>
         )}
         <div 
-          className="w-7 h-7 rounded-full flex items-center justify-center mb-0.5"
+          className="w-7 h-7 rounded-full flex items-center justify-center mb-0.5 transition-transform duration-150 group-hover:scale-110"
           style={{ backgroundColor: `${color}20` }}
         >
           <Icon size={12} style={{ color }} />
         </div>
         <span className="text-[9px] font-mono text-foreground truncate max-w-full">{label}</span>
         {count !== undefined && (
-          <Badge variant="secondary" className="text-[7px] mt-0.5 px-1 py-0 h-3">
+          <Badge variant="secondary" size="sm" className="mt-0.5 px-1 py-0 h-3">
             {count}
           </Badge>
         )}
         {badge && (
-          <Badge variant="outline" className="text-[7px] mt-0.5 px-1 py-0 h-3">
+          <Badge variant="outline" size="sm" className="mt-0.5 px-1 py-0 h-3">
             {badge}
           </Badge>
         )}
@@ -230,7 +236,12 @@ function PersonalQuickAction({
       {onRemove && (
         <button
           onClick={(e) => { e.stopPropagation(); onRemove(); }}
-          className="absolute -top-1 -right-1 w-4 h-4 bg-destructive text-destructive-foreground rounded-full opacity-0 group-hover:opacity-100 transition-opacity flex items-center justify-center"
+          className={cn(
+            "absolute -top-1 -right-1 w-4 h-4 bg-destructive text-destructive-foreground rounded-full",
+            "opacity-0 group-hover:opacity-100 transition-all duration-150",
+            "flex items-center justify-center",
+            "hover:scale-110 active:scale-95"
+          )}
         >
           <X size={8} />
         </button>

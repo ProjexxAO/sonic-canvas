@@ -386,22 +386,26 @@ export function AtlasHubLayout({
         </div>
       )}
 
-      {/* Header */}
+      {/* Header - Psychology-enhanced with smooth transitions */}
       <header className={cn(
-        "relative z-40 border-b backdrop-blur-xl",
+        "relative z-40 border-b backdrop-blur-xl transition-all duration-300",
         theme === 'dark'
           ? "bg-[hsl(240_10%_6%/0.7)] border-border/50"
           : "bg-white/60 border-border/30 shadow-sm"
       )}>
         <div className="flex items-center justify-between px-6 py-3">
           <div className="flex items-center gap-4">
-            <div className="flex items-center gap-2">
+            {/* Hub indicator with pulse animation */}
+            <div className="flex items-center gap-2 group">
               <div 
-                className="w-3 h-3 rounded-full"
-                style={{ backgroundColor: HUB_CONFIG[hubType].color }}
+                className="w-3 h-3 rounded-full transition-transform duration-200 group-hover:scale-110"
+                style={{ 
+                  backgroundColor: HUB_CONFIG[hubType].color,
+                  boxShadow: `0 0 8px ${HUB_CONFIG[hubType].color}40`
+                }}
               />
               <div>
-                <h1 className="text-sm font-mono font-semibold tracking-tight uppercase">
+                <h1 className="text-sm font-mono font-semibold tracking-tight uppercase transition-colors duration-200 group-hover:text-primary">
                   {hubTitle}
                 </h1>
                 <p className="text-[10px] text-muted-foreground font-mono uppercase tracking-wider">
@@ -410,15 +414,16 @@ export function AtlasHubLayout({
               </div>
             </div>
             
-            {/* Verified Badge for Personal Hub */}
+            {/* Verified Badge for Personal Hub - Enhanced with hover effect */}
             {hubType === 'personal' && hubCreatedAt && (
               <Tooltip>
                 <TooltipTrigger asChild>
                   <div className={cn(
                     "flex items-center gap-1.5 px-2.5 py-1 rounded-full text-xs font-medium cursor-help",
+                    "transition-all duration-200 hover:scale-105",
                     theme === 'dark'
-                      ? "bg-emerald-500/10 text-emerald-400 border border-emerald-500/20"
-                      : "bg-emerald-50 text-emerald-600 border border-emerald-200"
+                      ? "bg-emerald-500/10 text-emerald-400 border border-emerald-500/20 hover:bg-emerald-500/15"
+                      : "bg-emerald-50 text-emerald-600 border border-emerald-200 hover:bg-emerald-100"
                   )}>
                     <ShieldCheck className="h-3.5 w-3.5" />
                     <span>Verified</span>
@@ -443,24 +448,32 @@ export function AtlasHubLayout({
             )}
           </div>
 
+          {/* Right controls with enhanced feedback */}
           <div className="flex items-center gap-2">
-            {/* Connection Status */}
+            {/* Connection Status - Animated indicator */}
             <div className={cn(
-              "flex items-center gap-1.5 px-2 py-1 rounded-full text-[10px] font-mono",
+              "flex items-center gap-1.5 px-2 py-1 rounded-full text-[10px] font-mono transition-all duration-300",
               isConnected 
                 ? "bg-emerald-500/10 text-emerald-500" 
                 : "bg-muted text-muted-foreground"
             )}>
+              <span className={cn(
+                "w-1.5 h-1.5 rounded-full",
+                isConnected ? "bg-emerald-500 animate-pulse" : "bg-muted-foreground"
+              )} />
               {isConnected ? <Wifi size={10} /> : <WifiOff size={10} />}
               {isConnected ? 'CONNECTED' : 'OFFLINE'}
             </div>
             
-            {/* Wake Word Toggle */}
+            {/* Wake Word Toggle - Enhanced button */}
             {isConnected && (
               <Button
                 variant="ghost"
                 size="icon"
-                className="h-8 w-8"
+                className={cn(
+                  "h-8 w-8 transition-all duration-200",
+                  wakeWordEnabled && "bg-primary/10 text-primary"
+                )}
                 onClick={() => setWakeWordEnabled(!wakeWordEnabled)}
                 title={wakeWordEnabled ? 'Disable wake word' : 'Enable wake word'}
               >
@@ -468,11 +481,11 @@ export function AtlasHubLayout({
               </Button>
             )}
 
-            {/* Theme Toggle */}
+            {/* Theme Toggle - Smooth rotation */}
             <Button
               variant="ghost"
               size="icon"
-              className="h-8 w-8"
+              className="h-8 w-8 transition-transform duration-300 hover:rotate-12"
               onClick={() => setTheme(theme === 'dark' ? 'light' : 'dark')}
             >
               {theme === 'dark' ? <Sun size={14} /> : <Moon size={14} />}

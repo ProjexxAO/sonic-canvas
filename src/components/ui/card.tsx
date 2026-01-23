@@ -2,9 +2,51 @@ import * as React from "react";
 
 import { cn } from "@/lib/utils";
 
-const Card = React.forwardRef<HTMLDivElement, React.HTMLAttributes<HTMLDivElement>>(({ className, ...props }, ref) => (
-  <div ref={ref} className={cn("rounded-lg border bg-card text-card-foreground shadow-sm", className)} {...props} />
-));
+/**
+ * Card component with psychology-based enhancements:
+ * - Subtle hover lift for interactive cards (Fitts's Law affordance)
+ * - Smooth transitions following Doherty Threshold
+ * - Optional interactive mode with enhanced feedback
+ */
+
+export interface CardProps extends React.HTMLAttributes<HTMLDivElement> {
+  /** Enable hover interactions (lift, shadow) */
+  interactive?: boolean;
+  /** Add left accent border for visual hierarchy */
+  accent?: 'primary' | 'success' | 'warning' | 'destructive' | 'personal' | 'group' | 'csuite';
+}
+
+const Card = React.forwardRef<HTMLDivElement, CardProps>(
+  ({ className, interactive = false, accent, ...props }, ref) => {
+    const accentClasses = {
+      primary: 'border-l-4 border-l-primary',
+      success: 'border-l-4 border-l-success',
+      warning: 'border-l-4 border-l-warning',
+      destructive: 'border-l-4 border-l-destructive',
+      personal: 'border-l-4 border-l-[hsl(160_70%_45%)]',
+      group: 'border-l-4 border-l-[hsl(200_70%_50%)]',
+      csuite: 'border-l-4 border-l-[hsl(270_70%_55%)]',
+    };
+    
+    return (
+      <div 
+        ref={ref} 
+        className={cn(
+          "rounded-lg border bg-card text-card-foreground shadow-sm",
+          "transition-all duration-200 ease-out",
+          interactive && [
+            "cursor-pointer",
+            "hover:-translate-y-0.5 hover:shadow-md hover:border-primary/30",
+            "active:translate-y-0 active:shadow-sm",
+          ],
+          accent && accentClasses[accent],
+          className
+        )} 
+        {...props} 
+      />
+    );
+  }
+);
 Card.displayName = "Card";
 
 const CardHeader = React.forwardRef<HTMLDivElement, React.HTMLAttributes<HTMLDivElement>>(

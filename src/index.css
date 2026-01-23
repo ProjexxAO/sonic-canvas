@@ -692,6 +692,150 @@
     background: linear-gradient(135deg, hsl(var(--secondary)), hsl(var(--destructive)));
   }
 
+  /* Design Psychology - Interactive States */
+  .interactive-lift {
+    @apply transition-all duration-200 ease-out;
+  }
+  .interactive-lift:hover {
+    @apply -translate-y-0.5;
+    box-shadow: 0 4px 12px hsl(var(--primary) / 0.15);
+  }
+  .interactive-lift:active {
+    @apply translate-y-0 scale-[0.98];
+  }
+
+  /* Press feedback (haptic simulation) */
+  .press-feedback {
+    @apply transition-transform duration-75 ease-out active:scale-[0.97];
+  }
+  .press-feedback-light {
+    @apply transition-transform duration-75 ease-out active:scale-[0.99];
+  }
+  .press-feedback-heavy {
+    @apply transition-transform duration-75 ease-out active:scale-[0.95];
+  }
+
+  /* Focus glow for accessibility */
+  .focus-glow {
+    @apply transition-shadow duration-200;
+  }
+  .focus-glow:focus-within {
+    box-shadow: 0 0 0 2px hsl(var(--background)), 0 0 0 4px hsl(var(--primary) / 0.4), 0 0 15px hsl(var(--primary) / 0.2);
+  }
+
+  /* Success state feedback */
+  .success-glow {
+    box-shadow: 0 0 0 0 hsl(var(--success) / 0.4);
+    animation: success-pulse-anim 0.6s ease-out;
+  }
+  @keyframes success-pulse-anim {
+    0% { box-shadow: 0 0 0 0 hsl(var(--success) / 0.4); }
+    70% { box-shadow: 0 0 0 10px hsl(var(--success) / 0); }
+    100% { box-shadow: 0 0 0 0 hsl(var(--success) / 0); }
+  }
+
+  /* AI thinking indicator */
+  .ai-thinking-dot {
+    @apply w-2 h-2 rounded-full bg-primary;
+    animation: ai-dot-bounce 0.6s ease-in-out infinite;
+  }
+  @keyframes ai-dot-bounce {
+    0%, 100% { transform: translateY(0); opacity: 0.5; }
+    50% { transform: translateY(-6px); opacity: 1; }
+  }
+
+  /* Card hover states */
+  .card-interactive {
+    @apply transition-all duration-200 ease-out cursor-pointer;
+  }
+  .card-interactive:hover {
+    @apply border-primary/50 shadow-md -translate-y-0.5;
+  }
+  .card-interactive:active {
+    @apply translate-y-0;
+  }
+
+  /* Button micro-interactions */
+  .btn-primary-enhanced {
+    @apply relative overflow-hidden transition-all duration-200;
+  }
+  .btn-primary-enhanced::before {
+    content: '';
+    @apply absolute inset-0 bg-white/10 opacity-0 transition-opacity duration-200;
+  }
+  .btn-primary-enhanced:hover::before {
+    @apply opacity-100;
+  }
+  .btn-primary-enhanced:active {
+    @apply scale-[0.98];
+  }
+
+  /* Progressive disclosure indicator */
+  .disclosure-indicator {
+    @apply transition-transform duration-200;
+  }
+  .disclosure-indicator[data-open="true"] {
+    @apply rotate-180;
+  }
+
+  /* Staggered animation children */
+  .stagger-children > * {
+    animation: fade-in-up-stagger 0.4s ease-out both;
+  }
+  .stagger-children > *:nth-child(1) { animation-delay: 0ms; }
+  .stagger-children > *:nth-child(2) { animation-delay: 50ms; }
+  .stagger-children > *:nth-child(3) { animation-delay: 100ms; }
+  .stagger-children > *:nth-child(4) { animation-delay: 150ms; }
+  .stagger-children > *:nth-child(5) { animation-delay: 200ms; }
+  .stagger-children > *:nth-child(6) { animation-delay: 250ms; }
+  .stagger-children > *:nth-child(7) { animation-delay: 300ms; }
+
+  @keyframes fade-in-up-stagger {
+    0% { opacity: 0; transform: translateY(8px); }
+    100% { opacity: 1; transform: translateY(0); }
+  }
+
+  /* Loading shimmer */
+  .loading-shimmer {
+    @apply relative overflow-hidden bg-muted/50;
+  }
+  .loading-shimmer::after {
+    content: '';
+    @apply absolute inset-0 -translate-x-full;
+    background: linear-gradient(90deg, transparent, hsl(var(--foreground) / 0.05), transparent);
+    animation: shimmer-slide 1.5s infinite;
+  }
+  @keyframes shimmer-slide {
+    100% { transform: translateX(100%); }
+  }
+
+  /* Attention indicator */
+  .attention-badge {
+    @apply relative;
+  }
+  .attention-badge::after {
+    content: '';
+    @apply absolute -top-1 -right-1 w-3 h-3 bg-destructive rounded-full;
+    animation: attention-ping 1.5s cubic-bezier(0, 0, 0.2, 1) infinite;
+  }
+  @keyframes attention-ping {
+    75%, 100% { transform: scale(2); opacity: 0; }
+  }
+
+  /* Smooth reveal animation */
+  .reveal-up {
+    animation: reveal-up-anim 0.4s ease-out both;
+  }
+  @keyframes reveal-up-anim {
+    0% { opacity: 0; transform: translateY(16px); }
+    100% { opacity: 1; transform: translateY(0); }
+  }
+
+  /* Hub-specific accent borders */
+  .hub-accent-personal { border-left-color: hsl(160 70% 45%); }
+  .hub-accent-group { border-left-color: hsl(200 70% 50%); }
+  .hub-accent-csuite { border-left-color: hsl(270 70% 55%); }
+
   /* Noise texture overlay */
   .noise-overlay {
     position: relative;
