@@ -42,9 +42,8 @@ import {
   TooltipTrigger,
 } from '@/components/ui/tooltip';
 import { CustomWidget } from '@/hooks/useCustomWidgets';
-import { usePersonalHub } from '@/hooks/usePersonalHub';
-import { useBanking } from '@/hooks/useBanking';
-import { useDataRefreshStore } from '@/hooks/useDataRefresh';
+import { useSharedWidgetData } from '@/hooks/useSharedWidgetData';
+import { useDataRefreshStore, useDataRefreshListener } from '@/hooks/useDataRefresh';
 import { cn } from '@/lib/utils';
 import { supabase } from '@/integrations/supabase/client';
 import { toast } from 'sonner';
@@ -93,8 +92,13 @@ export function AgentWidgetRenderer({
   onDelete 
 }: AgentWidgetRendererProps) {
   const { user } = useAuth();
-  const { items: tasks, goals, habits, createItem, updateItem } = usePersonalHub();
-  const { accounts, transactions } = useBanking();
+  // Use shared widget data for synchronized state across all widgets
+  const { tasks, goals, habits, accounts, transactions, context: sharedContext, notifyChange } = useSharedWidgetData(widget.data_sources);
+  
+  // Listen for data changes from other widgets
+  useDataRefreshListener(['personal_items', 'personal_goals', 'personal_habits', 'finance', 'all'], () => {
+    console.log(`[${widget.name}] Data changed, context updated automatically`);
+  }, [widget.name]);
   
   const [isExpanded, setIsExpanded] = useState(false);
   const [messages, setMessages] = useState<AgentMessage[]>([]);
