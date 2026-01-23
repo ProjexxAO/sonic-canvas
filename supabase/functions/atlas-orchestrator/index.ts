@@ -1043,6 +1043,7 @@ Example good response:
       const dataSources = widgetConfig?.dataSources || [];
       const availableActions: string[] = [];
       
+      // CORE DATA ACTIONS
       if (dataSources.includes('tasks')) {
         availableActions.push('create_task', 'complete_task', 'list_tasks', 'prioritize_tasks');
       }
@@ -1059,10 +1060,18 @@ Example good response:
         availableActions.push('schedule_event', 'list_events', 'check_availability');
       }
       if (dataSources.includes('email')) {
-        availableActions.push('summarize_emails', 'draft_email', 'find_emails');
+        availableActions.push('summarize_emails', 'draft_email', 'find_emails', 'create_email_monitor');
       }
+      
+      // AUTOMATION & WORKFLOW ACTIONS (always available to widgets)
+      availableActions.push(
+        'create_workflow',
+        'create_automation',
+        'send_notification',
+        'schedule_reminder'
+      );
 
-      const systemPrompt = `You are an Agent Widget inside Atlas OS that can EXECUTE real actions.
+      const systemPrompt = `You are an AUTONOMOUS Agent Widget inside Atlas OS that can EXECUTE real actions and CREATE automations.
 
 Widget name: ${widgetConfig?.name || 'Agent Widget'}
 Widget purpose: ${widgetConfig?.purpose || widgetConfig?.description || 'Assist the user'}
@@ -1070,32 +1079,66 @@ Capabilities: ${(widgetConfig?.capabilities || []).join(', ') || 'general assist
 Data sources: ${dataSources.join(', ') || 'none'}
 
 AVAILABLE ACTIONS you can execute:
-${availableActions.length > 0 ? availableActions.join(', ') : 'general_assistance only'}
+${availableActions.join(', ')}
 
 CURRENT USER DATA:
 ${JSON.stringify(widgetContext, null, 2)}
 
 CRITICAL INSTRUCTIONS:
-1. Analyze the user's request in context of the widget's PURPOSE.
-2. If the request requires an action, respond with a JSON block containing the action to execute.
-3. Always provide a helpful text response AFTER the JSON action block.
-4. Base your analysis on the ACTUAL DATA provided, not hypothetical data.
+1. You are AUTONOMOUS - when users ask you to monitor, automate, or create workflows, you MUST create them.
+2. Always include a JSON action block when the request requires action.
+3. For monitoring requests (email, data changes), use create_workflow or create_automation.
+4. For reminders or alerts, use schedule_reminder or send_notification.
+5. Base your analysis on the ACTUAL DATA provided.
 
-ACTION FORMAT (include when executing an action):
+ACTION FORMAT (ALWAYS include when executing):
 \`\`\`json
 {
   "action": "action_name",
-  "params": { "key": "value" },
+  "params": { ... },
   "execute": true
 }
 \`\`\`
 
-EXAMPLES:
-- For "create a task to review budget": Include action block with create_task + title
-- For "what are my top priorities?": Analyze the tasks data and summarize
-- For "track my spending": Analyze finance data and provide insights
+ACTION EXAMPLES:
 
-Be specific, actionable, and reference the user's actual data.`;
+1. CREATE TASK:
+\`\`\`json
+{"action": "create_task", "params": {"title": "Task name", "priority": "high"}, "execute": true}
+\`\`\`
+
+2. CREATE WORKFLOW (for automated processes):
+\`\`\`json
+{"action": "create_workflow", "params": {"name": "Email Monitor", "trigger_type": "email_received", "trigger_config": {"from_filter": "boss@company.com"}, "action_type": "send_notification", "action_config": {"title": "Important Email", "message": "Email from boss received"}}, "execute": true}
+\`\`\`
+
+3. CREATE EMAIL MONITOR:
+\`\`\`json
+{"action": "create_email_monitor", "params": {"name": "VIP Emails", "from_filter": "vip@example.com", "notify": true}, "execute": true}
+\`\`\`
+
+4. CREATE AUTOMATION (for event-based triggers):
+\`\`\`json
+{"action": "create_automation", "params": {"name": "Daily Summary", "trigger_type": "schedule", "schedule": "0 9 * * *", "action_type": "generate_summary"}, "execute": true}
+\`\`\`
+
+5. SEND NOTIFICATION:
+\`\`\`json
+{"action": "send_notification", "params": {"title": "Alert", "message": "Something happened", "priority": "high"}, "execute": true}
+\`\`\`
+
+6. SCHEDULE REMINDER:
+\`\`\`json
+{"action": "schedule_reminder", "params": {"title": "Reminder", "message": "Don't forget!", "remind_at": "2025-01-24T09:00:00Z"}, "execute": true}
+\`\`\`
+
+When users say things like:
+- "Monitor my email for X" → create_workflow with email trigger
+- "Remind me to X" → schedule_reminder
+- "Alert me when X" → create_automation
+- "Create a workflow for X" → create_workflow
+
+ALWAYS execute real actions. Never just describe what you would do - DO IT.`;
 
       const messages = [
         { role: 'system', content: systemPrompt },
@@ -1238,6 +1281,186 @@ Be specific, actionable, and reference the user's actual data.`;
                 }
                 break;
 
+              // ===== NEW AUTOMATION ACTIONS =====
+              
+              case 'create_workflow':
+                const workflowData = {
+                  user_id: effectiveUserId,
+                  name: actionData.params?.name || 'New Workflow',
+                  description: actionData.params?.description || `Created by ${widgetConfig?.name || 'Widget'}`,
+                  trigger_type: actionData.params?.trigger_type || 'manual',
+                  trigger_config: actionData.params?.trigger_config || {},
+                  action_type: actionData.params?.action_type || 'send_notification',
+                  action_config: actionData.params?.action_config || {},
+                  is_active: true,
+                };
+                
+                const { data: newWorkflow, error: workflowError } = await supabase
+                  .from('atlas_workflows')
+                  .insert(workflowData)
+                  .select()
+                  .single();
+                  
+                if (!workflowError && newWorkflow) {
+                  executedAction = 'create_workflow';
+                  actionResult = { success: true, workflow: newWorkflow };
+                  console.log(`Workflow created: ${newWorkflow.name}`);
+                } else {
+                  console.error('Workflow creation error:', workflowError);
+                }
+                break;
+
+              case 'create_email_monitor':
+                // Create a workflow that monitors emails
+                const emailMonitorWorkflow = {
+                  user_id: effectiveUserId,
+                  name: actionData.params?.name || 'Email Monitor',
+                  description: `Monitors emails${actionData.params?.from_filter ? ` from ${actionData.params.from_filter}` : ''}`,
+                  trigger_type: 'email_received',
+                  trigger_config: {
+                    from_filter: actionData.params?.from_filter || null,
+                    subject_filter: actionData.params?.subject_filter || null,
+                    keywords: actionData.params?.keywords || [],
+                  },
+                  action_type: actionData.params?.notify ? 'send_notification' : 'log_event',
+                  action_config: {
+                    notification_title: actionData.params?.notification_title || 'Email Alert',
+                    notification_priority: actionData.params?.priority || 'medium',
+                  },
+                  is_active: true,
+                };
+                
+                const { data: emailWorkflow, error: emailWorkflowError } = await supabase
+                  .from('atlas_workflows')
+                  .insert(emailMonitorWorkflow)
+                  .select()
+                  .single();
+                  
+                if (!emailWorkflowError && emailWorkflow) {
+                  executedAction = 'create_email_monitor';
+                  actionResult = { success: true, workflow: emailWorkflow };
+                  console.log(`Email monitor created: ${emailWorkflow.name}`);
+                }
+                break;
+
+              case 'create_automation':
+                const automationData = {
+                  user_id: effectiveUserId,
+                  name: actionData.params?.name || 'New Automation',
+                  description: actionData.params?.description || `Automation created by ${widgetConfig?.name || 'Widget'}`,
+                  trigger_type: actionData.params?.trigger_type || 'schedule',
+                  trigger_config: {
+                    schedule: actionData.params?.schedule || null,
+                    event_type: actionData.params?.event_type || null,
+                    conditions: actionData.params?.conditions || {},
+                  },
+                  action_type: actionData.params?.action_type || 'send_notification',
+                  action_config: actionData.params?.action_config || {},
+                  is_active: true,
+                };
+                
+                const { data: newAutomation, error: automationError } = await supabase
+                  .from('atlas_workflows')
+                  .insert(automationData)
+                  .select()
+                  .single();
+                  
+                if (!automationError && newAutomation) {
+                  executedAction = 'create_automation';
+                  actionResult = { success: true, automation: newAutomation };
+                  console.log(`Automation created: ${newAutomation.name}`);
+                }
+                break;
+
+              case 'send_notification':
+                const notificationData = {
+                  user_id: effectiveUserId,
+                  title: actionData.params?.title || 'Widget Notification',
+                  message: actionData.params?.message || 'Notification from your widget',
+                  notification_type: actionData.params?.type || 'widget_alert',
+                  priority: actionData.params?.priority || 'medium',
+                  source_agent_name: widgetConfig?.name || 'Agent Widget',
+                  metadata: {
+                    widget_id: widgetConfig?.id,
+                    widget_name: widgetConfig?.name,
+                  },
+                  is_read: false,
+                  is_dismissed: false,
+                };
+                
+                const { data: notification, error: notificationError } = await supabase
+                  .from('agent_notifications')
+                  .insert(notificationData)
+                  .select()
+                  .single();
+                  
+                if (!notificationError && notification) {
+                  executedAction = 'send_notification';
+                  actionResult = { success: true, notification };
+                  console.log(`Notification sent: ${notification.title}`);
+                }
+                break;
+
+              case 'schedule_reminder':
+                // Create a task with a reminder time
+                const reminderTime = actionData.params?.remind_at || 
+                  new Date(Date.now() + 60 * 60 * 1000).toISOString(); // Default 1 hour
+                
+                const reminderItem = {
+                  user_id: effectiveUserId,
+                  item_type: 'reminder',
+                  title: actionData.params?.title || 'Reminder',
+                  content: actionData.params?.message || '',
+                  status: 'active',
+                  priority: actionData.params?.priority || 'medium',
+                  reminder_at: reminderTime,
+                  metadata: {
+                    created_by_widget: widgetConfig?.name,
+                    is_scheduled_reminder: true,
+                  },
+                };
+                
+                const { data: reminder, error: reminderError } = await supabase
+                  .from('personal_items')
+                  .insert(reminderItem)
+                  .select()
+                  .single();
+                  
+                if (!reminderError && reminder) {
+                  executedAction = 'schedule_reminder';
+                  actionResult = { success: true, reminder };
+                  console.log(`Reminder scheduled: ${reminder.title} at ${reminderTime}`);
+                }
+                break;
+
+              case 'schedule_event':
+                // Create a calendar event
+                const eventData = {
+                  user_id: effectiveUserId,
+                  title: actionData.params?.title || 'New Event',
+                  description: actionData.params?.description || '',
+                  start_at: actionData.params?.start_at || new Date().toISOString(),
+                  end_at: actionData.params?.end_at || null,
+                  location: actionData.params?.location || null,
+                  attendees: actionData.params?.attendees || [],
+                  type: 'event',
+                  source: 'widget',
+                  metadata: { created_by_widget: widgetConfig?.name },
+                };
+                
+                const { data: event, error: eventError } = await supabase
+                  .from('csuite_events')
+                  .insert(eventData)
+                  .select()
+                  .single();
+                  
+                if (!eventError && event) {
+                  executedAction = 'schedule_event';
+                  actionResult = { success: true, event };
+                  console.log(`Event created: ${event.title}`);
+                }
+                break;
+
               default:
                 // For analysis actions, the response text is the result
                 executedAction = actionData.action;
@@ -1261,6 +1484,12 @@ Be specific, actionable, and reference the user's actual data.`;
           update_goal_progress: '✅ Progress updated! ',
           create_habit: '✅ Habit created! ',
           complete_habit: '✅ Habit completed! ',
+          create_workflow: '🔄 Workflow created and activated! ',
+          create_email_monitor: '📧 Email monitor created! ',
+          create_automation: '⚡ Automation created and activated! ',
+          send_notification: '🔔 Notification sent! ',
+          schedule_reminder: '⏰ Reminder scheduled! ',
+          schedule_event: '📅 Event scheduled! ',
         };
         cleanResponse = (actionConfirmations[executedAction] || '✅ Action completed! ') + cleanResponse;
       }
