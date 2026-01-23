@@ -76,6 +76,15 @@ export class VoiceIntentParser {
     'sign up': '/auth',
     'register': '/auth',
     'authentication': '/auth',
+    
+    // Help & Legal
+    'help': '/help',
+    'support': '/help',
+    'assistance': '/help',
+    'terms': '/terms-of-service',
+    'terms of service': '/terms-of-service',
+    'privacy': '/privacy-policy',
+    'privacy policy': '/privacy-policy',
   };
 
   // Sector keywords for agent filtering
