@@ -56,8 +56,8 @@ export default defineConfig(({ mode }) => ({
             icons: [{ src: '/pwa-192x192.png', sizes: '192x192' }]
           },
           {
-            name: 'C-Suite Hub',
-            short_name: 'C-Suite',
+            name: 'Enterprise Hub',
+            short_name: 'Enterprise',
             url: '/atlas',
             icons: [{ src: '/pwa-192x192.png', sizes: '192x192' }]
           }

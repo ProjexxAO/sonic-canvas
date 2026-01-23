@@ -177,9 +177,9 @@ export default function Header({ onToggleAudio, audioEnabled, user, onSignOut }:
             <Users size={16} />
           </HeaderButton>
           <HeaderButton
-            entityName="C-Suite Hub"
+            entityName="Enterprise Hub"
             onClick={() => navigate('/atlas')}
-            title="C-Suite Data Hub"
+            title="Enterprise Data Hub"
             className="p-2 text-muted-foreground hover:text-primary transition-colors"
           >
             <Briefcase size={16} />

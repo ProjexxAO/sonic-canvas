@@ -881,7 +881,8 @@ export function AtlasProvider({ children }: AtlasProviderProps) {
           'data hub': '/atlas',
           'c-suite': '/atlas',
           'csuite': '/atlas',
-          'executive dashboard': '/atlas',
+          'enterprise': '/atlas',
+          'enterprise hub': '/atlas',
           
           // Import
           'import': '/import',

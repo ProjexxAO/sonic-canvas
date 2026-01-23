@@ -50,7 +50,7 @@ interface AtlasHubLayoutProps {
 const HUB_CONFIG: Record<HubType, { color: string; label: string }> = {
   personal: { color: 'hsl(150 70% 45%)', label: 'Personal' },
   group: { color: 'hsl(200 70% 50%)', label: 'Group' },
-  csuite: { color: 'hsl(280 70% 55%)', label: 'Executive' },
+  csuite: { color: 'hsl(280 70% 55%)', label: 'Enterprise' },
 };
 
 export function AtlasHubLayout({

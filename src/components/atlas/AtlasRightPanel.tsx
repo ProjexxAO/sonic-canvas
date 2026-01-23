@@ -58,7 +58,7 @@ interface AtlasRightPanelProps {
   searchResults: SearchResult[];
   // Synthesized Agent props
   synthesizedAgent: SynthesizedAgent | null;
-  // C-Suite Data Hub props
+  // Enterprise Data Hub props
   userId?: string;
   agents: any[];
   agentsLoading: boolean;

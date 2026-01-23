@@ -1,6 +1,6 @@
 /**
  * Atlas Universal Access Hook
- * Provides unified query capabilities across Personal, Group, and C-Suite hubs
+ * Provides unified query capabilities across Personal, Group, and Enterprise hubs
  * with cross-hub access enforcement and semantic search
  */
 
@@ -125,7 +125,7 @@ export function useAtlasUniversalAccess() {
         hubSummaries.push(...groupResults.summaries);
       }
 
-      // Search C-Suite Hub (if accessible)
+      // Search Enterprise Hub (if accessible)
       if (hubsToSearch.includes('csuite')) {
         const csuiteResults = await searchCSuiteHub(query, options, limit);
         allResults.push(...csuiteResults.results);
@@ -351,7 +351,7 @@ export function useAtlasUniversalAccess() {
     return { results, summaries };
   }
 
-  // Search C-Suite Hub
+  // Search Enterprise Hub
   async function searchCSuiteHub(
     query: string,
     options: UniversalQueryOptions,

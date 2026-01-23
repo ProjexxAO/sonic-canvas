@@ -355,7 +355,7 @@ export function usePhoneSync(userId?: string) {
 
     toast({
       title: 'Item Reassigned',
-      description: `Moved to ${hub === 'csuite' ? 'C-Suite' : hub.charAt(0).toUpperCase() + hub.slice(1)} Hub`
+      description: `Moved to ${hub === 'csuite' ? 'Enterprise' : hub.charAt(0).toUpperCase() + hub.slice(1)} Hub`
     });
   }, [syncItems, userId, toast]);
 
