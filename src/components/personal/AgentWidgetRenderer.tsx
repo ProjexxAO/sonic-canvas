@@ -285,26 +285,69 @@ export function AgentWidgetRenderer({
 
       if (error) throw error;
 
-      // Parse response for potential actions
+      // Parse response - now includes executedAction from orchestrator
       const responseText = data?.response || "I'll help you with that.";
+      const executedAction = data?.executedAction;
+      const actionResult = data?.actionResult;
+      
       let action: AgentMessage['action'] | undefined;
 
-      // Check if response contains action indicators and trigger data refresh
-      const lowerResponse = responseText.toLowerCase();
-      if (lowerResponse.includes('created task') || lowerResponse.includes('added task')) {
-        action = { type: 'task_created' };
-        useDataRefreshStore.getState().triggerRefresh('personal_items', 'widget-task-created');
-      } else if (lowerResponse.includes('created goal') || lowerResponse.includes('set goal')) {
-        action = { type: 'goal_created' };
-        useDataRefreshStore.getState().triggerRefresh('personal_goals', 'widget-goal-created');
-      } else if (lowerResponse.includes('created habit') || lowerResponse.includes('new habit')) {
-        action = { type: 'habit_created' };
-        useDataRefreshStore.getState().triggerRefresh('personal_habits', 'widget-habit-created');
-      } else if (lowerResponse.includes('completed') || lowerResponse.includes('marked as done')) {
-        action = { type: 'task_completed' };
-        useDataRefreshStore.getState().triggerRefresh('personal_items', 'widget-task-completed');
-      } else if (lowerResponse.includes('analysis') || lowerResponse.includes('analyzed')) {
-        action = { type: 'analysis_complete' };
+      // Use the executedAction from orchestrator if available (more reliable)
+      if (executedAction && actionResult?.success) {
+        switch (executedAction) {
+          case 'create_task':
+            action = { type: 'task_created', data: actionResult.task };
+            useDataRefreshStore.getState().triggerRefresh('personal_items', 'widget-task-created');
+            toast.success('Task created successfully!');
+            break;
+          case 'complete_task':
+            action = { type: 'task_completed' };
+            useDataRefreshStore.getState().triggerRefresh('personal_items', 'widget-task-completed');
+            toast.success('Task completed!');
+            break;
+          case 'create_goal':
+            action = { type: 'goal_created', data: actionResult.goal };
+            useDataRefreshStore.getState().triggerRefresh('personal_goals', 'widget-goal-created');
+            toast.success('Goal created successfully!');
+            break;
+          case 'update_goal_progress':
+            action = { type: 'goal_created' }; // Reuse for progress updates
+            useDataRefreshStore.getState().triggerRefresh('personal_goals', 'widget-goal-updated');
+            toast.success('Goal progress updated!');
+            break;
+          case 'create_habit':
+            action = { type: 'habit_created', data: actionResult.habit };
+            useDataRefreshStore.getState().triggerRefresh('personal_habits', 'widget-habit-created');
+            toast.success('Habit created successfully!');
+            break;
+          case 'complete_habit':
+            action = { type: 'habit_created' }; // Reuse for completions
+            useDataRefreshStore.getState().triggerRefresh('personal_habits', 'widget-habit-completed');
+            toast.success(`Habit completed! Streak: ${actionResult.newStreak}`);
+            break;
+          default:
+            if (actionResult.type === 'analysis') {
+              action = { type: 'analysis_complete' };
+            }
+        }
+      } else {
+        // Fallback to text-based detection for backwards compatibility
+        const lowerResponse = responseText.toLowerCase();
+        if (lowerResponse.includes('created task') || lowerResponse.includes('✅ task created')) {
+          action = { type: 'task_created' };
+          useDataRefreshStore.getState().triggerRefresh('personal_items', 'widget-task-created');
+        } else if (lowerResponse.includes('created goal') || lowerResponse.includes('✅ goal created')) {
+          action = { type: 'goal_created' };
+          useDataRefreshStore.getState().triggerRefresh('personal_goals', 'widget-goal-created');
+        } else if (lowerResponse.includes('created habit') || lowerResponse.includes('✅ habit created')) {
+          action = { type: 'habit_created' };
+          useDataRefreshStore.getState().triggerRefresh('personal_habits', 'widget-habit-created');
+        } else if (lowerResponse.includes('completed') || lowerResponse.includes('marked as done')) {
+          action = { type: 'task_completed' };
+          useDataRefreshStore.getState().triggerRefresh('personal_items', 'widget-task-completed');
+        } else if (lowerResponse.includes('analysis') || lowerResponse.includes('analyzed')) {
+          action = { type: 'analysis_complete' };
+        }
       }
 
       const agentResponse: AgentMessage = {
@@ -320,7 +363,7 @@ export function AgentWidgetRenderer({
         ...prev,
         isProcessing: false,
         currentTask: null,
-        lastAction: action?.type || 'Responded',
+        lastAction: executedAction || action?.type || 'Responded',
         lastActionTime: new Date(),
       }));
 
