@@ -479,10 +479,10 @@ export function AtlasHubLayout({
       {/* Main Content */}
       <main className={cn(
         "relative z-10 flex-1 flex overflow-hidden p-6 gap-6",
-        hubType === 'personal' && "pl-24" // Extra left padding for fixed orb
+        "pl-24" // Extra left padding for fixed orb on all hub types
       )}>
-        {/* Floating Orb for Personal Hub - Top Left Corner */}
-        {hubType === 'personal' && (
+        {/* Floating Orb for all Hub types - Top Left Corner */}
+        {(
           <div 
             className="fixed top-20 left-6 z-50 animate-fade-in"
             style={{ 
