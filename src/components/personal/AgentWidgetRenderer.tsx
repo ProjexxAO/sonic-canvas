@@ -44,6 +44,7 @@ import {
 import { CustomWidget } from '@/hooks/useCustomWidgets';
 import { usePersonalHub } from '@/hooks/usePersonalHub';
 import { useBanking } from '@/hooks/useBanking';
+import { useDataRefreshStore } from '@/hooks/useDataRefresh';
 import { cn } from '@/lib/utils';
 import { supabase } from '@/integrations/supabase/client';
 import { toast } from 'sonner';
@@ -61,7 +62,7 @@ interface AgentMessage {
   content: string;
   timestamp: Date;
   action?: {
-    type: 'task_created' | 'task_completed' | 'analysis_complete' | 'automation_triggered';
+    type: 'task_created' | 'task_completed' | 'goal_created' | 'habit_created' | 'analysis_complete' | 'automation_triggered';
     data?: any;
   };
 }
@@ -288,12 +289,21 @@ export function AgentWidgetRenderer({
       const responseText = data?.response || "I'll help you with that.";
       let action: AgentMessage['action'] | undefined;
 
-      // Check if response contains action indicators
-      if (responseText.toLowerCase().includes('created task') || responseText.toLowerCase().includes('added task')) {
+      // Check if response contains action indicators and trigger data refresh
+      const lowerResponse = responseText.toLowerCase();
+      if (lowerResponse.includes('created task') || lowerResponse.includes('added task')) {
         action = { type: 'task_created' };
-      } else if (responseText.toLowerCase().includes('completed') || responseText.toLowerCase().includes('marked as done')) {
+        useDataRefreshStore.getState().triggerRefresh('personal_items', 'widget-task-created');
+      } else if (lowerResponse.includes('created goal') || lowerResponse.includes('set goal')) {
+        action = { type: 'goal_created' };
+        useDataRefreshStore.getState().triggerRefresh('personal_goals', 'widget-goal-created');
+      } else if (lowerResponse.includes('created habit') || lowerResponse.includes('new habit')) {
+        action = { type: 'habit_created' };
+        useDataRefreshStore.getState().triggerRefresh('personal_habits', 'widget-habit-created');
+      } else if (lowerResponse.includes('completed') || lowerResponse.includes('marked as done')) {
         action = { type: 'task_completed' };
-      } else if (responseText.toLowerCase().includes('analysis') || responseText.toLowerCase().includes('analyzed')) {
+        useDataRefreshStore.getState().triggerRefresh('personal_items', 'widget-task-completed');
+      } else if (lowerResponse.includes('analysis') || lowerResponse.includes('analyzed')) {
         action = { type: 'analysis_complete' };
       }
 

@@ -3,6 +3,7 @@
 import { useState, useEffect, useCallback } from 'react';
 import { supabase } from '@/integrations/supabase/client';
 import { useAuth } from './useAuth';
+import { useDataRefreshListener } from './useDataRefresh';
 import { toast } from 'sonner';
 
 export type ItemType = 'task' | 'note' | 'event' | 'goal' | 'habit' | 'finance' | 'health' | 'bookmark';
@@ -115,6 +116,13 @@ export function usePersonalHub() {
   useEffect(() => {
     fetchData();
   }, [fetchData]);
+
+  // Subscribe to data refresh events from Atlas/widgets
+  useDataRefreshListener(
+    ['personal_items', 'personal_goals', 'personal_habits', 'all'],
+    fetchData,
+    [fetchData]
+  );
 
   // Create item
   const createItem = useCallback(async (
