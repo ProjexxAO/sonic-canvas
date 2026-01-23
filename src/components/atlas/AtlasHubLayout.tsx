@@ -17,6 +17,7 @@ import { useAudioFeedback } from '@/hooks/useAudioFeedback';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { AtlasRightPanel } from './AtlasRightPanel';
+import { SolarSystemBackground } from './SolarSystemBackground';
 import { OnboardingFlow } from '@/components/onboarding';
 import { InSessionSurvey, UnlockNotification } from '@/components/personalization';
 import {
@@ -496,60 +497,10 @@ export function AtlasHubLayout({
 
       {/* Main Content */}
       <main className="relative z-10 flex-1 flex overflow-hidden p-6 gap-6">
-        {/* Left Side - Central Orb Visualizer with Orbiting Planets */}
+        {/* Left Side - Central Orb Visualizer with Solar System */}
         <div className="flex items-center justify-center relative flex-shrink-0 flex-1">
-          {/* Orbiting Planets Container */}
-          <div className="absolute w-[400px] h-[400px]">
-            {/* Orbiting Agents/Planets */}
-            {agents.slice(0, 6).map((agent, index) => {
-              const orbitRadius = 140 + (index % 2) * 30;
-              const orbitDuration = 20 + index * 5;
-              const startAngle = (index / 6) * 360;
-              const planetSize = 12 - index * 1.5;
-              const planetColor = agent.sonicDNA?.color || HUB_CONFIG[hubType].color;
-              
-              return (
-                <div
-                  key={agent.id}
-                  className="absolute left-1/2 top-1/2 -translate-x-1/2 -translate-y-1/2"
-                  style={{
-                    animation: `orbit ${orbitDuration}s linear infinite`,
-                    animationDelay: `${-orbitDuration * (startAngle / 360)}s`,
-                  }}
-                >
-                  <div
-                    className="rounded-full transition-all duration-300 hover:scale-150 cursor-pointer"
-                    style={{
-                      width: `${Math.max(8, planetSize)}px`,
-                      height: `${Math.max(8, planetSize)}px`,
-                      backgroundColor: planetColor,
-                      boxShadow: `0 0 ${planetSize}px ${planetColor}60`,
-                      transform: `translateX(${orbitRadius}px)`,
-                    }}
-                    title={agent.designation}
-                  />
-                </div>
-              );
-            })}
-            
-            {/* Orbit Rings - Visual guides */}
-            <div 
-              className="absolute inset-0 m-auto rounded-full border opacity-20"
-              style={{ 
-                width: '280px', 
-                height: '280px',
-                borderColor: HUB_CONFIG[hubType].color 
-              }}
-            />
-            <div 
-              className="absolute inset-0 m-auto rounded-full border opacity-10"
-              style={{ 
-                width: '340px', 
-                height: '340px',
-                borderColor: HUB_CONFIG[hubType].color 
-              }}
-            />
-          </div>
+          {/* Solar System Background with Orbiting Planets */}
+          <SolarSystemBackground theme={theme} />
 
           {/* Central Orb - Smaller size */}
           <div 
