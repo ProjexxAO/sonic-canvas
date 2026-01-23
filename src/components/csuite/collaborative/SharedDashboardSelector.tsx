@@ -173,7 +173,7 @@ export function SharedDashboardSelector({
             className="flex items-center gap-2"
           >
             <Briefcase size={12} className="text-purple-500" />
-            <span className="flex-1">C-Suite Hub</span>
+            <span className="flex-1">Enterprise Hub</span>
             {currentPath === '/atlas' && currentDashboard && (
               <Badge variant="default" className="text-[8px]">Active</Badge>
             )}

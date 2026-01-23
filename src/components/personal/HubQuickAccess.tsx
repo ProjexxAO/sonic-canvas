@@ -84,7 +84,7 @@ export function HubQuickAccess({ className }: HubQuickAccessProps) {
                 onClick={() => navigate('/atlas')}
               >
                 <Briefcase size={12} className="mr-1" />
-                Executive
+                Enterprise
                 <Badge 
                   variant="secondary" 
                   className="ml-1 text-[8px] px-1 py-0 h-3.5 bg-purple-500/20 text-purple-500"
@@ -94,7 +94,7 @@ export function HubQuickAccess({ className }: HubQuickAccessProps) {
               </Button>
             </TooltipTrigger>
             <TooltipContent side="bottom" className="text-xs">
-              {csuiteCount} executive dashboard{csuiteCount > 1 ? 's' : ''} available
+              {csuiteCount} enterprise dashboard{csuiteCount > 1 ? 's' : ''} available
             </TooltipContent>
           </Tooltip>
         )}

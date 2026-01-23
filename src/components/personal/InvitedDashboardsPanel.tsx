@@ -54,7 +54,7 @@ const hubConfig: Record<HubType, {
   },
   csuite: { 
     icon: Briefcase, 
-    label: 'Executive Hub', 
+    label: 'Enterprise Hub', 
     route: '/atlas',
     color: 'text-purple-500',
     bgColor: 'bg-purple-500/10'

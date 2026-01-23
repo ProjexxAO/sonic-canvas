@@ -25,7 +25,7 @@ export function OnboardingComplete({ onComplete }: OnboardingCompleteProps) {
       
       {/* Description */}
       <p className="text-lg text-muted-foreground text-center max-w-md mb-8">
-        Your C-Suite Data Hub is ready. Start exploring your data and generating powerful insights.
+        Your Enterprise Data Hub is ready. Start exploring your data and generating powerful insights.
       </p>
 
       {/* What's next */}

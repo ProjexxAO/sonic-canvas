@@ -54,7 +54,7 @@ const DATA_TYPE_CONFIG = {
 const HUB_CONFIG = {
   personal: { icon: User, label: 'Personal', color: 'hsl(142 70% 45%)' },
   group: { icon: Users, label: 'Group', color: 'hsl(200 70% 50%)' },
-  csuite: { icon: Briefcase, label: 'C-Suite', color: 'hsl(280 70% 60%)' }
+  csuite: { icon: Briefcase, label: 'Enterprise', color: 'hsl(280 70% 60%)' }
 };
 
 export function PhoneSyncPanel({ userId, compact = false }: PhoneSyncPanelProps) {

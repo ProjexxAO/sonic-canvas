@@ -28,7 +28,7 @@ export class VoiceIntentParser {
     'data hub': '/atlas',
     'c-suite': '/atlas',
     'csuite': '/atlas',
-    'executive dashboard': '/atlas',
+    'enterprise': '/atlas',
     
     // Data Hubs
     'personal hub': '/personal',
@@ -45,7 +45,7 @@ export class VoiceIntentParser {
     'c-suite hub': '/atlas',
     'csuite hub': '/atlas',
     'enterprise hub': '/atlas',
-    'executive hub': '/atlas',
+    'enterprise data': '/atlas',
     
     // Import
     'import': '/import',

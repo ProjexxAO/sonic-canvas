@@ -457,7 +457,7 @@ export function CSuiteDataHub({ userId, agents = [], agentsLoading = false, hubT
             <div className="flex items-center gap-2">
               <BarChart3 size={14} className="text-primary" />
               <span className="text-xs font-mono text-muted-foreground uppercase">
-                {hubType === 'personal' ? 'PERSONAL DATA HUB' : hubType === 'group' ? 'GROUP DATA HUB' : 'C-SUITE DATA HUB'}
+                {hubType === 'personal' ? 'PERSONAL DATA HUB' : hubType === 'group' ? 'GROUP DATA HUB' : 'ENTERPRISE DATA HUB'}
               </span>
               {hubType === 'csuite' && currentPersona && !sharedDashboards.currentDashboard && (
                 <Badge variant="outline" className="text-[8px] font-mono">

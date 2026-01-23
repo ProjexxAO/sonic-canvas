@@ -129,7 +129,7 @@ function HubAccessContent() {
             </div>
             <div className="flex-1 min-w-0">
               <p className="text-sm font-medium truncate">
-                {grant.sourceHubName || (isGroup ? 'Group Hub' : 'Executive Hub')}
+                {grant.sourceHubName || (isGroup ? 'Group Hub' : 'Enterprise Hub')}
               </p>
               <p className="text-[10px] text-muted-foreground capitalize">
                 {grant.accessType} access

@@ -271,7 +271,7 @@ export function UniversalOrchestrationPanel({ compact = false }: UniversalOrches
                 </CardContent>
               </Card>
 
-              {/* C-Suite Hub */}
+              {/* Enterprise Hub */}
               <Card className={cn(
                 "bg-background/50 transition-colors",
                 orchestration.hubAccess.csuite.connected && "border-green-500/30"
@@ -279,7 +279,7 @@ export function UniversalOrchestrationPanel({ compact = false }: UniversalOrches
                 <CardContent className="pt-4">
                   <div className="flex items-center gap-2 mb-3">
                     <Briefcase className="h-5 w-5 text-amber-500" />
-                    <span className="font-medium">C-Suite Hub</span>
+                    <span className="font-medium">Enterprise Hub</span>
                     {orchestration.hubAccess.csuite.connected && (
                       <Badge variant="outline" className="ml-auto text-green-500 border-green-500/30">
                         Connected

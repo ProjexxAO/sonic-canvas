@@ -41,8 +41,8 @@ const TOUR_SLIDES = [
   },
   {
     id: 'personas',
-    title: 'Executive Personas',
-    description: 'Choose from 12 C-suite personas, each tailored to focus on what matters most to that role.',
+    title: 'Enterprise Personas',
+    description: 'Choose from 12 enterprise personas, each tailored to focus on what matters most to that role.',
     icon: User,
     features: [
       { icon: User, label: 'CEO - Strategic overview', color: 'hsl(var(--primary))' },
