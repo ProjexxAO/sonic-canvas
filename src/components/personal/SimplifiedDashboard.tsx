@@ -2,7 +2,8 @@
 // Designed for universal accessibility: children to seniors
 // Large touch targets, minimal cognitive load, AI-driven personalization
 
-import { useMemo } from 'react';
+import { useMemo, useState, useCallback, useEffect } from 'react';
+import { DragDropContext, Droppable, Draggable, DropResult } from '@hello-pangea/dnd';
 import { 
   CheckSquare, 
   Target, 
@@ -14,7 +15,8 @@ import {
   Sunrise,
   Plus,
   Wand2,
-  Flame
+  Flame,
+  GripVertical
 } from 'lucide-react';
 import { Card, CardContent } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
@@ -23,8 +25,10 @@ import { ScrollArea } from '@/components/ui/scroll-area';
 import { usePersonalHub } from '@/hooks/usePersonalHub';
 import { useAuth } from '@/hooks/useAuth';
 import { useIsMobile } from '@/hooks/use-mobile';
+import { useDashboardPreferences } from '@/hooks/useDashboardPreferences';
 import { cn } from '@/lib/utils';
 import { format, isToday, parseISO } from 'date-fns';
+import { toast } from 'sonner';
 
 interface SimplifiedDashboardProps {
   userId: string | undefined;
@@ -50,7 +54,8 @@ function PriorityCard({
   color, 
   onClick,
   highlight = false,
-  iconOnly = false
+  dragHandleProps,
+  isDragging = false
 }: { 
   icon: typeof CheckSquare; 
   title: string; 
@@ -59,39 +64,35 @@ function PriorityCard({
   color: string;
   onClick?: () => void;
   highlight?: boolean;
-  iconOnly?: boolean;
+  dragHandleProps?: any;
+  isDragging?: boolean;
 }) {
-  // Icon-only compact button (for Create Widget)
-  if (iconOnly) {
-    return (
-      <button
-        onClick={onClick}
-        className={cn(
-          "w-16 h-16 rounded-2xl border-2 transition-all duration-200 flex items-center justify-center",
-          "hover:scale-[1.05] active:scale-[0.95]",
-          "focus:outline-none focus:ring-4 focus:ring-primary/20",
-          "bg-card border-border hover:border-primary/50"
-        )}
-        title="Create Widget"
-      >
-        <Icon size={28} style={{ color }} />
-      </button>
-    );
-  }
-
   return (
-    <button
-      onClick={onClick}
+    <div
       className={cn(
-        "w-full text-left p-6 rounded-2xl border-2 transition-all duration-200",
-        "hover:scale-[1.02] active:scale-[0.98]",
+        "w-full text-left p-6 rounded-2xl border-2 transition-all duration-200 bg-card group relative",
         "focus:outline-none focus:ring-4 focus:ring-primary/20",
         highlight 
           ? "bg-primary/10 border-primary shadow-lg shadow-primary/10" 
-          : "bg-card border-border hover:border-primary/50"
+          : "border-border hover:border-primary/50",
+        isDragging && "shadow-xl opacity-95 ring-2 ring-primary/30"
       )}
     >
-      <div className="flex items-center gap-4">
+      {/* Drag handle */}
+      <div 
+        {...dragHandleProps}
+        className={cn(
+          "absolute left-2 top-1/2 -translate-y-1/2 p-1.5 rounded cursor-grab active:cursor-grabbing",
+          "opacity-0 group-hover:opacity-100 transition-opacity bg-muted/80 hover:bg-muted"
+        )}
+      >
+        <GripVertical size={16} className="text-muted-foreground" />
+      </div>
+      
+      <button
+        onClick={onClick}
+        className="w-full flex items-center gap-4 text-left"
+      >
         <div 
           className="w-16 h-16 rounded-2xl flex items-center justify-center flex-shrink-0"
           style={{ backgroundColor: `${color}20` }}
@@ -108,8 +109,8 @@ function PriorityCard({
           </div>
         )}
         <ChevronRight size={24} className="text-muted-foreground flex-shrink-0" />
-      </div>
-    </button>
+      </button>
+    </div>
   );
 }
 
@@ -205,6 +206,21 @@ export function SimplifiedDashboard({
     isLoading,
     completeItem
   } = usePersonalHub();
+  
+  const { preferences, updateWidgetOrder } = useDashboardPreferences();
+  const [cardOrder, setCardOrder] = useState<string[]>(['tasks', 'goals', 'habits', 'calendar']);
+
+  // Sync card order from preferences
+  useEffect(() => {
+    if (preferences.widget_order && preferences.widget_order.length > 0) {
+      // Filter to only include valid simple dashboard cards
+      const validCards = ['tasks', 'goals', 'habits', 'calendar'];
+      const savedOrder = preferences.widget_order.filter(id => validCards.includes(id));
+      // Add any missing cards at the end
+      const missingCards = validCards.filter(id => !savedOrder.includes(id));
+      setCardOrder([...savedOrder, ...missingCards]);
+    }
+  }, [preferences.widget_order]);
 
   const greeting = useMemo(() => getGreeting(), []);
   const userName = user?.email?.split('@')[0] || 'there';
@@ -254,56 +270,67 @@ export function SimplifiedDashboard({
     }
   };
 
-  // Priority cards based on what user cares about
-  const priorityCards = useMemo(() => {
-    const cards = [];
+  // Handle drag end for reordering cards
+  const handleDragEnd = useCallback((result: DropResult) => {
+    if (!result.destination) return;
     
-    // Tasks - always show
-    cards.push({
-      id: 'tasks',
-      icon: CheckSquare,
-      title: 'Tasks',
-      subtitle: stats.tasksToday > 0 ? `${stats.tasksToday} due today` : 'All caught up!',
-      value: stats.tasksToday > 0 ? stats.tasksToday : undefined,
-      color: 'hsl(var(--primary))',
-      highlight: stats.tasksToday > 3
-    });
+    const items = Array.from(cardOrder);
+    const [reorderedItem] = items.splice(result.source.index, 1);
+    items.splice(result.destination.index, 0, reorderedItem);
     
-    // Goals - always show
-    cards.push({
-      id: 'goals',
-      icon: Target,
-      title: 'Goals',
-      subtitle: stats.activeGoals > 0 ? 'Track your progress' : 'Set a new goal',
-      value: stats.activeGoals > 0 ? stats.activeGoals : undefined,
-      color: 'hsl(200 70% 50%)',
-      highlight: false
-    });
-    
-    // Habits - show streak info
-    cards.push({
-      id: 'habits',
-      icon: Flame,
-      title: 'Habits',
-      subtitle: stats.habitStreak > 0 ? `${stats.habitStreak} day streak!` : 'Build your routine',
-      value: stats.habitStreak > 0 ? stats.habitStreak : undefined,
-      color: 'hsl(25 90% 55%)',
-      highlight: stats.habitStreak >= 7
-    });
-    
-    // Calendar - always useful
-    cards.push({
-      id: 'calendar',
-      icon: Calendar,
-      title: 'Calendar',
-      subtitle: "What's coming up",
-      color: 'hsl(260 70% 55%)',
-      highlight: false
-    });
-    
-    
-    return cards;
+    setCardOrder(items);
+    updateWidgetOrder(items);
+    toast.success('Dashboard order saved');
+  }, [cardOrder, updateWidgetOrder]);
+
+  // Priority cards configuration based on what user cares about
+  const priorityCardsConfig = useMemo(() => {
+    return {
+      tasks: {
+        id: 'tasks',
+        icon: CheckSquare,
+        title: 'Tasks',
+        subtitle: stats.tasksToday > 0 ? `${stats.tasksToday} due today` : 'All caught up!',
+        value: stats.tasksToday > 0 ? stats.tasksToday : undefined,
+        color: 'hsl(var(--primary))',
+        highlight: stats.tasksToday > 3
+      },
+      goals: {
+        id: 'goals',
+        icon: Target,
+        title: 'Goals',
+        subtitle: stats.activeGoals > 0 ? 'Track your progress' : 'Set a new goal',
+        value: stats.activeGoals > 0 ? stats.activeGoals : undefined,
+        color: 'hsl(200 70% 50%)',
+        highlight: false
+      },
+      habits: {
+        id: 'habits',
+        icon: Flame,
+        title: 'Habits',
+        subtitle: stats.habitStreak > 0 ? `${stats.habitStreak} day streak!` : 'Build your routine',
+        value: stats.habitStreak > 0 ? stats.habitStreak : undefined,
+        color: 'hsl(25 90% 55%)',
+        highlight: stats.habitStreak >= 7
+      },
+      calendar: {
+        id: 'calendar',
+        icon: Calendar,
+        title: 'Calendar',
+        subtitle: "What's coming up",
+        value: undefined as string | number | undefined,
+        color: 'hsl(260 70% 55%)',
+        highlight: false
+      }
+    };
   }, [stats]);
+
+  // Sort cards based on user's saved order
+  const sortedCards = useMemo(() => {
+    return cardOrder
+      .map(id => priorityCardsConfig[id as keyof typeof priorityCardsConfig])
+      .filter(Boolean);
+  }, [cardOrder, priorityCardsConfig]);
 
   if (isLoading) {
     return (
@@ -382,23 +409,46 @@ export function SimplifiedDashboard({
             onComplete={handleCompleteTask}
           />
 
-          {/* Smart Priority Cards */}
+          {/* Smart Priority Cards with Drag & Drop */}
           <div className="space-y-3">
             <h2 className="text-sm font-medium text-muted-foreground uppercase tracking-wide">
               Your Dashboard
             </h2>
-            {priorityCards.map((card) => (
-              <PriorityCard
-                key={card.id}
-                icon={card.icon}
-                title={card.title}
-                subtitle={card.subtitle}
-                value={card.value}
-                color={card.color}
-                highlight={card.highlight}
-                onClick={() => onNavigate?.(card.id)}
-              />
-            ))}
+            <DragDropContext onDragEnd={handleDragEnd}>
+              <Droppable droppableId="simple-dashboard-cards" direction="vertical">
+                {(provided) => (
+                  <div
+                    ref={provided.innerRef}
+                    {...provided.droppableProps}
+                    className="space-y-3"
+                  >
+                    {sortedCards.map((card, index) => (
+                      <Draggable key={card.id} draggableId={card.id} index={index}>
+                        {(provided, snapshot) => (
+                          <div
+                            ref={provided.innerRef}
+                            {...provided.draggableProps}
+                          >
+                            <PriorityCard
+                              icon={card.icon}
+                              title={card.title}
+                              subtitle={card.subtitle}
+                              value={card.value}
+                              color={card.color}
+                              highlight={card.highlight}
+                              onClick={() => onNavigate?.(card.id)}
+                              dragHandleProps={provided.dragHandleProps}
+                              isDragging={snapshot.isDragging}
+                            />
+                          </div>
+                        )}
+                      </Draggable>
+                    ))}
+                    {provided.placeholder}
+                  </div>
+                )}
+              </Droppable>
+            </DragDropContext>
           </div>
 
           {/* More Options Link */}
