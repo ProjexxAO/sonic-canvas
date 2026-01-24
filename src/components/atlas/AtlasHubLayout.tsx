@@ -688,7 +688,7 @@ export function AtlasHubLayout({
         </div>
 
         {/* Right Panel - Scrollable dashboard area (full height, offset for fixed left side on desktop) */}
-        <div className="flex-1 overflow-y-auto p-4 md:p-6 md:ml-[50%] lg:ml-[55%] min-h-0 flex flex-col">
+        <div className="flex-1 overflow-y-auto p-4 md:p-6 md:ml-[50%] lg:ml-[55%] h-full flex flex-col">
           <AtlasRightPanel
           hubType={hubType}
           groupId={groupId}
