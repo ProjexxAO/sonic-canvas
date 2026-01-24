@@ -254,8 +254,8 @@ export function AtlasRightPanel({
 
     // Desktop/Tablet layout - consistent fixed width like Enterprise/Group hubs
     return (
-      <div className="w-full flex flex-col h-full">
-        <Tabs defaultValue="personal-data" className="flex flex-col h-full overflow-hidden">
+      <div className="w-full flex flex-col h-full flex-1">
+        <Tabs defaultValue="personal-data" className="flex flex-col flex-1 h-full overflow-hidden">
           {/* Tab Header Row */}
           <div className="flex items-center gap-2 mb-3 flex-shrink-0">
             <TabsList className="flex-1 flex justify-start gap-1 bg-muted/50 border border-border rounded-lg p-1">
@@ -307,8 +307,10 @@ export function AtlasRightPanel({
             </div>
           </div>
 
-          <TabsContent value="personal-data" className="flex-1 mt-0 min-h-0 overflow-hidden flex flex-col">
-            <PersonalDataHub userId={userId} />
+          <TabsContent value="personal-data" className="flex-1 mt-0 min-h-0 overflow-hidden data-[state=active]:flex data-[state=active]:flex-col h-full">
+            <div className="flex-1 min-h-0 overflow-hidden h-full">
+              <PersonalDataHub userId={userId} />
+            </div>
           </TabsContent>
 
           <TabsContent value="phone" className="flex-1 mt-0 overflow-hidden flex flex-col min-h-0">
