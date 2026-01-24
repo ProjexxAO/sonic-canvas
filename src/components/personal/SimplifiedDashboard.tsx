@@ -49,7 +49,8 @@ function PriorityCard({
   value, 
   color, 
   onClick,
-  highlight = false
+  highlight = false,
+  iconOnly = false
 }: { 
   icon: typeof CheckSquare; 
   title: string; 
@@ -58,7 +59,26 @@ function PriorityCard({
   color: string;
   onClick?: () => void;
   highlight?: boolean;
+  iconOnly?: boolean;
 }) {
+  // Icon-only compact button (for Create Widget)
+  if (iconOnly) {
+    return (
+      <button
+        onClick={onClick}
+        className={cn(
+          "w-16 h-16 rounded-2xl border-2 transition-all duration-200 flex items-center justify-center",
+          "hover:scale-[1.05] active:scale-[0.95]",
+          "focus:outline-none focus:ring-4 focus:ring-primary/20",
+          "bg-card border-border hover:border-primary/50"
+        )}
+        title="Create Widget"
+      >
+        <Icon size={28} style={{ color }} />
+      </button>
+    );
+  }
+
   return (
     <button
       onClick={onClick}
@@ -281,14 +301,15 @@ export function SimplifiedDashboard({
       highlight: false
     });
     
-    // Create Widget - AI widget builder
+    // Create Widget - AI widget builder (icon only, matching Advanced view)
     cards.push({
       id: 'create-widget',
       icon: Wand2,
-      title: 'Create Widget',
-      subtitle: 'Build with AI',
+      title: '',
+      subtitle: '',
       color: 'hsl(280 80% 60%)',
-      highlight: false
+      highlight: false,
+      iconOnly: true
     });
     
     return cards;
@@ -360,7 +381,7 @@ export function SimplifiedDashboard({
             <h2 className="text-sm font-medium text-muted-foreground uppercase tracking-wide">
               Your Dashboard
             </h2>
-            {priorityCards.map((card) => (
+            {priorityCards.filter(card => !card.iconOnly).map((card) => (
               <PriorityCard
                 key={card.id}
                 icon={card.icon}
@@ -369,15 +390,31 @@ export function SimplifiedDashboard({
                 value={card.value}
                 color={card.color}
                 highlight={card.highlight}
-                onClick={() => {
-                  if (card.id === 'create-widget') {
-                    onCreateWidget?.();
-                  } else {
-                    onNavigate?.(card.id);
-                  }
-                }}
+                onClick={() => onNavigate?.(card.id)}
               />
             ))}
+            
+            {/* Icon-only buttons row */}
+            <div className="flex gap-3 pt-2">
+              {priorityCards.filter(card => card.iconOnly).map((card) => (
+                <PriorityCard
+                  key={card.id}
+                  icon={card.icon}
+                  title={card.title}
+                  subtitle={card.subtitle}
+                  color={card.color}
+                  highlight={card.highlight}
+                  iconOnly={card.iconOnly}
+                  onClick={() => {
+                    if (card.id === 'create-widget') {
+                      onCreateWidget?.();
+                    } else {
+                      onNavigate?.(card.id);
+                    }
+                  }}
+                />
+              ))}
+            </div>
           </div>
 
           {/* More Options Link */}
