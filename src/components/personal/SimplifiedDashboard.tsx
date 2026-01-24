@@ -301,16 +301,6 @@ export function SimplifiedDashboard({
       highlight: false
     });
     
-    // Create Widget - AI widget builder (icon only, matching Advanced view)
-    cards.push({
-      id: 'create-widget',
-      icon: Wand2,
-      title: '',
-      subtitle: '',
-      color: 'hsl(280 80% 60%)',
-      highlight: false,
-      iconOnly: true
-    });
     
     return cards;
   }, [stats]);
@@ -325,35 +315,51 @@ export function SimplifiedDashboard({
 
   return (
     <div className="h-full flex flex-col bg-background">
-      {/* Header - Greeting */}
+      {/* Header - Greeting with Create Widget button */}
       <div className={cn(
         "flex-shrink-0 px-6 pt-6 pb-4",
         isMobile && "px-4 pt-4 pb-3"
       )}>
-        <div className="flex items-center gap-3">
-          <div className={cn(
-            "w-12 h-12 rounded-full flex items-center justify-center",
-            greeting.period === 'morning' && "bg-orange-100 dark:bg-orange-900/30",
-            greeting.period === 'afternoon' && "bg-yellow-100 dark:bg-yellow-900/30",
-            greeting.period === 'evening' && "bg-indigo-100 dark:bg-indigo-900/30"
-          )}>
-            <greeting.icon size={24} className={cn(
-              greeting.period === 'morning' && "text-orange-500",
-              greeting.period === 'afternoon' && "text-yellow-500",
-              greeting.period === 'evening' && "text-indigo-400"
-            )} />
-          </div>
-          <div>
-            <h1 className={cn(
-              "font-bold text-foreground",
-              isMobile ? "text-xl" : "text-2xl"
+        <div className="flex items-center justify-between">
+          <div className="flex items-center gap-3">
+            <div className={cn(
+              "w-12 h-12 rounded-full flex items-center justify-center",
+              greeting.period === 'morning' && "bg-orange-100 dark:bg-orange-900/30",
+              greeting.period === 'afternoon' && "bg-yellow-100 dark:bg-yellow-900/30",
+              greeting.period === 'evening' && "bg-indigo-100 dark:bg-indigo-900/30"
             )}>
-              {greeting.text}, {userName}!
-            </h1>
-            <p className="text-sm text-muted-foreground">
-              {format(new Date(), 'EEEE, MMMM d')}
-            </p>
+              <greeting.icon size={24} className={cn(
+                greeting.period === 'morning' && "text-orange-500",
+                greeting.period === 'afternoon' && "text-yellow-500",
+                greeting.period === 'evening' && "text-indigo-400"
+              )} />
+            </div>
+            <div>
+              <h1 className={cn(
+                "font-bold text-foreground",
+                isMobile ? "text-xl" : "text-2xl"
+              )}>
+                {greeting.text}, {userName}!
+              </h1>
+              <p className="text-sm text-muted-foreground">
+                {format(new Date(), 'EEEE, MMMM d')}
+              </p>
+            </div>
           </div>
+          
+          {/* Create Widget button in header */}
+          <button
+            onClick={onCreateWidget}
+            className={cn(
+              "w-10 h-10 rounded-xl border transition-all duration-200 flex items-center justify-center",
+              "hover:scale-105 active:scale-95",
+              "focus:outline-none focus:ring-2 focus:ring-primary/20",
+              "bg-card border-border hover:border-primary/50 hover:bg-primary/5"
+            )}
+            title="Create Widget with AI"
+          >
+            <Wand2 size={18} className="text-purple-500" />
+          </button>
         </div>
       </div>
 
@@ -381,7 +387,7 @@ export function SimplifiedDashboard({
             <h2 className="text-sm font-medium text-muted-foreground uppercase tracking-wide">
               Your Dashboard
             </h2>
-            {priorityCards.filter(card => !card.iconOnly).map((card) => (
+            {priorityCards.map((card) => (
               <PriorityCard
                 key={card.id}
                 icon={card.icon}
@@ -393,28 +399,6 @@ export function SimplifiedDashboard({
                 onClick={() => onNavigate?.(card.id)}
               />
             ))}
-            
-            {/* Icon-only buttons row */}
-            <div className="flex gap-3 pt-2">
-              {priorityCards.filter(card => card.iconOnly).map((card) => (
-                <PriorityCard
-                  key={card.id}
-                  icon={card.icon}
-                  title={card.title}
-                  subtitle={card.subtitle}
-                  color={card.color}
-                  highlight={card.highlight}
-                  iconOnly={card.iconOnly}
-                  onClick={() => {
-                    if (card.id === 'create-widget') {
-                      onCreateWidget?.();
-                    } else {
-                      onNavigate?.(card.id);
-                    }
-                  }}
-                />
-              ))}
-            </div>
           </div>
 
           {/* More Options Link */}
