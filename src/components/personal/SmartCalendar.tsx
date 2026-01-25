@@ -120,6 +120,13 @@ export function SmartCalendar({ className, compact = false }: SmartCalendarProps
   // Handle creating new event
   const handleCreateEvent = async () => {
     const startAt = new Date(`${newEventData.date}T${newEventData.time}`);
+    
+    // Validate event is not in the past
+    if (startAt < new Date()) {
+      toast.error('Cannot create events in the past');
+      return;
+    }
+    
     const endAt = addHours(startAt, parseInt(newEventData.duration) / 60);
     
     const result = await createEvent({

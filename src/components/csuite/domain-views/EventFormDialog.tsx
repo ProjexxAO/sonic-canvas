@@ -137,6 +137,20 @@ export function EventFormDialog({
       return;
     }
 
+    // Validate event is not in the past (only for new events)
+    if (!isEditing) {
+      const startAt = startDate && startTime 
+        ? new Date(`${startDate}T${startTime}:00`) 
+        : startDate 
+          ? new Date(`${startDate}T00:00:00`)
+          : null;
+      
+      if (startAt && startAt < new Date()) {
+        toast.error('Cannot create events in the past');
+        return;
+      }
+    }
+
     setIsLoading(true);
     try {
       const startAt = startDate && startTime 
