@@ -1,6 +1,7 @@
 // Simplified Dashboard - User-centric, Atlas-first design
 // Designed for universal accessibility: children to seniors
 // Large touch targets, minimal cognitive load, AI-driven personalization
+// Enhanced with Famous AI-inspired UI patterns
 
 import { useMemo, useState, useCallback, useEffect } from 'react';
 import { DragDropContext, Droppable, Draggable, DropResult } from '@hello-pangea/dnd';
@@ -16,7 +17,8 @@ import {
   Plus,
   Wand2,
   Flame,
-  GripVertical
+  GripVertical,
+  Wallet
 } from 'lucide-react';
 import { Card, CardContent } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
@@ -29,6 +31,9 @@ import { useDashboardPreferences } from '@/hooks/useDashboardPreferences';
 import { cn } from '@/lib/utils';
 import { format, isToday, parseISO } from 'date-fns';
 import { toast } from 'sonner';
+import { MetricHeaderRow } from './MetricHeaderRow';
+import { WeekHabitGrid } from './WeekHabitGrid';
+import { CompactFinanceCard } from './CompactFinanceCard';
 
 interface SimplifiedDashboardProps {
   userId: string | undefined;
@@ -158,38 +163,7 @@ function TodaysFocusCard({
   );
 }
 
-// Quick Stats Row - at-a-glance metrics
-function QuickStatsRow({ 
-  tasks, 
-  goals, 
-  habits 
-}: { 
-  tasks: number; 
-  goals: number; 
-  habits: number; 
-}) {
-  return (
-    <div className="grid grid-cols-3 gap-3">
-      {[
-        { label: 'Tasks Today', value: tasks, color: 'hsl(var(--primary))' },
-        { label: 'Goals Active', value: goals, color: 'hsl(200 70% 50%)' },
-        { label: 'Habit Streak', value: habits, color: 'hsl(25 90% 55%)' },
-      ].map((stat) => (
-        <Card key={stat.label} className="bg-card/50">
-          <CardContent className="p-4 text-center">
-            <p 
-              className="text-3xl font-bold"
-              style={{ color: stat.color }}
-            >
-              {stat.value}
-            </p>
-            <p className="text-xs text-muted-foreground mt-1">{stat.label}</p>
-          </CardContent>
-        </Card>
-      ))}
-    </div>
-  );
-}
+// Note: QuickStatsRow replaced by MetricHeaderRow for Famous AI-inspired design
 
 export function SimplifiedDashboard({ 
   userId, 
@@ -393,15 +367,11 @@ export function SimplifiedDashboard({
       {/* Main Content */}
       <ScrollArea className="flex-1">
         <div className={cn(
-          "px-6 pb-32 space-y-6",
+          "px-6 pb-32 space-y-5",
           isMobile && "px-4 space-y-4"
         )}>
-          {/* Quick Stats */}
-          <QuickStatsRow 
-            tasks={stats.tasksToday}
-            goals={stats.activeGoals}
-            habits={stats.habitStreak}
-          />
+          {/* Metric Header Row - Famous AI inspired KPIs */}
+          <MetricHeaderRow />
 
           {/* Today's Focus */}
           <TodaysFocusCard 
@@ -409,10 +379,21 @@ export function SimplifiedDashboard({
             onComplete={handleCompleteTask}
           />
 
+          {/* Compact Finance Card with circular progress */}
+          <CompactFinanceCard 
+            onClick={() => onNavigate?.('finance')}
+            savingsGoal={10000}
+          />
+
+          {/* Week Habit Grid - Visual 7-day checkmarks */}
+          <WeekHabitGrid 
+            onHabitClick={(habitId) => onNavigate?.('habits')}
+          />
+
           {/* Smart Priority Cards with Drag & Drop */}
           <div className="space-y-3">
             <h2 className="text-sm font-medium text-muted-foreground uppercase tracking-wide">
-              Your Dashboard
+              Quick Access
             </h2>
             <DragDropContext onDragEnd={handleDragEnd}>
               <Droppable droppableId="simple-dashboard-cards" direction="vertical">
