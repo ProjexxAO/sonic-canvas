@@ -38,7 +38,7 @@ function useTheme() {
 }
 
 // Multiple colorful orbital rings that pulse and breathe
-function OrbitalRings({ volume, isActive, isSpeaking }: { volume: number; isActive: boolean; isSpeaking: boolean }) {
+function OrbitalRings({ volume, isActive, isSpeaking, isDark }: { volume: number; isActive: boolean; isSpeaking: boolean; isDark: boolean }) {
   const groupRef = useRef<THREE.Group>(null);
   const ringRefs = useRef<THREE.Mesh[]>([]);
   
@@ -74,7 +74,7 @@ function OrbitalRings({ volume, isActive, isSpeaking }: { volume: number; isActi
         
         // Pulsing opacity - voice reactive when speaking
         const material = ring.material as THREE.MeshBasicMaterial;
-        const baseOpacity = 0.5;
+        const baseOpacity = isDark ? 0.5 : 0.75;
         const pulse = 0.15 * Math.sin(time * 2 + i);
         const voiceOpacity = isSpeaking ? volume * 0.4 : 0;
         material.opacity = baseOpacity + pulse + voiceOpacity;
@@ -98,8 +98,8 @@ function OrbitalRings({ volume, isActive, isSpeaking }: { volume: number; isActi
           <meshBasicMaterial
             color={config.color}
             transparent
-            opacity={0.5}
-            blending={THREE.AdditiveBlending}
+            opacity={isDark ? 0.5 : 0.75}
+            blending={isDark ? THREE.AdditiveBlending : THREE.NormalBlending}
             depthWrite={false}
           />
         </mesh>
@@ -109,7 +109,7 @@ function OrbitalRings({ volume, isActive, isSpeaking }: { volume: number; isActi
 }
 
 // Expanding sound wave rings - only visible when speaking
-function SoundWaves({ volume, isActive, isSpeaking }: { volume: number; isActive: boolean; isSpeaking: boolean }) {
+function SoundWaves({ volume, isActive, isSpeaking, isDark }: { volume: number; isActive: boolean; isSpeaking: boolean; isDark: boolean }) {
   const wavesRef = useRef<THREE.Mesh[]>([]);
   const waveCount = 6;
   
@@ -130,7 +130,7 @@ function SoundWaves({ volume, isActive, isSpeaking }: { volume: number; isActive
         // Only visible when speaking
         const material = wave.material as THREE.MeshBasicMaterial;
         const fadeOut = Math.max(0, 1 - expandProgress * 1.2);
-        material.opacity = isSpeaking ? fadeOut * 0.4 * (0.5 + volume) : 0;
+        material.opacity = isSpeaking ? fadeOut * (isDark ? 0.4 : 0.6) * (0.5 + volume) : 0;
       }
     });
   });
@@ -150,7 +150,7 @@ function SoundWaves({ volume, isActive, isSpeaking }: { volume: number; isActive
             transparent
             opacity={0}
             side={THREE.DoubleSide}
-            blending={THREE.AdditiveBlending}
+            blending={isDark ? THREE.AdditiveBlending : THREE.NormalBlending}
             depthWrite={false}
           />
         </mesh>
@@ -160,7 +160,7 @@ function SoundWaves({ volume, isActive, isSpeaking }: { volume: number; isActive
 }
 
 // Living, breathing plasma core - same appearance, voice reactive when speaking
-function LivingCore({ volume, isActive, isSpeaking }: { volume: number; isActive: boolean; isSpeaking: boolean }) {
+function LivingCore({ volume, isActive, isSpeaking, isDark }: { volume: number; isActive: boolean; isSpeaking: boolean; isDark: boolean }) {
   const coreRef = useRef<THREE.Mesh>(null);
   const innerGlowRef = useRef<THREE.Mesh>(null);
   const midGlowRef = useRef<THREE.Mesh>(null);
@@ -200,8 +200,9 @@ function LivingCore({ volume, isActive, isSpeaking }: { volume: number; isActive
     }
   });
 
-  // Base intensity - voice boosts opacity when speaking
+  // Light mode needs higher opacity and different blending
   const speakingBoost = isSpeaking ? 1 + volume * 0.5 : 1;
+  const baseMultiplier = isDark ? 1 : 1.8;
 
   return (
     <group>
@@ -209,11 +210,11 @@ function LivingCore({ volume, isActive, isSpeaking }: { volume: number; isActive
       <mesh ref={outerGlowRef}>
         <sphereGeometry args={[1, 48, 48]} />
         <meshBasicMaterial
-          color="#ff00aa"
+          color={isDark ? "#ff00aa" : "#cc0088"}
           transparent
-          opacity={0.2 * speakingBoost}
+          opacity={(isDark ? 0.2 : 0.5) * speakingBoost * baseMultiplier}
           depthWrite={false}
-          blending={THREE.AdditiveBlending}
+          blending={isDark ? THREE.AdditiveBlending : THREE.NormalBlending}
         />
       </mesh>
       
@@ -221,11 +222,11 @@ function LivingCore({ volume, isActive, isSpeaking }: { volume: number; isActive
       <mesh ref={midGlowRef}>
         <sphereGeometry args={[1, 48, 48]} />
         <meshBasicMaterial
-          color="#00ffff"
+          color={isDark ? "#00ffff" : "#00cccc"}
           transparent
-          opacity={0.35 * speakingBoost}
+          opacity={(isDark ? 0.35 : 0.6) * speakingBoost * baseMultiplier}
           depthWrite={false}
-          blending={THREE.AdditiveBlending}
+          blending={isDark ? THREE.AdditiveBlending : THREE.NormalBlending}
         />
       </mesh>
       
@@ -233,11 +234,11 @@ function LivingCore({ volume, isActive, isSpeaking }: { volume: number; isActive
       <mesh ref={plasmaRef}>
         <icosahedronGeometry args={[1, 2]} />
         <meshBasicMaterial
-          color="#ff66ff"
+          color={isDark ? "#ff66ff" : "#cc44cc"}
           transparent
-          opacity={0.4 * speakingBoost}
+          opacity={(isDark ? 0.4 : 0.7) * speakingBoost * baseMultiplier}
           depthWrite={false}
-          blending={THREE.AdditiveBlending}
+          blending={isDark ? THREE.AdditiveBlending : THREE.NormalBlending}
           wireframe
         />
       </mesh>
@@ -246,11 +247,11 @@ function LivingCore({ volume, isActive, isSpeaking }: { volume: number; isActive
       <mesh ref={innerGlowRef}>
         <sphereGeometry args={[1, 48, 48]} />
         <meshBasicMaterial
-          color="#ffaa00"
+          color={isDark ? "#ffaa00" : "#ff8800"}
           transparent
-          opacity={0.6 * speakingBoost}
+          opacity={(isDark ? 0.6 : 0.85) * speakingBoost * baseMultiplier}
           depthWrite={false}
-          blending={THREE.AdditiveBlending}
+          blending={isDark ? THREE.AdditiveBlending : THREE.NormalBlending}
         />
       </mesh>
       
@@ -260,27 +261,27 @@ function LivingCore({ volume, isActive, isSpeaking }: { volume: number; isActive
         <meshBasicMaterial
           color="#ffffff"
           transparent
-          opacity={0.9}
-          blending={THREE.AdditiveBlending}
+          opacity={0.95}
+          blending={isDark ? THREE.AdditiveBlending : THREE.NormalBlending}
         />
       </mesh>
       
       {/* Dynamic lighting - intensifies when speaking */}
       <pointLight 
         color="#ff00ff" 
-        intensity={isSpeaking ? 4 + volume * 5 : 3} 
+        intensity={isSpeaking ? 4 + volume * 5 : (isDark ? 3 : 5)} 
         distance={8} 
         decay={2} 
       />
       <pointLight 
         color="#00ffff" 
-        intensity={isSpeaking ? 3 + volume * 4 : 2.5} 
+        intensity={isSpeaking ? 3 + volume * 4 : (isDark ? 2.5 : 4)} 
         distance={9} 
         decay={2} 
       />
       <pointLight 
         color="#ffaa00" 
-        intensity={isSpeaking ? 2.5 + volume * 3 : 2} 
+        intensity={isSpeaking ? 2.5 + volume * 3 : (isDark ? 2 : 3.5)} 
         distance={7} 
         decay={2} 
       />
@@ -289,7 +290,7 @@ function LivingCore({ volume, isActive, isSpeaking }: { volume: number; isActive
 }
 
 // Energy particles orbiting the core - voice reactive
-function EnergyParticles({ volume, isActive, isSpeaking }: { volume: number; isActive: boolean; isSpeaking: boolean }) {
+function EnergyParticles({ volume, isActive, isSpeaking, isDark }: { volume: number; isActive: boolean; isSpeaking: boolean; isDark: boolean }) {
   const particlesRef = useRef<THREE.Points>(null);
   
   const { positions, colors } = useMemo(() => {
@@ -346,13 +347,13 @@ function EnergyParticles({ volume, isActive, isSpeaking }: { volume: number; isA
   return (
     <points ref={particlesRef} geometry={geometry}>
       <pointsMaterial
-        size={0.018}
+        size={isDark ? 0.018 : 0.022}
         transparent
-        opacity={isSpeaking ? 0.8 + volume * 0.2 : 0.6}
+        opacity={isSpeaking ? (isDark ? 0.8 : 0.95) + volume * 0.2 : (isDark ? 0.6 : 0.85)}
         vertexColors
         sizeAttenuation
         depthWrite={false}
-        blending={THREE.AdditiveBlending}
+        blending={isDark ? THREE.AdditiveBlending : THREE.NormalBlending}
       />
     </points>
   );
@@ -369,7 +370,8 @@ function TorusKnotRibbon({
   rotationSpeedY,
   phaseOffset,
   volume,
-  isSpeaking
+  isSpeaking,
+  isDark
 }: {
   color: string;
   scale: number;
@@ -381,6 +383,7 @@ function TorusKnotRibbon({
   phaseOffset: number;
   volume: number;
   isSpeaking: boolean;
+  isDark: boolean;
 }) {
   const meshRef = useRef<THREE.Mesh>(null);
   
@@ -397,8 +400,8 @@ function TorusKnotRibbon({
     }
   });
   
-  // Voice reactive opacity
-  const opacity = isSpeaking ? 0.7 + volume * 0.2 : 0.6;
+  // Voice reactive opacity - boosted for light mode
+  const opacity = isSpeaking ? (isDark ? 0.7 : 0.85) + volume * 0.2 : (isDark ? 0.6 : 0.8);
 
   return (
     <mesh ref={meshRef}>
@@ -407,14 +410,14 @@ function TorusKnotRibbon({
         color={color}
         transparent
         opacity={opacity}
-        blending={THREE.AdditiveBlending}
+        blending={isDark ? THREE.AdditiveBlending : THREE.NormalBlending}
       />
     </mesh>
   );
 }
 
 // Intertwining energy ribbons system
-function EnergyRibbons({ volume, isSpeaking }: { volume: number; isSpeaking: boolean }) {
+function EnergyRibbons({ volume, isSpeaking, isDark }: { volume: number; isSpeaking: boolean; isDark: boolean }) {
   const groupRef = useRef<THREE.Group>(null);
   
   const ribbonConfigs = useMemo(() => [
@@ -448,6 +451,7 @@ function EnergyRibbons({ volume, isSpeaking }: { volume: number; isSpeaking: boo
           phaseOffset={config.phase}
           volume={volume}
           isSpeaking={isSpeaking}
+          isDark={isDark}
         />
       ))}
     </group>
@@ -455,7 +459,7 @@ function EnergyRibbons({ volume, isSpeaking }: { volume: number; isSpeaking: boo
 }
 
 // Glowing vertex points on the crystal
-function VertexGlowPoints({ isSpeaking, volume }: { isSpeaking: boolean; volume: number }) {
+function VertexGlowPoints({ isSpeaking, volume, isDark }: { isSpeaking: boolean; volume: number; isDark: boolean }) {
   const groupRef = useRef<THREE.Group>(null);
   
   const positions = useMemo(() => {
@@ -483,8 +487,8 @@ function VertexGlowPoints({ isSpeaking, volume }: { isSpeaking: boolean; volume:
   });
 
   const colors = ['#00ffff', '#ff44cc', '#44ff88', '#ffaa44'];
-  const size = isSpeaking ? 0.03 + volume * 0.015 : 0.028;
-  const opacity = isSpeaking ? 0.7 + volume * 0.3 : 0.6;
+  const size = isSpeaking ? 0.03 + volume * 0.015 : (isDark ? 0.028 : 0.035);
+  const opacity = isSpeaking ? (isDark ? 0.7 : 0.9) + volume * 0.3 : (isDark ? 0.6 : 0.85);
   
   return (
     <group ref={groupRef}>
@@ -495,7 +499,7 @@ function VertexGlowPoints({ isSpeaking, volume }: { isSpeaking: boolean; volume:
             color={colors[i % colors.length]}
             transparent
             opacity={opacity}
-            blending={THREE.AdditiveBlending}
+            blending={isDark ? THREE.AdditiveBlending : THREE.NormalBlending}
           />
         </mesh>
       ))}
@@ -504,7 +508,7 @@ function VertexGlowPoints({ isSpeaking, volume }: { isSpeaking: boolean; volume:
 }
 
 // Crystal lens flares at key points
-function CrystalFlares({ isSpeaking, volume }: { isSpeaking: boolean; volume: number }) {
+function CrystalFlares({ isSpeaking, volume, isDark }: { isSpeaking: boolean; volume: number; isDark: boolean }) {
   const flaresRef = useRef<THREE.Group>(null);
   
   const flarePositions = useMemo(() => [
@@ -520,8 +524,8 @@ function CrystalFlares({ isSpeaking, volume }: { isSpeaking: boolean; volume: nu
     }
   });
 
-  const opacity = isSpeaking ? 0.5 + volume * 0.3 : 0.45;
-  const size = isSpeaking ? 0.08 + volume * 0.03 : 0.07;
+  const opacity = isSpeaking ? (isDark ? 0.5 : 0.7) + volume * 0.3 : (isDark ? 0.45 : 0.65);
+  const size = isSpeaking ? 0.08 + volume * 0.03 : (isDark ? 0.07 : 0.09);
   const flareColors = ['#ff66cc', '#66ffee', '#ffcc44', '#cc66ff'];
   
   return (
@@ -534,12 +538,12 @@ function CrystalFlares({ isSpeaking, volume }: { isSpeaking: boolean; volume: nu
               color={flareColors[i]}
               transparent
               opacity={opacity}
-              blending={THREE.AdditiveBlending}
+              blending={isDark ? THREE.AdditiveBlending : THREE.NormalBlending}
               side={THREE.DoubleSide}
               depthWrite={false}
             />
           </mesh>
-          <pointLight color={flareColors[i]} intensity={isSpeaking ? 0.6 + volume * 0.3 : 0.5} distance={2} decay={2} />
+          <pointLight color={flareColors[i]} intensity={isSpeaking ? 0.6 + volume * 0.3 : (isDark ? 0.5 : 0.8)} distance={2} decay={2} />
         </group>
       ))}
     </group>
@@ -547,7 +551,7 @@ function CrystalFlares({ isSpeaking, volume }: { isSpeaking: boolean; volume: nu
 }
 
 // Glass crystal shell
-function CrystalShell({ volume, isSpeaking }: { volume: number; isSpeaking: boolean }) {
+function CrystalShell({ volume, isSpeaking, isDark }: { volume: number; isSpeaking: boolean; isDark: boolean }) {
   const shellRef = useRef<THREE.Mesh>(null);
   const edgesRef = useRef<THREE.LineSegments>(null);
   const innerEdgesRef = useRef<THREE.LineSegments>(null);
@@ -573,24 +577,24 @@ function CrystalShell({ volume, isSpeaking }: { volume: number; isSpeaking: bool
   const geometry = useMemo(() => new THREE.DodecahedronGeometry(0.5, 0), []);
   const edgesGeometry = useMemo(() => new THREE.EdgesGeometry(geometry), [geometry]);
 
-  const edgeOpacity = isSpeaking ? 0.6 + volume * 0.3 : 0.5;
-  const innerEdgeOpacity = isSpeaking ? 0.3 + volume * 0.15 : 0.25;
+  const edgeOpacity = isSpeaking ? (isDark ? 0.6 : 0.8) + volume * 0.3 : (isDark ? 0.5 : 0.7);
+  const innerEdgeOpacity = isSpeaking ? (isDark ? 0.3 : 0.5) + volume * 0.15 : (isDark ? 0.25 : 0.4);
 
   return (
     <group>
       <mesh ref={shellRef} geometry={geometry}>
         <meshPhysicalMaterial
-          color="#88ccff"
+          color={isDark ? "#88ccff" : "#6699cc"}
           metalness={0.1}
           roughness={0.0}
-          transmission={0.95}
+          transmission={isDark ? 0.95 : 0.8}
           thickness={0.5}
           envMapIntensity={1}
           clearcoat={1}
           clearcoatRoughness={0}
           ior={2.4}
           transparent
-          opacity={0.12}
+          opacity={isDark ? 0.12 : 0.25}
           side={THREE.DoubleSide}
           depthWrite={false}
         />
@@ -598,19 +602,19 @@ function CrystalShell({ volume, isSpeaking }: { volume: number; isSpeaking: bool
       
       <lineSegments ref={edgesRef} geometry={edgesGeometry}>
         <lineBasicMaterial 
-          color="#88bbcc" 
+          color={isDark ? "#88bbcc" : "#4488aa"} 
           transparent 
           opacity={edgeOpacity}
-          blending={THREE.AdditiveBlending}
+          blending={isDark ? THREE.AdditiveBlending : THREE.NormalBlending}
         />
       </lineSegments>
       
       <lineSegments ref={innerEdgesRef} geometry={edgesGeometry} scale={0.97}>
         <lineBasicMaterial 
-          color="#ffffff" 
+          color={isDark ? "#ffffff" : "#aaddff"} 
           transparent 
           opacity={innerEdgeOpacity}
-          blending={THREE.AdditiveBlending}
+          blending={isDark ? THREE.AdditiveBlending : THREE.NormalBlending}
         />
       </lineSegments>
     </group>
@@ -618,7 +622,7 @@ function CrystalShell({ volume, isSpeaking }: { volume: number; isSpeaking: bool
 }
 
 // Ambient particle dust
-function AmbientDust({ volume, isSpeaking }: { volume: number; isSpeaking: boolean }) {
+function AmbientDust({ volume, isSpeaking, isDark }: { volume: number; isSpeaking: boolean; isDark: boolean }) {
   const pointsRef = useRef<THREE.Points>(null);
   
   const positions = useMemo(() => {
@@ -654,58 +658,59 @@ function AmbientDust({ volume, isSpeaking }: { volume: number; isSpeaking: boole
   return (
     <points ref={pointsRef} geometry={geometry}>
       <pointsMaterial
-        color="#ccddee"
-        size={isSpeaking ? 0.01 + volume * 0.006 : 0.009}
+        color={isDark ? "#ccddee" : "#8899aa"}
+        size={isSpeaking ? (isDark ? 0.01 : 0.014) + volume * 0.006 : (isDark ? 0.009 : 0.012)}
         transparent
-        opacity={isSpeaking ? 0.6 + volume * 0.3 : 0.55}
+        opacity={isSpeaking ? (isDark ? 0.6 : 0.8) + volume * 0.3 : (isDark ? 0.55 : 0.75)}
         sizeAttenuation
         depthWrite={false}
-        blending={THREE.AdditiveBlending}
+        blending={isDark ? THREE.AdditiveBlending : THREE.NormalBlending}
       />
     </points>
   );
 }
 
 // Main 3D Scene
-function OrbScene({ isConnected, isSpeaking, inputVolume, outputVolume }: { 
+function OrbScene({ isConnected, isSpeaking, inputVolume, outputVolume, isDark }: { 
   isConnected: boolean; 
   isSpeaking: boolean; 
   inputVolume: number; 
-  outputVolume: number 
+  outputVolume: number;
+  isDark: boolean;
 }) {
   const volume = isSpeaking ? outputVolume : inputVolume;
 
   return (
     <>
-      {/* Ambient lighting */}
-      <ambientLight intensity={0.3} />
+      {/* Ambient lighting - brighter in light mode */}
+      <ambientLight intensity={isDark ? 0.3 : 0.6} />
       
       {/* Orbital rings */}
-      <OrbitalRings volume={volume} isActive={isConnected} isSpeaking={isSpeaking} />
+      <OrbitalRings volume={volume} isActive={isConnected} isSpeaking={isSpeaking} isDark={isDark} />
       
       {/* Sound wave rings - only visible when speaking */}
-      <SoundWaves volume={volume} isActive={isConnected} isSpeaking={isSpeaking} />
+      <SoundWaves volume={volume} isActive={isConnected} isSpeaking={isSpeaking} isDark={isDark} />
       
       {/* Living plasma core */}
-      <LivingCore volume={volume} isActive={isConnected} isSpeaking={isSpeaking} />
+      <LivingCore volume={volume} isActive={isConnected} isSpeaking={isSpeaking} isDark={isDark} />
       
       {/* Orbiting energy particles */}
-      <EnergyParticles volume={volume} isActive={isConnected} isSpeaking={isSpeaking} />
+      <EnergyParticles volume={volume} isActive={isConnected} isSpeaking={isSpeaking} isDark={isDark} />
       
       {/* Energy ribbon system */}
-      <EnergyRibbons volume={volume} isSpeaking={isSpeaking} />
+      <EnergyRibbons volume={volume} isSpeaking={isSpeaking} isDark={isDark} />
       
       {/* Glowing vertex points */}
-      <VertexGlowPoints isSpeaking={isSpeaking} volume={volume} />
+      <VertexGlowPoints isSpeaking={isSpeaking} volume={volume} isDark={isDark} />
       
       {/* Lens flare effects */}
-      <CrystalFlares isSpeaking={isSpeaking} volume={volume} />
+      <CrystalFlares isSpeaking={isSpeaking} volume={volume} isDark={isDark} />
       
       {/* Ambient particles */}
-      <AmbientDust volume={volume} isSpeaking={isSpeaking} />
+      <AmbientDust volume={volume} isSpeaking={isSpeaking} isDark={isDark} />
       
       {/* Crystal shell - outermost layer */}
-      <CrystalShell volume={volume} isSpeaking={isSpeaking} />
+      <CrystalShell volume={volume} isSpeaking={isSpeaking} isDark={isDark} />
     </>
   );
 }
@@ -725,20 +730,6 @@ export function CrystallineOrb({
       className="relative w-full h-full cursor-pointer"
       onClick={onClick}
     >
-      {/* Dark backdrop for light mode visibility */}
-      {!isDark && (
-        <div className="absolute inset-0 flex items-center justify-center pointer-events-none">
-          <div 
-            className="rounded-full"
-            style={{
-              width: '75%',
-              height: '75%',
-              background: 'radial-gradient(circle, rgba(15, 23, 42, 0.95) 0%, rgba(30, 41, 59, 0.85) 50%, rgba(51, 65, 85, 0.6) 75%, transparent 100%)',
-              filter: 'blur(8px)',
-            }}
-          />
-        </div>
-      )}
       <Canvas
         camera={{ position: [0, 0, 5], fov: 45 }}
         style={{ background: 'transparent' }}
@@ -747,7 +738,7 @@ export function CrystallineOrb({
           antialias: true, 
           powerPreference: 'high-performance',
           toneMapping: THREE.ACESFilmicToneMapping,
-          toneMappingExposure: isDark ? 1.4 : 1.8,
+          toneMappingExposure: isDark ? 1.4 : 1.2,
         }}
       >
         <OrbScene 
@@ -755,6 +746,7 @@ export function CrystallineOrb({
           isSpeaking={isSpeaking}
           inputVolume={inputVolume}
           outputVolume={outputVolume}
+          isDark={isDark}
         />
       </Canvas>
     </div>
