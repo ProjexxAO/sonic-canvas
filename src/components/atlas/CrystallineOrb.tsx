@@ -737,19 +737,19 @@ export function CrystallineOrb({
           <div 
             className="absolute rounded-full"
             style={{
-              width: '55%',
-              height: '55%',
-              background: 'radial-gradient(circle, transparent 40%, rgba(147, 51, 234, 0.12) 60%, rgba(139, 92, 246, 0.08) 80%, transparent 100%)',
+              width: '32%',
+              height: '32%',
+              background: 'radial-gradient(circle, transparent 30%, rgba(147, 51, 234, 0.15) 50%, rgba(139, 92, 246, 0.1) 70%, transparent 100%)',
             }}
           />
           {/* Inner cosmic window - softer purple/indigo tones */}
           <div 
             className="rounded-full"
             style={{
-              width: '45%',
-              height: '45%',
-              background: 'radial-gradient(circle, rgba(88, 28, 135, 0.85) 0%, rgba(109, 40, 217, 0.7) 35%, rgba(139, 92, 246, 0.5) 60%, rgba(167, 139, 250, 0.25) 80%, transparent 100%)',
-              boxShadow: '0 0 30px 10px rgba(139, 92, 246, 0.2), 0 0 50px 20px rgba(167, 139, 250, 0.1)',
+              width: '24%',
+              height: '24%',
+              background: 'radial-gradient(circle, rgba(88, 28, 135, 0.9) 0%, rgba(109, 40, 217, 0.75) 40%, rgba(139, 92, 246, 0.5) 70%, rgba(167, 139, 250, 0.2) 90%, transparent 100%)',
+              boxShadow: '0 0 20px 6px rgba(139, 92, 246, 0.25), 0 0 35px 12px rgba(167, 139, 250, 0.12)',
             }}
           />
         </div>
