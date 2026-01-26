@@ -77,3 +77,6 @@ verify_jwt = false
 
 [functions.agent-continuous-learning]
 verify_jwt = false
+
+[functions.agent-hyper-evolution]
+verify_jwt = false
