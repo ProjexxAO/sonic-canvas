@@ -179,30 +179,33 @@ function LivingCore({ volume, isActive, isSpeaking, isDark }: { volume: number; 
     const voiceReaction = isSpeaking ? volume * 0.6 : 0;
     const pulse = basePulse + voiceReaction;
     
+    const scaleBoost = isDark ? 1 : 1.3;
+    
     if (coreRef.current) {
-      coreRef.current.scale.setScalar(0.25 * pulse);
+      coreRef.current.scale.setScalar(0.25 * pulse * scaleBoost);
       coreRef.current.rotation.y = time * 0.2;
     }
     if (innerGlowRef.current) {
-      innerGlowRef.current.scale.setScalar(0.35 * pulse);
+      innerGlowRef.current.scale.setScalar(0.35 * pulse * scaleBoost);
       innerGlowRef.current.rotation.y = -time * 0.15;
     }
     if (midGlowRef.current) {
-      midGlowRef.current.scale.setScalar(0.5 * pulse);
+      midGlowRef.current.scale.setScalar(0.5 * pulse * scaleBoost);
     }
     if (outerGlowRef.current) {
-      outerGlowRef.current.scale.setScalar(0.7 * pulse);
+      outerGlowRef.current.scale.setScalar(0.7 * pulse * scaleBoost);
     }
     if (plasmaRef.current) {
-      plasmaRef.current.scale.setScalar(0.42 * pulse);
+      plasmaRef.current.scale.setScalar(0.42 * pulse * scaleBoost);
       plasmaRef.current.rotation.x = time * 0.3;
       plasmaRef.current.rotation.z = time * 0.2;
     }
   });
 
-  // Light mode needs higher opacity and different blending
+  // Light mode needs higher opacity and scale
   const speakingBoost = isSpeaking ? 1 + volume * 0.5 : 1;
-  const baseMultiplier = isDark ? 1 : 1.8;
+  const baseMultiplier = isDark ? 1 : 2.2;
+  const scaleMultiplier = isDark ? 1 : 1.3;
 
   return (
     <group>
@@ -694,8 +697,8 @@ function OrbScene({ isConnected, isSpeaking, inputVolume, outputVolume, isDark, 
       {/* Sound wave rings - only visible when speaking */}
       <SoundWaves volume={volume} isActive={isConnected} isSpeaking={isSpeaking} isDark={isDark} />
       
-      {/* Living plasma core */}
-      <LivingCore volume={volume} isActive={isConnected} isSpeaking={isSpeaking} isDark={isDark} />
+      {/* Living plasma core - use actual theme for visibility */}
+      <LivingCore volume={volume} isActive={isConnected} isSpeaking={isSpeaking} isDark={actualTheme} />
       
       {/* Orbiting energy particles */}
       <EnergyParticles volume={volume} isActive={isConnected} isSpeaking={isSpeaking} isDark={isDark} />
