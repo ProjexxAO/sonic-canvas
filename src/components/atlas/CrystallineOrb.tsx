@@ -14,107 +14,128 @@ interface CrystallineOrbProps {
   onClick?: () => void;
 }
 
-// Crystal Shell - Faceted dodecahedron outer layer
+// Crystal Shell - Faceted dodecahedron outer layer with better visibility
 function CrystalShell({ volume, isActive }: { volume: number; isActive: boolean }) {
   const meshRef = useRef<THREE.Mesh>(null);
   
   useFrame((state) => {
     if (meshRef.current) {
-      meshRef.current.rotation.y += 0.002;
-      meshRef.current.rotation.x = Math.sin(state.clock.elapsedTime * 0.3) * 0.1;
+      meshRef.current.rotation.y += 0.003;
+      meshRef.current.rotation.x = Math.sin(state.clock.elapsedTime * 0.3) * 0.15;
     }
   });
 
   return (
     <mesh ref={meshRef}>
-      <dodecahedronGeometry args={[2.2, 0]} />
+      <dodecahedronGeometry args={[2.0, 0]} />
       <meshPhysicalMaterial
-        color="#1a1a2e"
-        metalness={0.1}
-        roughness={0.05}
-        transmission={0.85}
-        thickness={0.5}
-        envMapIntensity={1}
+        color={isActive ? "#2a2a4e" : "#1a1a2e"}
+        metalness={0.3}
+        roughness={0.1}
+        transmission={0.6}
+        thickness={0.8}
+        envMapIntensity={2}
         clearcoat={1}
-        clearcoatRoughness={0.1}
+        clearcoatRoughness={0.05}
         transparent
-        opacity={0.6}
+        opacity={0.35}
         side={THREE.DoubleSide}
       />
     </mesh>
   );
 }
 
-// Inner crystal facets
-function InnerFacets({ volume }: { volume: number }) {
+// Inner crystal facets - more visible
+function InnerFacets({ volume, isActive }: { volume: number; isActive: boolean }) {
   const meshRef = useRef<THREE.Mesh>(null);
   
   useFrame((state) => {
     if (meshRef.current) {
-      meshRef.current.rotation.y -= 0.003;
-      meshRef.current.rotation.z += 0.002;
-      const scale = 1 + volume * 0.1;
+      meshRef.current.rotation.y -= 0.004;
+      meshRef.current.rotation.z += 0.003;
+      const scale = 1 + volume * 0.15;
       meshRef.current.scale.setScalar(scale);
     }
   });
 
   return (
     <mesh ref={meshRef}>
-      <icosahedronGeometry args={[1.6, 0]} />
+      <icosahedronGeometry args={[1.4, 0]} />
       <meshPhysicalMaterial
-        color="#0d0d1a"
-        metalness={0.2}
-        roughness={0.1}
-        transmission={0.7}
-        thickness={0.3}
+        color={isActive ? "#3a3a5e" : "#1a1a2e"}
+        metalness={0.4}
+        roughness={0.15}
+        transmission={0.5}
+        thickness={0.4}
         transparent
-        opacity={0.4}
+        opacity={0.25}
         side={THREE.DoubleSide}
       />
     </mesh>
   );
 }
 
-// Plasma Core - Glowing center
+// Plasma Core - Bright glowing center (key visual element)
 function PlasmaCore({ volume, isActive }: { volume: number; isActive: boolean }) {
   const meshRef = useRef<THREE.Mesh>(null);
   const glowRef = useRef<THREE.Mesh>(null);
+  const outerGlowRef = useRef<THREE.Mesh>(null);
   
   useFrame((state) => {
+    const time = state.clock.elapsedTime;
     if (meshRef.current) {
-      const pulse = 1 + Math.sin(state.clock.elapsedTime * 3) * 0.05;
-      const volumeScale = 1 + volume * 0.3;
+      const pulse = 1 + Math.sin(time * 4) * 0.08;
+      const volumeScale = 1 + volume * 0.4;
       meshRef.current.scale.setScalar(pulse * volumeScale);
     }
     if (glowRef.current) {
-      const glowPulse = 1 + Math.sin(state.clock.elapsedTime * 2) * 0.1;
-      glowRef.current.scale.setScalar(glowPulse * (1 + volume * 0.2));
+      const glowPulse = 1 + Math.sin(time * 2.5) * 0.12;
+      glowRef.current.scale.setScalar(glowPulse * (1 + volume * 0.3));
+    }
+    if (outerGlowRef.current) {
+      const outerPulse = 1 + Math.sin(time * 1.5) * 0.08;
+      outerGlowRef.current.scale.setScalar(outerPulse * (1 + volume * 0.2));
     }
   });
 
-  const coreColor = isActive ? '#fffaf0' : '#e8e0d5';
-  const glowIntensity = isActive ? 2 + volume * 3 : 0.8;
+  const coreColor = isActive ? '#ffffff' : '#f5f0e8';
+  const midGlowColor = isActive ? '#fff8e7' : '#e8dcc8';
+  const outerGlowColor = isActive ? '#ffcc66' : '#d4a855';
+  const glowIntensity = isActive ? 3 + volume * 4 : 1.2;
 
   return (
     <group>
-      {/* Core glow sphere */}
-      <mesh ref={glowRef}>
-        <sphereGeometry args={[0.8, 32, 32]} />
+      {/* Outer atmospheric glow */}
+      <mesh ref={outerGlowRef}>
+        <sphereGeometry args={[1.2, 32, 32]} />
         <meshBasicMaterial
-          color={coreColor}
+          color={outerGlowColor}
           transparent
-          opacity={0.9}
+          opacity={isActive ? 0.15 + volume * 0.1 : 0.08}
         />
       </mesh>
       
-      {/* Bright center */}
-      <mesh ref={meshRef}>
-        <sphereGeometry args={[0.4, 32, 32]} />
-        <meshBasicMaterial color="#ffffff" />
+      {/* Mid glow sphere */}
+      <mesh ref={glowRef}>
+        <sphereGeometry args={[0.7, 32, 32]} />
+        <meshBasicMaterial
+          color={midGlowColor}
+          transparent
+          opacity={isActive ? 0.7 + volume * 0.3 : 0.4}
+        />
       </mesh>
       
-      {/* Point light for illumination */}
-      <pointLight color={coreColor} intensity={glowIntensity} distance={5} />
+      {/* Bright white center */}
+      <mesh ref={meshRef}>
+        <sphereGeometry args={[0.35, 32, 32]} />
+        <meshBasicMaterial color={coreColor} />
+      </mesh>
+      
+      {/* Core point light */}
+      <pointLight color={midGlowColor} intensity={glowIntensity} distance={6} decay={2} />
+      
+      {/* Secondary warm light */}
+      <pointLight color="#ffaa44" intensity={glowIntensity * 0.5} distance={4} decay={2} />
     </group>
   );
 }
@@ -237,18 +258,18 @@ function OrbitalRings({ volume, isActive }: { volume: number; isActive: boolean 
   );
 }
 
-// Particle Field - Ambient energy particles
+// Particle Field - Visible energy sparkles
 function ParticleField({ volume, isActive }: { volume: number; isActive: boolean }) {
   const pointsRef = useRef<THREE.Points>(null);
   
   const particles = useMemo(() => {
-    const count = 200;
+    const count = 300;
     const positions = new Float32Array(count * 3);
     
     for (let i = 0; i < count; i++) {
       const theta = Math.random() * Math.PI * 2;
       const phi = Math.acos(2 * Math.random() - 1);
-      const r = 1 + Math.random() * 1.2;
+      const r = 0.8 + Math.random() * 1.4;
       
       positions[i * 3] = r * Math.sin(phi) * Math.cos(theta);
       positions[i * 3 + 1] = r * Math.sin(phi) * Math.sin(theta);
@@ -260,8 +281,8 @@ function ParticleField({ volume, isActive }: { volume: number; isActive: boolean
 
   useFrame((state) => {
     if (pointsRef.current) {
-      pointsRef.current.rotation.y += 0.001;
-      pointsRef.current.rotation.x = Math.sin(state.clock.elapsedTime * 0.2) * 0.1;
+      pointsRef.current.rotation.y += 0.002;
+      pointsRef.current.rotation.x = Math.sin(state.clock.elapsedTime * 0.3) * 0.15;
     }
   });
 
@@ -274,10 +295,10 @@ function ParticleField({ volume, isActive }: { volume: number; isActive: boolean
   return (
     <points ref={pointsRef} geometry={geometry}>
       <pointsMaterial
-        color={isActive ? '#60d5ff' : '#4a5568'}
-        size={0.02}
+        color={isActive ? '#ffffcc' : '#aaaaaa'}
+        size={isActive ? 0.04 + volume * 0.02 : 0.025}
         transparent
-        opacity={isActive ? 0.6 + volume * 0.4 : 0.3}
+        opacity={isActive ? 0.8 + volume * 0.2 : 0.4}
         sizeAttenuation
       />
     </points>
@@ -291,16 +312,21 @@ function OrbScene({ isConnected, isSpeaking, inputVolume, outputVolume }: { isCo
 
   return (
     <>
-      <ambientLight intensity={0.1} />
-      <pointLight position={[5, 5, 5]} intensity={0.3} color="#60d5ff" />
-      <pointLight position={[-5, -5, -5]} intensity={0.2} color="#ff9f43" />
+      {/* Ambient lighting - brighter base */}
+      <ambientLight intensity={0.2} />
       
-      <CrystalShell volume={volume} isActive={isActive} />
-      <InnerFacets volume={volume} />
+      {/* Key lights for crystal reflections */}
+      <pointLight position={[4, 4, 4]} intensity={0.5} color="#60d5ff" />
+      <pointLight position={[-4, -4, -4]} intensity={0.4} color="#ff9f43" />
+      <pointLight position={[0, 5, 0]} intensity={0.3} color="#ffffff" />
+      
+      {/* Render order matters - core first, shell last */}
       <PlasmaCore volume={volume} isActive={isActive} />
+      <ParticleField volume={volume} isActive={isActive} />
       <EnergyTendrils volume={volume} isActive={isActive} />
       <OrbitalRings volume={volume} isActive={isActive} />
-      <ParticleField volume={volume} isActive={isActive} />
+      <InnerFacets volume={volume} isActive={isActive} />
+      <CrystalShell volume={volume} isActive={isActive} />
     </>
   );
 }
