@@ -74,3 +74,6 @@ verify_jwt = false
 
 [functions.widget-generator]
 verify_jwt = false
+
+[functions.agent-continuous-learning]
+verify_jwt = false
