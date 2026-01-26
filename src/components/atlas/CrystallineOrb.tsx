@@ -421,13 +421,15 @@ function EnergyRibbons({ volume, isSpeaking, isDark }: { volume: number; isSpeak
   const groupRef = useRef<THREE.Group>(null);
   
   const ribbonConfigs = useMemo(() => [
-    { color: '#00ffff', scale: 0.22, tubeRadius: 0.012, p: 2, q: 3, rotX: 0.1, rotY: 0.15, phase: 0 },
-    { color: '#40e0d0', scale: 0.20, tubeRadius: 0.010, p: 3, q: 2, rotX: -0.12, rotY: 0.1, phase: Math.PI / 3 },
-    { color: '#00ced1', scale: 0.24, tubeRadius: 0.009, p: 2, q: 5, rotX: 0.08, rotY: -0.13, phase: Math.PI * 2 / 3 },
-    { color: '#ff00ff', scale: 0.21, tubeRadius: 0.011, p: 3, q: 4, rotX: -0.09, rotY: 0.14, phase: Math.PI / 4 },
-    { color: '#da70d6', scale: 0.19, tubeRadius: 0.010, p: 2, q: 3, rotX: 0.11, rotY: -0.08, phase: Math.PI / 2 },
-    { color: '#ffd700', scale: 0.20, tubeRadius: 0.011, p: 3, q: 5, rotX: -0.07, rotY: 0.12, phase: Math.PI * 5 / 6 },
-    { color: '#ffaa00', scale: 0.23, tubeRadius: 0.009, p: 2, q: 3, rotX: 0.13, rotY: -0.11, phase: Math.PI },
+    { color: '#00ffff', scale: 0.22, tubeRadius: 0.014, p: 2, q: 3, rotX: 0.1, rotY: 0.15, phase: 0 },
+    { color: '#00e5ff', scale: 0.20, tubeRadius: 0.012, p: 3, q: 2, rotX: -0.12, rotY: 0.1, phase: Math.PI / 3 },
+    { color: '#18ffff', scale: 0.24, tubeRadius: 0.011, p: 2, q: 5, rotX: 0.08, rotY: -0.13, phase: Math.PI * 2 / 3 },
+    { color: '#ff00ff', scale: 0.21, tubeRadius: 0.013, p: 3, q: 4, rotX: -0.09, rotY: 0.14, phase: Math.PI / 4 },
+    { color: '#ff44ff', scale: 0.19, tubeRadius: 0.012, p: 2, q: 3, rotX: 0.11, rotY: -0.08, phase: Math.PI / 2 },
+    { color: '#ffea00', scale: 0.20, tubeRadius: 0.013, p: 3, q: 5, rotX: -0.07, rotY: 0.12, phase: Math.PI * 5 / 6 },
+    { color: '#ffc400', scale: 0.23, tubeRadius: 0.011, p: 2, q: 3, rotX: 0.13, rotY: -0.11, phase: Math.PI },
+    { color: '#76ff03', scale: 0.18, tubeRadius: 0.010, p: 3, q: 2, rotX: 0.09, rotY: 0.16, phase: Math.PI * 3 / 4 },
+    { color: '#e040fb', scale: 0.21, tubeRadius: 0.012, p: 2, q: 5, rotX: -0.11, rotY: -0.09, phase: Math.PI / 6 },
   ], []);
 
   useFrame(() => {
