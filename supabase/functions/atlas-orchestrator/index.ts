@@ -1505,15 +1505,118 @@ ALWAYS execute real actions. Never just describe what you would do - DO IT.`;
     }
 
     if (action === 'orchestrate_agents') {
+      // ============================================
+      // TIERED INTELLIGENCE ROUTING SYSTEM
+      // Tier 1: Instant deterministic routing (0ms) - uses pre-computed agent scores
+      // Tier 2: Fast pattern matching (50-200ms) - partial matches, cached responses  
+      // Tier 3: LLM fallback (1-5s) - only when Tier 1+2 insufficient
+      // ============================================
+      
+      const routingStartTime = Date.now();
+      let usedTier: 'tier1' | 'tier2' | 'tier3' = 'tier3';
+      let tier1Agents: any[] = [];
+      let skipLLM = false;
+      
+      // TIER 1: Try deterministic intent parsing first (no LLM)
+      let detectedTaskType = body.taskType;
+      let detectedDomain: string | null = null;
+      
+      if (!detectedTaskType && query) {
+        console.log('[Tiered Intelligence] Tier 1: Attempting deterministic intent parsing...');
+        const { data: intentResult, error: intentError } = await supabase
+          .rpc('tier1_parse_intent', { p_query: query });
+        
+        if (!intentError && intentResult?.[0]) {
+          const intent = intentResult[0];
+          if (!intent.requires_llm && intent.confidence >= 0.7) {
+            detectedTaskType = intent.task_type;
+            detectedDomain = intent.domain;
+            console.log(`[Tiered Intelligence] Tier 1: Intent parsed - ${detectedTaskType} (${Math.round(intent.confidence * 100)}% confidence)`);
+          } else {
+            console.log(`[Tiered Intelligence] Tier 1: Intent uncertain (${intent.task_type}, ${Math.round(intent.confidence * 100)}%) - continuing to Tier 2/3`);
+          }
+        }
+      }
+      
+      // TIER 1: Try deterministic agent routing (no LLM)
+      if (detectedTaskType) {
+        console.log(`[Tiered Intelligence] Tier 1: Attempting deterministic routing for "${detectedTaskType}"...`);
+        const { data: tier1Result, error: tier1Error } = await supabase
+          .rpc('tier1_deterministic_route', { 
+            p_task_type: detectedTaskType,
+            p_confidence_threshold: 0.7,
+            p_limit: 5
+          });
+        
+        if (!tier1Error && tier1Result && tier1Result.length > 0) {
+          tier1Agents = tier1Result;
+          const topAgent = tier1Result[0];
+          
+          // Check if we can skip LLM entirely (high-confidence specialists)
+          if (!topAgent.requires_llm_fallback && topAgent.confidence >= 0.7) {
+            usedTier = 'tier1';
+            skipLLM = true;
+            console.log(`[Tiered Intelligence] Tier 1 SUCCESS: ${tier1Agents.length} specialists found, skipping LLM (${Date.now() - routingStartTime}ms)`);
+          } else if (topAgent.specialization_score > 0) {
+            usedTier = 'tier2';
+            console.log(`[Tiered Intelligence] Tier 2: Partial match found, will use LLM for refinement`);
+          }
+        }
+      }
+      
+      // If Tier 1 succeeded completely, return immediately without LLM
+      if (skipLLM && tier1Agents.length > 0) {
+        const orchestrationPlan = {
+          recommended_agents: tier1Agents.map((a: any, idx: number) => ({
+            agent_id: a.agent_id,
+            agent_name: a.agent_name,
+            role: `${a.sector} specialist for ${detectedTaskType}`,
+            confidence: a.confidence,
+            requires_approval: a.confidence < 0.9,
+            reasoning: a.routing_reason,
+            specialization_match: a.specialization_score >= 0.8 ? 'high' : a.specialization_score >= 0.5 ? 'medium' : 'low',
+          })),
+          orchestration_plan: `Tier 1 deterministic routing: ${tier1Agents.length} pre-qualified specialists assigned based on proven track record`,
+          task_type: detectedTaskType,
+          estimated_duration: 'instant',
+          learning_opportunity: `Reinforce ${detectedTaskType} specialization`,
+          routing_tier: 'tier1',
+          routing_time_ms: Date.now() - routingStartTime,
+          llm_bypassed: true,
+        };
+        
+        console.log(`[Tiered Intelligence] Tier 1 complete: Returning ${tier1Agents.length} agents in ${Date.now() - routingStartTime}ms (LLM bypassed)`);
+        
+        return new Response(JSON.stringify({
+          success: true,
+          orchestration: orchestrationPlan,
+          agents: tier1Agents,
+          routingTier: 'tier1',
+          routingTimeMs: Date.now() - routingStartTime,
+        }), {
+          status: 200,
+          headers: { ...corsHeaders, 'Content-Type': 'application/json' },
+        });
+      }
+      
+      // TIER 3: Fall back to LLM-based orchestration
+      console.log(`[Tiered Intelligence] Tier 3: Using LLM for orchestration...`);
+      
       // Get conversation context for better understanding
       const conversationContext = await getConversationContext(supabase, userId, sessionId, 15);
       
-      // Extract task type from query for intelligent matching
-      const { taskType: detectedTaskType } = body;
+      // Use Tier 1 results as pre-ranked specialists for LLM (Tier 2 hybrid approach)
+      let specializedAgents: any[] = tier1Agents.length > 0 ? tier1Agents.map((a: any) => ({
+        agent_id: a.agent_id,
+        agent_name: a.agent_name,
+        sector: a.sector,
+        specialization_score: a.specialization_score,
+        success_rate: a.success_rate,
+        total_tasks: 0,
+      })) : [];
       
-      // PHASE 2: Use intelligent agent-to-task matching via database function
-      let specializedAgents: any[] = [];
-      if (detectedTaskType) {
+      // If no Tier 1 results, use the legacy find_best_agents_for_task
+      if (specializedAgents.length === 0 && detectedTaskType) {
         const { data: bestAgents, error: bestAgentsError } = await supabase
           .rpc('find_best_agents_for_task', { 
             p_task_type: detectedTaskType,
