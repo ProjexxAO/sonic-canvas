@@ -730,6 +730,30 @@ export function CrystallineOrb({
       className="relative w-full h-full cursor-pointer"
       onClick={onClick}
     >
+      {/* Cosmic portal backdrop for light mode - keeps additive blending working */}
+      {!isDark && (
+        <div className="absolute inset-0 flex items-center justify-center pointer-events-none">
+          {/* Outer glow ring */}
+          <div 
+            className="absolute rounded-full"
+            style={{
+              width: '85%',
+              height: '85%',
+              background: 'radial-gradient(circle, transparent 40%, rgba(147, 51, 234, 0.15) 60%, rgba(79, 70, 229, 0.1) 80%, transparent 100%)',
+            }}
+          />
+          {/* Inner cosmic window */}
+          <div 
+            className="rounded-full"
+            style={{
+              width: '70%',
+              height: '70%',
+              background: 'radial-gradient(circle, rgba(15, 23, 42, 0.92) 0%, rgba(30, 41, 59, 0.88) 40%, rgba(51, 65, 85, 0.7) 70%, rgba(100, 116, 139, 0.3) 90%, transparent 100%)',
+              boxShadow: '0 0 60px 20px rgba(147, 51, 234, 0.15), 0 0 100px 40px rgba(79, 70, 229, 0.08)',
+            }}
+          />
+        </div>
+      )}
       <Canvas
         camera={{ position: [0, 0, 5], fov: 45 }}
         style={{ background: 'transparent' }}
@@ -738,7 +762,7 @@ export function CrystallineOrb({
           antialias: true, 
           powerPreference: 'high-performance',
           toneMapping: THREE.ACESFilmicToneMapping,
-          toneMappingExposure: isDark ? 1.4 : 1.2,
+          toneMappingExposure: isDark ? 1.4 : 1.6,
         }}
       >
         <OrbScene 
@@ -746,7 +770,7 @@ export function CrystallineOrb({
           isSpeaking={isSpeaking}
           inputVolume={inputVolume}
           outputVolume={outputVolume}
-          isDark={isDark}
+          isDark={true}
         />
       </Canvas>
     </div>
