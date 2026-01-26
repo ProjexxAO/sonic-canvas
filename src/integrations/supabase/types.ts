@@ -2428,6 +2428,39 @@ export type Database = {
         }
         Relationships: []
       }
+      intent_task_mapping: {
+        Row: {
+          confidence: number | null
+          created_at: string | null
+          domain: string | null
+          id: string
+          intent_pattern: string
+          keywords: string[] | null
+          task_type: string
+          updated_at: string | null
+        }
+        Insert: {
+          confidence?: number | null
+          created_at?: string | null
+          domain?: string | null
+          id?: string
+          intent_pattern: string
+          keywords?: string[] | null
+          task_type: string
+          updated_at?: string | null
+        }
+        Update: {
+          confidence?: number | null
+          created_at?: string | null
+          domain?: string | null
+          id?: string
+          intent_pattern?: string
+          keywords?: string[] | null
+          task_type?: string
+          updated_at?: string | null
+        }
+        Relationships: []
+      }
       item_comments: {
         Row: {
           content: string
@@ -4865,6 +4898,16 @@ export type Database = {
           tool_name: string
         }[]
       }
+      get_routing_tier_stats: {
+        Args: never
+        Returns: {
+          avg_specialization: number
+          can_tier1_route: boolean
+          recommended_tier: string
+          task_type: string
+          total_specialists: number
+        }[]
+      }
       get_seraphim_overview: {
         Args: never
         Returns: {
@@ -4979,6 +5022,36 @@ export type Database = {
           name: string
           sector: string
           similarity: number
+        }[]
+      }
+      tier1_deterministic_route: {
+        Args: {
+          p_confidence_threshold?: number
+          p_limit?: number
+          p_query?: string
+          p_task_type: string
+        }
+        Returns: {
+          agent_id: string
+          agent_name: string
+          confidence: number
+          hierarchy_tier: Database["public"]["Enums"]["hierarchy_tier"]
+          requires_llm_fallback: boolean
+          routing_reason: string
+          sector: string
+          seraphim_id: string
+          specialization_score: number
+          success_rate: number
+        }[]
+      }
+      tier1_parse_intent: {
+        Args: { p_query: string }
+        Returns: {
+          confidence: number
+          domain: string
+          matched_pattern: string
+          requires_llm: boolean
+          task_type: string
         }[]
       }
       upgrade_verification_level: {
