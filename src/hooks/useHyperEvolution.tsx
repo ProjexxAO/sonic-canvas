@@ -11,6 +11,7 @@ export const EVOLUTION_MODES = {
   HYPER_PARALLEL: 'hyper_parallel',
   ADVERSARIAL: 'adversarial',
   CRYSTALLIZATION: 'crystallization',
+  WEB_KNOWLEDGE: 'web_knowledge',
   FULL_ACCELERATION: 'full_acceleration',
 } as const;
 

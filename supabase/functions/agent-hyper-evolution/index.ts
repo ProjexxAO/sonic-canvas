@@ -14,7 +14,23 @@ const EVOLUTION_MODES = {
   HYPER_PARALLEL: 'hyper_parallel',           // 10k+ simultaneous learning
   ADVERSARIAL: 'adversarial',                 // Competitive improvement
   MEMORY_CRYSTALLIZATION: 'crystallization',  // Distill and propagate learnings
+  WEB_KNOWLEDGE: 'web_knowledge',             // Real-time web information absorption
   FULL_ACCELERATION: 'full_acceleration',     // All modes combined
+};
+
+// Web search topics for knowledge absorption by sector
+const SECTOR_KNOWLEDGE_TOPICS: Record<string, string[]> = {
+  FINANCE: ['latest financial market trends', 'cryptocurrency regulations 2024', 'AI in fintech innovations', 'global economic forecasts', 'sustainable investing strategies'],
+  TECHNOLOGY: ['emerging AI breakthroughs', 'quantum computing advances', 'cybersecurity threats 2024', 'cloud computing trends', 'edge computing developments'],
+  CREATIVE: ['AI art generation techniques', 'design trends 2024', 'creative automation tools', 'digital content strategies', 'multimedia production innovations'],
+  OPERATIONS: ['supply chain optimization AI', 'process automation trends', 'logistics technology advances', 'operational efficiency metrics', 'lean management innovations'],
+  LEGAL: ['AI legal compliance updates', 'data privacy regulations', 'intellectual property AI', 'contract automation advances', 'legal tech innovations'],
+  MEDICAL: ['AI diagnostics breakthroughs', 'telemedicine advances', 'medical imaging AI', 'healthcare automation', 'clinical trial AI innovations'],
+  RESEARCH: ['scientific discovery AI', 'research methodology advances', 'academic AI tools', 'data analysis innovations', 'knowledge synthesis techniques'],
+  SECURITY: ['threat detection AI advances', 'zero trust architecture', 'AI security vulnerabilities', 'penetration testing automation', 'security compliance AI'],
+  COMMUNICATIONS: ['natural language processing advances', 'multilingual AI models', 'communication automation', 'sentiment analysis innovations', 'conversational AI trends'],
+  STRATEGY: ['strategic planning AI', 'competitive intelligence automation', 'market analysis AI', 'business forecasting innovations', 'decision support systems'],
+  GENERAL: ['artificial general intelligence progress', 'machine learning breakthroughs', 'neural network innovations', 'AI ethics developments', 'automation industry trends']
 };
 
 interface EvolutionResult {
@@ -104,6 +120,11 @@ Deno.serve(async (req) => {
         const crystalResults = await executeMemoryCrystallization(agents, supabase, intensityMultiplier);
         totalCrystallizations += crystalResults.crystallizations;
         totalKnowledgeGained += crystalResults.knowledgeGained;
+      }
+
+      if (mode === 'full_acceleration' || mode === 'web_knowledge') {
+        const webResults = await executeWebKnowledgeAbsorption(agents, supabase, intensityMultiplier);
+        totalKnowledgeGained += webResults.knowledgeGained;
       }
     }
 
@@ -669,4 +690,174 @@ function calculateCompetitiveScore(agent: any): number {
     velocity * 0.15 +
     specializationDepth * 0.15
   );
+}
+
+// WEB KNOWLEDGE ABSORPTION: Real-time web information ingestion via Perplexity
+async function executeWebKnowledgeAbsorption(
+  agents: any[],
+  supabase: any,
+  intensity: number
+): Promise<{ knowledgeGained: number, topicsAbsorbed: number }> {
+  console.log(`[Web Knowledge Absorption] Fetching real-time web knowledge for ${agents.length} agents`);
+
+  const perplexityApiKey = Deno.env.get('PERPLEXITY_API_KEY');
+  if (!perplexityApiKey) {
+    console.log('[Web Knowledge Absorption] Perplexity API key not configured, skipping');
+    return { knowledgeGained: 0, topicsAbsorbed: 0 };
+  }
+
+  let totalKnowledge = 0;
+  let topicsAbsorbed = 0;
+
+  // Group agents by sector for targeted knowledge acquisition
+  const sectorGroups: Record<string, any[]> = {};
+  for (const agent of agents) {
+    const sector = agent.sector || 'GENERAL';
+    if (!sectorGroups[sector]) sectorGroups[sector] = [];
+    sectorGroups[sector].push(agent);
+  }
+
+  const memories: any[] = [];
+  const learningEvents: any[] = [];
+  const updates: any[] = [];
+
+  // Fetch web knowledge for each sector (limit API calls based on intensity)
+  const sectorsToQuery = Object.keys(sectorGroups).slice(0, Math.ceil(intensity * 3));
+  
+  for (const sector of sectorsToQuery) {
+    const topics = SECTOR_KNOWLEDGE_TOPICS[sector] || SECTOR_KNOWLEDGE_TOPICS.GENERAL;
+    const selectedTopic = topics[Math.floor(Math.random() * topics.length)];
+
+    try {
+      console.log(`[Web Knowledge] Querying: "${selectedTopic}" for sector ${sector}`);
+      
+      const response = await fetch('https://api.perplexity.ai/chat/completions', {
+        method: 'POST',
+        headers: {
+          'Authorization': `Bearer ${perplexityApiKey}`,
+          'Content-Type': 'application/json',
+        },
+        body: JSON.stringify({
+          model: 'sonar',
+          messages: [
+            { 
+              role: 'system', 
+              content: 'You are a knowledge synthesizer. Provide concise, actionable insights that can be used to enhance AI agent capabilities. Focus on practical applications, emerging patterns, and strategic implications. Be specific and data-driven.'
+            },
+            { 
+              role: 'user', 
+              content: `Provide the latest insights on: ${selectedTopic}. Focus on actionable intelligence, emerging trends, key statistics, and practical applications for AI systems operating in the ${sector.toLowerCase()} domain.`
+            }
+          ],
+          max_tokens: 500,
+          temperature: 0.3,
+          search_recency_filter: 'week' // Focus on recent information
+        }),
+      });
+
+      if (!response.ok) {
+        console.log(`[Web Knowledge] API error for ${sector}: ${response.status}`);
+        continue;
+      }
+
+      const data = await response.json();
+      const knowledge = data.choices?.[0]?.message?.content;
+      const citations = data.citations || [];
+
+      if (knowledge) {
+        topicsAbsorbed++;
+        const knowledgeValue = Math.min(1.0, 0.3 + intensity * 0.1);
+        
+        // Distribute knowledge to agents in this sector
+        const sectorAgents = sectorGroups[sector];
+        const knowledgePerAgent = knowledgeValue / sectorAgents.length;
+
+        for (const agent of sectorAgents) {
+          // Create memory with web-sourced knowledge
+          memories.push({
+            agent_id: agent.id,
+            user_id: agent.user_id,
+            memory_type: 'web_knowledge',
+            content: `[WEB INSIGHT - ${selectedTopic}] ${knowledge.substring(0, 500)}`,
+            importance_score: knowledgeValue,
+            context: {
+              source: 'perplexity_search',
+              topic: selectedTopic,
+              sector,
+              citations: citations.slice(0, 3),
+              timestamp: new Date().toISOString()
+            }
+          });
+
+          // Update agent's task specializations based on absorbed knowledge
+          const currentSpecs = agent.task_specializations || {};
+          const newSpecs = { ...currentSpecs };
+          const researchBoost = intensity * 0.02;
+          
+          // Boost research and relevant domain skills
+          newSpecs['research'] = Math.min(1.0, (newSpecs['research'] || 0) + researchBoost);
+          newSpecs['data_processing'] = Math.min(1.0, (newSpecs['data_processing'] || 0) + researchBoost * 0.5);
+          
+          updates.push({
+            id: agent.id,
+            task_specializations: newSpecs,
+            learning_velocity: Math.min(1.0, (agent.learning_velocity || 0.5) + intensity * 0.01),
+            last_performance_update: new Date().toISOString()
+          });
+
+          totalKnowledge += knowledgePerAgent;
+        }
+
+        // Log learning event for this sector
+        learningEvents.push({
+          agent_id: sectorAgents[0]?.id || '00000000-0000-0000-0000-000000000000',
+          event_type: 'web_knowledge_absorption',
+          event_data: {
+            topic: selectedTopic,
+            sector,
+            agentsEnriched: sectorAgents.length,
+            knowledgeValue,
+            citationCount: citations.length,
+            contentLength: knowledge.length
+          },
+          impact_score: knowledgeValue
+        });
+
+        console.log(`[Web Knowledge] Absorbed "${selectedTopic}" for ${sectorAgents.length} ${sector} agents`);
+      }
+
+    } catch (error) {
+      console.error(`[Web Knowledge] Error fetching knowledge for ${sector}:`, error);
+    }
+
+    // Small delay between API calls to avoid rate limiting
+    await new Promise(resolve => setTimeout(resolve, 500));
+  }
+
+  // Batch insert memories
+  if (memories.length > 0) {
+    const batchSize = 100;
+    for (let i = 0; i < memories.length; i += batchSize) {
+      const batch = memories.slice(i, i + batchSize);
+      await supabase.from('agent_memory').insert(batch);
+    }
+  }
+
+  // Batch insert learning events
+  if (learningEvents.length > 0) {
+    await supabase.from('agent_learning_events').insert(learningEvents);
+  }
+
+  // Batch update agents
+  for (const update of updates) {
+    await supabase.from('sonic_agents').update({
+      task_specializations: update.task_specializations,
+      learning_velocity: update.learning_velocity,
+      last_performance_update: update.last_performance_update
+    }).eq('id', update.id);
+  }
+
+  console.log(`[Web Knowledge Absorption] Complete: ${topicsAbsorbed} topics absorbed, ${totalKnowledge.toFixed(2)} knowledge gained`);
+
+  return { knowledgeGained: totalKnowledge, topicsAbsorbed };
 }
