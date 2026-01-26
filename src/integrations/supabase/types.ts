@@ -4818,13 +4818,11 @@ export type Database = {
     Views: {
       tiered_routing_statistics: {
         Row: {
-          agents_with_specializations: number | null
-          avg_base_confidence: number | null
-          domains_covered: number | null
-          tier1_coverage_pct: number | null
-          tier1_ready_specializations: number | null
-          tier2_specializations: number | null
-          total_patterns: number | null
+          avg_specialization: number | null
+          can_tier1_route: boolean | null
+          recommended_tier: string | null
+          task_type: string | null
+          total_specialists: number | null
         }
         Relationships: []
       }
