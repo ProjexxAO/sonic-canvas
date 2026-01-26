@@ -673,12 +673,13 @@ function AmbientDust({ volume, isSpeaking, isDark }: { volume: number; isSpeakin
 }
 
 // Main 3D Scene
-function OrbScene({ isConnected, isSpeaking, inputVolume, outputVolume, isDark }: { 
+function OrbScene({ isConnected, isSpeaking, inputVolume, outputVolume, isDark, actualTheme }: { 
   isConnected: boolean; 
   isSpeaking: boolean; 
   inputVolume: number; 
   outputVolume: number;
   isDark: boolean;
+  actualTheme: boolean;
 }) {
   const volume = isSpeaking ? outputVolume : inputVolume;
 
@@ -687,8 +688,8 @@ function OrbScene({ isConnected, isSpeaking, inputVolume, outputVolume, isDark }
       {/* Ambient lighting - brighter in light mode */}
       <ambientLight intensity={isDark ? 0.3 : 0.6} />
       
-      {/* Orbital rings */}
-      <OrbitalRings volume={volume} isActive={isConnected} isSpeaking={isSpeaking} isDark={isDark} />
+      {/* Orbital rings - use actual theme for visibility */}
+      <OrbitalRings volume={volume} isActive={isConnected} isSpeaking={isSpeaking} isDark={actualTheme} />
       
       {/* Sound wave rings - only visible when speaking */}
       <SoundWaves volume={volume} isActive={isConnected} isSpeaking={isSpeaking} isDark={isDark} />
@@ -773,6 +774,7 @@ export function CrystallineOrb({
           inputVolume={inputVolume}
           outputVolume={outputVolume}
           isDark={true}
+          actualTheme={isDark}
         />
       </Canvas>
     </div>
