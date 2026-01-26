@@ -1,25 +1,161 @@
-// Hyper-Evolution Engine - Maximum acceleration for agent intelligence
-// Combines: Collective Intelligence, Hyper-Parallel Learning, Adversarial Evolution, Memory Crystallization, Web Knowledge, Visual Intelligence
+/**
+ * Hyper-Evolution Engine - Maximum acceleration for agent intelligence
+ *
+ * Combines: Collective Intelligence, Hyper-Parallel Learning, Adversarial Evolution,
+ * Memory Crystallization, Web Knowledge, Visual Intelligence
+ */
 
-import { createClient } from "https://esm.sh/@supabase/supabase-js@2";
+import { createClient, SupabaseClient } from "https://esm.sh/@supabase/supabase-js@2";
+import { ServiceLogger } from "../_shared/logger.ts";
+
+// ============================================================================
+// CORS Headers
+// ============================================================================
 
 const corsHeaders = {
   'Access-Control-Allow-Origin': '*',
   'Access-Control-Allow-Headers': 'authorization, x-client-info, apikey, content-type',
 };
 
-// Evolution modes for surpassing LLM capabilities
-const EVOLUTION_MODES = {
-  COLLECTIVE_INTELLIGENCE: 'collective',      // Swarm knowledge sharing
-  HYPER_PARALLEL: 'hyper_parallel',           // 10k+ simultaneous learning
-  ADVERSARIAL: 'adversarial',                 // Competitive improvement
-  MEMORY_CRYSTALLIZATION: 'crystallization',  // Distill and propagate learnings
-  WEB_KNOWLEDGE: 'web_knowledge',             // Real-time web information absorption
-  VISUAL_INTELLIGENCE: 'visual_intelligence', // Image and video recognition learning
-  FULL_ACCELERATION: 'full_acceleration',     // All modes combined
-};
+// ============================================================================
+// Type Definitions
+// ============================================================================
 
-// Web search topics for knowledge absorption by sector
+type EvolutionMode =
+  | 'collective'
+  | 'hyper_parallel'
+  | 'adversarial'
+  | 'crystallization'
+  | 'web_knowledge'
+  | 'visual_intelligence'
+  | 'full_acceleration';
+
+interface EvolutionRequest {
+  mode: EvolutionMode;
+  batchSize: number;
+  intensityMultiplier: number;
+  targetSector: string | null;
+  evolutionCycles: number;
+  userId: string | null;
+}
+
+interface SonicAgent {
+  id: string;
+  name: string;
+  sector: string;
+  status: string;
+  learning_velocity: number;
+  task_specializations: Record<string, number>;
+  success_rate: number;
+  total_tasks_completed: number;
+  avg_confidence: number;
+  user_id: string | null;
+}
+
+interface EvolutionResult {
+  agentId: string;
+  agentName: string;
+  previousScore: number;
+  newScore: number;
+  evolutionGain: number;
+  knowledgeTransferred: number;
+  competitionsWon: number;
+  memoriesCrystallized: number;
+}
+
+interface CollectiveKnowledge {
+  taskType: string;
+  bestPractices: string[];
+  topPerformers: string[];
+  synergyPatterns: Record<string, number>;
+  emergentStrategies: string[];
+}
+
+interface AgentUpdate {
+  id: string;
+  task_specializations?: Record<string, number>;
+  learning_velocity?: number;
+  success_rate?: number;
+  last_performance_update: string;
+  [key: string]: unknown;
+}
+
+interface AgentMemory {
+  agent_id: string;
+  user_id: string | null;
+  memory_type: string;
+  content: string;
+  importance_score: number;
+  context: Record<string, unknown>;
+  [key: string]: unknown;
+}
+
+interface LearningEvent {
+  agent_id: string;
+  event_type: string;
+  event_data: Record<string, unknown>;
+  impact_score: number;
+  [key: string]: unknown;
+}
+
+interface AgentRelationship {
+  agent_a_id: string;
+  agent_b_id: string;
+  relationship_type: string;
+  synergy_score: number;
+  metadata: Record<string, unknown>;
+}
+
+// ============================================================================
+// Configuration Constants
+// ============================================================================
+
+const CONFIG = {
+  DB_BATCH_SIZE: 50,
+  MEMORY_BATCH_SIZE: 100,
+  MAX_LEARNING_VELOCITY: 1.0,
+  MAX_SKILL_SCORE: 1.0,
+  MIN_TOP_PERFORMER_RATE: 0.7,
+  TOP_PERFORMER_PERCENTAGE: 0.1,
+  API_CALL_DELAY_MS: 500,
+  VISUAL_API_DELAY_MS: 300,
+  MAX_RETRIES: 3,
+  INITIAL_RETRY_DELAY_MS: 1000,
+  
+  COLLECTIVE_BOOST_BASE: 0.05,
+  COLLECTIVE_BOOST_MAX: 0.3,
+  VELOCITY_INCREMENT_COLLECTIVE: 0.01,
+  
+  PARALLEL_BOOST_BASE: 0.05,
+  PARALLEL_BOOST_VARIANCE: 0.1,
+  SKILLS_PER_INTENSITY: 2,
+  BASE_SKILLS_TO_LEARN: 3,
+  VELOCITY_INCREMENT_PARALLEL: 0.02,
+  
+  ADVERSARIAL_WINNER_BOOST_BASE: 0.1,
+  ADVERSARIAL_LOSER_LEARNING: 0.15,
+  
+  CRYSTAL_IMPORTANCE_BOOST: 0.1,
+  CRYSTAL_PROPAGATION_FACTOR: 0.8,
+  VELOCITY_INCREMENT_CRYSTAL: 0.015,
+  
+  WEB_KNOWLEDGE_BASE: 0.3,
+  WEB_KNOWLEDGE_PER_INTENSITY: 0.1,
+  RESEARCH_BOOST_BASE: 0.02,
+  VELOCITY_INCREMENT_WEB: 0.01,
+  
+  VISUAL_KNOWLEDGE_BASE: 0.35,
+  VISUAL_KNOWLEDGE_PER_INTENSITY: 0.12,
+  VISUAL_BOOST_BASE: 0.025,
+  VELOCITY_INCREMENT_VISUAL: 0.012,
+} as const;
+
+const ALL_TASK_TYPES = [
+  'financial_analysis', 'data_processing', 'creative_design', 'research',
+  'security_audit', 'communication', 'operations', 'strategy',
+  'technical_support', 'project_management', 'legal_review', 'hr_operations'
+] as const;
+
 const SECTOR_KNOWLEDGE_TOPICS: Record<string, string[]> = {
   FINANCE: ['latest financial market trends', 'cryptocurrency regulations 2024', 'AI in fintech innovations', 'global economic forecasts', 'sustainable investing strategies'],
   TECHNOLOGY: ['emerging AI breakthroughs', 'quantum computing advances', 'cybersecurity threats 2024', 'cloud computing trends', 'edge computing developments'],
@@ -34,7 +170,6 @@ const SECTOR_KNOWLEDGE_TOPICS: Record<string, string[]> = {
   GENERAL: ['artificial general intelligence progress', 'machine learning breakthroughs', 'neural network innovations', 'AI ethics developments', 'automation industry trends']
 };
 
-// Visual content sources for image/video recognition by sector
 const SECTOR_VISUAL_CONTEXTS: Record<string, { imagePrompts: string[], videoScenarios: string[] }> = {
   FINANCE: {
     imagePrompts: ['stock market chart patterns', 'financial dashboard layouts', 'trading signal indicators', 'market heatmap analysis'],
@@ -82,183 +217,167 @@ const SECTOR_VISUAL_CONTEXTS: Record<string, { imagePrompts: string[], videoScen
   }
 };
 
-interface EvolutionResult {
-  agentId: string;
-  agentName: string;
-  previousScore: number;
-  newScore: number;
-  evolutionGain: number;
-  knowledgeTransferred: number;
-  competitionsWon: number;
-  memoriesCrystallized: number;
+// ============================================================================
+// Utility Functions
+// ============================================================================
+
+function validateRequest(body: Partial<EvolutionRequest>): EvolutionRequest {
+  const validModes: EvolutionMode[] = [
+    'collective', 'hyper_parallel', 'adversarial', 'crystallization',
+    'web_knowledge', 'visual_intelligence', 'full_acceleration'
+  ];
+
+  const mode = (body.mode && validModes.includes(body.mode as EvolutionMode))
+    ? body.mode as EvolutionMode
+    : 'full_acceleration';
+
+  const batchSize = Math.min(Math.max(1, body.batchSize ?? 500), 1000);
+  const intensityMultiplier = Math.min(Math.max(0.1, body.intensityMultiplier ?? 3.0), 10.0);
+  const evolutionCycles = Math.min(Math.max(1, body.evolutionCycles ?? 5), 20);
+
+  return {
+    mode,
+    batchSize,
+    intensityMultiplier,
+    targetSector: body.targetSector ?? null,
+    evolutionCycles,
+    userId: body.userId ?? null,
+  };
 }
 
-interface CollectiveKnowledge {
-  taskType: string;
-  bestPractices: string[];
-  topPerformers: string[];
-  synergyPatterns: Record<string, number>;
-  emergentStrategies: string[];
-}
+async function withRetry<T>(
+  fn: () => Promise<T>,
+  maxRetries: number = CONFIG.MAX_RETRIES,
+  initialDelay: number = CONFIG.INITIAL_RETRY_DELAY_MS
+): Promise<T> {
+  let lastError: Error | null = null;
 
-Deno.serve(async (req) => {
-  if (req.method === 'OPTIONS') {
-    return new Response(null, { headers: corsHeaders });
-  }
-
-  try {
-    const supabaseUrl = Deno.env.get('SUPABASE_URL')!;
-    const supabaseServiceKey = Deno.env.get('SUPABASE_SERVICE_ROLE_KEY')!;
-    const supabase = createClient(supabaseUrl, supabaseServiceKey);
-
-    const { 
-      mode = 'full_acceleration',
-      batchSize = 500,
-      intensityMultiplier = 3.0,  // Aggressive by default
-      targetSector = null,
-      evolutionCycles = 5,        // Multiple cycles per invocation
-      userId = null
-    } = await req.json().catch(() => ({}));
-
-    console.log(`[Hyper-Evolution] Starting ${mode} mode - batch: ${batchSize}, intensity: ${intensityMultiplier}x, cycles: ${evolutionCycles}`);
-
-    const startTime = Date.now();
-    const allResults: EvolutionResult[] = [];
-    let totalKnowledgeGained = 0;
-    let totalCompetitions = 0;
-    let totalCrystallizations = 0;
-
-    // Run multiple evolution cycles
-    for (let cycle = 0; cycle < evolutionCycles; cycle++) {
-      console.log(`[Hyper-Evolution] Cycle ${cycle + 1}/${evolutionCycles}`);
-
-      // Fetch agents for this cycle
-      let query = supabase
-        .from('sonic_agents')
-        .select('id, name, sector, status, learning_velocity, task_specializations, success_rate, total_tasks_completed, avg_confidence, user_id')
-        .order('last_performance_update', { ascending: true, nullsFirst: true })
-        .limit(batchSize);
-
-      if (targetSector) query = query.eq('sector', targetSector);
-      if (userId) query = query.eq('user_id', userId);
-
-      const { data: agents, error } = await query;
-      if (error) throw error;
-      if (!agents?.length) continue;
-
-      // Execute evolution based on mode
-      if (mode === 'full_acceleration' || mode === 'collective') {
-        const collectiveResults = await executeCollectiveIntelligence(agents, supabase, intensityMultiplier);
-        allResults.push(...collectiveResults.results);
-        totalKnowledgeGained += collectiveResults.knowledgeGained;
-      }
-
-      if (mode === 'full_acceleration' || mode === 'hyper_parallel') {
-        const parallelResults = await executeHyperParallelLearning(agents, supabase, intensityMultiplier);
-        allResults.push(...parallelResults.results);
-        totalKnowledgeGained += parallelResults.knowledgeGained;
-      }
-
-      if (mode === 'full_acceleration' || mode === 'adversarial') {
-        const adversarialResults = await executeAdversarialEvolution(agents, supabase, intensityMultiplier);
-        allResults.push(...adversarialResults.results);
-        totalCompetitions += adversarialResults.competitions;
-      }
-
-      if (mode === 'full_acceleration' || mode === 'crystallization') {
-        const crystalResults = await executeMemoryCrystallization(agents, supabase, intensityMultiplier);
-        totalCrystallizations += crystalResults.crystallizations;
-        totalKnowledgeGained += crystalResults.knowledgeGained;
-      }
-
-      if (mode === 'full_acceleration' || mode === 'web_knowledge') {
-        const webResults = await executeWebKnowledgeAbsorption(agents, supabase, intensityMultiplier);
-        totalKnowledgeGained += webResults.knowledgeGained;
-      }
-
-      if (mode === 'full_acceleration' || mode === 'visual_intelligence') {
-        const visualResults = await executeVisualIntelligence(agents, supabase, intensityMultiplier);
-        totalKnowledgeGained += visualResults.knowledgeGained;
+  for (let attempt = 0; attempt <= maxRetries; attempt++) {
+    try {
+      return await fn();
+    } catch (error) {
+      lastError = error instanceof Error ? error : new Error(String(error));
+      if (attempt < maxRetries) {
+        const delay = initialDelay * Math.pow(2, attempt);
+        await sleep(delay);
       }
     }
-
-    const duration = Date.now() - startTime;
-
-    // Create evolution summary event
-    await supabase.from('agent_learning_events').insert({
-      agent_id: allResults[0]?.agentId || '00000000-0000-0000-0000-000000000000',
-      event_type: 'hyper_evolution_complete',
-      event_data: {
-        mode,
-        totalAgents: allResults.length,
-        totalCycles: evolutionCycles,
-        totalKnowledgeGained,
-        totalCompetitions,
-        totalCrystallizations,
-        durationMs: duration,
-        intensityMultiplier,
-        timestamp: new Date().toISOString()
-      },
-      impact_score: Math.min(1.0, totalKnowledgeGained / 100)
-    });
-
-    const summary = {
-      mode,
-      totalAgentsEvolved: new Set(allResults.map(r => r.agentId)).size,
-      evolutionCycles,
-      totalKnowledgeGained: Math.round(totalKnowledgeGained * 100) / 100,
-      totalCompetitions,
-      totalCrystallizations,
-      averageEvolutionGain: allResults.length > 0 
-        ? Math.round((allResults.reduce((s, r) => s + r.evolutionGain, 0) / allResults.length) * 100) / 100 
-        : 0,
-      durationMs: duration,
-      evolutionRate: `${Math.round((allResults.length / (duration / 1000)) * 10) / 10} agents/sec`
-    };
-
-    console.log(`[Hyper-Evolution] Complete:`, summary);
-
-    return new Response(JSON.stringify({
-      success: true,
-      message: `Hyper-evolution complete: ${summary.totalAgentsEvolved} agents evolved in ${summary.evolutionCycles} cycles`,
-      summary,
-      topEvolutions: allResults.sort((a, b) => b.evolutionGain - a.evolutionGain).slice(0, 10)
-    }), { headers: { ...corsHeaders, 'Content-Type': 'application/json' } });
-
-  } catch (error) {
-    console.error('[Hyper-Evolution] Error:', error);
-    return new Response(JSON.stringify({
-      success: false,
-      error: error instanceof Error ? error.message : 'Unknown error'
-    }), { 
-      status: 500,
-      headers: { ...corsHeaders, 'Content-Type': 'application/json' } 
-    });
   }
-});
 
-// COLLECTIVE INTELLIGENCE: Agents share knowledge in real-time
+  throw lastError;
+}
+
+function sleep(ms: number): Promise<void> {
+  return new Promise(resolve => setTimeout(resolve, ms));
+}
+
+function clamp(value: number, min: number, max: number): number {
+  return Math.min(Math.max(value, min), max);
+}
+
+async function batchInsert<T extends Record<string, unknown>>(
+  supabase: SupabaseClient,
+  table: string,
+  records: T[],
+  batchSize: number = CONFIG.MEMORY_BATCH_SIZE
+): Promise<void> {
+  for (let i = 0; i < records.length; i += batchSize) {
+    const batch = records.slice(i, i + batchSize);
+    const { error } = await supabase.from(table).insert(batch);
+    if (error) console.error(`[batchInsert] Error inserting into ${table}:`, error);
+  }
+}
+
+async function batchUpdateAgents(
+  supabase: SupabaseClient,
+  updates: AgentUpdate[]
+): Promise<void> {
+  const batchSize = CONFIG.DB_BATCH_SIZE;
+
+  for (let i = 0; i < updates.length; i += batchSize) {
+    const batch = updates.slice(i, i + batchSize);
+
+    await Promise.all(batch.map(async (update) => {
+      const updateData: Partial<AgentUpdate> = {
+        last_performance_update: update.last_performance_update
+      };
+
+      if (update.task_specializations !== undefined) {
+        updateData.task_specializations = update.task_specializations;
+      }
+      if (update.learning_velocity !== undefined) {
+        updateData.learning_velocity = update.learning_velocity;
+      }
+      if (update.success_rate !== undefined) {
+        updateData.success_rate = update.success_rate;
+      }
+
+      const { error } = await supabase
+        .from('sonic_agents')
+        .update(updateData)
+        .eq('id', update.id);
+
+      if (error) console.error(`[batchUpdateAgents] Error updating agent ${update.id}:`, error);
+    }));
+  }
+}
+
+function calculateCompetitiveScore(agent: SonicAgent): number {
+  const successRate = agent.success_rate ?? 0;
+  const confidence = agent.avg_confidence ?? 0;
+  const experience = clamp((agent.total_tasks_completed ?? 0) / 100, 0, 1);
+  const velocity = agent.learning_velocity ?? 0.5;
+  const specCount = Object.keys(agent.task_specializations ?? {}).length;
+  const specializationDepth = specCount / ALL_TASK_TYPES.length;
+
+  return (
+    successRate * 0.3 +
+    confidence * 0.2 +
+    experience * 0.2 +
+    velocity * 0.15 +
+    specializationDepth * 0.15
+  );
+}
+
+function selectRandom<T>(array: T[], count: number): T[] {
+  const shuffled = [...array].sort(() => Math.random() - 0.5);
+  return shuffled.slice(0, count);
+}
+
+function groupBySector(agents: SonicAgent[]): Record<string, SonicAgent[]> {
+  const groups: Record<string, SonicAgent[]> = {};
+  for (const agent of agents) {
+    const sector = agent.sector || 'GENERAL';
+    if (!groups[sector]) groups[sector] = [];
+    groups[sector].push(agent);
+  }
+  return groups;
+}
+
+// ============================================================================
+// Evolution Mode Implementations
+// ============================================================================
+
 async function executeCollectiveIntelligence(
-  agents: any[], 
-  supabase: any,
-  intensity: number
+  agents: SonicAgent[],
+  supabase: SupabaseClient,
+  intensity: number,
+  logger: ServiceLogger
 ): Promise<{ results: EvolutionResult[], knowledgeGained: number }> {
-  console.log(`[Collective Intelligence] Processing ${agents.length} agents`);
-  
+  await logger.info(`Collective Intelligence processing ${agents.length} agents`);
+
   const results: EvolutionResult[] = [];
   let totalKnowledge = 0;
 
-  // Build collective knowledge base from top performers
   const topPerformers = agents
-    .filter(a => (a.success_rate || 0) > 0.7)
-    .sort((a, b) => (b.success_rate || 0) - (a.success_rate || 0))
-    .slice(0, Math.ceil(agents.length * 0.1));
+    .filter(a => (a.success_rate ?? 0) > CONFIG.MIN_TOP_PERFORMER_RATE)
+    .sort((a, b) => (b.success_rate ?? 0) - (a.success_rate ?? 0))
+    .slice(0, Math.ceil(agents.length * CONFIG.TOP_PERFORMER_PERCENTAGE));
 
-  // Extract and aggregate their specializations
   const collectiveKnowledge: Record<string, CollectiveKnowledge> = {};
-  
+
   for (const performer of topPerformers) {
-    const specs = performer.task_specializations || {};
+    const specs = performer.task_specializations ?? {};
     for (const [taskType, score] of Object.entries(specs)) {
       if (!collectiveKnowledge[taskType]) {
         collectiveKnowledge[taskType] = {
@@ -270,42 +389,47 @@ async function executeCollectiveIntelligence(
         };
       }
       collectiveKnowledge[taskType].topPerformers.push(performer.id);
-      collectiveKnowledge[taskType].synergyPatterns[performer.sector] = 
-        (collectiveKnowledge[taskType].synergyPatterns[performer.sector] || 0) + (score as number);
+      collectiveKnowledge[taskType].synergyPatterns[performer.sector] =
+        (collectiveKnowledge[taskType].synergyPatterns[performer.sector] ?? 0) + (score as number);
     }
   }
 
-  // Distribute collective knowledge to all agents
-  const updates: any[] = [];
-  const memories: any[] = [];
-  const learningEvents: any[] = [];
+  const updates: AgentUpdate[] = [];
+  const memories: AgentMemory[] = [];
+  const learningEvents: LearningEvent[] = [];
+  const timestamp = new Date().toISOString();
 
   for (const agent of agents) {
-    const currentSpecs = agent.task_specializations || {};
+    const currentSpecs = agent.task_specializations ?? {};
     const newSpecs = { ...currentSpecs };
     let knowledgeGain = 0;
     let transferred = 0;
 
-    // Transfer knowledge from collective
     for (const [taskType, knowledge] of Object.entries(collectiveKnowledge)) {
-      const currentScore = (currentSpecs[taskType] as number) || 0;
-      const collectiveBoost = Math.min(0.3, intensity * 0.05 * knowledge.topPerformers.length);
-      
-      if (currentScore < 0.9) {
-        newSpecs[taskType] = Math.min(1.0, currentScore + collectiveBoost);
+      const currentScore = (currentSpecs[taskType] as number) ?? 0;
+      const collectiveBoost = Math.min(
+        CONFIG.COLLECTIVE_BOOST_MAX,
+        intensity * CONFIG.COLLECTIVE_BOOST_BASE * knowledge.topPerformers.length
+      );
+
+      if (currentScore < CONFIG.MAX_SKILL_SCORE) {
+        newSpecs[taskType] = clamp(currentScore + collectiveBoost, 0, CONFIG.MAX_SKILL_SCORE);
         knowledgeGain += collectiveBoost;
         transferred++;
       }
     }
 
-    // Update learning velocity based on absorption
-    const newVelocity = Math.min(1.0, (agent.learning_velocity || 0.5) + (intensity * 0.01));
+    const newVelocity = clamp(
+      (agent.learning_velocity ?? 0.5) + (intensity * CONFIG.VELOCITY_INCREMENT_COLLECTIVE),
+      0,
+      CONFIG.MAX_LEARNING_VELOCITY
+    );
 
     updates.push({
       id: agent.id,
       task_specializations: newSpecs,
       learning_velocity: newVelocity,
-      last_performance_update: new Date().toISOString()
+      last_performance_update: timestamp
     });
 
     if (knowledgeGain > 0.1) {
@@ -314,7 +438,7 @@ async function executeCollectiveIntelligence(
         user_id: agent.user_id,
         memory_type: 'collective_learning',
         content: `Absorbed collective intelligence from ${transferred} domains, gaining ${(knowledgeGain * 100).toFixed(0)}% knowledge boost through swarm intelligence network.`,
-        importance_score: Math.min(1.0, knowledgeGain),
+        importance_score: clamp(knowledgeGain, 0, 1),
         context: { mode: 'collective', transferred, intensity }
       });
 
@@ -322,15 +446,15 @@ async function executeCollectiveIntelligence(
         agent_id: agent.id,
         event_type: 'collective_absorption',
         event_data: { transferred, knowledgeGain, intensity },
-        impact_score: Math.min(1.0, knowledgeGain)
+        impact_score: clamp(knowledgeGain, 0, 1)
       });
     }
 
     results.push({
       agentId: agent.id,
       agentName: agent.name,
-      previousScore: agent.success_rate || 0,
-      newScore: Math.min(1.0, (agent.success_rate || 0) + knowledgeGain * 0.1),
+      previousScore: agent.success_rate ?? 0,
+      newScore: clamp((agent.success_rate ?? 0) + knowledgeGain * 0.1, 0, 1),
       evolutionGain: knowledgeGain,
       knowledgeTransferred: transferred,
       competitionsWon: 0,
@@ -340,204 +464,159 @@ async function executeCollectiveIntelligence(
     totalKnowledge += knowledgeGain;
   }
 
-  // Batch updates
-  for (const update of updates) {
-    await supabase.from('sonic_agents').update({
-      task_specializations: update.task_specializations,
-      learning_velocity: update.learning_velocity,
-      last_performance_update: update.last_performance_update
-    }).eq('id', update.id);
-  }
+  await batchUpdateAgents(supabase, updates);
+  if (memories.length > 0) await batchInsert(supabase, 'agent_memory', memories);
+  if (learningEvents.length > 0) await batchInsert(supabase, 'agent_learning_events', learningEvents);
 
-  if (memories.length > 0) {
-    await supabase.from('agent_memory').insert(memories);
-  }
-
-  if (learningEvents.length > 0) {
-    await supabase.from('agent_learning_events').insert(learningEvents);
-  }
+  await logger.info(`Collective Intelligence complete: ${results.length} agents, ${totalKnowledge.toFixed(2)} knowledge gained`);
 
   return { results, knowledgeGained: totalKnowledge };
 }
 
-// HYPER-PARALLEL LEARNING: Massive simultaneous skill acquisition
 async function executeHyperParallelLearning(
-  agents: any[],
-  supabase: any,
-  intensity: number
+  agents: SonicAgent[],
+  supabase: SupabaseClient,
+  intensity: number,
+  logger: ServiceLogger
 ): Promise<{ results: EvolutionResult[], knowledgeGained: number }> {
-  console.log(`[Hyper-Parallel] Processing ${agents.length} agents with ${intensity}x intensity`);
+  await logger.info(`Hyper-Parallel processing ${agents.length} agents with ${intensity}x intensity`);
 
   const results: EvolutionResult[] = [];
   let totalKnowledge = 0;
 
-  // All task types for parallel learning
-  const allTaskTypes = [
-    'financial_analysis', 'data_processing', 'creative_design', 'research',
-    'security_audit', 'communication', 'operations', 'strategy',
-    'technical_support', 'project_management', 'legal_review', 'hr_operations'
-  ];
+  const updates: AgentUpdate[] = [];
+  const learningEvents: LearningEvent[] = [];
+  const timestamp = new Date().toISOString();
 
-  const updates: any[] = [];
-  const learningEvents: any[] = [];
+  for (const agent of agents) {
+    const currentSpecs = agent.task_specializations ?? {};
+    const newSpecs = { ...currentSpecs };
+    let knowledgeGain = 0;
 
-  // Process all agents in parallel batches
-  const batchSize = 50;
-  for (let i = 0; i < agents.length; i += batchSize) {
-    const batch = agents.slice(i, i + batchSize);
-    
-    await Promise.all(batch.map(async (agent) => {
-      const currentSpecs = agent.task_specializations || {};
-      const newSpecs = { ...currentSpecs };
-      let knowledgeGain = 0;
+    const skillsToLearn = Math.floor(CONFIG.BASE_SKILLS_TO_LEARN + intensity * CONFIG.SKILLS_PER_INTENSITY);
+    const selectedTasks = selectRandom([...ALL_TASK_TYPES], skillsToLearn);
 
-      // Learn multiple skills simultaneously
-      const skillsToLearn = Math.floor(3 + intensity * 2);
-      const selectedTasks = allTaskTypes
-        .sort(() => Math.random() - 0.5)
-        .slice(0, skillsToLearn);
+    for (const taskType of selectedTasks) {
+      const current = (currentSpecs[taskType] as number) ?? 0;
+      const learningBoost = intensity * (CONFIG.PARALLEL_BOOST_BASE + Math.random() * CONFIG.PARALLEL_BOOST_VARIANCE);
 
-      for (const taskType of selectedTasks) {
-        const current = (currentSpecs[taskType] as number) || 0;
-        const learningBoost = intensity * (0.05 + Math.random() * 0.1);
-        
-        if (current < 1.0) {
-          newSpecs[taskType] = Math.min(1.0, current + learningBoost);
-          knowledgeGain += learningBoost;
-        }
+      if (current < CONFIG.MAX_SKILL_SCORE) {
+        newSpecs[taskType] = clamp(current + learningBoost, 0, CONFIG.MAX_SKILL_SCORE);
+        knowledgeGain += learningBoost;
       }
+    }
 
-      // Accelerate learning velocity
-      const newVelocity = Math.min(1.0, (agent.learning_velocity || 0.5) + (intensity * 0.02));
-      
-      updates.push({
-        id: agent.id,
-        task_specializations: newSpecs,
-        learning_velocity: newVelocity,
-        last_performance_update: new Date().toISOString()
-      });
+    const newVelocity = clamp(
+      (agent.learning_velocity ?? 0.5) + (intensity * CONFIG.VELOCITY_INCREMENT_PARALLEL),
+      0,
+      CONFIG.MAX_LEARNING_VELOCITY
+    );
 
-      learningEvents.push({
-        agent_id: agent.id,
-        event_type: 'hyper_parallel_learning',
-        event_data: { 
-          skillsLearned: skillsToLearn, 
-          knowledgeGain,
-          intensity,
-          parallelFactor: batch.length
-        },
-        impact_score: Math.min(1.0, knowledgeGain * 0.5)
-      });
+    updates.push({
+      id: agent.id,
+      task_specializations: newSpecs,
+      learning_velocity: newVelocity,
+      last_performance_update: timestamp
+    });
 
-      results.push({
-        agentId: agent.id,
-        agentName: agent.name,
-        previousScore: agent.success_rate || 0,
-        newScore: Math.min(1.0, (agent.success_rate || 0) + knowledgeGain * 0.05),
-        evolutionGain: knowledgeGain,
-        knowledgeTransferred: skillsToLearn,
-        competitionsWon: 0,
-        memoriesCrystallized: 0
-      });
+    learningEvents.push({
+      agent_id: agent.id,
+      event_type: 'hyper_parallel_learning',
+      event_data: { skillsLearned: skillsToLearn, knowledgeGain, intensity },
+      impact_score: clamp(knowledgeGain * 0.5, 0, 1)
+    });
 
-      totalKnowledge += knowledgeGain;
-    }));
+    results.push({
+      agentId: agent.id,
+      agentName: agent.name,
+      previousScore: agent.success_rate ?? 0,
+      newScore: clamp((agent.success_rate ?? 0) + knowledgeGain * 0.05, 0, 1),
+      evolutionGain: knowledgeGain,
+      knowledgeTransferred: skillsToLearn,
+      competitionsWon: 0,
+      memoriesCrystallized: 0
+    });
+
+    totalKnowledge += knowledgeGain;
   }
 
-  // Batch database updates
-  for (const update of updates) {
-    await supabase.from('sonic_agents').update({
-      task_specializations: update.task_specializations,
-      learning_velocity: update.learning_velocity,
-      last_performance_update: update.last_performance_update
-    }).eq('id', update.id);
-  }
+  await batchUpdateAgents(supabase, updates);
+  if (learningEvents.length > 0) await batchInsert(supabase, 'agent_learning_events', learningEvents);
 
-  if (learningEvents.length > 0) {
-    await supabase.from('agent_learning_events').insert(learningEvents);
-  }
+  await logger.info(`Hyper-Parallel complete: ${results.length} agents, ${totalKnowledge.toFixed(2)} knowledge gained`);
 
   return { results, knowledgeGained: totalKnowledge };
 }
 
-// ADVERSARIAL EVOLUTION: Agents compete to improve faster
 async function executeAdversarialEvolution(
-  agents: any[],
-  supabase: any,
-  intensity: number
+  agents: SonicAgent[],
+  supabase: SupabaseClient,
+  intensity: number,
+  logger: ServiceLogger
 ): Promise<{ results: EvolutionResult[], competitions: number }> {
-  console.log(`[Adversarial Evolution] Creating ${Math.floor(agents.length / 2)} competitions`);
+  await logger.info(`Adversarial Evolution creating ${Math.floor(agents.length / 2)} competitions`);
 
   const results: EvolutionResult[] = [];
   let totalCompetitions = 0;
 
-  // Shuffle and pair agents for competition
   const shuffled = [...agents].sort(() => Math.random() - 0.5);
-  const pairs: [any, any][] = [];
-  
+  const pairs: [SonicAgent, SonicAgent][] = [];
+
   for (let i = 0; i < shuffled.length - 1; i += 2) {
     pairs.push([shuffled[i], shuffled[i + 1]]);
   }
 
-  const updates: any[] = [];
-  const learningEvents: any[] = [];
-  const relationships: any[] = [];
+  const updates: AgentUpdate[] = [];
+  const learningEvents: LearningEvent[] = [];
+  const relationships: AgentRelationship[] = [];
+  const timestamp = new Date().toISOString();
 
   for (const [agentA, agentB] of pairs) {
-    // Determine winner based on performance metrics
     const scoreA = calculateCompetitiveScore(agentA);
     const scoreB = calculateCompetitiveScore(agentB);
-    
+
     const winner = scoreA >= scoreB ? agentA : agentB;
     const loser = scoreA >= scoreB ? agentB : agentA;
     const margin = Math.abs(scoreA - scoreB);
 
-    // Winner gets boost, loser learns from winner
-    const winnerBoost = intensity * 0.1 * (1 + margin);
-    const loserLearning = intensity * 0.15; // Loser learns more
+    const winnerBoost = intensity * CONFIG.ADVERSARIAL_WINNER_BOOST_BASE * (1 + margin);
+    const loserLearning = intensity * CONFIG.ADVERSARIAL_LOSER_LEARNING;
 
-    // Update winner
-    const winnerSpecs = winner.task_specializations || {};
+    const winnerSpecs = winner.task_specializations ?? {};
     const winnerNewSpecs = { ...winnerSpecs };
     for (const key of Object.keys(winnerNewSpecs)) {
-      winnerNewSpecs[key] = Math.min(1.0, (winnerNewSpecs[key] as number) + winnerBoost * 0.1);
+      winnerNewSpecs[key] = clamp((winnerNewSpecs[key] as number) + winnerBoost * 0.1, 0, CONFIG.MAX_SKILL_SCORE);
     }
 
-    // Loser absorbs winner's strengths
-    const loserSpecs = loser.task_specializations || {};
+    const loserSpecs = loser.task_specializations ?? {};
     const loserNewSpecs = { ...loserSpecs };
     for (const [key, value] of Object.entries(winnerSpecs)) {
-      const loserCurrent = (loserNewSpecs[key] as number) || 0;
+      const loserCurrent = (loserNewSpecs[key] as number) ?? 0;
       if ((value as number) > loserCurrent) {
-        loserNewSpecs[key] = Math.min(1.0, loserCurrent + loserLearning);
+        loserNewSpecs[key] = clamp(loserCurrent + loserLearning, 0, CONFIG.MAX_SKILL_SCORE);
       }
     }
 
     updates.push({
       id: winner.id,
       task_specializations: winnerNewSpecs,
-      success_rate: Math.min(1.0, (winner.success_rate || 0) + winnerBoost * 0.05),
-      last_performance_update: new Date().toISOString()
+      success_rate: clamp((winner.success_rate ?? 0) + winnerBoost * 0.05, 0, 1),
+      last_performance_update: timestamp
     });
 
     updates.push({
       id: loser.id,
       task_specializations: loserNewSpecs,
-      learning_velocity: Math.min(1.0, (loser.learning_velocity || 0.5) + loserLearning * 0.1),
-      last_performance_update: new Date().toISOString()
+      learning_velocity: clamp((loser.learning_velocity ?? 0.5) + loserLearning * 0.1, 0, CONFIG.MAX_LEARNING_VELOCITY),
+      last_performance_update: timestamp
     });
 
-    // Create competitive relationship
     relationships.push({
       agent_a_id: winner.id,
       agent_b_id: loser.id,
       relationship_type: 'competitive',
       synergy_score: 0.5 + margin,
-      metadata: {
-        competition_result: 'winner_a',
-        margin,
-        timestamp: new Date().toISOString()
-      }
+      metadata: { competition_result: 'winner_a', margin, timestamp }
     });
 
     learningEvents.push({
@@ -557,8 +636,8 @@ async function executeAdversarialEvolution(
     results.push({
       agentId: winner.id,
       agentName: winner.name,
-      previousScore: winner.success_rate || 0,
-      newScore: Math.min(1.0, (winner.success_rate || 0) + winnerBoost * 0.05),
+      previousScore: winner.success_rate ?? 0,
+      newScore: clamp((winner.success_rate ?? 0) + winnerBoost * 0.05, 0, 1),
       evolutionGain: winnerBoost,
       knowledgeTransferred: 0,
       competitionsWon: 1,
@@ -568,8 +647,8 @@ async function executeAdversarialEvolution(
     results.push({
       agentId: loser.id,
       agentName: loser.name,
-      previousScore: loser.success_rate || 0,
-      newScore: Math.min(1.0, (loser.success_rate || 0) + loserLearning * 0.02),
+      previousScore: loser.success_rate ?? 0,
+      newScore: clamp((loser.success_rate ?? 0) + loserLearning * 0.02, 0, 1),
       evolutionGain: loserLearning,
       knowledgeTransferred: Object.keys(winnerSpecs).length,
       competitionsWon: 0,
@@ -579,50 +658,40 @@ async function executeAdversarialEvolution(
     totalCompetitions++;
   }
 
-  // Batch updates
-  for (const update of updates) {
-    const updateData: any = { last_performance_update: update.last_performance_update };
-    if (update.task_specializations) updateData.task_specializations = update.task_specializations;
-    if (update.success_rate) updateData.success_rate = update.success_rate;
-    if (update.learning_velocity) updateData.learning_velocity = update.learning_velocity;
-    
-    await supabase.from('sonic_agents').update(updateData).eq('id', update.id);
-  }
+  await batchUpdateAgents(supabase, updates);
+  if (learningEvents.length > 0) await batchInsert(supabase, 'agent_learning_events', learningEvents);
 
-  if (learningEvents.length > 0) {
-    await supabase.from('agent_learning_events').insert(learningEvents);
-  }
-
-  // Upsert relationships
   for (const rel of relationships) {
     await supabase.from('agent_relationships').upsert(rel, { onConflict: 'agent_a_id,agent_b_id' });
   }
 
+  await logger.info(`Adversarial Evolution complete: ${totalCompetitions} competitions`);
+
   return { results, competitions: totalCompetitions };
 }
 
-// MEMORY CRYSTALLIZATION: Distill and propagate the most valuable learnings
 async function executeMemoryCrystallization(
-  agents: any[],
-  supabase: any,
-  intensity: number
+  agents: SonicAgent[],
+  supabase: SupabaseClient,
+  intensity: number,
+  logger: ServiceLogger
 ): Promise<{ crystallizations: number, knowledgeGained: number }> {
-  console.log(`[Memory Crystallization] Processing memories for ${agents.length} agents`);
+  await logger.info(`Memory Crystallization processing memories for ${agents.length} agents`);
 
   let totalCrystallizations = 0;
   let totalKnowledge = 0;
 
-  // Get high-value memories from top performers
   const topAgentIds = agents
-    .filter(a => (a.success_rate || 0) > 0.6)
+    .filter(a => (a.success_rate ?? 0) > 0.6)
     .slice(0, 50)
     .map(a => a.id);
 
   if (topAgentIds.length === 0) {
+    await logger.info('Memory Crystallization: No top performers found, skipping');
     return { crystallizations: 0, knowledgeGained: 0 };
   }
 
-  const { data: memories } = await supabase
+  const { data: memories, error: memoriesError } = await supabase
     .from('agent_memory')
     .select('*')
     .in('agent_id', topAgentIds)
@@ -630,48 +699,42 @@ async function executeMemoryCrystallization(
     .order('importance_score', { ascending: false })
     .limit(100);
 
-  if (!memories?.length) {
+  if (memoriesError || !memories?.length) {
+    await logger.info('Memory Crystallization: No high-value memories found');
     return { crystallizations: 0, knowledgeGained: 0 };
   }
 
-  // Crystallize memories into universal knowledge
-  const crystalMemories: any[] = [];
+  const crystalMemories: AgentMemory[] = [];
   const crystalizedContent = new Set<string>();
 
   for (const memory of memories) {
-    // Skip duplicates
     const contentHash = memory.content.substring(0, 50);
     if (crystalizedContent.has(contentHash)) continue;
     crystalizedContent.add(contentHash);
 
-    // Create crystallized version with boosted importance
-    const crystallized = {
+    crystalMemories.push({
       agent_id: memory.agent_id,
       user_id: memory.user_id,
       memory_type: 'crystallized',
       content: `[CRYSTALLIZED] ${memory.content}`,
-      importance_score: Math.min(1.0, memory.importance_score + intensity * 0.1),
+      importance_score: clamp(memory.importance_score + intensity * CONFIG.CRYSTAL_IMPORTANCE_BOOST, 0, 1),
       context: {
         ...memory.context,
         crystallized: true,
         original_importance: memory.importance_score,
         crystallization_intensity: intensity
       }
-    };
+    });
 
-    crystalMemories.push(crystallized);
     totalCrystallizations++;
   }
 
-  // Propagate crystallized knowledge to all agents
-  const propagatedMemories: any[] = [];
-  const updatePromises: Promise<any>[] = [];
+  const propagatedMemories: AgentMemory[] = [];
+  const updates: AgentUpdate[] = [];
+  const timestamp = new Date().toISOString();
 
   for (const agent of agents) {
-    // Each agent receives subset of crystallized knowledge
-    const toReceive = crystalMemories
-      .sort(() => Math.random() - 0.5)
-      .slice(0, Math.ceil(intensity * 3));
+    const toReceive = selectRandom(crystalMemories, Math.ceil(intensity * 3));
 
     for (const crystal of toReceive) {
       if (crystal.agent_id !== agent.id) {
@@ -680,43 +743,32 @@ async function executeMemoryCrystallization(
           user_id: agent.user_id,
           memory_type: 'received_crystal',
           content: crystal.content.replace('[CRYSTALLIZED]', '[RECEIVED]'),
-          importance_score: crystal.importance_score * 0.8,
-          context: {
-            source_agent: crystal.agent_id,
-            propagated: true
-          }
+          importance_score: crystal.importance_score * CONFIG.CRYSTAL_PROPAGATION_FACTOR,
+          context: { source_agent: crystal.agent_id, propagated: true }
         });
         totalKnowledge += 0.05;
       }
     }
 
-    // Boost agent's learning velocity from crystallization
-    const newVelocity = Math.min(1.0, (agent.learning_velocity || 0.5) + intensity * 0.015);
-    updatePromises.push(
-      supabase.from('sonic_agents')
-        .update({ learning_velocity: newVelocity, last_performance_update: new Date().toISOString() })
-        .eq('id', agent.id)
+    const newVelocity = clamp(
+      (agent.learning_velocity ?? 0.5) + intensity * CONFIG.VELOCITY_INCREMENT_CRYSTAL,
+      0,
+      CONFIG.MAX_LEARNING_VELOCITY
     );
+
+    updates.push({
+      id: agent.id,
+      learning_velocity: newVelocity,
+      last_performance_update: timestamp
+    });
   }
 
-  // Insert crystallized memories
-  if (crystalMemories.length > 0) {
-    await supabase.from('agent_memory').insert(crystalMemories);
-  }
+  if (crystalMemories.length > 0) await batchInsert(supabase, 'agent_memory', crystalMemories);
+  if (propagatedMemories.length > 0) await batchInsert(supabase, 'agent_memory', propagatedMemories);
+  await batchUpdateAgents(supabase, updates);
 
-  // Insert propagated memories in batches
-  const batchSize = 100;
-  for (let i = 0; i < propagatedMemories.length; i += batchSize) {
-    const batch = propagatedMemories.slice(i, i + batchSize);
-    await supabase.from('agent_memory').insert(batch);
-  }
-
-  // Execute velocity updates
-  await Promise.all(updatePromises);
-
-  // Log crystallization event
   await supabase.from('agent_learning_events').insert({
-    agent_id: agents[0]?.id || '00000000-0000-0000-0000-000000000000',
+    agent_id: agents[0]?.id ?? '00000000-0000-0000-0000-000000000000',
     event_type: 'memory_crystallization_complete',
     event_data: {
       crystallized: totalCrystallizations,
@@ -724,261 +776,206 @@ async function executeMemoryCrystallization(
       agentsAffected: agents.length,
       intensity
     },
-    impact_score: Math.min(1.0, totalCrystallizations * 0.02)
+    impact_score: clamp(totalCrystallizations * 0.02, 0, 1)
   });
+
+  await logger.info(`Memory Crystallization complete: ${totalCrystallizations} crystallized, ${propagatedMemories.length} propagated`);
 
   return { crystallizations: totalCrystallizations, knowledgeGained: totalKnowledge };
 }
 
-function calculateCompetitiveScore(agent: any): number {
-  const successRate = agent.success_rate || 0;
-  const confidence = agent.avg_confidence || 0;
-  const experience = Math.min(1.0, (agent.total_tasks_completed || 0) / 100);
-  const velocity = agent.learning_velocity || 0.5;
-  const specializationDepth = Object.keys(agent.task_specializations || {}).length / 12;
-
-  return (
-    successRate * 0.3 +
-    confidence * 0.2 +
-    experience * 0.2 +
-    velocity * 0.15 +
-    specializationDepth * 0.15
-  );
-}
-
-// WEB KNOWLEDGE ABSORPTION: Real-time web information ingestion via Perplexity
 async function executeWebKnowledgeAbsorption(
-  agents: any[],
-  supabase: any,
-  intensity: number
+  agents: SonicAgent[],
+  supabase: SupabaseClient,
+  intensity: number,
+  logger: ServiceLogger
 ): Promise<{ knowledgeGained: number, topicsAbsorbed: number }> {
-  console.log(`[Web Knowledge Absorption] Fetching real-time web knowledge for ${agents.length} agents`);
+  await logger.info(`Web Knowledge Absorption starting for ${agents.length} agents`);
 
   const perplexityApiKey = Deno.env.get('PERPLEXITY_API_KEY');
   if (!perplexityApiKey) {
-    console.log('[Web Knowledge Absorption] Perplexity API key not configured, skipping');
+    await logger.warn('Perplexity API key not configured, skipping web knowledge absorption');
     return { knowledgeGained: 0, topicsAbsorbed: 0 };
   }
 
   let totalKnowledge = 0;
   let topicsAbsorbed = 0;
 
-  // Group agents by sector for targeted knowledge acquisition
-  const sectorGroups: Record<string, any[]> = {};
-  for (const agent of agents) {
-    const sector = agent.sector || 'GENERAL';
-    if (!sectorGroups[sector]) sectorGroups[sector] = [];
-    sectorGroups[sector].push(agent);
-  }
+  const sectorGroups = groupBySector(agents);
+  const memories: AgentMemory[] = [];
+  const learningEvents: LearningEvent[] = [];
+  const updates: AgentUpdate[] = [];
+  const timestamp = new Date().toISOString();
 
-  const memories: any[] = [];
-  const learningEvents: any[] = [];
-  const updates: any[] = [];
-
-  // Fetch web knowledge for each sector (limit API calls based on intensity)
   const sectorsToQuery = Object.keys(sectorGroups).slice(0, Math.ceil(intensity * 3));
-  
+
   for (const sector of sectorsToQuery) {
-    const topics = SECTOR_KNOWLEDGE_TOPICS[sector] || SECTOR_KNOWLEDGE_TOPICS.GENERAL;
+    const topics = SECTOR_KNOWLEDGE_TOPICS[sector] ?? SECTOR_KNOWLEDGE_TOPICS.GENERAL;
     const selectedTopic = topics[Math.floor(Math.random() * topics.length)];
 
     try {
-      console.log(`[Web Knowledge] Querying: "${selectedTopic}" for sector ${sector}`);
-      
-      const response = await fetch('https://api.perplexity.ai/chat/completions', {
-        method: 'POST',
-        headers: {
-          'Authorization': `Bearer ${perplexityApiKey}`,
-          'Content-Type': 'application/json',
-        },
-        body: JSON.stringify({
-          model: 'sonar',
-          messages: [
-            { 
-              role: 'system', 
-              content: 'You are a knowledge synthesizer. Provide concise, actionable insights that can be used to enhance AI agent capabilities. Focus on practical applications, emerging patterns, and strategic implications. Be specific and data-driven.'
-            },
-            { 
-              role: 'user', 
-              content: `Provide the latest insights on: ${selectedTopic}. Focus on actionable intelligence, emerging trends, key statistics, and practical applications for AI systems operating in the ${sector.toLowerCase()} domain.`
-            }
-          ],
-          max_tokens: 500,
-          temperature: 0.3,
-          search_recency_filter: 'week' // Focus on recent information
-        }),
+      await logger.debug(`Querying web knowledge: "${selectedTopic}" for sector ${sector}`);
+
+      const knowledge = await withRetry(async () => {
+        const response = await fetch('https://api.perplexity.ai/chat/completions', {
+          method: 'POST',
+          headers: {
+            'Authorization': `Bearer ${perplexityApiKey}`,
+            'Content-Type': 'application/json',
+          },
+          body: JSON.stringify({
+            model: 'sonar',
+            messages: [
+              {
+                role: 'system',
+                content: 'You are a knowledge synthesizer. Provide concise, actionable insights that can be used to enhance AI agent capabilities. Focus on practical applications, emerging patterns, and strategic implications. Be specific and data-driven.'
+              },
+              {
+                role: 'user',
+                content: `Provide the latest insights on: ${selectedTopic}. Focus on actionable intelligence, emerging trends, key statistics, and practical applications for AI systems operating in the ${sector.toLowerCase()} domain.`
+              }
+            ],
+            max_tokens: 500,
+            temperature: 0.3,
+            search_recency_filter: 'week'
+          }),
+        });
+
+        if (!response.ok) throw new Error(`Perplexity API error: ${response.status}`);
+
+        const data = await response.json();
+        return {
+          content: data.choices?.[0]?.message?.content,
+          citations: data.citations ?? []
+        };
       });
 
-      if (!response.ok) {
-        console.log(`[Web Knowledge] API error for ${sector}: ${response.status}`);
-        continue;
-      }
-
-      const data = await response.json();
-      const knowledge = data.choices?.[0]?.message?.content;
-      const citations = data.citations || [];
-
-      if (knowledge) {
+      if (knowledge.content) {
         topicsAbsorbed++;
-        const knowledgeValue = Math.min(1.0, 0.3 + intensity * 0.1);
-        
-        // Distribute knowledge to agents in this sector
+        const knowledgeValue = clamp(CONFIG.WEB_KNOWLEDGE_BASE + intensity * CONFIG.WEB_KNOWLEDGE_PER_INTENSITY, 0, 1);
+
         const sectorAgents = sectorGroups[sector];
         const knowledgePerAgent = knowledgeValue / sectorAgents.length;
 
         for (const agent of sectorAgents) {
-          // Create memory with web-sourced knowledge
           memories.push({
             agent_id: agent.id,
             user_id: agent.user_id,
             memory_type: 'web_knowledge',
-            content: `[WEB INSIGHT - ${selectedTopic}] ${knowledge.substring(0, 500)}`,
+            content: `[WEB INSIGHT - ${selectedTopic}] ${knowledge.content.substring(0, 500)}`,
             importance_score: knowledgeValue,
             context: {
               source: 'perplexity_search',
               topic: selectedTopic,
               sector,
-              citations: citations.slice(0, 3),
-              timestamp: new Date().toISOString()
+              citations: knowledge.citations.slice(0, 3),
+              timestamp
             }
           });
 
-          // Update agent's task specializations based on absorbed knowledge
-          const currentSpecs = agent.task_specializations || {};
+          const currentSpecs = agent.task_specializations ?? {};
           const newSpecs = { ...currentSpecs };
-          const researchBoost = intensity * 0.02;
-          
-          // Boost research and relevant domain skills
-          newSpecs['research'] = Math.min(1.0, (newSpecs['research'] || 0) + researchBoost);
-          newSpecs['data_processing'] = Math.min(1.0, (newSpecs['data_processing'] || 0) + researchBoost * 0.5);
-          
+          const researchBoost = intensity * CONFIG.RESEARCH_BOOST_BASE;
+
+          newSpecs['research'] = clamp((newSpecs['research'] ?? 0) + researchBoost, 0, CONFIG.MAX_SKILL_SCORE);
+          newSpecs['data_processing'] = clamp((newSpecs['data_processing'] ?? 0) + researchBoost * 0.5, 0, CONFIG.MAX_SKILL_SCORE);
+
           updates.push({
             id: agent.id,
             task_specializations: newSpecs,
-            learning_velocity: Math.min(1.0, (agent.learning_velocity || 0.5) + intensity * 0.01),
-            last_performance_update: new Date().toISOString()
+            learning_velocity: clamp((agent.learning_velocity ?? 0.5) + intensity * CONFIG.VELOCITY_INCREMENT_WEB, 0, CONFIG.MAX_LEARNING_VELOCITY),
+            last_performance_update: timestamp
           });
 
           totalKnowledge += knowledgePerAgent;
         }
 
-        // Log learning event for this sector
         learningEvents.push({
-          agent_id: sectorAgents[0]?.id || '00000000-0000-0000-0000-000000000000',
+          agent_id: sectorAgents[0]?.id ?? '00000000-0000-0000-0000-000000000000',
           event_type: 'web_knowledge_absorption',
           event_data: {
             topic: selectedTopic,
             sector,
             agentsEnriched: sectorAgents.length,
             knowledgeValue,
-            citationCount: citations.length,
-            contentLength: knowledge.length
+            citationCount: knowledge.citations.length,
+            contentLength: knowledge.content.length
           },
           impact_score: knowledgeValue
         });
 
-        console.log(`[Web Knowledge] Absorbed "${selectedTopic}" for ${sectorAgents.length} ${sector} agents`);
+        await logger.debug(`Absorbed "${selectedTopic}" for ${sectorAgents.length} ${sector} agents`);
       }
 
     } catch (error) {
-      console.error(`[Web Knowledge] Error fetching knowledge for ${sector}:`, error);
+      await logger.error(`Error fetching web knowledge for ${sector}`, { error: String(error) });
     }
 
-    // Small delay between API calls to avoid rate limiting
-    await new Promise(resolve => setTimeout(resolve, 500));
+    await sleep(CONFIG.API_CALL_DELAY_MS);
   }
 
-  // Batch insert memories
-  if (memories.length > 0) {
-    const batchSize = 100;
-    for (let i = 0; i < memories.length; i += batchSize) {
-      const batch = memories.slice(i, i + batchSize);
-      await supabase.from('agent_memory').insert(batch);
-    }
-  }
+  if (memories.length > 0) await batchInsert(supabase, 'agent_memory', memories);
+  if (learningEvents.length > 0) await batchInsert(supabase, 'agent_learning_events', learningEvents);
+  await batchUpdateAgents(supabase, updates);
 
-  // Batch insert learning events
-  if (learningEvents.length > 0) {
-    await supabase.from('agent_learning_events').insert(learningEvents);
-  }
-
-  // Batch update agents
-  for (const update of updates) {
-    await supabase.from('sonic_agents').update({
-      task_specializations: update.task_specializations,
-      learning_velocity: update.learning_velocity,
-      last_performance_update: update.last_performance_update
-    }).eq('id', update.id);
-  }
-
-  console.log(`[Web Knowledge Absorption] Complete: ${topicsAbsorbed} topics absorbed, ${totalKnowledge.toFixed(2)} knowledge gained`);
+  await logger.info(`Web Knowledge Absorption complete: ${topicsAbsorbed} topics, ${totalKnowledge.toFixed(2)} knowledge gained`);
 
   return { knowledgeGained: totalKnowledge, topicsAbsorbed };
 }
 
-// VISUAL INTELLIGENCE: Image and video recognition learning using Gemini multimodal
 async function executeVisualIntelligence(
-  agents: any[],
-  supabase: any,
-  intensity: number
+  agents: SonicAgent[],
+  supabase: SupabaseClient,
+  intensity: number,
+  logger: ServiceLogger
 ): Promise<{ knowledgeGained: number, visualPatternsLearned: number }> {
-  console.log(`[Visual Intelligence] Processing visual learning for ${agents.length} agents`);
+  await logger.info(`Visual Intelligence starting for ${agents.length} agents`);
 
   const lovableApiKey = Deno.env.get('LOVABLE_API_KEY');
   if (!lovableApiKey) {
-    console.log('[Visual Intelligence] Lovable API key not configured, skipping');
+    await logger.warn('Lovable API key not configured, skipping visual intelligence');
     return { knowledgeGained: 0, visualPatternsLearned: 0 };
   }
 
   let totalKnowledge = 0;
   let visualPatternsLearned = 0;
 
-  // Group agents by sector
-  const sectorGroups: Record<string, any[]> = {};
-  for (const agent of agents) {
-    const sector = agent.sector || 'GENERAL';
-    if (!sectorGroups[sector]) sectorGroups[sector] = [];
-    sectorGroups[sector].push(agent);
-  }
+  const sectorGroups = groupBySector(agents);
+  const memories: AgentMemory[] = [];
+  const learningEvents: LearningEvent[] = [];
+  const updates: AgentUpdate[] = [];
+  const timestamp = new Date().toISOString();
 
-  const memories: any[] = [];
-  const learningEvents: any[] = [];
-  const updates: any[] = [];
-
-  // Process visual intelligence for each sector (limit based on intensity)
   const sectorsToProcess = Object.keys(sectorGroups).slice(0, Math.ceil(intensity * 2));
-  
+
   for (const sector of sectorsToProcess) {
-    const visualContext = SECTOR_VISUAL_CONTEXTS[sector] || SECTOR_VISUAL_CONTEXTS.GENERAL;
-    
-    // Select prompts for image analysis and video scenarios
+    const visualContext = SECTOR_VISUAL_CONTEXTS[sector] ?? SECTOR_VISUAL_CONTEXTS.GENERAL;
     const imagePrompt = visualContext.imagePrompts[Math.floor(Math.random() * visualContext.imagePrompts.length)];
     const videoScenario = visualContext.videoScenarios[Math.floor(Math.random() * visualContext.videoScenarios.length)];
 
     try {
-      console.log(`[Visual Intelligence] Processing sector ${sector} with prompt: "${imagePrompt}"`);
-      
-      // Use Gemini's vision capabilities to analyze visual patterns conceptually
-      // Since we can't actually fetch images, we simulate visual learning through pattern analysis
-      const response = await fetch('https://ai.gateway.lovable.dev/v1/chat/completions', {
-        method: 'POST',
-        headers: {
-          'Authorization': `Bearer ${lovableApiKey}`,
-          'Content-Type': 'application/json',
-        },
-        body: JSON.stringify({
-          model: 'google/gemini-2.5-flash',
-          messages: [
-            { 
-              role: 'system', 
-              content: `You are a visual intelligence trainer for AI agents in the ${sector.toLowerCase()} domain. 
+      await logger.debug(`Processing visual intelligence for sector ${sector}: "${imagePrompt}"`);
+
+      const visualKnowledge = await withRetry(async () => {
+        const response = await fetch('https://ai.gateway.lovable.dev/v1/chat/completions', {
+          method: 'POST',
+          headers: {
+            'Authorization': `Bearer ${lovableApiKey}`,
+            'Content-Type': 'application/json',
+          },
+          body: JSON.stringify({
+            model: 'google/gemini-2.5-flash',
+            messages: [
+              {
+                role: 'system',
+                content: `You are a visual intelligence trainer for AI agents in the ${sector.toLowerCase()} domain.
 Your job is to teach agents how to recognize and analyze visual patterns, diagrams, charts, and video content.
 Provide detailed pattern recognition insights, visual analysis techniques, and interpretation frameworks.
 Be specific about shapes, layouts, color meanings, motion patterns, and visual hierarchies.`
-            },
-            { 
-              role: 'user', 
-              content: `Teach an AI agent how to visually analyze and interpret: "${imagePrompt}"
+              },
+              {
+                role: 'user',
+                content: `Teach an AI agent how to visually analyze and interpret: "${imagePrompt}"
 
 Additionally, explain how to analyze video content showing: "${videoScenario}"
 
@@ -990,30 +987,27 @@ Provide:
 5. Context interpretation strategies
 6. Common visual indicators and their meanings
 7. Decision-making based on visual data`
-            }
-          ],
-          max_tokens: 800,
-          temperature: 0.4,
-        }),
+              }
+            ],
+            max_tokens: 800,
+            temperature: 0.4,
+          }),
+        });
+
+        if (!response.ok) throw new Error(`Lovable API error: ${response.status}`);
+
+        const data = await response.json();
+        return data.choices?.[0]?.message?.content;
       });
-
-      if (!response.ok) {
-        console.log(`[Visual Intelligence] API error for ${sector}: ${response.status}`);
-        continue;
-      }
-
-      const data = await response.json();
-      const visualKnowledge = data.choices?.[0]?.message?.content;
 
       if (visualKnowledge) {
         visualPatternsLearned++;
-        const knowledgeValue = Math.min(1.0, 0.35 + intensity * 0.12);
-        
+        const knowledgeValue = clamp(CONFIG.VISUAL_KNOWLEDGE_BASE + intensity * CONFIG.VISUAL_KNOWLEDGE_PER_INTENSITY, 0, 1);
+
         const sectorAgents = sectorGroups[sector];
         const knowledgePerAgent = knowledgeValue / sectorAgents.length;
 
         for (const agent of sectorAgents) {
-          // Create memory with visual intelligence knowledge
           memories.push({
             agent_id: agent.id,
             user_id: agent.user_id,
@@ -1026,34 +1020,31 @@ Provide:
               videoScenario,
               sector,
               learningType: 'visual_pattern_recognition',
-              timestamp: new Date().toISOString()
+              timestamp
             }
           });
 
-          // Update agent's visual and analytical skills
-          const currentSpecs = agent.task_specializations || {};
+          const currentSpecs = agent.task_specializations ?? {};
           const newSpecs = { ...currentSpecs };
-          const visualBoost = intensity * 0.025;
-          
-          // Boost visual processing and analysis skills
-          newSpecs['visual_analysis'] = Math.min(1.0, (newSpecs['visual_analysis'] || 0) + visualBoost);
-          newSpecs['pattern_recognition'] = Math.min(1.0, (newSpecs['pattern_recognition'] || 0) + visualBoost * 0.8);
-          newSpecs['data_visualization'] = Math.min(1.0, (newSpecs['data_visualization'] || 0) + visualBoost * 0.6);
-          newSpecs['video_analysis'] = Math.min(1.0, (newSpecs['video_analysis'] || 0) + visualBoost * 0.7);
-          
+          const visualBoost = intensity * CONFIG.VISUAL_BOOST_BASE;
+
+          newSpecs['visual_analysis'] = clamp((newSpecs['visual_analysis'] ?? 0) + visualBoost, 0, CONFIG.MAX_SKILL_SCORE);
+          newSpecs['pattern_recognition'] = clamp((newSpecs['pattern_recognition'] ?? 0) + visualBoost * 0.8, 0, CONFIG.MAX_SKILL_SCORE);
+          newSpecs['data_visualization'] = clamp((newSpecs['data_visualization'] ?? 0) + visualBoost * 0.6, 0, CONFIG.MAX_SKILL_SCORE);
+          newSpecs['video_analysis'] = clamp((newSpecs['video_analysis'] ?? 0) + visualBoost * 0.7, 0, CONFIG.MAX_SKILL_SCORE);
+
           updates.push({
             id: agent.id,
             task_specializations: newSpecs,
-            learning_velocity: Math.min(1.0, (agent.learning_velocity || 0.5) + intensity * 0.012),
-            last_performance_update: new Date().toISOString()
+            learning_velocity: clamp((agent.learning_velocity ?? 0.5) + intensity * CONFIG.VELOCITY_INCREMENT_VISUAL, 0, CONFIG.MAX_LEARNING_VELOCITY),
+            last_performance_update: timestamp
           });
 
           totalKnowledge += knowledgePerAgent;
         }
 
-        // Log learning event
         learningEvents.push({
-          agent_id: sectorAgents[0]?.id || '00000000-0000-0000-0000-000000000000',
+          agent_id: sectorAgents[0]?.id ?? '00000000-0000-0000-0000-000000000000',
           event_type: 'visual_intelligence_learning',
           event_data: {
             imagePrompt,
@@ -1067,41 +1058,183 @@ Provide:
           impact_score: knowledgeValue
         });
 
-        console.log(`[Visual Intelligence] Learned "${imagePrompt}" for ${sectorAgents.length} ${sector} agents`);
+        await logger.debug(`Learned "${imagePrompt}" for ${sectorAgents.length} ${sector} agents`);
       }
 
     } catch (error) {
-      console.error(`[Visual Intelligence] Error for ${sector}:`, error);
+      await logger.error(`Error in visual intelligence for ${sector}`, { error: String(error) });
     }
 
-    // Rate limit protection
-    await new Promise(resolve => setTimeout(resolve, 300));
+    await sleep(CONFIG.VISUAL_API_DELAY_MS);
   }
 
-  // Batch insert memories
-  if (memories.length > 0) {
-    const batchSize = 100;
-    for (let i = 0; i < memories.length; i += batchSize) {
-      const batch = memories.slice(i, i + batchSize);
-      await supabase.from('agent_memory').insert(batch);
-    }
-  }
+  if (memories.length > 0) await batchInsert(supabase, 'agent_memory', memories);
+  if (learningEvents.length > 0) await batchInsert(supabase, 'agent_learning_events', learningEvents);
+  await batchUpdateAgents(supabase, updates);
 
-  // Batch insert learning events
-  if (learningEvents.length > 0) {
-    await supabase.from('agent_learning_events').insert(learningEvents);
-  }
-
-  // Batch update agents
-  for (const update of updates) {
-    await supabase.from('sonic_agents').update({
-      task_specializations: update.task_specializations,
-      learning_velocity: update.learning_velocity,
-      last_performance_update: update.last_performance_update
-    }).eq('id', update.id);
-  }
-
-  console.log(`[Visual Intelligence] Complete: ${visualPatternsLearned} patterns learned, ${totalKnowledge.toFixed(2)} knowledge gained`);
+  await logger.info(`Visual Intelligence complete: ${visualPatternsLearned} patterns, ${totalKnowledge.toFixed(2)} knowledge gained`);
 
   return { knowledgeGained: totalKnowledge, visualPatternsLearned };
 }
+
+// ============================================================================
+// Main Handler
+// ============================================================================
+
+Deno.serve(async (req) => {
+  if (req.method === 'OPTIONS') {
+    return new Response(null, { headers: corsHeaders });
+  }
+
+  const startTime = Date.now();
+  const requestId = crypto.randomUUID();
+
+  try {
+    const supabaseUrl = Deno.env.get('SUPABASE_URL');
+    const supabaseServiceKey = Deno.env.get('SUPABASE_SERVICE_ROLE_KEY');
+
+    if (!supabaseUrl || !supabaseServiceKey) {
+      throw new Error('Missing required environment variables: SUPABASE_URL or SUPABASE_SERVICE_ROLE_KEY');
+    }
+
+    const supabase = createClient(supabaseUrl, supabaseServiceKey);
+
+    const body = await req.json().catch(() => ({}));
+    const params = validateRequest(body);
+
+    const logger = new ServiceLogger(
+      supabase,
+      requestId,
+      params.userId,
+      null,
+      'hyper-evolution'
+    );
+
+    await logger.info(`Starting ${params.mode} mode`, {
+      batch: params.batchSize,
+      intensity: params.intensityMultiplier,
+      cycles: params.evolutionCycles
+    });
+
+    const allResults: EvolutionResult[] = [];
+    let totalKnowledgeGained = 0;
+    let totalCompetitions = 0;
+    let totalCrystallizations = 0;
+
+    for (let cycle = 0; cycle < params.evolutionCycles; cycle++) {
+      await logger.info(`Cycle ${cycle + 1}/${params.evolutionCycles}`);
+
+      let query = supabase
+        .from('sonic_agents')
+        .select('id, name, sector, status, learning_velocity, task_specializations, success_rate, total_tasks_completed, avg_confidence, user_id')
+        .order('last_performance_update', { ascending: true, nullsFirst: true })
+        .limit(params.batchSize);
+
+      if (params.targetSector) query = query.eq('sector', params.targetSector);
+      if (params.userId) query = query.eq('user_id', params.userId);
+
+      const { data: agentsData, error } = await query;
+
+      if (error) throw new Error(`Failed to fetch agents: ${error.message}`);
+      if (!agentsData?.length) {
+        await logger.info('No agents found for this cycle, continuing');
+        continue;
+      }
+
+      const agents = agentsData as SonicAgent[];
+      const { mode, intensityMultiplier } = params;
+
+      if (mode === 'full_acceleration' || mode === 'collective') {
+        const collectiveResults = await executeCollectiveIntelligence(agents, supabase, intensityMultiplier, logger);
+        allResults.push(...collectiveResults.results);
+        totalKnowledgeGained += collectiveResults.knowledgeGained;
+      }
+
+      if (mode === 'full_acceleration' || mode === 'hyper_parallel') {
+        const parallelResults = await executeHyperParallelLearning(agents, supabase, intensityMultiplier, logger);
+        allResults.push(...parallelResults.results);
+        totalKnowledgeGained += parallelResults.knowledgeGained;
+      }
+
+      if (mode === 'full_acceleration' || mode === 'adversarial') {
+        const adversarialResults = await executeAdversarialEvolution(agents, supabase, intensityMultiplier, logger);
+        allResults.push(...adversarialResults.results);
+        totalCompetitions += adversarialResults.competitions;
+      }
+
+      if (mode === 'full_acceleration' || mode === 'crystallization') {
+        const crystalResults = await executeMemoryCrystallization(agents, supabase, intensityMultiplier, logger);
+        totalCrystallizations += crystalResults.crystallizations;
+        totalKnowledgeGained += crystalResults.knowledgeGained;
+      }
+
+      if (mode === 'full_acceleration' || mode === 'web_knowledge') {
+        const webResults = await executeWebKnowledgeAbsorption(agents, supabase, intensityMultiplier, logger);
+        totalKnowledgeGained += webResults.knowledgeGained;
+      }
+
+      if (mode === 'full_acceleration' || mode === 'visual_intelligence') {
+        const visualResults = await executeVisualIntelligence(agents, supabase, intensityMultiplier, logger);
+        totalKnowledgeGained += visualResults.knowledgeGained;
+      }
+    }
+
+    const duration = Date.now() - startTime;
+
+    const firstAgentId = allResults[0]?.agentId ?? '00000000-0000-0000-0000-000000000000';
+    await supabase.from('agent_learning_events').insert({
+      agent_id: firstAgentId,
+      event_type: 'hyper_evolution_complete',
+      event_data: {
+        request_id: requestId,
+        mode: params.mode,
+        totalAgents: allResults.length,
+        totalCycles: params.evolutionCycles,
+        totalKnowledgeGained,
+        totalCompetitions,
+        totalCrystallizations,
+        durationMs: duration,
+        intensityMultiplier: params.intensityMultiplier,
+        timestamp: new Date().toISOString()
+      },
+      impact_score: clamp(totalKnowledgeGained / 100, 0, 1)
+    });
+
+    const uniqueAgents = new Set(allResults.map(r => r.agentId)).size;
+    const averageGain = allResults.length > 0
+      ? allResults.reduce((sum, r) => sum + r.evolutionGain, 0) / allResults.length
+      : 0;
+
+    const summary = {
+      mode: params.mode,
+      totalAgentsEvolved: uniqueAgents,
+      evolutionCycles: params.evolutionCycles,
+      totalKnowledgeGained: Math.round(totalKnowledgeGained * 100) / 100,
+      totalCompetitions,
+      totalCrystallizations,
+      averageEvolutionGain: Math.round(averageGain * 100) / 100,
+      durationMs: duration,
+      evolutionRate: `${Math.round((allResults.length / (duration / 1000)) * 10) / 10} agents/sec`
+    };
+
+    await logger.info('Evolution complete', summary);
+
+    return new Response(JSON.stringify({
+      success: true,
+      message: `Hyper-evolution complete: ${summary.totalAgentsEvolved} agents evolved in ${summary.evolutionCycles} cycles`,
+      summary,
+      topEvolutions: allResults.sort((a, b) => b.evolutionGain - a.evolutionGain).slice(0, 10)
+    }), { headers: { ...corsHeaders, 'Content-Type': 'application/json' } });
+
+  } catch (error) {
+    console.error('[Hyper-Evolution] Error:', error);
+    return new Response(JSON.stringify({
+      success: false,
+      error: error instanceof Error ? error.message : 'Unknown error',
+      requestId
+    }), {
+      status: 500,
+      headers: { ...corsHeaders, 'Content-Type': 'application/json' }
+    });
+  }
+});
