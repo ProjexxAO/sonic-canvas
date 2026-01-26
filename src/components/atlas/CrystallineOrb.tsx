@@ -18,30 +18,45 @@ interface CrystallineOrbProps {
 function GoldenCore({ volume, isActive }: { volume: number; isActive: boolean }) {
   const coreRef = useRef<THREE.Mesh>(null);
   const glowRef = useRef<THREE.Mesh>(null);
+  const outerGlowRef = useRef<THREE.Mesh>(null);
   
   useFrame((state) => {
     const time = state.clock.elapsedTime;
-    const pulse = 1 + Math.sin(time * 2) * 0.1 * (1 + volume * 0.5);
+    const pulse = 1 + Math.sin(time * 2) * 0.15 * (1 + volume * 0.5);
     
     if (coreRef.current) {
-      coreRef.current.scale.setScalar(0.25 * pulse);
+      coreRef.current.scale.setScalar(0.3 * pulse);
     }
     if (glowRef.current) {
-      glowRef.current.scale.setScalar(0.5 * pulse);
+      glowRef.current.scale.setScalar(0.55 * pulse);
+    }
+    if (outerGlowRef.current) {
+      outerGlowRef.current.scale.setScalar(0.85 * pulse);
     }
   });
 
-  const coreIntensity = isActive ? 1 : 0.4;
+  const intensity = isActive ? 1 : 0.6;
 
   return (
     <group>
-      {/* Outer glow */}
+      {/* Outer atmospheric glow */}
+      <mesh ref={outerGlowRef}>
+        <sphereGeometry args={[1, 32, 32]} />
+        <meshBasicMaterial
+          color="#ff8833"
+          transparent
+          opacity={0.15 * intensity}
+          depthWrite={false}
+          blending={THREE.AdditiveBlending}
+        />
+      </mesh>
+      {/* Mid glow */}
       <mesh ref={glowRef}>
         <sphereGeometry args={[1, 32, 32]} />
         <meshBasicMaterial
-          color="#ffaa44"
+          color="#ffcc66"
           transparent
-          opacity={0.3 * coreIntensity}
+          opacity={0.4 * intensity}
           depthWrite={false}
           blending={THREE.AdditiveBlending}
         />
@@ -50,40 +65,42 @@ function GoldenCore({ volume, isActive }: { volume: number; isActive: boolean })
       <mesh ref={coreRef}>
         <sphereGeometry args={[1, 32, 32]} />
         <meshBasicMaterial
-          color="#ffe4aa"
+          color="#ffe8cc"
           transparent
-          opacity={0.9 * coreIntensity}
+          opacity={0.95 * intensity}
           blending={THREE.AdditiveBlending}
         />
       </mesh>
       <pointLight 
-        color="#ffcc66" 
-        intensity={isActive ? 3 + volume * 2 : 1} 
-        distance={5} 
+        color="#ffaa44" 
+        intensity={isActive ? 4 + volume * 3 : 2} 
+        distance={6} 
         decay={2} 
       />
     </group>
   );
 }
 
-// Thick tubular energy ribbon
-function EnergyTube({ 
-  color, 
-  radius, 
+// Individual torus knot ribbon - ALWAYS VISIBLE
+function TorusKnotRibbon({
+  color,
+  scale,
   tubeRadius,
-  segments,
-  rotationAxis,
-  rotationSpeed,
+  p,
+  q,
+  rotationSpeedX,
+  rotationSpeedY,
   phaseOffset,
   volume,
-  isActive 
-}: { 
+  isActive
+}: {
   color: string;
-  radius: number;
+  scale: number;
   tubeRadius: number;
-  segments: number;
-  rotationAxis: THREE.Vector3;
-  rotationSpeed: number;
+  p: number;
+  q: number;
+  rotationSpeedX: number;
+  rotationSpeedY: number;
   phaseOffset: number;
   volume: number;
   isActive: boolean;
@@ -93,56 +110,55 @@ function EnergyTube({
   useFrame((state) => {
     if (meshRef.current) {
       const time = state.clock.elapsedTime;
-      meshRef.current.rotation.x = rotationAxis.x * time * rotationSpeed + phaseOffset;
-      meshRef.current.rotation.y = rotationAxis.y * time * rotationSpeed + phaseOffset;
-      meshRef.current.rotation.z = rotationAxis.z * time * rotationSpeed + phaseOffset;
+      const speed = isActive ? 1 : 0.3;
+      meshRef.current.rotation.x = time * rotationSpeedX * speed + phaseOffset;
+      meshRef.current.rotation.y = time * rotationSpeedY * speed + phaseOffset * 0.7;
+      meshRef.current.rotation.z = Math.sin(time * 0.5 * speed + phaseOffset) * 0.3;
       
-      const scale = radius * (1 + volume * 0.1);
-      meshRef.current.scale.setScalar(scale);
+      const volumeScale = 1 + volume * 0.15;
+      meshRef.current.scale.setScalar(scale * volumeScale);
     }
   });
 
-  if (!isActive) return null;
+  const opacity = isActive ? 0.8 + volume * 0.2 : 0.5;
 
   return (
     <mesh ref={meshRef}>
-      <torusKnotGeometry args={[0.5, tubeRadius, 64, 8, 2, 3]} />
+      <torusKnotGeometry args={[0.6, tubeRadius, 128, 16, p, q]} />
       <meshBasicMaterial
         color={color}
         transparent
-        opacity={0.8}
+        opacity={opacity}
         blending={THREE.AdditiveBlending}
-        side={THREE.DoubleSide}
       />
     </mesh>
   );
 }
 
-// Intertwining energy ribbons system
+// Intertwining energy ribbons system - ALWAYS VISIBLE
 function EnergyRibbons({ volume, isActive }: { volume: number; isActive: boolean }) {
   const groupRef = useRef<THREE.Group>(null);
   
   // Create multiple ribbon paths
   const ribbonConfigs = useMemo(() => [
     // Cyan ribbons
-    { color: '#00ffff', scale: 0.9, tubeRadius: 0.025, p: 2, q: 3, rotX: 0.1, rotY: 0.15, phase: 0 },
-    { color: '#40e0d0', scale: 0.85, tubeRadius: 0.02, p: 3, q: 2, rotX: -0.12, rotY: 0.1, phase: Math.PI / 3 },
-    { color: '#00ced1', scale: 0.95, tubeRadius: 0.018, p: 2, q: 5, rotX: 0.08, rotY: -0.13, phase: Math.PI * 2 / 3 },
+    { color: '#00ffff', scale: 0.9, tubeRadius: 0.028, p: 2, q: 3, rotX: 0.1, rotY: 0.15, phase: 0 },
+    { color: '#40e0d0', scale: 0.85, tubeRadius: 0.024, p: 3, q: 2, rotX: -0.12, rotY: 0.1, phase: Math.PI / 3 },
+    { color: '#00ced1', scale: 0.95, tubeRadius: 0.022, p: 2, q: 5, rotX: 0.08, rotY: -0.13, phase: Math.PI * 2 / 3 },
     // Magenta/Pink ribbons
-    { color: '#ff00ff', scale: 0.88, tubeRadius: 0.022, p: 3, q: 4, rotX: -0.09, rotY: 0.14, phase: Math.PI / 4 },
-    { color: '#da70d6', scale: 0.82, tubeRadius: 0.02, p: 2, q: 3, rotX: 0.11, rotY: -0.08, phase: Math.PI / 2 },
-    // Gold/Amber ribbons
-    { color: '#ffd700', scale: 0.86, tubeRadius: 0.024, p: 3, q: 5, rotX: -0.07, rotY: 0.12, phase: Math.PI * 5 / 6 },
-    { color: '#ffaa00', scale: 0.92, tubeRadius: 0.019, p: 2, q: 3, rotX: 0.13, rotY: -0.11, phase: Math.PI },
+    { color: '#ff00ff', scale: 0.88, tubeRadius: 0.026, p: 3, q: 4, rotX: -0.09, rotY: 0.14, phase: Math.PI / 4 },
+    { color: '#da70d6', scale: 0.82, tubeRadius: 0.023, p: 2, q: 3, rotX: 0.11, rotY: -0.08, phase: Math.PI / 2 },
+    // Gold/Amber ribbons  
+    { color: '#ffd700', scale: 0.86, tubeRadius: 0.027, p: 3, q: 5, rotX: -0.07, rotY: 0.12, phase: Math.PI * 5 / 6 },
+    { color: '#ffaa00', scale: 0.92, tubeRadius: 0.021, p: 2, q: 3, rotX: 0.13, rotY: -0.11, phase: Math.PI },
   ], []);
 
   useFrame((state) => {
     if (groupRef.current) {
-      groupRef.current.rotation.y += 0.002;
+      const speed = isActive ? 0.003 : 0.001;
+      groupRef.current.rotation.y += speed;
     }
   });
-
-  if (!isActive) return null;
 
   return (
     <group ref={groupRef}>
@@ -158,62 +174,14 @@ function EnergyRibbons({ volume, isActive }: { volume: number; isActive: boolean
           rotationSpeedY={config.rotY}
           phaseOffset={config.phase}
           volume={volume}
+          isActive={isActive}
         />
       ))}
     </group>
   );
 }
 
-// Individual torus knot ribbon
-function TorusKnotRibbon({
-  color,
-  scale,
-  tubeRadius,
-  p,
-  q,
-  rotationSpeedX,
-  rotationSpeedY,
-  phaseOffset,
-  volume
-}: {
-  color: string;
-  scale: number;
-  tubeRadius: number;
-  p: number;
-  q: number;
-  rotationSpeedX: number;
-  rotationSpeedY: number;
-  phaseOffset: number;
-  volume: number;
-}) {
-  const meshRef = useRef<THREE.Mesh>(null);
-  
-  useFrame((state) => {
-    if (meshRef.current) {
-      const time = state.clock.elapsedTime;
-      meshRef.current.rotation.x = time * rotationSpeedX + phaseOffset;
-      meshRef.current.rotation.y = time * rotationSpeedY + phaseOffset * 0.7;
-      meshRef.current.rotation.z = Math.sin(time * 0.5 + phaseOffset) * 0.3;
-      
-      const volumeScale = 1 + volume * 0.15;
-      meshRef.current.scale.setScalar(scale * volumeScale);
-    }
-  });
-
-  return (
-    <mesh ref={meshRef}>
-      <torusKnotGeometry args={[0.6, tubeRadius, 128, 16, p, q]} />
-      <meshBasicMaterial
-        color={color}
-        transparent
-        opacity={0.75 + volume * 0.25}
-        blending={THREE.AdditiveBlending}
-      />
-    </mesh>
-  );
-}
-
-// Glowing vertex points on the crystal
+// Glowing vertex points on the crystal - ALWAYS VISIBLE
 function VertexGlowPoints({ isActive }: { isActive: boolean }) {
   const pointsRef = useRef<THREE.Points>(null);
   
@@ -239,7 +207,8 @@ function VertexGlowPoints({ isActive }: { isActive: boolean }) {
 
   useFrame((state) => {
     if (pointsRef.current) {
-      pointsRef.current.rotation.y = state.clock.elapsedTime * 0.05;
+      const speed = isActive ? 0.05 : 0.02;
+      pointsRef.current.rotation.y = state.clock.elapsedTime * speed;
     }
   });
 
@@ -253,9 +222,9 @@ function VertexGlowPoints({ isActive }: { isActive: boolean }) {
     <points ref={pointsRef} geometry={geometry}>
       <pointsMaterial
         color="#00ffff"
-        size={isActive ? 0.15 : 0.08}
+        size={isActive ? 0.18 : 0.12}
         transparent
-        opacity={isActive ? 0.9 : 0.4}
+        opacity={isActive ? 0.95 : 0.6}
         sizeAttenuation
         depthWrite={false}
         blending={THREE.AdditiveBlending}
@@ -264,7 +233,7 @@ function VertexGlowPoints({ isActive }: { isActive: boolean }) {
   );
 }
 
-// Crystal lens flares at key points
+// Crystal lens flares at key points - ALWAYS VISIBLE
 function CrystalFlares({ isActive }: { isActive: boolean }) {
   const flaresRef = useRef<THREE.Group>(null);
   
@@ -277,53 +246,66 @@ function CrystalFlares({ isActive }: { isActive: boolean }) {
 
   useFrame((state) => {
     if (flaresRef.current) {
-      flaresRef.current.rotation.y = state.clock.elapsedTime * 0.03;
+      const speed = isActive ? 0.03 : 0.01;
+      flaresRef.current.rotation.y = state.clock.elapsedTime * speed;
     }
   });
 
-  if (!isActive) return null;
+  const opacity = isActive ? 0.7 : 0.4;
+  const size = isActive ? 0.35 : 0.25;
 
   return (
     <group ref={flaresRef}>
       {flarePositions.map((pos, i) => (
         <group key={i} position={pos}>
           <mesh>
-            <planeGeometry args={[0.3, 0.3]} />
+            <planeGeometry args={[size, size]} />
             <meshBasicMaterial
               color="#ffffff"
               transparent
-              opacity={0.6}
+              opacity={opacity}
               blending={THREE.AdditiveBlending}
               side={THREE.DoubleSide}
               depthWrite={false}
             />
           </mesh>
-          <pointLight color="#ffffff" intensity={0.5} distance={2} decay={2} />
+          <pointLight color="#aaeeff" intensity={isActive ? 0.6 : 0.3} distance={2} decay={2} />
         </group>
       ))}
     </group>
   );
 }
 
-// Glass crystal shell with refractive edges
+// Glass crystal shell with refractive edges - ALWAYS VISIBLE
 function CrystalShell({ volume, isActive }: { volume: number; isActive: boolean }) {
   const shellRef = useRef<THREE.Mesh>(null);
   const edgesRef = useRef<THREE.LineSegments>(null);
+  const innerEdgesRef = useRef<THREE.LineSegments>(null);
   
   useFrame((state) => {
-    const rotation = state.clock.elapsedTime * 0.08;
+    const speed = isActive ? 0.08 : 0.03;
+    const rotation = state.clock.elapsedTime * speed;
+    const tilt = Math.sin(state.clock.elapsedTime * 0.15) * 0.1;
+    
     if (shellRef.current) {
       shellRef.current.rotation.y = rotation;
-      shellRef.current.rotation.x = Math.sin(state.clock.elapsedTime * 0.15) * 0.1;
+      shellRef.current.rotation.x = tilt;
     }
     if (edgesRef.current) {
       edgesRef.current.rotation.y = rotation;
-      edgesRef.current.rotation.x = shellRef.current?.rotation.x || 0;
+      edgesRef.current.rotation.x = tilt;
+    }
+    if (innerEdgesRef.current) {
+      innerEdgesRef.current.rotation.y = rotation;
+      innerEdgesRef.current.rotation.x = tilt;
     }
   });
 
   const geometry = useMemo(() => new THREE.DodecahedronGeometry(2, 0), []);
   const edgesGeometry = useMemo(() => new THREE.EdgesGeometry(geometry), [geometry]);
+
+  const edgeOpacity = isActive ? 0.8 + volume * 0.2 : 0.5;
+  const innerEdgeOpacity = isActive ? 0.4 : 0.2;
 
   return (
     <group>
@@ -340,7 +322,7 @@ function CrystalShell({ volume, isActive }: { volume: number; isActive: boolean 
           clearcoatRoughness={0}
           ior={2.4}
           transparent
-          opacity={0.1}
+          opacity={0.12}
           side={THREE.DoubleSide}
           depthWrite={false}
         />
@@ -349,20 +331,19 @@ function CrystalShell({ volume, isActive }: { volume: number; isActive: boolean 
       {/* Bright glowing edges */}
       <lineSegments ref={edgesRef} geometry={edgesGeometry}>
         <lineBasicMaterial 
-          color={isActive ? "#aaeeff" : "#668899"} 
+          color={isActive ? "#aaeeff" : "#6699aa"} 
           transparent 
-          opacity={isActive ? 0.7 + volume * 0.3 : 0.25}
-          linewidth={2}
+          opacity={edgeOpacity}
           blending={THREE.AdditiveBlending}
         />
       </lineSegments>
       
       {/* Inner edge glow for thickness effect */}
-      <lineSegments geometry={edgesGeometry} scale={0.98}>
+      <lineSegments ref={innerEdgesRef} geometry={edgesGeometry} scale={0.97}>
         <lineBasicMaterial 
           color="#ffffff" 
           transparent 
-          opacity={isActive ? 0.3 : 0.1}
+          opacity={innerEdgeOpacity}
           blending={THREE.AdditiveBlending}
         />
       </lineSegments>
@@ -370,12 +351,12 @@ function CrystalShell({ volume, isActive }: { volume: number; isActive: boolean 
   );
 }
 
-// Ambient particle dust
+// Ambient particle dust - ALWAYS VISIBLE
 function AmbientDust({ volume, isActive }: { volume: number; isActive: boolean }) {
   const pointsRef = useRef<THREE.Points>(null);
   
   const positions = useMemo(() => {
-    const count = 300;
+    const count = 400;
     const pos = new Float32Array(count * 3);
     
     for (let i = 0; i < count; i++) {
@@ -393,7 +374,8 @@ function AmbientDust({ volume, isActive }: { volume: number; isActive: boolean }
 
   useFrame((state) => {
     if (pointsRef.current) {
-      pointsRef.current.rotation.y += 0.001;
+      const speed = isActive ? 0.002 : 0.0008;
+      pointsRef.current.rotation.y += speed;
       pointsRef.current.rotation.x = Math.sin(state.clock.elapsedTime * 0.1) * 0.05;
     }
   });
@@ -408,9 +390,9 @@ function AmbientDust({ volume, isActive }: { volume: number; isActive: boolean }
     <points ref={pointsRef} geometry={geometry}>
       <pointsMaterial
         color={isActive ? '#ffffff' : '#aabbcc'}
-        size={isActive ? 0.02 + volume * 0.01 : 0.015}
+        size={isActive ? 0.025 + volume * 0.012 : 0.018}
         transparent
-        opacity={isActive ? 0.7 : 0.3}
+        opacity={isActive ? 0.8 : 0.5}
         sizeAttenuation
         depthWrite={false}
         blending={THREE.AdditiveBlending}
@@ -432,24 +414,24 @@ function OrbScene({ isConnected, isSpeaking, inputVolume, outputVolume }: {
   return (
     <>
       {/* Subtle ambient */}
-      <ambientLight intensity={0.15} />
+      <ambientLight intensity={0.2} />
       
-      {/* Core lighting */}
+      {/* Core lighting - always visible */}
       <GoldenCore volume={volume} isActive={isActive} />
       
-      {/* Energy ribbon system */}
+      {/* Energy ribbon system - always visible */}
       <EnergyRibbons volume={volume} isActive={isActive} />
       
-      {/* Glowing points at crystal vertices */}
+      {/* Glowing points at crystal vertices - always visible */}
       <VertexGlowPoints isActive={isActive} />
       
-      {/* Lens flare effects */}
+      {/* Lens flare effects - always visible */}
       <CrystalFlares isActive={isActive} />
       
-      {/* Ambient particles */}
+      {/* Ambient particles - always visible */}
       <AmbientDust volume={volume} isActive={isActive} />
       
-      {/* Crystal shell - rendered last */}
+      {/* Crystal shell - rendered last, always visible */}
       <CrystalShell volume={volume} isActive={isActive} />
     </>
   );
@@ -476,7 +458,7 @@ export function CrystallineOrb({
           antialias: true, 
           powerPreference: 'high-performance',
           toneMapping: THREE.ACESFilmicToneMapping,
-          toneMappingExposure: 1.3,
+          toneMappingExposure: 1.4,
         }}
       >
         <OrbScene 
