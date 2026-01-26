@@ -18,6 +18,7 @@ import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { AtlasRightPanel } from './AtlasRightPanel';
 import { SolarSystemBackground } from './SolarSystemBackground';
+import { CrystallineOrb } from './CrystallineOrb';
 import { OnboardingFlow } from '@/components/onboarding';
 import { InSessionSurvey, UnlockNotification } from '@/components/personalization';
 import {
@@ -572,100 +573,26 @@ export function AtlasHubLayout({
           {/* Solar System Background with Orbiting Planets */}
           <SolarSystemBackground theme={theme} />
 
-          {/* Central Orb - Smaller size */}
+          {/* Central Orb - Crystalline Energy Design */}
           <div 
-            className="relative w-52 h-52"
+            className="relative w-64 h-64 pointer-events-auto"
             style={{ 
               transform: `scale(${1 + (conversation.isSpeaking ? outputVolume : inputVolume) * 0.08})`,
               transition: 'transform 0.15s ease-out'
             }}
           >
-            {/* Outer ring */}
-            <div 
-              className={cn(
-                "absolute inset-0 rounded-full border-2",
-                isConnected && "border-primary animate-pulse"
-              )}
-              style={{
-                borderColor: !isConnected 
-                  ? `hsl(var(--border) / ${theme === 'dark' ? 1 : 1})`
-                  : undefined,
-              }}
-            />
-            
-            {/* Middle ring */}
-            <div 
-              className={cn(
-                "absolute inset-3 rounded-full border-2",
-                isConnected && conversation.isSpeaking && "border-secondary animate-spin"
-              )}
-              style={{ 
-                animationDuration: '3s',
-                borderColor: !(isConnected && conversation.isSpeaking)
-                  ? `hsl(var(--border) / ${theme === 'dark' ? 0.5 : 0.8})`
-                  : undefined
-              }}
-            />
-            
-            {/* Inner circle - Cosmic Orb */}
-            <div
-              className={cn(
-                "absolute inset-6 rounded-full border border-border flex items-center justify-center overflow-hidden",
-                !isConnected && !isConnecting && "cursor-pointer hover:border-primary/50 transition-colors pointer-events-auto",
-                theme === 'dark' 
-                  ? "bg-[hsl(240_10%_6%/0.9)]" 
-                  : "bg-gradient-to-br from-[hsl(220_20%_92%)] to-[hsl(220_25%_88%)] shadow-lg"
-              )}
+            <CrystallineOrb
+              isConnected={isConnected}
+              isConnecting={isConnecting}
+              isSpeaking={conversation.isSpeaking}
+              inputVolume={inputVolume}
+              outputVolume={outputVolume}
               onClick={() => {
                 if (!isConnected && !isConnecting) {
                   startConversation();
                 }
               }}
-              title={!isConnected ? "Tap to activate Atlas" : undefined}
-            >
-              {/* Cosmic Orb visual */}
-              <div className="relative w-full h-full flex items-center justify-center pointer-events-none">
-                <div 
-                  className="absolute w-[85%] h-[85%] rounded-full overflow-hidden"
-                  style={{
-                    transform: `scale(${1 + (conversation.isSpeaking ? outputVolume : inputVolume) * 0.15})`,
-                    transition: 'transform 0.1s ease-out'
-                  }}
-                >
-                  <div 
-                    className="absolute inset-0 rounded-full"
-                    style={{
-                      background: theme === 'dark' 
-                        ? `radial-gradient(ellipse at ${30 + frequencyBands.bass * 20}% ${40 + frequencyBands.mid * 20}%, 
-                            hsl(270 100% ${isConnected ? 45 + outputVolume * 35 : 35}% / ${0.8 + outputVolume * 0.2}) 0%,
-                            hsl(220 100% ${isConnected ? 35 + outputVolume * 25 : 28}% / ${0.7 + outputVolume * 0.3}) 30%,
-                            hsl(280 100% ${isConnected ? 28 + outputVolume * 20 : 22}% / ${0.6 + outputVolume * 0.3}) 60%,
-                            transparent 100%)`
-                        : `radial-gradient(ellipse at ${30 + frequencyBands.bass * 20}% ${40 + frequencyBands.mid * 20}%, 
-                            hsl(222 70% ${isConnected ? 38 + outputVolume * 18 : 35}% / ${0.9 + outputVolume * 0.1}) 0%,
-                            hsl(201 75% ${isConnected ? 32 + outputVolume * 15 : 30}% / ${0.8 + outputVolume * 0.15}) 25%,
-                            hsl(173 70% ${isConnected ? 28 + outputVolume * 14 : 26}% / ${0.7 + outputVolume * 0.2}) 50%,
-                            hsl(220 25% 85% / 0.5) 100%)`,
-                      animation: isConnected && conversation.isSpeaking 
-                        ? 'orb-pulse 0.5s ease-in-out infinite' 
-                        : 'orb-idle 4s ease-in-out infinite',
-                    }}
-                  />
-                </div>
-                
-                {/* Center text */}
-                {!isConnected && !isConnecting && (
-                  <span className="text-[10px] font-mono text-muted-foreground uppercase tracking-widest text-center">
-                    Tap to Activate
-                  </span>
-                )}
-                {isConnecting && (
-                  <span className="text-[10px] font-mono text-primary uppercase tracking-widest animate-pulse">
-                    Connecting...
-                  </span>
-                )}
-              </div>
-            </div>
+            />
           </div>
 
           {/* Voice Controls */}
