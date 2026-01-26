@@ -3460,9 +3460,11 @@ export type Database = {
           density: number
           description: string | null
           designation: string
+          domain_specialty: string | null
           efficiency: number
           embedding: string | null
           frequency: number
+          hierarchy_tier: Database["public"]["Enums"]["hierarchy_tier"] | null
           id: string
           last_active: string
           last_performance_update: string | null
@@ -3471,7 +3473,9 @@ export type Database = {
           modulation: number
           name: string
           preferred_task_types: string[] | null
+          promoted_at: string | null
           sector: Database["public"]["Enums"]["agent_sector"]
+          seraphim_id: string | null
           specialization_level: string | null
           stability: number
           status: Database["public"]["Enums"]["agent_status"]
@@ -3480,6 +3484,7 @@ export type Database = {
           total_tasks_completed: number | null
           user_id: string
           waveform: Database["public"]["Enums"]["waveform_type"]
+          worker_pool_size: number | null
         }
         Insert: {
           avg_confidence?: number | null
@@ -3492,9 +3497,11 @@ export type Database = {
           density?: number
           description?: string | null
           designation: string
+          domain_specialty?: string | null
           efficiency?: number
           embedding?: string | null
           frequency?: number
+          hierarchy_tier?: Database["public"]["Enums"]["hierarchy_tier"] | null
           id?: string
           last_active?: string
           last_performance_update?: string | null
@@ -3503,7 +3510,9 @@ export type Database = {
           modulation?: number
           name: string
           preferred_task_types?: string[] | null
+          promoted_at?: string | null
           sector?: Database["public"]["Enums"]["agent_sector"]
+          seraphim_id?: string | null
           specialization_level?: string | null
           stability?: number
           status?: Database["public"]["Enums"]["agent_status"]
@@ -3512,6 +3521,7 @@ export type Database = {
           total_tasks_completed?: number | null
           user_id: string
           waveform?: Database["public"]["Enums"]["waveform_type"]
+          worker_pool_size?: number | null
         }
         Update: {
           avg_confidence?: number | null
@@ -3524,9 +3534,11 @@ export type Database = {
           density?: number
           description?: string | null
           designation?: string
+          domain_specialty?: string | null
           efficiency?: number
           embedding?: string | null
           frequency?: number
+          hierarchy_tier?: Database["public"]["Enums"]["hierarchy_tier"] | null
           id?: string
           last_active?: string
           last_performance_update?: string | null
@@ -3535,7 +3547,9 @@ export type Database = {
           modulation?: number
           name?: string
           preferred_task_types?: string[] | null
+          promoted_at?: string | null
           sector?: Database["public"]["Enums"]["agent_sector"]
+          seraphim_id?: string | null
           specialization_level?: string | null
           stability?: number
           status?: Database["public"]["Enums"]["agent_status"]
@@ -3544,8 +3558,17 @@ export type Database = {
           total_tasks_completed?: number | null
           user_id?: string
           waveform?: Database["public"]["Enums"]["waveform_type"]
+          worker_pool_size?: number | null
         }
-        Relationships: []
+        Relationships: [
+          {
+            foreignKeyName: "sonic_agents_seraphim_id_fkey"
+            columns: ["seraphim_id"]
+            isOneToOne: false
+            referencedRelation: "sonic_agents"
+            referencedColumns: ["id"]
+          },
+        ]
       }
       sonic_dna_embeddings: {
         Row: {
@@ -4842,6 +4865,17 @@ export type Database = {
           tool_name: string
         }[]
       }
+      get_seraphim_overview: {
+        Args: never
+        Returns: {
+          avg_worker_success: number
+          domain_specialty: string
+          seraphim_id: string
+          seraphim_name: string
+          total_pool_tasks: number
+          worker_count: number
+        }[]
+      }
       get_user_tier: {
         Args: { p_user_id: string }
         Returns: Database["public"]["Enums"]["subscription_tier"]
@@ -4906,8 +4940,13 @@ export type Database = {
         Args: { _user_id: string; _workspace_id: string }
         Returns: boolean
       }
+      promote_to_seraphim: { Args: { p_count?: number }; Returns: number }
       restore_document_version: {
         Args: { p_version_id: string }
+        Returns: string
+      }
+      route_task_to_seraphim: {
+        Args: { p_domain?: string; p_task_type: string }
         Returns: string
       }
       search_agent_memories: {
@@ -4973,6 +5012,7 @@ export type Database = {
       cross_hub_access_type: "read" | "write" | "admin"
       governance_level: "persona" | "industry" | "workspace" | "user" | "agent"
       group_role: "owner" | "admin" | "member" | "viewer"
+      hierarchy_tier: "seraphim" | "worker" | "reserve"
       hub_type: "personal" | "group" | "csuite"
       insight_cadence: "daily" | "weekly" | "monthly" | "manual"
       message_status:
@@ -5148,6 +5188,7 @@ export const Constants = {
       cross_hub_access_type: ["read", "write", "admin"],
       governance_level: ["persona", "industry", "workspace", "user", "agent"],
       group_role: ["owner", "admin", "member", "viewer"],
+      hierarchy_tier: ["seraphim", "worker", "reserve"],
       hub_type: ["personal", "group", "csuite"],
       insight_cadence: ["daily", "weekly", "monthly", "manual"],
       message_status: [
