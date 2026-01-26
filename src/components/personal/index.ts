@@ -20,3 +20,8 @@ export { SmartNudgesWidget } from './SmartNudgesWidget';
 export { LifeBalancePanel } from './LifeBalancePanel';
 export { IntegrationsTab } from './IntegrationsTab';
 export { IntegrationSurfaceWidget, IntegrationQuickActions, IntegrationSurfaceSummary } from './IntegrationSurfaceWidget';
+export { AtlasActivityWidget } from './AtlasActivityWidget';
+export { MetricHeaderRow } from './MetricHeaderRow';
+export { WeekHabitGrid } from './WeekHabitGrid';
+export { CompactFinanceCard } from './CompactFinanceCard';
+export { SimplifiedDashboard } from './SimplifiedDashboard';
