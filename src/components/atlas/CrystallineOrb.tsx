@@ -14,28 +14,94 @@ interface CrystallineOrbProps {
   onClick?: () => void;
 }
 
-// Warm golden core at the center
-function GoldenCore({ volume, isActive }: { volume: number; isActive: boolean }) {
+// Sound rings that pulse with voice
+function SoundRings({ volume, isActive, isSpeaking }: { volume: number; isActive: boolean; isSpeaking: boolean }) {
+  const ringsRef = useRef<THREE.Group>(null);
+  const ringCount = 5;
+  const ringRefs = useRef<THREE.Mesh[]>([]);
+  
+  useFrame((state) => {
+    const time = state.clock.elapsedTime;
+    
+    ringRefs.current.forEach((ring, i) => {
+      if (ring) {
+        // Each ring expands outward at different phases
+        const phase = (time * 2 + i * 0.8) % 4;
+        const expandProgress = phase / 4;
+        
+        // Scale from 0.3 to 1.2 based on phase
+        const baseScale = 0.3 + expandProgress * 0.9;
+        const volumeBoost = isSpeaking ? volume * 0.3 : 0;
+        ring.scale.setScalar(baseScale + volumeBoost);
+        
+        // Fade out as it expands
+        const material = ring.material as THREE.MeshBasicMaterial;
+        const baseOpacity = isActive ? (1 - expandProgress) * 0.6 : 0.1;
+        material.opacity = baseOpacity + (isSpeaking ? volume * 0.3 : 0);
+      }
+    });
+    
+    if (ringsRef.current) {
+      ringsRef.current.rotation.x = Math.sin(time * 0.3) * 0.2;
+    }
+  });
+
+  if (!isActive) return null;
+
+  const ringColors = ['#00ffff', '#ff44cc', '#44ff88', '#ffaa44', '#cc66ff'];
+
+  return (
+    <group ref={ringsRef}>
+      {Array.from({ length: ringCount }).map((_, i) => (
+        <mesh 
+          key={i} 
+          ref={(el) => { if (el) ringRefs.current[i] = el; }}
+          rotation={[Math.PI / 2, 0, 0]}
+        >
+          <ringGeometry args={[0.5, 0.52, 64]} />
+          <meshBasicMaterial
+            color={ringColors[i % ringColors.length]}
+            transparent
+            opacity={0.5}
+            side={THREE.DoubleSide}
+            blending={THREE.AdditiveBlending}
+            depthWrite={false}
+          />
+        </mesh>
+      ))}
+    </group>
+  );
+}
+
+// Warm golden core at the center - intensifies when active
+function GoldenCore({ volume, isActive, isSpeaking }: { volume: number; isActive: boolean; isSpeaking: boolean }) {
   const coreRef = useRef<THREE.Mesh>(null);
   const glowRef = useRef<THREE.Mesh>(null);
   const outerGlowRef = useRef<THREE.Mesh>(null);
   
   useFrame((state) => {
     const time = state.clock.elapsedTime;
-    const pulse = 1 + Math.sin(time * 2) * 0.15 * (1 + volume * 0.5);
+    const basePulse = 1 + Math.sin(time * 2) * 0.15;
+    const voiceReaction = isSpeaking ? volume * 0.8 : volume * 0.3;
+    const pulse = basePulse * (1 + voiceReaction);
+    
+    // Scale multiplier when active
+    const activeScale = isActive ? 1.5 : 1;
     
     if (coreRef.current) {
-      coreRef.current.scale.setScalar(0.3 * pulse);
+      coreRef.current.scale.setScalar(0.3 * pulse * activeScale);
     }
     if (glowRef.current) {
-      glowRef.current.scale.setScalar(0.55 * pulse);
+      glowRef.current.scale.setScalar(0.55 * pulse * activeScale);
     }
     if (outerGlowRef.current) {
-      outerGlowRef.current.scale.setScalar(0.85 * pulse);
+      outerGlowRef.current.scale.setScalar(0.85 * pulse * activeScale);
     }
   });
 
-  const intensity = isActive ? 1 : 0.6;
+  // Intensify colors when active
+  const intensity = isActive ? 1.2 : 0.5;
+  const speakingBoost = isSpeaking ? 1 + volume * 0.5 : 1;
 
   return (
     <group>
@@ -43,9 +109,9 @@ function GoldenCore({ volume, isActive }: { volume: number; isActive: boolean })
       <mesh ref={outerGlowRef}>
         <sphereGeometry args={[1, 32, 32]} />
         <meshBasicMaterial
-          color="#ff44aa"
+          color={isActive ? "#ff66cc" : "#ff44aa"}
           transparent
-          opacity={0.25 * intensity}
+          opacity={0.35 * intensity * speakingBoost}
           depthWrite={false}
           blending={THREE.AdditiveBlending}
         />
@@ -54,9 +120,9 @@ function GoldenCore({ volume, isActive }: { volume: number; isActive: boolean })
       <mesh ref={glowRef}>
         <sphereGeometry args={[1, 32, 32]} />
         <meshBasicMaterial
-          color="#44ffee"
+          color={isActive ? "#66ffff" : "#44ffee"}
           transparent
-          opacity={0.5 * intensity}
+          opacity={0.6 * intensity * speakingBoost}
           depthWrite={false}
           blending={THREE.AdditiveBlending}
         />
@@ -65,29 +131,29 @@ function GoldenCore({ volume, isActive }: { volume: number; isActive: boolean })
       <mesh ref={coreRef}>
         <sphereGeometry args={[1, 32, 32]} />
         <meshBasicMaterial
-          color="#ffdd88"
+          color={isActive ? "#ffee99" : "#ffdd88"}
           transparent
           opacity={1 * intensity}
           blending={THREE.AdditiveBlending}
         />
       </mesh>
-      {/* Multi-colored point lights */}
+      {/* Multi-colored point lights - intensify when speaking */}
       <pointLight 
         color="#ff66cc" 
-        intensity={isActive ? 3 + volume * 2 : 1.5} 
-        distance={4} 
+        intensity={isActive ? (isSpeaking ? 5 + volume * 4 : 3) : 1} 
+        distance={isActive ? 6 : 4} 
         decay={2} 
       />
       <pointLight 
         color="#44ddff" 
-        intensity={isActive ? 2 + volume * 1.5 : 1} 
-        distance={5} 
+        intensity={isActive ? (isSpeaking ? 4 + volume * 3 : 2.5) : 0.8} 
+        distance={isActive ? 7 : 5} 
         decay={2} 
       />
       <pointLight 
         color="#ffaa44" 
-        intensity={isActive ? 2 + volume * 1.5 : 1} 
-        distance={5} 
+        intensity={isActive ? (isSpeaking ? 4 + volume * 3 : 2.5) : 0.8} 
+        distance={isActive ? 7 : 5} 
         decay={2} 
       />
     </group>
@@ -438,10 +504,13 @@ function OrbScene({ isConnected, isSpeaking, inputVolume, outputVolume }: {
   return (
     <>
       {/* Subtle ambient */}
-      <ambientLight intensity={0.2} />
+      <ambientLight intensity={isActive ? 0.3 : 0.2} />
+      
+      {/* Sound rings - react to voice */}
+      <SoundRings volume={volume} isActive={isActive} isSpeaking={isSpeaking} />
       
       {/* Core lighting - always visible */}
-      <GoldenCore volume={volume} isActive={isActive} />
+      <GoldenCore volume={volume} isActive={isActive} isSpeaking={isSpeaking} />
       
       {/* Energy ribbon system - always visible */}
       <EnergyRibbons volume={volume} isActive={isActive} />
