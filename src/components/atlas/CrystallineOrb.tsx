@@ -200,8 +200,9 @@ function LivingCore({ volume, isActive, isSpeaking, isDark }: { volume: number; 
     }
   });
 
-  // Light mode uses much more intense, saturated colors
+  // Light mode needs higher opacity and different blending
   const speakingBoost = isSpeaking ? 1 + volume * 0.5 : 1;
+  const baseMultiplier = isDark ? 1 : 1.8;
 
   return (
     <group>
@@ -209,9 +210,9 @@ function LivingCore({ volume, isActive, isSpeaking, isDark }: { volume: number; 
       <mesh ref={outerGlowRef}>
         <sphereGeometry args={[1, 48, 48]} />
         <meshBasicMaterial
-          color={isDark ? "#ff00aa" : "#d946ef"}
+          color={isDark ? "#ff00aa" : "#cc0088"}
           transparent
-          opacity={(isDark ? 0.2 : 0.9) * speakingBoost}
+          opacity={(isDark ? 0.2 : 0.5) * speakingBoost * baseMultiplier}
           depthWrite={false}
           blending={isDark ? THREE.AdditiveBlending : THREE.NormalBlending}
         />
@@ -221,9 +222,9 @@ function LivingCore({ volume, isActive, isSpeaking, isDark }: { volume: number; 
       <mesh ref={midGlowRef}>
         <sphereGeometry args={[1, 48, 48]} />
         <meshBasicMaterial
-          color={isDark ? "#00ffff" : "#06b6d4"}
+          color={isDark ? "#00ffff" : "#00cccc"}
           transparent
-          opacity={(isDark ? 0.35 : 0.85) * speakingBoost}
+          opacity={(isDark ? 0.35 : 0.6) * speakingBoost * baseMultiplier}
           depthWrite={false}
           blending={isDark ? THREE.AdditiveBlending : THREE.NormalBlending}
         />
@@ -233,9 +234,9 @@ function LivingCore({ volume, isActive, isSpeaking, isDark }: { volume: number; 
       <mesh ref={plasmaRef}>
         <icosahedronGeometry args={[1, 2]} />
         <meshBasicMaterial
-          color={isDark ? "#ff66ff" : "#a855f7"}
+          color={isDark ? "#ff66ff" : "#cc44cc"}
           transparent
-          opacity={(isDark ? 0.4 : 0.95) * speakingBoost}
+          opacity={(isDark ? 0.4 : 0.7) * speakingBoost * baseMultiplier}
           depthWrite={false}
           blending={isDark ? THREE.AdditiveBlending : THREE.NormalBlending}
           wireframe
@@ -246,9 +247,9 @@ function LivingCore({ volume, isActive, isSpeaking, isDark }: { volume: number; 
       <mesh ref={innerGlowRef}>
         <sphereGeometry args={[1, 48, 48]} />
         <meshBasicMaterial
-          color={isDark ? "#ffaa00" : "#f59e0b"}
+          color={isDark ? "#ffaa00" : "#ff8800"}
           transparent
-          opacity={(isDark ? 0.6 : 0.95) * speakingBoost}
+          opacity={(isDark ? 0.6 : 0.85) * speakingBoost * baseMultiplier}
           depthWrite={false}
           blending={isDark ? THREE.AdditiveBlending : THREE.NormalBlending}
         />
@@ -265,22 +266,22 @@ function LivingCore({ volume, isActive, isSpeaking, isDark }: { volume: number; 
         />
       </mesh>
       
-      {/* Dynamic lighting - much stronger in light mode */}
+      {/* Dynamic lighting - intensifies when speaking */}
       <pointLight 
         color="#ff00ff" 
-        intensity={isSpeaking ? 4 + volume * 5 : (isDark ? 3 : 8)} 
+        intensity={isSpeaking ? 4 + volume * 5 : (isDark ? 3 : 5)} 
         distance={8} 
         decay={2} 
       />
       <pointLight 
         color="#00ffff" 
-        intensity={isSpeaking ? 3 + volume * 4 : (isDark ? 2.5 : 6)} 
+        intensity={isSpeaking ? 3 + volume * 4 : (isDark ? 2.5 : 4)} 
         distance={9} 
         decay={2} 
       />
       <pointLight 
         color="#ffaa00" 
-        intensity={isSpeaking ? 2.5 + volume * 3 : (isDark ? 2 : 5)} 
+        intensity={isSpeaking ? 2.5 + volume * 3 : (isDark ? 2 : 3.5)} 
         distance={7} 
         decay={2} 
       />
@@ -729,6 +730,30 @@ export function CrystallineOrb({
       className="relative w-full h-full cursor-pointer"
       onClick={onClick}
     >
+      {/* Cosmic portal backdrop for light mode - keeps additive blending working */}
+      {!isDark && (
+        <div className="absolute inset-0 flex items-center justify-center pointer-events-none">
+          {/* Outer glow ring */}
+          <div 
+            className="absolute rounded-full"
+            style={{
+              width: '55%',
+              height: '55%',
+              background: 'radial-gradient(circle, transparent 40%, rgba(147, 51, 234, 0.12) 60%, rgba(139, 92, 246, 0.08) 80%, transparent 100%)',
+            }}
+          />
+          {/* Inner cosmic window - softer purple/indigo tones */}
+          <div 
+            className="rounded-full"
+            style={{
+              width: '45%',
+              height: '45%',
+              background: 'radial-gradient(circle, rgba(88, 28, 135, 0.85) 0%, rgba(109, 40, 217, 0.7) 35%, rgba(139, 92, 246, 0.5) 60%, rgba(167, 139, 250, 0.25) 80%, transparent 100%)',
+              boxShadow: '0 0 30px 10px rgba(139, 92, 246, 0.2), 0 0 50px 20px rgba(167, 139, 250, 0.1)',
+            }}
+          />
+        </div>
+      )}
       <Canvas
         camera={{ position: [0, 0, 5], fov: 45 }}
         style={{ background: 'transparent' }}
@@ -737,7 +762,7 @@ export function CrystallineOrb({
           antialias: true, 
           powerPreference: 'high-performance',
           toneMapping: THREE.ACESFilmicToneMapping,
-          toneMappingExposure: isDark ? 1.4 : 2.2,
+          toneMappingExposure: isDark ? 1.4 : 1.6,
         }}
       >
         <OrbScene 
@@ -745,7 +770,7 @@ export function CrystallineOrb({
           isSpeaking={isSpeaking}
           inputVolume={inputVolume}
           outputVolume={outputVolume}
-          isDark={isDark}
+          isDark={true}
         />
       </Canvas>
     </div>
