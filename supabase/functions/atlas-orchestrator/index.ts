@@ -1638,9 +1638,10 @@ ALWAYS execute real actions. Never just describe what you would do - DO IT.`;
 
       if (agentsError) throw agentsError;
 
-      // PHASE 2: Semantic memory search for relevant context
+      // PHASE 3: Query-time memory injection using get_agent_execution_context
       const agentMemoryContexts: string[] = [];
       const agentSpecializationInfo: string[] = [];
+      const enrichedAgentContexts: Record<string, any> = {};
       
       if (agents && agents.length > 0) {
         // Prioritize specialized agents if found, otherwise use top performers
@@ -1648,55 +1649,65 @@ ALWAYS execute real actions. Never just describe what you would do - DO IT.`;
           ? agents.filter(a => specializedAgents.some(sa => sa.agent_id === a.id))
           : [...agents].sort((a, b) => (b.success_rate || 0) - (a.success_rate || 0)).slice(0, 5);
         
+        // Use the new get_agent_execution_context function for rich context injection
         for (const agent of priorityAgents.slice(0, 5)) {
-          // Fetch task-specific scores for context
-          const { data: taskScores } = await supabase
-            .from('agent_task_scores')
-            .select('task_type, specialization_score, success_count, avg_confidence')
-            .eq('agent_id', agent.id)
-            .order('specialization_score', { ascending: false })
-            .limit(3);
-          
-          if (taskScores && taskScores.length > 0) {
-            const specInfo = taskScores.map(ts => 
-              `${ts.task_type}: ${Math.round(ts.specialization_score * 100)}% specialized (${ts.success_count} successes)`
-            ).join(', ');
-            agentSpecializationInfo.push(`[${agent.name}] Specializations: ${specInfo}`);
-          }
-
-          // Semantic memory search if query provided
-          if (query) {
-            const { data: relevantMemories } = await supabase
-              .rpc('search_agent_memories', {
+          try {
+            const { data: executionContext } = await supabase
+              .rpc('get_agent_execution_context', {
                 p_agent_id: agent.id,
-                p_search_query: query,
-                p_memory_type: null,
-                p_limit: 3
+                p_query: query || '',
+                p_task_type: detectedTaskType
               });
             
-            if (relevantMemories && relevantMemories.length > 0) {
-              agentMemoryContexts.push(
-                `[${agent.name} Relevant Memory]\n${relevantMemories.map((m: any) => `- [${m.memory_type}] ${m.content} (relevance: ${Math.round(m.relevance_rank * 100)}%)`).join('\n')}`
-              );
+            if (executionContext) {
+              enrichedAgentContexts[agent.id] = executionContext;
+              
+              // Extract memories for prompt context
+              const memories = executionContext.memories || [];
+              if (memories.length > 0) {
+                agentMemoryContexts.push(
+                  `[${agent.name} Contextual Memory]\n${memories.slice(0, 3).map((m: any) => 
+                    `- [${m.type}] ${m.content} (relevance: ${Math.round((m.relevance || 0) * 100)}%)`
+                  ).join('\n')}`
+                );
+              }
+              
+              // Extract specializations
+              const specs = executionContext.specializations || [];
+              if (specs.length > 0) {
+                const specInfo = specs.slice(0, 3).map((s: any) => 
+                  `${s.task_type}: ${Math.round((s.score || 0) * 100)}% (${s.successes || 0} successes)`
+                ).join(', ');
+                agentSpecializationInfo.push(`[${agent.name}] Specializations: ${specInfo}`);
+              }
+              
+              // Note high-synergy partners for coordination
+              const partners = executionContext.high_synergy_partners || [];
+              if (partners.length > 0) {
+                console.log(`[Memory Injection] ${agent.name} has ${partners.length} high-synergy partners`);
+              }
             }
-          }
-          
-          // Fallback to importance-based if no semantic matches
-          if (agentMemoryContexts.filter(c => c.includes(agent.name)).length === 0) {
-            const { data: memories } = await supabase
-              .from('agent_memory')
-              .select('memory_type, content, importance_score')
+          } catch (ctxErr) {
+            console.warn(`Failed to get execution context for ${agent.name}:`, ctxErr);
+            
+            // Fallback to direct query
+            const { data: taskScores } = await supabase
+              .from('agent_task_scores')
+              .select('task_type, specialization_score, success_count, avg_confidence')
               .eq('agent_id', agent.id)
-              .order('importance_score', { ascending: false })
+              .order('specialization_score', { ascending: false })
               .limit(3);
             
-            if (memories && memories.length > 0) {
-              agentMemoryContexts.push(
-                `[${agent.name} Memory]\n${memories.map(m => `- [${m.memory_type}] ${m.content}`).join('\n')}`
-              );
+            if (taskScores && taskScores.length > 0) {
+              const specInfo = taskScores.map(ts => 
+                `${ts.task_type}: ${Math.round(ts.specialization_score * 100)}% specialized (${ts.success_count} successes)`
+              ).join(', ');
+              agentSpecializationInfo.push(`[${agent.name}] Specializations: ${specInfo}`);
             }
           }
         }
+        
+        console.log(`[Memory Injection] Enriched ${Object.keys(enrichedAgentContexts).length} agents with execution context`);
       }
 
       const memorySection = agentMemoryContexts.length > 0 
