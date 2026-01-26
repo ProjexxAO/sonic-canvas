@@ -737,8 +737,8 @@ export function CrystallineOrb({
           <div 
             className="absolute rounded-full"
             style={{
-              width: '85%',
-              height: '85%',
+              width: '55%',
+              height: '55%',
               background: 'radial-gradient(circle, transparent 40%, rgba(147, 51, 234, 0.15) 60%, rgba(79, 70, 229, 0.1) 80%, transparent 100%)',
             }}
           />
@@ -746,10 +746,10 @@ export function CrystallineOrb({
           <div 
             className="rounded-full"
             style={{
-              width: '70%',
-              height: '70%',
+              width: '45%',
+              height: '45%',
               background: 'radial-gradient(circle, rgba(15, 23, 42, 0.92) 0%, rgba(30, 41, 59, 0.88) 40%, rgba(51, 65, 85, 0.7) 70%, rgba(100, 116, 139, 0.3) 90%, transparent 100%)',
-              boxShadow: '0 0 60px 20px rgba(147, 51, 234, 0.15), 0 0 100px 40px rgba(79, 70, 229, 0.08)',
+              boxShadow: '0 0 40px 15px rgba(147, 51, 234, 0.12), 0 0 70px 30px rgba(79, 70, 229, 0.06)',
             }}
           />
         </div>
