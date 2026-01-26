@@ -44,18 +44,18 @@ function OrbitalRings({ volume, isActive, isSpeaking, isDark }: { volume: number
   
   // Define multiple ring configurations with different colors and orientations
   const ringConfigs = useMemo(() => [
-    // Horizontal rings - darker, more saturated colors for light mode visibility
-    { color: '#e000e0', radius: 0.65, width: 0.035, rotX: Math.PI / 2, rotY: 0, speed: 0.5 },
-    { color: '#00c5c5', radius: 0.75, width: 0.03, rotX: Math.PI / 2, rotY: 0, speed: -0.3 },
-    { color: '#e09000', radius: 0.85, width: 0.025, rotX: Math.PI / 2, rotY: 0, speed: 0.4 },
+    // Horizontal rings - bold, deep colors for maximum light mode visibility
+    { color: isDark ? '#ff00ff' : '#8b008b', radius: 0.65, width: 0.04, rotX: Math.PI / 2, rotY: 0, speed: 0.5 },
+    { color: isDark ? '#00ffff' : '#006666', radius: 0.75, width: 0.035, rotX: Math.PI / 2, rotY: 0, speed: -0.3 },
+    { color: isDark ? '#ffaa00' : '#b36b00', radius: 0.85, width: 0.03, rotX: Math.PI / 2, rotY: 0, speed: 0.4 },
     // Tilted rings
-    { color: '#d050a0', radius: 0.7, width: 0.03, rotX: Math.PI / 3, rotY: Math.PI / 4, speed: 0.6 },
-    { color: '#20b090', radius: 0.8, width: 0.025, rotX: Math.PI / 2.5, rotY: -Math.PI / 3, speed: -0.5 },
-    { color: '#d0a030', radius: 0.9, width: 0.022, rotX: Math.PI / 4, rotY: Math.PI / 6, speed: 0.35 },
+    { color: isDark ? '#ff66cc' : '#a03070', radius: 0.7, width: 0.035, rotX: Math.PI / 3, rotY: Math.PI / 4, speed: 0.6 },
+    { color: isDark ? '#66ffcc' : '#107050', radius: 0.8, width: 0.03, rotX: Math.PI / 2.5, rotY: -Math.PI / 3, speed: -0.5 },
+    { color: isDark ? '#ffcc66' : '#a07020', radius: 0.9, width: 0.028, rotX: Math.PI / 4, rotY: Math.PI / 6, speed: 0.35 },
     // Vertical rings
-    { color: '#9040d0', radius: 0.72, width: 0.028, rotX: 0, rotY: Math.PI / 2, speed: -0.4 },
-    { color: '#3090d0', radius: 0.82, width: 0.022, rotX: Math.PI / 6, rotY: 0, speed: 0.45 },
-  ], []);
+    { color: isDark ? '#cc66ff' : '#6020a0', radius: 0.72, width: 0.032, rotX: 0, rotY: Math.PI / 2, speed: -0.4 },
+    { color: isDark ? '#66ccff' : '#1060a0', radius: 0.82, width: 0.028, rotX: Math.PI / 6, rotY: 0, speed: 0.45 },
+  ], [isDark]);
   
   useFrame((state) => {
     const time = state.clock.elapsedTime;
@@ -74,9 +74,9 @@ function OrbitalRings({ volume, isActive, isSpeaking, isDark }: { volume: number
         
         // Pulsing opacity - voice reactive when speaking
         const material = ring.material as THREE.MeshBasicMaterial;
-        const baseOpacity = isDark ? 0.5 : 0.9;
-        const pulse = 0.15 * Math.sin(time * 2 + i);
-        const voiceOpacity = isSpeaking ? volume * 0.4 : 0;
+        const baseOpacity = isDark ? 0.5 : 1.0;
+        const pulse = (isDark ? 0.15 : 0.0) * Math.sin(time * 2 + i);
+        const voiceOpacity = isSpeaking ? volume * 0.3 : 0;
         material.opacity = Math.min(1, baseOpacity + pulse + voiceOpacity);
       }
     });
@@ -98,7 +98,7 @@ function OrbitalRings({ volume, isActive, isSpeaking, isDark }: { volume: number
           <meshBasicMaterial
             color={config.color}
             transparent
-            opacity={isDark ? 0.5 : 0.75}
+            opacity={isDark ? 0.5 : 1.0}
             blending={isDark ? THREE.AdditiveBlending : THREE.NormalBlending}
             depthWrite={false}
           />
