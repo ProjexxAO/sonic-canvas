@@ -12,6 +12,7 @@ export const EVOLUTION_MODES = {
   ADVERSARIAL: 'adversarial',
   CRYSTALLIZATION: 'crystallization',
   WEB_KNOWLEDGE: 'web_knowledge',
+  VISUAL_INTELLIGENCE: 'visual_intelligence',
   FULL_ACCELERATION: 'full_acceleration',
 } as const;
 
