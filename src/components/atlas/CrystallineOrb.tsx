@@ -44,17 +44,17 @@ function OrbitalRings({ volume, isActive, isSpeaking, isDark }: { volume: number
   
   // Define multiple ring configurations with different colors and orientations
   const ringConfigs = useMemo(() => [
-    // Horizontal rings
-    { color: '#ff00ff', radius: 0.65, width: 0.03, rotX: Math.PI / 2, rotY: 0, speed: 0.5 },
-    { color: '#00ffff', radius: 0.75, width: 0.025, rotX: Math.PI / 2, rotY: 0, speed: -0.3 },
-    { color: '#ffaa00', radius: 0.85, width: 0.02, rotX: Math.PI / 2, rotY: 0, speed: 0.4 },
+    // Horizontal rings - darker, more saturated colors for light mode visibility
+    { color: '#e000e0', radius: 0.65, width: 0.035, rotX: Math.PI / 2, rotY: 0, speed: 0.5 },
+    { color: '#00c5c5', radius: 0.75, width: 0.03, rotX: Math.PI / 2, rotY: 0, speed: -0.3 },
+    { color: '#e09000', radius: 0.85, width: 0.025, rotX: Math.PI / 2, rotY: 0, speed: 0.4 },
     // Tilted rings
-    { color: '#ff66cc', radius: 0.7, width: 0.025, rotX: Math.PI / 3, rotY: Math.PI / 4, speed: 0.6 },
-    { color: '#66ffcc', radius: 0.8, width: 0.02, rotX: Math.PI / 2.5, rotY: -Math.PI / 3, speed: -0.5 },
-    { color: '#ffcc66', radius: 0.9, width: 0.018, rotX: Math.PI / 4, rotY: Math.PI / 6, speed: 0.35 },
+    { color: '#d050a0', radius: 0.7, width: 0.03, rotX: Math.PI / 3, rotY: Math.PI / 4, speed: 0.6 },
+    { color: '#20b090', radius: 0.8, width: 0.025, rotX: Math.PI / 2.5, rotY: -Math.PI / 3, speed: -0.5 },
+    { color: '#d0a030', radius: 0.9, width: 0.022, rotX: Math.PI / 4, rotY: Math.PI / 6, speed: 0.35 },
     // Vertical rings
-    { color: '#cc66ff', radius: 0.72, width: 0.022, rotX: 0, rotY: Math.PI / 2, speed: -0.4 },
-    { color: '#66ccff', radius: 0.82, width: 0.018, rotX: Math.PI / 6, rotY: 0, speed: 0.45 },
+    { color: '#9040d0', radius: 0.72, width: 0.028, rotX: 0, rotY: Math.PI / 2, speed: -0.4 },
+    { color: '#3090d0', radius: 0.82, width: 0.022, rotX: Math.PI / 6, rotY: 0, speed: 0.45 },
   ], []);
   
   useFrame((state) => {
@@ -74,10 +74,10 @@ function OrbitalRings({ volume, isActive, isSpeaking, isDark }: { volume: number
         
         // Pulsing opacity - voice reactive when speaking
         const material = ring.material as THREE.MeshBasicMaterial;
-        const baseOpacity = isDark ? 0.5 : 0.75;
+        const baseOpacity = isDark ? 0.5 : 0.9;
         const pulse = 0.15 * Math.sin(time * 2 + i);
         const voiceOpacity = isSpeaking ? volume * 0.4 : 0;
-        material.opacity = baseOpacity + pulse + voiceOpacity;
+        material.opacity = Math.min(1, baseOpacity + pulse + voiceOpacity);
       }
     });
     
