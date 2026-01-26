@@ -1,7 +1,7 @@
 // Crystalline Energy Orb - Advanced 3D visualization for Atlas
 // Reference: Glass dodecahedron with intertwining cyan/magenta/gold energy tubes
 
-import { useRef, useMemo } from 'react';
+import { useRef, useMemo, useEffect, useState } from 'react';
 import { Canvas, useFrame } from '@react-three/fiber';
 import * as THREE from 'three';
 
@@ -12,6 +12,29 @@ interface CrystallineOrbProps {
   inputVolume: number;
   outputVolume: number;
   onClick?: () => void;
+}
+
+// Hook to detect dark/light theme
+function useTheme() {
+  const [isDark, setIsDark] = useState(true);
+  
+  useEffect(() => {
+    const checkTheme = () => {
+      setIsDark(document.documentElement.classList.contains('dark'));
+    };
+    
+    checkTheme();
+    
+    const observer = new MutationObserver(checkTheme);
+    observer.observe(document.documentElement, { 
+      attributes: true, 
+      attributeFilter: ['class'] 
+    });
+    
+    return () => observer.disconnect();
+  }, []);
+  
+  return isDark;
 }
 
 // Multiple colorful orbital rings that pulse and breathe
@@ -695,11 +718,27 @@ export function CrystallineOrb({
   outputVolume,
   onClick 
 }: CrystallineOrbProps) {
+  const isDark = useTheme();
+  
   return (
     <div 
       className="relative w-full h-full cursor-pointer"
       onClick={onClick}
     >
+      {/* Dark backdrop for light mode visibility */}
+      {!isDark && (
+        <div className="absolute inset-0 flex items-center justify-center pointer-events-none">
+          <div 
+            className="rounded-full"
+            style={{
+              width: '75%',
+              height: '75%',
+              background: 'radial-gradient(circle, rgba(15, 23, 42, 0.95) 0%, rgba(30, 41, 59, 0.85) 50%, rgba(51, 65, 85, 0.6) 75%, transparent 100%)',
+              filter: 'blur(8px)',
+            }}
+          />
+        </div>
+      )}
       <Canvas
         camera={{ position: [0, 0, 5], fov: 45 }}
         style={{ background: 'transparent' }}
@@ -708,7 +747,7 @@ export function CrystallineOrb({
           antialias: true, 
           powerPreference: 'high-performance',
           toneMapping: THREE.ACESFilmicToneMapping,
-          toneMappingExposure: 1.4,
+          toneMappingExposure: isDark ? 1.4 : 1.8,
         }}
       >
         <OrbScene 
