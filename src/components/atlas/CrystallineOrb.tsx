@@ -139,18 +139,18 @@ function TorusKnotRibbon({
 function EnergyRibbons({ volume, isActive }: { volume: number; isActive: boolean }) {
   const groupRef = useRef<THREE.Group>(null);
   
-  // Create multiple ribbon paths
+  // Create multiple ribbon paths - scaled down to fit inside smaller shell
   const ribbonConfigs = useMemo(() => [
     // Cyan ribbons
-    { color: '#00ffff', scale: 0.9, tubeRadius: 0.028, p: 2, q: 3, rotX: 0.1, rotY: 0.15, phase: 0 },
-    { color: '#40e0d0', scale: 0.85, tubeRadius: 0.024, p: 3, q: 2, rotX: -0.12, rotY: 0.1, phase: Math.PI / 3 },
-    { color: '#00ced1', scale: 0.95, tubeRadius: 0.022, p: 2, q: 5, rotX: 0.08, rotY: -0.13, phase: Math.PI * 2 / 3 },
+    { color: '#00ffff', scale: 0.22, tubeRadius: 0.012, p: 2, q: 3, rotX: 0.1, rotY: 0.15, phase: 0 },
+    { color: '#40e0d0', scale: 0.20, tubeRadius: 0.010, p: 3, q: 2, rotX: -0.12, rotY: 0.1, phase: Math.PI / 3 },
+    { color: '#00ced1', scale: 0.24, tubeRadius: 0.009, p: 2, q: 5, rotX: 0.08, rotY: -0.13, phase: Math.PI * 2 / 3 },
     // Magenta/Pink ribbons
-    { color: '#ff00ff', scale: 0.88, tubeRadius: 0.026, p: 3, q: 4, rotX: -0.09, rotY: 0.14, phase: Math.PI / 4 },
-    { color: '#da70d6', scale: 0.82, tubeRadius: 0.023, p: 2, q: 3, rotX: 0.11, rotY: -0.08, phase: Math.PI / 2 },
+    { color: '#ff00ff', scale: 0.21, tubeRadius: 0.011, p: 3, q: 4, rotX: -0.09, rotY: 0.14, phase: Math.PI / 4 },
+    { color: '#da70d6', scale: 0.19, tubeRadius: 0.010, p: 2, q: 3, rotX: 0.11, rotY: -0.08, phase: Math.PI / 2 },
     // Gold/Amber ribbons  
-    { color: '#ffd700', scale: 0.86, tubeRadius: 0.027, p: 3, q: 5, rotX: -0.07, rotY: 0.12, phase: Math.PI * 5 / 6 },
-    { color: '#ffaa00', scale: 0.92, tubeRadius: 0.021, p: 2, q: 3, rotX: 0.13, rotY: -0.11, phase: Math.PI },
+    { color: '#ffd700', scale: 0.20, tubeRadius: 0.011, p: 3, q: 5, rotX: -0.07, rotY: 0.12, phase: Math.PI * 5 / 6 },
+    { color: '#ffaa00', scale: 0.23, tubeRadius: 0.009, p: 2, q: 3, rotX: 0.13, rotY: -0.11, phase: Math.PI },
   ], []);
 
   useFrame((state) => {
@@ -185,9 +185,9 @@ function EnergyRibbons({ volume, isActive }: { volume: number; isActive: boolean
 function VertexGlowPoints({ isActive }: { isActive: boolean }) {
   const pointsRef = useRef<THREE.Points>(null);
   
-  // Dodecahedron vertices
+  // Dodecahedron vertices - smaller to match core size
   const positions = useMemo(() => {
-    const geo = new THREE.DodecahedronGeometry(1.95, 0);
+    const geo = new THREE.DodecahedronGeometry(0.5, 0);
     const posArray = geo.attributes.position.array as Float32Array;
     
     // Get unique vertices
@@ -222,7 +222,7 @@ function VertexGlowPoints({ isActive }: { isActive: boolean }) {
     <points ref={pointsRef} geometry={geometry}>
       <pointsMaterial
         color="#00ffff"
-        size={isActive ? 0.18 : 0.12}
+        size={isActive ? 0.08 : 0.05}
         transparent
         opacity={isActive ? 0.95 : 0.6}
         sizeAttenuation
@@ -237,11 +237,12 @@ function VertexGlowPoints({ isActive }: { isActive: boolean }) {
 function CrystalFlares({ isActive }: { isActive: boolean }) {
   const flaresRef = useRef<THREE.Group>(null);
   
+  // Smaller flare positions to match core size
   const flarePositions = useMemo(() => [
-    new THREE.Vector3(1.8, 0.8, 0.5),
-    new THREE.Vector3(-1.5, 1.2, -0.8),
-    new THREE.Vector3(0.5, -1.6, 1.0),
-    new THREE.Vector3(-0.8, 0.5, 1.7),
+    new THREE.Vector3(0.45, 0.2, 0.12),
+    new THREE.Vector3(-0.38, 0.3, -0.2),
+    new THREE.Vector3(0.12, -0.4, 0.25),
+    new THREE.Vector3(-0.2, 0.12, 0.42),
   ], []);
 
   useFrame((state) => {
@@ -252,7 +253,7 @@ function CrystalFlares({ isActive }: { isActive: boolean }) {
   });
 
   const opacity = isActive ? 0.7 : 0.4;
-  const size = isActive ? 0.35 : 0.25;
+  const size = isActive ? 0.1 : 0.07;
 
   return (
     <group ref={flaresRef}>
@@ -301,7 +302,8 @@ function CrystalShell({ volume, isActive }: { volume: number; isActive: boolean 
     }
   });
 
-  const geometry = useMemo(() => new THREE.DodecahedronGeometry(2, 0), []);
+  // Dodecahedron sized to match core (core is ~0.3-0.55 radius)
+  const geometry = useMemo(() => new THREE.DodecahedronGeometry(0.5, 0), []);
   const edgesGeometry = useMemo(() => new THREE.EdgesGeometry(geometry), [geometry]);
 
   const edgeOpacity = isActive ? 0.8 + volume * 0.2 : 0.5;
@@ -355,14 +357,15 @@ function CrystalShell({ volume, isActive }: { volume: number; isActive: boolean 
 function AmbientDust({ volume, isActive }: { volume: number; isActive: boolean }) {
   const pointsRef = useRef<THREE.Points>(null);
   
+  // Particles scaled to fit around smaller orb
   const positions = useMemo(() => {
-    const count = 400;
+    const count = 300;
     const pos = new Float32Array(count * 3);
     
     for (let i = 0; i < count; i++) {
       const theta = Math.random() * Math.PI * 2;
       const phi = Math.acos(2 * Math.random() - 1);
-      const r = 0.5 + Math.random() * 1.8;
+      const r = 0.15 + Math.random() * 0.5;
       
       pos[i * 3] = r * Math.sin(phi) * Math.cos(theta);
       pos[i * 3 + 1] = r * Math.sin(phi) * Math.sin(theta);
@@ -390,7 +393,7 @@ function AmbientDust({ volume, isActive }: { volume: number; isActive: boolean }
     <points ref={pointsRef} geometry={geometry}>
       <pointsMaterial
         color={isActive ? '#ffffff' : '#aabbcc'}
-        size={isActive ? 0.025 + volume * 0.012 : 0.018}
+        size={isActive ? 0.012 + volume * 0.005 : 0.008}
         transparent
         opacity={isActive ? 0.8 : 0.5}
         sizeAttenuation
