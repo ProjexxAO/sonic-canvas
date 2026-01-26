@@ -45,16 +45,16 @@ function OrbitalRings({ volume, isActive, isSpeaking, isDark }: { volume: number
   // Define multiple ring configurations with different colors and orientations
   const ringConfigs = useMemo(() => [
     // Horizontal rings - bold, deep colors for maximum light mode visibility
-    { color: isDark ? '#ff00ff' : '#8b008b', radius: 0.65, width: 0.04, rotX: Math.PI / 2, rotY: 0, speed: 0.5 },
-    { color: isDark ? '#00ffff' : '#006666', radius: 0.75, width: 0.035, rotX: Math.PI / 2, rotY: 0, speed: -0.3 },
-    { color: isDark ? '#ffaa00' : '#b36b00', radius: 0.85, width: 0.03, rotX: Math.PI / 2, rotY: 0, speed: 0.4 },
+    { color: isDark ? '#ff00ff' : '#8b008b', radius: 0.65, width: 0.018, rotX: Math.PI / 2, rotY: 0, speed: 0.5 },
+    { color: isDark ? '#00ffff' : '#006666', radius: 0.75, width: 0.015, rotX: Math.PI / 2, rotY: 0, speed: -0.3 },
+    { color: isDark ? '#ffaa00' : '#b36b00', radius: 0.85, width: 0.012, rotX: Math.PI / 2, rotY: 0, speed: 0.4 },
     // Tilted rings
-    { color: isDark ? '#ff66cc' : '#a03070', radius: 0.7, width: 0.035, rotX: Math.PI / 3, rotY: Math.PI / 4, speed: 0.6 },
-    { color: isDark ? '#66ffcc' : '#107050', radius: 0.8, width: 0.03, rotX: Math.PI / 2.5, rotY: -Math.PI / 3, speed: -0.5 },
-    { color: isDark ? '#ffcc66' : '#a07020', radius: 0.9, width: 0.028, rotX: Math.PI / 4, rotY: Math.PI / 6, speed: 0.35 },
+    { color: isDark ? '#ff66cc' : '#a03070', radius: 0.7, width: 0.015, rotX: Math.PI / 3, rotY: Math.PI / 4, speed: 0.6 },
+    { color: isDark ? '#66ffcc' : '#107050', radius: 0.8, width: 0.012, rotX: Math.PI / 2.5, rotY: -Math.PI / 3, speed: -0.5 },
+    { color: isDark ? '#ffcc66' : '#a07020', radius: 0.9, width: 0.01, rotX: Math.PI / 4, rotY: Math.PI / 6, speed: 0.35 },
     // Vertical rings
-    { color: isDark ? '#cc66ff' : '#6020a0', radius: 0.72, width: 0.032, rotX: 0, rotY: Math.PI / 2, speed: -0.4 },
-    { color: isDark ? '#66ccff' : '#1060a0', radius: 0.82, width: 0.028, rotX: Math.PI / 6, rotY: 0, speed: 0.45 },
+    { color: isDark ? '#cc66ff' : '#6020a0', radius: 0.72, width: 0.014, rotX: 0, rotY: Math.PI / 2, speed: -0.4 },
+    { color: isDark ? '#66ccff' : '#1060a0', radius: 0.82, width: 0.01, rotX: Math.PI / 6, rotY: 0, speed: 0.45 },
   ], [isDark]);
   
   useFrame((state) => {
