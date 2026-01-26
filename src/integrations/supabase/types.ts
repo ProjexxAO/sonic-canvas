@@ -4816,7 +4816,18 @@ export type Database = {
       }
     }
     Views: {
-      [_ in never]: never
+      tiered_routing_statistics: {
+        Row: {
+          agents_with_specializations: number | null
+          avg_base_confidence: number | null
+          domains_covered: number | null
+          tier1_coverage_pct: number | null
+          tier1_ready_specializations: number | null
+          tier2_specializations: number | null
+          total_patterns: number | null
+        }
+        Relationships: []
+      }
     }
     Functions: {
       calculate_sonic_dna_traits: {
@@ -4874,6 +4885,10 @@ export type Database = {
           success_rate: number
           total_tasks: number
         }[]
+      }
+      get_agent_execution_context: {
+        Args: { p_agent_id: string; p_query: string; p_task_type?: string }
+        Returns: Json
       }
       get_document_insights: {
         Args: { p_document_id: string; p_document_type?: string }
@@ -5023,6 +5038,15 @@ export type Database = {
           sector: string
           similarity: number
         }[]
+      }
+      seraphim_broadcast_learning: {
+        Args: {
+          p_impact_score?: number
+          p_learning_content: string
+          p_learning_type: string
+          p_seraphim_id: string
+        }
+        Returns: number
       }
       tier1_deterministic_route: {
         Args: {
