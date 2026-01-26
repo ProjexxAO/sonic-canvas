@@ -59,6 +59,51 @@ export interface AgentRelationship {
   metadata: Record<string, unknown>;
 }
 
+// Phase 2: Task specialization score interface
+export interface AgentTaskScore {
+  id: string;
+  agent_id: string;
+  task_type: string;
+  success_count: number;
+  failure_count: number;
+  total_execution_time_ms: number;
+  avg_confidence: number;
+  avg_user_satisfaction: number;
+  specialization_score: number;
+  last_performed_at: string;
+}
+
+// Phase 2: Learning event interface
+export interface AgentLearningEvent {
+  id: string;
+  agent_id: string;
+  event_type: 'skill_gained' | 'specialization_up' | 'relationship_formed' | 'memory_consolidated';
+  event_data: Record<string, unknown>;
+  impact_score: number;
+  created_at: string;
+}
+
+// Phase 2: Semantic search result
+export interface SemanticMemoryResult {
+  id: string;
+  memory_type: string;
+  content: string;
+  importance_score: number;
+  created_at: string;
+  relevance_rank: number;
+}
+
+// Phase 2: Best agent for task result
+export interface BestAgentForTask {
+  agent_id: string;
+  agent_name: string;
+  sector: string;
+  specialization_score: number;
+  success_rate: number;
+  total_tasks: number;
+  avg_confidence: number;
+}
+
 export function useAgentMemory() {
   const { user } = useAuth();
   const [isLoading, setIsLoading] = useState(false);
@@ -378,8 +423,152 @@ export function useAgentMemory() {
     return context;
   }, [getMemories]);
 
+  // PHASE 2: Semantic memory search
+  const searchMemories = useCallback(async (
+    agentId: string,
+    searchQuery: string,
+    memoryType?: string,
+    limit = 10
+  ): Promise<SemanticMemoryResult[]> => {
+    try {
+      const { data, error } = await supabase
+        .rpc('search_agent_memories', {
+          p_agent_id: agentId,
+          p_search_query: searchQuery,
+          p_memory_type: memoryType || null,
+          p_limit: limit
+        });
+
+      if (error) throw error;
+      return (data || []) as SemanticMemoryResult[];
+    } catch (error) {
+      console.error('Failed to search agent memories:', error);
+      return [];
+    }
+  }, []);
+
+  // PHASE 2: Find best agents for a specific task type
+  const findBestAgentsForTask = useCallback(async (
+    taskType: string,
+    sector?: string,
+    limit = 5
+  ): Promise<BestAgentForTask[]> => {
+    try {
+      const { data, error } = await supabase
+        .rpc('find_best_agents_for_task', {
+          p_task_type: taskType,
+          p_sector: sector || null,
+          p_limit: limit
+        });
+
+      if (error) throw error;
+      return (data || []) as BestAgentForTask[];
+    } catch (error) {
+      console.error('Failed to find best agents for task:', error);
+      return [];
+    }
+  }, []);
+
+  // PHASE 2: Get task specialization scores for an agent
+  const getTaskScores = useCallback(async (
+    agentId: string,
+    limit = 10
+  ): Promise<AgentTaskScore[]> => {
+    try {
+      const { data, error } = await supabase
+        .from('agent_task_scores')
+        .select('*')
+        .eq('agent_id', agentId)
+        .order('specialization_score', { ascending: false })
+        .limit(limit);
+
+      if (error) throw error;
+      return (data || []) as AgentTaskScore[];
+    } catch (error) {
+      console.error('Failed to get task scores:', error);
+      return [];
+    }
+  }, []);
+
+  // PHASE 2: Get learning events for an agent
+  const getLearningEvents = useCallback(async (
+    agentId: string,
+    eventType?: string,
+    limit = 20
+  ): Promise<AgentLearningEvent[]> => {
+    try {
+      let query = supabase
+        .from('agent_learning_events')
+        .select('*')
+        .eq('agent_id', agentId)
+        .order('created_at', { ascending: false })
+        .limit(limit);
+
+      if (eventType) {
+        query = query.eq('event_type', eventType);
+      }
+
+      const { data, error } = await query;
+
+      if (error) throw error;
+      return (data || []) as AgentLearningEvent[];
+    } catch (error) {
+      console.error('Failed to get learning events:', error);
+      return [];
+    }
+  }, []);
+
+  // PHASE 2: Log a learning event manually
+  const logLearningEvent = useCallback(async (
+    agentId: string,
+    eventType: AgentLearningEvent['event_type'],
+    eventData: Record<string, unknown> = {},
+    impactScore = 0.5
+  ): Promise<AgentLearningEvent | null> => {
+    try {
+      const { data, error } = await supabase
+        .from('agent_learning_events')
+        .insert({
+          agent_id: agentId,
+          event_type: eventType,
+          event_data: eventData as Json,
+          impact_score: impactScore
+        })
+        .select()
+        .single();
+
+      if (error) throw error;
+      return data as AgentLearningEvent;
+    } catch (error) {
+      console.error('Failed to log learning event:', error);
+      return null;
+    }
+  }, []);
+
+  // PHASE 2: Get agent's top specializations
+  const getAgentSpecializations = useCallback(async (
+    agentId: string
+  ): Promise<{ taskType: string; score: number }[]> => {
+    try {
+      const { data, error } = await supabase
+        .from('agent_task_scores')
+        .select('task_type, specialization_score')
+        .eq('agent_id', agentId)
+        .gte('specialization_score', 0.5)
+        .order('specialization_score', { ascending: false })
+        .limit(5);
+
+      if (error) throw error;
+      return (data || []).map(d => ({ taskType: d.task_type, score: d.specialization_score }));
+    } catch (error) {
+      console.error('Failed to get agent specializations:', error);
+      return [];
+    }
+  }, []);
+
   return {
     isLoading,
+    // Phase 1
     storeMemory,
     getMemories,
     recordPerformance,
@@ -387,6 +576,13 @@ export function useAgentMemory() {
     getSonicDNA,
     updateRelationship,
     getBestCollaborators,
-    buildMemoryContext
+    buildMemoryContext,
+    // Phase 2
+    searchMemories,
+    findBestAgentsForTask,
+    getTaskScores,
+    getLearningEvents,
+    logLearningEvent,
+    getAgentSpecializations
   };
 }

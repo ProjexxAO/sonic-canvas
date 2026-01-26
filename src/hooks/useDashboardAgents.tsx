@@ -33,6 +33,14 @@ const mapDbToAgent = (row: any): SonicAgent => ({
     stability: Number(row.stability),
   },
   linkedAgents: row.linked_agents || [],
+  // Phase 1 & 2 metrics
+  totalTasksCompleted: row.total_tasks_completed,
+  successRate: row.success_rate,
+  avgConfidence: row.avg_confidence,
+  specializationLevel: row.specialization_level,
+  taskSpecializations: row.task_specializations,
+  preferredTaskTypes: row.preferred_task_types,
+  learningVelocity: row.learning_velocity,
 });
 
 export function useDashboardAgents(options?: { limit?: number }) {

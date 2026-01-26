@@ -25,6 +25,15 @@ export interface SonicAgent {
   };
   position?: { x: number; y: number };
   linkedAgents: string[];
+  // Phase 1 metrics
+  totalTasksCompleted?: number;
+  successRate?: number;
+  avgConfidence?: number;
+  specializationLevel?: 'novice' | 'apprentice' | 'competent' | 'proficient' | 'expert';
+  // Phase 2 advanced learning
+  taskSpecializations?: Record<string, number>;
+  preferredTaskTypes?: string[];
+  learningVelocity?: number;
 }
 
 export interface SynthesisRequest {

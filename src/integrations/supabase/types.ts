@@ -73,6 +73,41 @@ export type Database = {
           },
         ]
       }
+      agent_learning_events: {
+        Row: {
+          agent_id: string
+          created_at: string
+          event_data: Json | null
+          event_type: string
+          id: string
+          impact_score: number | null
+        }
+        Insert: {
+          agent_id: string
+          created_at?: string
+          event_data?: Json | null
+          event_type: string
+          id?: string
+          impact_score?: number | null
+        }
+        Update: {
+          agent_id?: string
+          created_at?: string
+          event_data?: Json | null
+          event_type?: string
+          id?: string
+          impact_score?: number | null
+        }
+        Relationships: [
+          {
+            foreignKeyName: "agent_learning_events_agent_id_fkey"
+            columns: ["agent_id"]
+            isOneToOne: false
+            referencedRelation: "sonic_agents"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
       agent_memory: {
         Row: {
           agent_id: string
@@ -349,6 +384,59 @@ export type Database = {
           user_id?: string
         }
         Relationships: []
+      }
+      agent_task_scores: {
+        Row: {
+          agent_id: string
+          avg_confidence: number | null
+          avg_user_satisfaction: number | null
+          created_at: string
+          failure_count: number | null
+          id: string
+          last_performed_at: string | null
+          specialization_score: number | null
+          success_count: number | null
+          task_type: string
+          total_execution_time_ms: number | null
+          updated_at: string
+        }
+        Insert: {
+          agent_id: string
+          avg_confidence?: number | null
+          avg_user_satisfaction?: number | null
+          created_at?: string
+          failure_count?: number | null
+          id?: string
+          last_performed_at?: string | null
+          specialization_score?: number | null
+          success_count?: number | null
+          task_type: string
+          total_execution_time_ms?: number | null
+          updated_at?: string
+        }
+        Update: {
+          agent_id?: string
+          avg_confidence?: number | null
+          avg_user_satisfaction?: number | null
+          created_at?: string
+          failure_count?: number | null
+          id?: string
+          last_performed_at?: string | null
+          specialization_score?: number | null
+          success_count?: number | null
+          task_type?: string
+          total_execution_time_ms?: number | null
+          updated_at?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "agent_task_scores_agent_id_fkey"
+            columns: ["agent_id"]
+            isOneToOne: false
+            referencedRelation: "sonic_agents"
+            referencedColumns: ["id"]
+          },
+        ]
       }
       atlas_conversations: {
         Row: {
@@ -3382,11 +3470,13 @@ export type Database = {
           linked_agents: string[] | null
           modulation: number
           name: string
+          preferred_task_types: string[] | null
           sector: Database["public"]["Enums"]["agent_sector"]
           specialization_level: string | null
           stability: number
           status: Database["public"]["Enums"]["agent_status"]
           success_rate: number | null
+          task_specializations: Json | null
           total_tasks_completed: number | null
           user_id: string
           waveform: Database["public"]["Enums"]["waveform_type"]
@@ -3412,11 +3502,13 @@ export type Database = {
           linked_agents?: string[] | null
           modulation?: number
           name: string
+          preferred_task_types?: string[] | null
           sector?: Database["public"]["Enums"]["agent_sector"]
           specialization_level?: string | null
           stability?: number
           status?: Database["public"]["Enums"]["agent_status"]
           success_rate?: number | null
+          task_specializations?: Json | null
           total_tasks_completed?: number | null
           user_id: string
           waveform?: Database["public"]["Enums"]["waveform_type"]
@@ -3442,11 +3534,13 @@ export type Database = {
           linked_agents?: string[] | null
           modulation?: number
           name?: string
+          preferred_task_types?: string[] | null
           sector?: Database["public"]["Enums"]["agent_sector"]
           specialization_level?: string | null
           stability?: number
           status?: Database["public"]["Enums"]["agent_status"]
           success_rate?: number | null
+          task_specializations?: Json | null
           total_tasks_completed?: number | null
           user_id?: string
           waveform?: Database["public"]["Enums"]["waveform_type"]
@@ -4713,6 +4807,18 @@ export type Database = {
         }
         Returns: number
       }
+      find_best_agents_for_task: {
+        Args: { p_limit?: number; p_sector?: string; p_task_type: string }
+        Returns: {
+          agent_id: string
+          agent_name: string
+          avg_confidence: number
+          sector: string
+          specialization_score: number
+          success_rate: number
+          total_tasks: number
+        }[]
+      }
       get_document_insights: {
         Args: { p_document_id: string; p_document_type?: string }
         Returns: Json
@@ -4803,6 +4909,22 @@ export type Database = {
       restore_document_version: {
         Args: { p_version_id: string }
         Returns: string
+      }
+      search_agent_memories: {
+        Args: {
+          p_agent_id: string
+          p_limit?: number
+          p_memory_type?: string
+          p_search_query: string
+        }
+        Returns: {
+          content: string
+          created_at: string
+          id: string
+          importance_score: number
+          memory_type: string
+          relevance_rank: number
+        }[]
       }
       search_agents_by_embedding: {
         Args: {

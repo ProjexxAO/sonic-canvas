@@ -1508,57 +1508,138 @@ ALWAYS execute real actions. Never just describe what you would do - DO IT.`;
       // Get conversation context for better understanding
       const conversationContext = await getConversationContext(supabase, userId, sessionId, 15);
       
-      // Analyze the user request and determine which agents to engage
+      // Extract task type from query for intelligent matching
+      const { taskType: detectedTaskType } = body;
+      
+      // PHASE 2: Use intelligent agent-to-task matching via database function
+      let specializedAgents: any[] = [];
+      if (detectedTaskType) {
+        const { data: bestAgents, error: bestAgentsError } = await supabase
+          .rpc('find_best_agents_for_task', { 
+            p_task_type: detectedTaskType,
+            p_sector: null,
+            p_limit: 10
+          });
+        
+        if (!bestAgentsError && bestAgents) {
+          specializedAgents = bestAgents;
+          console.log(`Found ${bestAgents.length} specialized agents for task type: ${detectedTaskType}`);
+        }
+      }
+
+      // Fallback: fetch all agents with enhanced metrics
       const { data: agents, error: agentsError } = await supabase
         .from('sonic_agents')
-        .select('id, name, sector, description, capabilities, status, total_tasks_completed, success_rate, specialization_level')
+        .select('id, name, sector, description, capabilities, status, total_tasks_completed, success_rate, specialization_level, task_specializations, preferred_task_types, learning_velocity')
         .limit(50);
 
       if (agentsError) throw agentsError;
 
-      // Fetch agent memory context for top agents (performance-based)
+      // PHASE 2: Semantic memory search for relevant context
       const agentMemoryContexts: string[] = [];
+      const agentSpecializationInfo: string[] = [];
+      
       if (agents && agents.length > 0) {
-        // Get top 5 agents by success rate for memory context
-        const topAgents = [...agents]
-          .sort((a, b) => (b.success_rate || 0) - (a.success_rate || 0))
-          .slice(0, 5);
+        // Prioritize specialized agents if found, otherwise use top performers
+        const priorityAgents = specializedAgents.length > 0
+          ? agents.filter(a => specializedAgents.some(sa => sa.agent_id === a.id))
+          : [...agents].sort((a, b) => (b.success_rate || 0) - (a.success_rate || 0)).slice(0, 5);
         
-        for (const agent of topAgents) {
-          const { data: memories } = await supabase
-            .from('agent_memory')
-            .select('memory_type, content, importance_score')
+        for (const agent of priorityAgents.slice(0, 5)) {
+          // Fetch task-specific scores for context
+          const { data: taskScores } = await supabase
+            .from('agent_task_scores')
+            .select('task_type, specialization_score, success_count, avg_confidence')
             .eq('agent_id', agent.id)
-            .order('importance_score', { ascending: false })
-            .limit(5);
+            .order('specialization_score', { ascending: false })
+            .limit(3);
           
-          if (memories && memories.length > 0) {
-            agentMemoryContexts.push(
-              `[${agent.name} Memory]\n${memories.map(m => `- [${m.memory_type}] ${m.content}`).join('\n')}`
-            );
+          if (taskScores && taskScores.length > 0) {
+            const specInfo = taskScores.map(ts => 
+              `${ts.task_type}: ${Math.round(ts.specialization_score * 100)}% specialized (${ts.success_count} successes)`
+            ).join(', ');
+            agentSpecializationInfo.push(`[${agent.name}] Specializations: ${specInfo}`);
+          }
+
+          // Semantic memory search if query provided
+          if (query) {
+            const { data: relevantMemories } = await supabase
+              .rpc('search_agent_memories', {
+                p_agent_id: agent.id,
+                p_search_query: query,
+                p_memory_type: null,
+                p_limit: 3
+              });
+            
+            if (relevantMemories && relevantMemories.length > 0) {
+              agentMemoryContexts.push(
+                `[${agent.name} Relevant Memory]\n${relevantMemories.map((m: any) => `- [${m.memory_type}] ${m.content} (relevance: ${Math.round(m.relevance_rank * 100)}%)`).join('\n')}`
+              );
+            }
+          }
+          
+          // Fallback to importance-based if no semantic matches
+          if (agentMemoryContexts.filter(c => c.includes(agent.name)).length === 0) {
+            const { data: memories } = await supabase
+              .from('agent_memory')
+              .select('memory_type, content, importance_score')
+              .eq('agent_id', agent.id)
+              .order('importance_score', { ascending: false })
+              .limit(3);
+            
+            if (memories && memories.length > 0) {
+              agentMemoryContexts.push(
+                `[${agent.name} Memory]\n${memories.map(m => `- [${m.memory_type}] ${m.content}`).join('\n')}`
+              );
+            }
           }
         }
       }
 
       const memorySection = agentMemoryContexts.length > 0 
-        ? `\n\n=== Agent Learning History ===\n${agentMemoryContexts.join('\n\n')}\n=== End Agent Memory ===\n`
+        ? `\n\n=== Agent Learning History (Semantically Matched) ===\n${agentMemoryContexts.join('\n\n')}\n=== End Agent Memory ===\n`
+        : '';
+      
+      const specializationSection = agentSpecializationInfo.length > 0
+        ? `\n\n=== Agent Task Specializations ===\n${agentSpecializationInfo.join('\n')}\n=== End Specializations ===\n`
+        : '';
+
+      // Build specialized agent context if available
+      const specializedContext = specializedAgents.length > 0
+        ? `\n\nPRE-RANKED SPECIALISTS for "${detectedTaskType}":\n${specializedAgents.map((sa, i) => 
+            `${i + 1}. ${sa.agent_name} - Specialization: ${Math.round(sa.specialization_score * 100)}%, Success: ${Math.round(sa.success_rate * 100)}%, Tasks: ${sa.total_tasks}`
+          ).join('\n')}\n`
         : '';
 
       // Use AI to determine which agents are best suited for the task
-      const orchestrationPrompt = `You are Atlas, an AI orchestrator with access to learned agent behaviors. Analyze the following user request and determine which agents should be engaged.
+      const orchestrationPrompt = `You are Atlas, an AI orchestrator with PHASE 2 advanced learning capabilities. Analyze the following user request and determine which agents should be engaged.
 
 ${conversationContext ? `Use this conversation history for context:${conversationContext}` : ''}
 ${memorySection}
+${specializationSection}
+${specializedContext}
 
 Current User Request: ${query}
+${detectedTaskType ? `Detected Task Type: ${detectedTaskType}` : ''}
 
 Available Agents (with performance metrics):
-${agents?.map(a => `- ${a.name} (${a.sector}): ${a.description || 'No description'}
+${agents?.map(a => {
+  const specializations = a.task_specializations && Object.keys(a.task_specializations).length > 0
+    ? Object.entries(a.task_specializations).slice(0, 3).map(([k, v]) => `${k}:${Math.round((v as number) * 100)}%`).join(', ')
+    : 'None yet';
+  const preferred = a.preferred_task_types?.slice(0, 3).join(', ') || 'None';
+  return `- ${a.name} (${a.sector}): ${a.description || 'No description'}
   Capabilities: ${a.capabilities?.join(', ') || 'None listed'}
-  Level: ${a.specialization_level || 'novice'} | Tasks: ${a.total_tasks_completed || 0} | Success: ${Math.round((a.success_rate || 0) * 100)}%`).join('\n')}
+  Level: ${a.specialization_level || 'novice'} | Tasks: ${a.total_tasks_completed || 0} | Success: ${Math.round((a.success_rate || 0) * 100)}%
+  Specializations: ${specializations} | Preferred Tasks: ${preferred} | Learning Velocity: ${a.learning_velocity || 0.5}`;
+}).join('\n')}
 
-IMPORTANT: Prioritize agents with higher success rates and more experience (higher task counts).
-Factor in agent memory context when available - agents remember their past successes and failures.
+CRITICAL SELECTION CRITERIA (in order):
+1. Use PRE-RANKED SPECIALISTS if provided - they have proven track records for this task type
+2. Factor in SPECIALIZATION SCORES - agents with higher scores for the detected task type should be prioritized
+3. Consider SEMANTIC MEMORY MATCHES - agents with relevant past experience should be preferred
+4. Prefer agents with higher LEARNING VELOCITY for novel tasks (they adapt faster)
+5. Success rate and total experience as baseline qualifiers
 
 Respond with a JSON object:
 {
@@ -1569,37 +1650,29 @@ Respond with a JSON object:
       "role": "what this agent will do",
       "confidence": 0.0-1.0,
       "requires_approval": true/false,
-      "reasoning": "why this agent was selected based on performance/memory"
+      "reasoning": "why this agent was selected based on specialization/memory",
+      "specialization_match": "high|medium|low|none"
     }
   ],
   "orchestration_plan": "brief description of how agents will work together",
-  "task_type": "automation|notification|analysis|assistance|background",
-  "estimated_duration": "time estimate"
+  "task_type": "specific task type for specialization tracking",
+  "estimated_duration": "time estimate",
+  "learning_opportunity": "what agents will learn from this task"
 }`;
 
-      const aiResponse = await fetch('https://ai.gateway.lovable.dev/v1/chat/completions', {
-        method: 'POST',
-        headers: {
-          'Authorization': `Bearer ${lovableApiKey}`,
-          'Content-Type': 'application/json',
-        },
-        body: JSON.stringify({
-          model: 'google/gemini-2.5-flash',
-          messages: [
-            { role: 'system', content: 'You are Atlas, an expert AI orchestrator with memory of agent performance. Always respond with valid JSON.' },
-            { role: 'user', content: orchestrationPrompt },
-          ],
-        }),
-      });
+      const aiResult = await callAIGateway([
+        { role: 'system', content: 'You are Atlas, an expert AI orchestrator with Phase 2 advanced learning. Prioritize specialized agents and semantic memory matches. Always respond with valid JSON.' },
+        { role: 'user', content: orchestrationPrompt },
+      ]);
 
-      if (!aiResponse.ok) {
-        const errorText = await aiResponse.text();
-        console.error('AI orchestration error:', errorText);
-        throw new Error('Failed to orchestrate agents');
+      if (aiResult.status !== 200) {
+        return new Response(JSON.stringify(aiResult.body), {
+          status: aiResult.status,
+          headers: { ...corsHeaders, 'Content-Type': 'application/json' },
+        });
       }
 
-      const aiData = await aiResponse.json();
-      const orchestrationContent = aiData.choices[0].message.content;
+      const orchestrationContent = aiResult.body.response;
       
       let orchestrationPlan;
       try {
@@ -1610,26 +1683,58 @@ Respond with a JSON object:
         orchestrationPlan = null;
       }
 
-      // Store the orchestration as an interaction memory for involved agents
-      if (orchestrationPlan?.recommended_agents) {
-        for (const recAgent of orchestrationPlan.recommended_agents) {
-          await supabase
-            .from('agent_memory')
-            .insert({
-              agent_id: recAgent.agent_id,
-              user_id: userId,
-              memory_type: 'interaction',
-              content: `Assigned to task: "${query?.substring(0, 100)}" with role: ${recAgent.role}`,
-              context: { task_type: orchestrationPlan.task_type, confidence: recAgent.confidence },
-              importance_score: recAgent.confidence || 0.5
-            });
+      // Store interaction memory for recommended agents with enhanced context
+      if (orchestrationPlan?.recommended_agents && userId) {
+        const taskTypeForMemory = orchestrationPlan.task_type || detectedTaskType || 'general';
+        
+        for (const rec of orchestrationPlan.recommended_agents.slice(0, 3)) {
+          if (rec.agent_id && rec.agent_id.match(/^[0-9a-f-]{36}$/i)) {
+            try {
+              // Store enriched interaction memory
+              await supabase
+                .from('agent_memory')
+                .insert({
+                  agent_id: rec.agent_id,
+                  user_id: userId,
+                  memory_type: 'interaction',
+                  content: `Assigned to "${taskTypeForMemory}" task: ${query?.substring(0, 100) || 'orchestration'}. Role: ${rec.role}. Match: ${rec.specialization_match || 'unrated'}`,
+                  context: { 
+                    task_type: taskTypeForMemory, 
+                    confidence: rec.confidence,
+                    specialization_match: rec.specialization_match,
+                    learning_opportunity: orchestrationPlan.learning_opportunity
+                  },
+                  importance_score: rec.confidence || 0.5
+                });
+              
+              // Log learning event for high-confidence selections
+              if (rec.confidence >= 0.8) {
+                await supabase
+                  .from('agent_learning_events')
+                  .insert({
+                    agent_id: rec.agent_id,
+                    event_type: 'skill_gained',
+                    event_data: { 
+                      task_type: taskTypeForMemory, 
+                      confidence: rec.confidence,
+                      role: rec.role
+                    },
+                    impact_score: rec.confidence
+                  });
+              }
+            } catch (memErr) {
+              console.warn('Failed to store agent memory/learning event:', memErr);
+            }
+          }
         }
       }
 
       return new Response(JSON.stringify({ 
         orchestration: orchestrationPlan,
         availableAgents: agents?.length || 0,
-        memoryEnabled: agentMemoryContexts.length > 0
+        specializedAgents,
+        memoryEnabled: agentMemoryContexts.length > 0,
+        phase: 2
       }), {
         headers: { ...corsHeaders, 'Content-Type': 'application/json' },
       });
