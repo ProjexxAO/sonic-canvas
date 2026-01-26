@@ -34,6 +34,7 @@ import { toast } from 'sonner';
 import { MetricHeaderRow } from './MetricHeaderRow';
 import { WeekHabitGrid } from './WeekHabitGrid';
 import { CompactFinanceCard } from './CompactFinanceCard';
+import { AtlasActivityWidget } from './AtlasActivityWidget';
 
 interface SimplifiedDashboardProps {
   userId: string | undefined;
@@ -372,6 +373,9 @@ export function SimplifiedDashboard({
         )}>
           {/* Metric Header Row - Famous AI inspired KPIs */}
           <MetricHeaderRow />
+
+          {/* Atlas Activity - Transparency layer */}
+          <AtlasActivityWidget />
 
           {/* Today's Focus */}
           <TodaysFocusCard 
