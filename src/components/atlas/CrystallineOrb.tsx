@@ -39,42 +39,55 @@ function GoldenCore({ volume, isActive }: { volume: number; isActive: boolean })
 
   return (
     <group>
-      {/* Outer atmospheric glow */}
+      {/* Outer magenta atmospheric glow */}
       <mesh ref={outerGlowRef}>
         <sphereGeometry args={[1, 32, 32]} />
         <meshBasicMaterial
-          color="#ff8833"
+          color="#ff44aa"
           transparent
-          opacity={0.15 * intensity}
+          opacity={0.25 * intensity}
           depthWrite={false}
           blending={THREE.AdditiveBlending}
         />
       </mesh>
-      {/* Mid glow */}
+      {/* Mid cyan glow */}
       <mesh ref={glowRef}>
         <sphereGeometry args={[1, 32, 32]} />
         <meshBasicMaterial
-          color="#ffcc66"
+          color="#44ffee"
           transparent
-          opacity={0.4 * intensity}
+          opacity={0.5 * intensity}
           depthWrite={false}
           blending={THREE.AdditiveBlending}
         />
       </mesh>
-      {/* Inner core */}
+      {/* Inner warm core */}
       <mesh ref={coreRef}>
         <sphereGeometry args={[1, 32, 32]} />
         <meshBasicMaterial
-          color="#ffe8cc"
+          color="#ffdd88"
           transparent
-          opacity={0.95 * intensity}
+          opacity={1 * intensity}
           blending={THREE.AdditiveBlending}
         />
       </mesh>
+      {/* Multi-colored point lights */}
+      <pointLight 
+        color="#ff66cc" 
+        intensity={isActive ? 3 + volume * 2 : 1.5} 
+        distance={4} 
+        decay={2} 
+      />
+      <pointLight 
+        color="#44ddff" 
+        intensity={isActive ? 2 + volume * 1.5 : 1} 
+        distance={5} 
+        decay={2} 
+      />
       <pointLight 
         color="#ffaa44" 
-        intensity={isActive ? 4 + volume * 3 : 2} 
-        distance={6} 
+        intensity={isActive ? 2 + volume * 1.5 : 1} 
+        distance={5} 
         decay={2} 
       />
     </group>
@@ -119,8 +132,8 @@ function TorusKnotRibbon({
       meshRef.current.scale.setScalar(scale * volumeScale);
     }
   });
-
-  const opacity = isActive ? 0.8 + volume * 0.2 : 0.5;
+  // Increased opacity for more vibrant colors
+  const opacity = isActive ? 0.95 + volume * 0.05 : 0.7;
 
   return (
     <mesh ref={meshRef}>
@@ -183,7 +196,7 @@ function EnergyRibbons({ volume, isActive }: { volume: number; isActive: boolean
 
 // Glowing vertex points on the crystal - ALWAYS VISIBLE
 function VertexGlowPoints({ isActive }: { isActive: boolean }) {
-  const pointsRef = useRef<THREE.Points>(null);
+  const groupRef = useRef<THREE.Group>(null);
   
   // Dodecahedron vertices - smaller to match core size
   const positions = useMemo(() => {
@@ -206,9 +219,9 @@ function VertexGlowPoints({ isActive }: { isActive: boolean }) {
   }, []);
 
   useFrame((state) => {
-    if (pointsRef.current) {
+    if (groupRef.current) {
       const speed = isActive ? 0.05 : 0.02;
-      pointsRef.current.rotation.y = state.clock.elapsedTime * speed;
+      groupRef.current.rotation.y = state.clock.elapsedTime * speed;
     }
   });
 
@@ -218,18 +231,23 @@ function VertexGlowPoints({ isActive }: { isActive: boolean }) {
     return geo;
   }, [positions]);
 
+  // Colorful vertex points
+  const colors = ['#00ffff', '#ff44cc', '#44ff88', '#ffaa44'];
+  
   return (
-    <points ref={pointsRef} geometry={geometry}>
-      <pointsMaterial
-        color="#00ffff"
-        size={isActive ? 0.08 : 0.05}
-        transparent
-        opacity={isActive ? 0.95 : 0.6}
-        sizeAttenuation
-        depthWrite={false}
-        blending={THREE.AdditiveBlending}
-      />
-    </points>
+    <group ref={groupRef}>
+      {Array.from({ length: Math.floor(positions.length / 3) }).map((_, i) => (
+        <mesh key={i} position={[positions[i * 3], positions[i * 3 + 1], positions[i * 3 + 2]]}>
+          <sphereGeometry args={[isActive ? 0.04 : 0.025, 8, 8]} />
+          <meshBasicMaterial
+            color={colors[i % colors.length]}
+            transparent
+            opacity={isActive ? 0.95 : 0.6}
+            blending={THREE.AdditiveBlending}
+          />
+        </mesh>
+      ))}
+    </group>
   );
 }
 
@@ -255,6 +273,9 @@ function CrystalFlares({ isActive }: { isActive: boolean }) {
   const opacity = isActive ? 0.7 : 0.4;
   const size = isActive ? 0.1 : 0.07;
 
+  // Colorful flares
+  const flareColors = ['#ff66cc', '#66ffee', '#ffcc44', '#cc66ff'];
+  
   return (
     <group ref={flaresRef}>
       {flarePositions.map((pos, i) => (
@@ -262,7 +283,7 @@ function CrystalFlares({ isActive }: { isActive: boolean }) {
           <mesh>
             <planeGeometry args={[size, size]} />
             <meshBasicMaterial
-              color="#ffffff"
+              color={flareColors[i]}
               transparent
               opacity={opacity}
               blending={THREE.AdditiveBlending}
@@ -270,7 +291,7 @@ function CrystalFlares({ isActive }: { isActive: boolean }) {
               depthWrite={false}
             />
           </mesh>
-          <pointLight color="#aaeeff" intensity={isActive ? 0.6 : 0.3} distance={2} decay={2} />
+          <pointLight color={flareColors[i]} intensity={isActive ? 0.8 : 0.4} distance={2} decay={2} />
         </group>
       ))}
     </group>
