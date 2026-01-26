@@ -471,23 +471,6 @@ export function CrystallineOrb({
           outputVolume={outputVolume}
         />
       </Canvas>
-      
-      {/* Overlay text */}
-      {!isConnected && !isConnecting && (
-        <div className="absolute inset-0 flex items-center justify-center pointer-events-none">
-          <span className="text-[10px] font-mono text-muted-foreground uppercase tracking-widest text-center bg-background/70 px-3 py-1.5 rounded-full backdrop-blur-sm border border-border/40">
-            Tap to Activate
-          </span>
-        </div>
-      )}
-      
-      {isConnecting && (
-        <div className="absolute inset-0 flex items-center justify-center pointer-events-none">
-          <span className="text-[10px] font-mono text-primary uppercase tracking-widest animate-pulse text-center bg-background/70 px-3 py-1.5 rounded-full backdrop-blur-sm border border-primary/40">
-            Connecting...
-          </span>
-        </div>
-      )}
     </div>
   );
 }
