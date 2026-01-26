@@ -73,6 +73,53 @@ export type Database = {
           },
         ]
       }
+      agent_memory: {
+        Row: {
+          agent_id: string
+          content: string
+          context: Json | null
+          created_at: string
+          embedding: string | null
+          expires_at: string | null
+          id: string
+          importance_score: number | null
+          memory_type: string
+          user_id: string
+        }
+        Insert: {
+          agent_id: string
+          content: string
+          context?: Json | null
+          created_at?: string
+          embedding?: string | null
+          expires_at?: string | null
+          id?: string
+          importance_score?: number | null
+          memory_type?: string
+          user_id: string
+        }
+        Update: {
+          agent_id?: string
+          content?: string
+          context?: Json | null
+          created_at?: string
+          embedding?: string | null
+          expires_at?: string | null
+          id?: string
+          importance_score?: number | null
+          memory_type?: string
+          user_id?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "agent_memory_agent_id_fkey"
+            columns: ["agent_id"]
+            isOneToOne: false
+            referencedRelation: "sonic_agents"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
       agent_notifications: {
         Row: {
           action_items: Json | null
@@ -132,6 +179,113 @@ export type Database = {
           user_id?: string
         }
         Relationships: []
+      }
+      agent_performance: {
+        Row: {
+          agent_id: string
+          confidence_score: number | null
+          context: Json | null
+          created_at: string
+          error_type: string | null
+          execution_time_ms: number | null
+          id: string
+          success: boolean
+          task_description: string | null
+          task_type: string
+          user_id: string
+          user_satisfaction: number | null
+        }
+        Insert: {
+          agent_id: string
+          confidence_score?: number | null
+          context?: Json | null
+          created_at?: string
+          error_type?: string | null
+          execution_time_ms?: number | null
+          id?: string
+          success: boolean
+          task_description?: string | null
+          task_type: string
+          user_id: string
+          user_satisfaction?: number | null
+        }
+        Update: {
+          agent_id?: string
+          confidence_score?: number | null
+          context?: Json | null
+          created_at?: string
+          error_type?: string | null
+          execution_time_ms?: number | null
+          id?: string
+          success?: boolean
+          task_description?: string | null
+          task_type?: string
+          user_id?: string
+          user_satisfaction?: number | null
+        }
+        Relationships: [
+          {
+            foreignKeyName: "agent_performance_agent_id_fkey"
+            columns: ["agent_id"]
+            isOneToOne: false
+            referencedRelation: "sonic_agents"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      agent_relationships: {
+        Row: {
+          agent_a_id: string
+          agent_b_id: string
+          created_at: string
+          id: string
+          interaction_count: number | null
+          metadata: Json | null
+          relationship_type: string
+          success_rate: number | null
+          synergy_score: number | null
+          updated_at: string
+        }
+        Insert: {
+          agent_a_id: string
+          agent_b_id: string
+          created_at?: string
+          id?: string
+          interaction_count?: number | null
+          metadata?: Json | null
+          relationship_type?: string
+          success_rate?: number | null
+          synergy_score?: number | null
+          updated_at?: string
+        }
+        Update: {
+          agent_a_id?: string
+          agent_b_id?: string
+          created_at?: string
+          id?: string
+          interaction_count?: number | null
+          metadata?: Json | null
+          relationship_type?: string
+          success_rate?: number | null
+          synergy_score?: number | null
+          updated_at?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "agent_relationships_agent_a_id_fkey"
+            columns: ["agent_a_id"]
+            isOneToOne: false
+            referencedRelation: "sonic_agents"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "agent_relationships_agent_b_id_fkey"
+            columns: ["agent_b_id"]
+            isOneToOne: false
+            referencedRelation: "sonic_agents"
+            referencedColumns: ["id"]
+          },
+        ]
       }
       agent_task_queue: {
         Row: {
@@ -3208,6 +3362,7 @@ export type Database = {
       }
       sonic_agents: {
         Row: {
+          avg_confidence: number | null
           capabilities: string[] | null
           class: Database["public"]["Enums"]["agent_class"]
           code_artifact: string | null
@@ -3222,16 +3377,22 @@ export type Database = {
           frequency: number
           id: string
           last_active: string
+          last_performance_update: string | null
+          learning_velocity: number | null
           linked_agents: string[] | null
           modulation: number
           name: string
           sector: Database["public"]["Enums"]["agent_sector"]
+          specialization_level: string | null
           stability: number
           status: Database["public"]["Enums"]["agent_status"]
+          success_rate: number | null
+          total_tasks_completed: number | null
           user_id: string
           waveform: Database["public"]["Enums"]["waveform_type"]
         }
         Insert: {
+          avg_confidence?: number | null
           capabilities?: string[] | null
           class?: Database["public"]["Enums"]["agent_class"]
           code_artifact?: string | null
@@ -3246,16 +3407,22 @@ export type Database = {
           frequency?: number
           id?: string
           last_active?: string
+          last_performance_update?: string | null
+          learning_velocity?: number | null
           linked_agents?: string[] | null
           modulation?: number
           name: string
           sector?: Database["public"]["Enums"]["agent_sector"]
+          specialization_level?: string | null
           stability?: number
           status?: Database["public"]["Enums"]["agent_status"]
+          success_rate?: number | null
+          total_tasks_completed?: number | null
           user_id: string
           waveform?: Database["public"]["Enums"]["waveform_type"]
         }
         Update: {
+          avg_confidence?: number | null
           capabilities?: string[] | null
           class?: Database["public"]["Enums"]["agent_class"]
           code_artifact?: string | null
@@ -3270,16 +3437,71 @@ export type Database = {
           frequency?: number
           id?: string
           last_active?: string
+          last_performance_update?: string | null
+          learning_velocity?: number | null
           linked_agents?: string[] | null
           modulation?: number
           name?: string
           sector?: Database["public"]["Enums"]["agent_sector"]
+          specialization_level?: string | null
           stability?: number
           status?: Database["public"]["Enums"]["agent_status"]
+          success_rate?: number | null
+          total_tasks_completed?: number | null
           user_id?: string
           waveform?: Database["public"]["Enums"]["waveform_type"]
         }
         Relationships: []
+      }
+      sonic_dna_embeddings: {
+        Row: {
+          affinity_matrix: Json | null
+          agent_id: string
+          behavioral_embedding: string | null
+          calibration_count: number | null
+          created_at: string
+          id: string
+          last_calibrated_at: string | null
+          personality_traits: Json | null
+          sonic_signature: Json
+          specialization_score: Json | null
+          updated_at: string
+        }
+        Insert: {
+          affinity_matrix?: Json | null
+          agent_id: string
+          behavioral_embedding?: string | null
+          calibration_count?: number | null
+          created_at?: string
+          id?: string
+          last_calibrated_at?: string | null
+          personality_traits?: Json | null
+          sonic_signature: Json
+          specialization_score?: Json | null
+          updated_at?: string
+        }
+        Update: {
+          affinity_matrix?: Json | null
+          agent_id?: string
+          behavioral_embedding?: string | null
+          calibration_count?: number | null
+          created_at?: string
+          id?: string
+          last_calibrated_at?: string | null
+          personality_traits?: Json | null
+          sonic_signature?: Json
+          specialization_score?: Json | null
+          updated_at?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "sonic_dna_embeddings_agent_id_fkey"
+            columns: ["agent_id"]
+            isOneToOne: true
+            referencedRelation: "sonic_agents"
+            referencedColumns: ["id"]
+          },
+        ]
       }
       subscriptions: {
         Row: {
@@ -4447,6 +4669,10 @@ export type Database = {
       [_ in never]: never
     }
     Functions: {
+      calculate_sonic_dna_traits: {
+        Args: { p_sonic_signature: Json }
+        Returns: Json
+      }
       can_access_hub: {
         Args: {
           p_hub: Database["public"]["Enums"]["hub_type"]

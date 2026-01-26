@@ -1511,20 +1511,54 @@ ALWAYS execute real actions. Never just describe what you would do - DO IT.`;
       // Analyze the user request and determine which agents to engage
       const { data: agents, error: agentsError } = await supabase
         .from('sonic_agents')
-        .select('id, name, sector, description, capabilities, status')
+        .select('id, name, sector, description, capabilities, status, total_tasks_completed, success_rate, specialization_level')
         .limit(50);
 
       if (agentsError) throw agentsError;
 
+      // Fetch agent memory context for top agents (performance-based)
+      const agentMemoryContexts: string[] = [];
+      if (agents && agents.length > 0) {
+        // Get top 5 agents by success rate for memory context
+        const topAgents = [...agents]
+          .sort((a, b) => (b.success_rate || 0) - (a.success_rate || 0))
+          .slice(0, 5);
+        
+        for (const agent of topAgents) {
+          const { data: memories } = await supabase
+            .from('agent_memory')
+            .select('memory_type, content, importance_score')
+            .eq('agent_id', agent.id)
+            .order('importance_score', { ascending: false })
+            .limit(5);
+          
+          if (memories && memories.length > 0) {
+            agentMemoryContexts.push(
+              `[${agent.name} Memory]\n${memories.map(m => `- [${m.memory_type}] ${m.content}`).join('\n')}`
+            );
+          }
+        }
+      }
+
+      const memorySection = agentMemoryContexts.length > 0 
+        ? `\n\n=== Agent Learning History ===\n${agentMemoryContexts.join('\n\n')}\n=== End Agent Memory ===\n`
+        : '';
+
       // Use AI to determine which agents are best suited for the task
-      const orchestrationPrompt = `You are Atlas, an AI orchestrator. Analyze the following user request and determine which agents should be engaged.
+      const orchestrationPrompt = `You are Atlas, an AI orchestrator with access to learned agent behaviors. Analyze the following user request and determine which agents should be engaged.
 
 ${conversationContext ? `Use this conversation history for context:${conversationContext}` : ''}
+${memorySection}
 
 Current User Request: ${query}
 
-Available Agents:
-${agents?.map(a => `- ${a.name} (${a.sector}): ${a.description || 'No description'}. Capabilities: ${a.capabilities?.join(', ') || 'None listed'}`).join('\n')}
+Available Agents (with performance metrics):
+${agents?.map(a => `- ${a.name} (${a.sector}): ${a.description || 'No description'}
+  Capabilities: ${a.capabilities?.join(', ') || 'None listed'}
+  Level: ${a.specialization_level || 'novice'} | Tasks: ${a.total_tasks_completed || 0} | Success: ${Math.round((a.success_rate || 0) * 100)}%`).join('\n')}
+
+IMPORTANT: Prioritize agents with higher success rates and more experience (higher task counts).
+Factor in agent memory context when available - agents remember their past successes and failures.
 
 Respond with a JSON object:
 {
@@ -1534,7 +1568,8 @@ Respond with a JSON object:
       "agent_name": "name",
       "role": "what this agent will do",
       "confidence": 0.0-1.0,
-      "requires_approval": true/false
+      "requires_approval": true/false,
+      "reasoning": "why this agent was selected based on performance/memory"
     }
   ],
   "orchestration_plan": "brief description of how agents will work together",
@@ -1551,7 +1586,7 @@ Respond with a JSON object:
         body: JSON.stringify({
           model: 'google/gemini-2.5-flash',
           messages: [
-            { role: 'system', content: 'You are Atlas, an expert AI orchestrator. Always respond with valid JSON.' },
+            { role: 'system', content: 'You are Atlas, an expert AI orchestrator with memory of agent performance. Always respond with valid JSON.' },
             { role: 'user', content: orchestrationPrompt },
           ],
         }),
@@ -1575,10 +1610,232 @@ Respond with a JSON object:
         orchestrationPlan = null;
       }
 
+      // Store the orchestration as an interaction memory for involved agents
+      if (orchestrationPlan?.recommended_agents) {
+        for (const recAgent of orchestrationPlan.recommended_agents) {
+          await supabase
+            .from('agent_memory')
+            .insert({
+              agent_id: recAgent.agent_id,
+              user_id: userId,
+              memory_type: 'interaction',
+              content: `Assigned to task: "${query?.substring(0, 100)}" with role: ${recAgent.role}`,
+              context: { task_type: orchestrationPlan.task_type, confidence: recAgent.confidence },
+              importance_score: recAgent.confidence || 0.5
+            });
+        }
+      }
+
       return new Response(JSON.stringify({ 
         orchestration: orchestrationPlan,
-        availableAgents: agents?.length || 0
+        availableAgents: agents?.length || 0,
+        memoryEnabled: agentMemoryContexts.length > 0
       }), {
+        headers: { ...corsHeaders, 'Content-Type': 'application/json' },
+      });
+    }
+
+    // =============================================
+    // AGENT MEMORY & PERFORMANCE ACTIONS
+    // =============================================
+
+    if (action === 'record_agent_performance') {
+      const { agentId, taskType, success, taskDescription, executionTimeMs, confidenceScore, errorType, context: perfContext } = body;
+      
+      if (!agentId || !taskType || success === undefined) {
+        return new Response(JSON.stringify({ error: 'agentId, taskType, and success are required' }), {
+          status: 400,
+          headers: { ...corsHeaders, 'Content-Type': 'application/json' },
+        });
+      }
+
+      // Insert performance record
+      const { data: perfData, error: perfError } = await supabase
+        .from('agent_performance')
+        .insert({
+          agent_id: agentId,
+          user_id: userId,
+          task_type: taskType,
+          task_description: taskDescription,
+          success,
+          execution_time_ms: executionTimeMs,
+          confidence_score: confidenceScore,
+          error_type: errorType,
+          context: perfContext || {}
+        })
+        .select()
+        .single();
+
+      if (perfError) throw perfError;
+
+      // Also store as learning memory
+      await supabase
+        .from('agent_memory')
+        .insert({
+          agent_id: agentId,
+          user_id: userId,
+          memory_type: success ? 'outcome' : 'learning',
+          content: `Task "${taskType}": ${success ? 'Completed successfully' : 'Failed'}${errorType ? ` - ${errorType}` : ''}`,
+          context: { taskType, success, taskDescription },
+          importance_score: success ? 0.6 : 0.8 // Failures are more important to remember
+        });
+
+      return new Response(JSON.stringify({ 
+        success: true, 
+        performance: perfData,
+        message: `Performance recorded for agent`
+      }), {
+        headers: { ...corsHeaders, 'Content-Type': 'application/json' },
+      });
+    }
+
+    if (action === 'get_agent_memory') {
+      const { agentId, memoryType, limit: memLimit } = body;
+      
+      if (!agentId) {
+        return new Response(JSON.stringify({ error: 'agentId is required' }), {
+          status: 400,
+          headers: { ...corsHeaders, 'Content-Type': 'application/json' },
+        });
+      }
+
+      let memQuery = supabase
+        .from('agent_memory')
+        .select('*')
+        .eq('agent_id', agentId)
+        .order('created_at', { ascending: false })
+        .limit(memLimit || 50);
+
+      if (memoryType) {
+        memQuery = memQuery.eq('memory_type', memoryType);
+      }
+
+      const { data: memories, error: memError } = await memQuery;
+      if (memError) throw memError;
+
+      return new Response(JSON.stringify({ memories: memories || [] }), {
+        headers: { ...corsHeaders, 'Content-Type': 'application/json' },
+      });
+    }
+
+    if (action === 'get_sonic_dna') {
+      const { agentId, sonicSignature } = body;
+      
+      if (!agentId) {
+        return new Response(JSON.stringify({ error: 'agentId is required' }), {
+          status: 400,
+          headers: { ...corsHeaders, 'Content-Type': 'application/json' },
+        });
+      }
+
+      // Try to get existing
+      const { data: existing, error: fetchError } = await supabase
+        .from('sonic_dna_embeddings')
+        .select('*')
+        .eq('agent_id', agentId)
+        .maybeSingle();
+
+      if (fetchError) throw fetchError;
+
+      if (existing) {
+        return new Response(JSON.stringify({ sonicDNA: existing }), {
+          headers: { ...corsHeaders, 'Content-Type': 'application/json' },
+        });
+      }
+
+      // Create new if signature provided
+      if (sonicSignature) {
+        // Calculate traits using the database function
+        const { data: traits } = await supabase
+          .rpc('calculate_sonic_dna_traits', { p_sonic_signature: sonicSignature });
+
+        const { data: created, error: createError } = await supabase
+          .from('sonic_dna_embeddings')
+          .insert({
+            agent_id: agentId,
+            sonic_signature: sonicSignature,
+            personality_traits: traits || {},
+            specialization_score: {},
+            affinity_matrix: {}
+          })
+          .select()
+          .single();
+
+        if (createError) throw createError;
+
+        return new Response(JSON.stringify({ sonicDNA: created, created: true }), {
+          headers: { ...corsHeaders, 'Content-Type': 'application/json' },
+        });
+      }
+
+      return new Response(JSON.stringify({ sonicDNA: null }), {
+        headers: { ...corsHeaders, 'Content-Type': 'application/json' },
+      });
+    }
+
+    if (action === 'update_agent_relationship') {
+      const { agentAId, agentBId, success: relSuccess } = body;
+      
+      if (!agentAId || !agentBId || relSuccess === undefined) {
+        return new Response(JSON.stringify({ error: 'agentAId, agentBId, and success are required' }), {
+          status: 400,
+          headers: { ...corsHeaders, 'Content-Type': 'application/json' },
+        });
+      }
+
+      // Ensure consistent ordering
+      const [firstId, secondId] = agentAId < agentBId ? [agentAId, agentBId] : [agentBId, agentAId];
+
+      // Try to get existing
+      const { data: existing, error: fetchRelError } = await supabase
+        .from('agent_relationships')
+        .select('*')
+        .eq('agent_a_id', firstId)
+        .eq('agent_b_id', secondId)
+        .maybeSingle();
+
+      if (fetchRelError) throw fetchRelError;
+
+      if (existing) {
+        const newCount = (existing.interaction_count || 0) + 1;
+        const currentRate = existing.success_rate || 0.5;
+        const newRate = (currentRate * existing.interaction_count + (relSuccess ? 1 : 0)) / newCount;
+
+        const { data: updated, error: updateRelError } = await supabase
+          .from('agent_relationships')
+          .update({
+            interaction_count: newCount,
+            success_rate: newRate,
+            synergy_score: Math.min(1, (existing.synergy_score || 0.5) + (relSuccess ? 0.02 : -0.01))
+          })
+          .eq('id', existing.id)
+          .select()
+          .single();
+
+        if (updateRelError) throw updateRelError;
+
+        return new Response(JSON.stringify({ relationship: updated }), {
+          headers: { ...corsHeaders, 'Content-Type': 'application/json' },
+        });
+      }
+
+      // Create new
+      const { data: created, error: createRelError } = await supabase
+        .from('agent_relationships')
+        .insert({
+          agent_a_id: firstId,
+          agent_b_id: secondId,
+          relationship_type: 'collaboration',
+          synergy_score: relSuccess ? 0.55 : 0.45,
+          interaction_count: 1,
+          success_rate: relSuccess ? 1.0 : 0.0
+        })
+        .select()
+        .single();
+
+      if (createRelError) throw createRelError;
+
+      return new Response(JSON.stringify({ relationship: created, created: true }), {
         headers: { ...corsHeaders, 'Content-Type': 'application/json' },
       });
     }
