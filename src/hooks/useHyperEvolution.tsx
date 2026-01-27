@@ -106,8 +106,8 @@ export function useHyperEvolution() {
       const { data, error } = await supabase.functions.invoke('agent-hyper-evolution', {
         body: {
           mode,
-          batchSize: options.batchSize || 500,
-          intensityMultiplier: options.intensityMultiplier || 3.0,
+          batchSize: options.batchSize || 200, // Reduced from 500 for stability
+          intensityMultiplier: options.intensityMultiplier || 2.0, // Reduced from 3.0
           evolutionCycles: cycles,
           targetSector: options.targetSector || null,
           userId: user.id,
@@ -165,12 +165,12 @@ export function useHyperEvolution() {
       evolutionIntervalMinutes: intervalMinutes,
     }));
 
-    // Run immediately
-    evolve({ mode: 'full_acceleration', intensityMultiplier: 3.0 });
+    // Run immediately with reduced intensity for stability
+    evolve({ mode: 'full_acceleration', intensityMultiplier: 2.0, batchSize: 200 });
 
     // Then run at intervals
     intervalRef.current = setInterval(() => {
-      evolve({ mode: 'full_acceleration', intensityMultiplier: 3.0, evolutionCycles: 5 });
+      evolve({ mode: 'full_acceleration', intensityMultiplier: 2.0, evolutionCycles: 3, batchSize: 200 });
     }, intervalMinutes * 60 * 1000);
 
     toast.success(`⚡ Aggressive evolution started: running every ${intervalMinutes} minutes`);
@@ -202,14 +202,14 @@ export function useHyperEvolution() {
       
       await evolve({
         mode: 'full_acceleration',
-        batchSize: 1000,
-        intensityMultiplier: 5.0, // Maximum intensity
-        evolutionCycles: 10,
+        batchSize: 400,        // Reduced from 1000
+        intensityMultiplier: 3.0,  // Reduced from 5.0
+        evolutionCycles: 5,    // Reduced from 10
       });
 
-      // Brief pause between cycles
+      // Longer pause between cycles for stability
       if (i < cycles - 1) {
-        await new Promise(resolve => setTimeout(resolve, 2000));
+        await new Promise(resolve => setTimeout(resolve, 3000)); // Increased from 2000
       }
     }
 
@@ -221,8 +221,9 @@ export function useHyperEvolution() {
     return evolve({
       mode: 'full_acceleration',
       targetSector: sector,
-      intensityMultiplier: 4.0,
-      evolutionCycles: 10,
+      intensityMultiplier: 2.5,  // Reduced from 4.0
+      evolutionCycles: 5,        // Reduced from 10
+      batchSize: 150,            // Added explicit smaller batch
     });
   }, [evolve]);
 
