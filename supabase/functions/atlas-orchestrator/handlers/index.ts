@@ -4,8 +4,8 @@
  * Central export for all action handlers
  */
 
-export { getUIPreferences, updateUIPreferences } from "./preferences.ts";
-export { createTask, updateTask, deleteTask, getTasks } from "./tasks.ts";
+export { getUIPreferences, updateUIPreferences } from "./ui-preferences.ts";
+export { createTask, updateTask, deleteTask, getTasks } from "./task-queue.ts";
 export {
   createPersonalItem,
   updatePersonalItem,
@@ -18,17 +18,17 @@ export {
   completeHabit,
   getPersonalSummary,
   syncMemoryTasks,
-} from "./personal.ts";
-export { getConversationHistory, chat } from "./conversation.ts";
+} from "./personal-hub.ts";
+export { getConversationHistory, chat } from "./conversation-memory.ts";
 export { sendNotification, getNotifications, dismissNotification } from "./notifications.ts";
 export {
   recordAgentPerformance,
   getAgentMemory,
   getSonicDNA,
   updateAgentRelationship,
-} from "./agents.ts";
-export { orchestrateAgents } from "./orchestration.ts";
-export { widgetInitialize, widgetExecute } from "./widgets.ts";
+} from "./agent-memory.ts";
+export { orchestrateAgents } from "./agent-orchestration.ts";
+export { widgetInitialize, widgetExecute } from "./widget-agent.ts";
 export {
   dashboardList,
   dashboardSelect,
@@ -38,5 +38,5 @@ export {
   dashboardNotifications,
   dashboardMembers,
   dashboardSummary,
-} from "./dashboard.ts";
-export { search, webSearch, synthesize } from "./search.ts";
+} from "./shared-dashboard.ts";
+export { search, webSearch, synthesize } from "./search-synthesis.ts";
