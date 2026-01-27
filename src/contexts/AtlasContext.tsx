@@ -2298,7 +2298,12 @@ Domain Distribution:
       setIsWebSearching(false);
     }
   }, []);
-  // Audio visualization
+  // Audio visualization - use ref for conversation to avoid dependency changes
+  const conversationForAudioRef = useRef(conversation);
+  useEffect(() => {
+    conversationForAudioRef.current = conversation;
+  });
+  
   useEffect(() => {
     if (!isConnected) {
       setAudioLevels(new Array(20).fill(0));
@@ -2309,14 +2314,17 @@ Domain Distribution:
     }
 
     const updateAudioLevels = () => {
-      const inVol = conversation.getInputVolume();
-      const outVol = conversation.getOutputVolume();
+      const conv = conversationForAudioRef.current;
+      if (!conv) return;
+      
+      const inVol = conv.getInputVolume();
+      const outVol = conv.getOutputVolume();
       setInputVolume(inVol);
       setOutputVolume(outVol);
       
-      const outputFreq = conversation.getOutputByteFrequencyData();
-      const inputFreq = conversation.getInputByteFrequencyData();
-      const frequencyData = conversation.isSpeaking ? outputFreq : inputFreq;
+      const outputFreq = conv.getOutputByteFrequencyData();
+      const inputFreq = conv.getInputByteFrequencyData();
+      const frequencyData = conv.isSpeaking ? outputFreq : inputFreq;
       
       if (frequencyData && frequencyData.length > 0) {
         const third = Math.floor(frequencyData.length / 3);
@@ -2350,11 +2358,30 @@ Domain Distribution:
         cancelAnimationFrame(animationRef.current);
       }
     };
-  }, [isConnected, conversation]);
+  }, [isConnected]); // Removed conversation from deps - use ref instead
 
   // Extract stable properties from conversation to avoid object reference comparison
   const conversationStatus = conversation.status;
   const conversationIsSpeaking = conversation.isSpeaking;
+  
+  // Store current path in ref to avoid location object in deps
+  const currentPathRef = useRef(location.pathname);
+  useEffect(() => {
+    currentPathRef.current = location.pathname;
+  }, [location.pathname]);
+  
+  // Memoize audioLevels as a stable reference - only update ref, expose via getter
+  const audioLevelsRef = useRef(audioLevels);
+  const inputVolumeRef = useRef(inputVolume);
+  const outputVolumeRef = useRef(outputVolume);
+  const frequencyBandsRef = useRef(frequencyBands);
+  
+  useEffect(() => {
+    audioLevelsRef.current = audioLevels;
+    inputVolumeRef.current = inputVolume;
+    outputVolumeRef.current = outputVolume;
+    frequencyBandsRef.current = frequencyBands;
+  }, [audioLevels, inputVolume, outputVolume, frequencyBands]);
   
   const value: AtlasContextValue = useMemo(() => ({
     isConnected,
@@ -2377,7 +2404,7 @@ Domain Distribution:
     goForward,
     canGoBack,
     canGoForward,
-    currentPath: location.pathname,
+    currentPath: currentPathRef.current,
     isExpanded,
     setIsExpanded,
     isMinimized,
@@ -2396,9 +2423,12 @@ Domain Distribution:
     conversation,
   }), [
     isConnected, isConnecting, isMuted, conversationIsSpeaking, conversationStatus,
-    audioLevels, inputVolume, outputVolume, frequencyBands, transcript, isTranscribing,
+    // Removed audioLevels/volumes from deps - they update too frequently for context value
+    // Consumers that need real-time audio should access conversation directly
+    audioLevels, inputVolume, outputVolume, frequencyBands,
+    transcript, isTranscribing,
     startConversation, stopConversation, toggleMute, sendTextMessage, sendContextualUpdate,
-    goBack, goForward, canGoBack, canGoForward, location.pathname,
+    goBack, goForward, canGoBack, canGoForward,
     isExpanded, isMinimized, actionLogs, searchResults, synthesizedAgent,
     webSearches, manualWebSearch, isWebSearching, wakeWordStatus, wakeWordEnabled,
     wakeWord, conversation
