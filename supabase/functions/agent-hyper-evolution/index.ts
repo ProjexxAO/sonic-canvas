@@ -107,20 +107,32 @@ interface AgentRelationship {
 }
 
 // ============================================================================
-// Configuration Constants
+// Configuration Constants - OPTIMIZED for resilience
 // ============================================================================
 
 const CONFIG = {
-  DB_BATCH_SIZE: 50,
-  MEMORY_BATCH_SIZE: 100,
+  // Reduced batch sizes to avoid CPU timeouts
+  DB_BATCH_SIZE: 25,           // Reduced from 50 to prevent Cloudflare 500s
+  MEMORY_BATCH_SIZE: 50,       // Reduced from 100 for faster processing
+  AGENT_UPDATE_BATCH_SIZE: 10, // New: smaller batches for agent updates
+  
   MAX_LEARNING_VELOCITY: 1.0,
   MAX_SKILL_SCORE: 1.0,
-  MIN_TOP_PERFORMER_RATE: 0.7,
-  TOP_PERFORMER_PERCENTAGE: 0.1,
-  API_CALL_DELAY_MS: 500,
-  VISUAL_API_DELAY_MS: 300,
-  MAX_RETRIES: 3,
-  INITIAL_RETRY_DELAY_MS: 1000,
+  
+  // Lowered thresholds for top performer detection
+  MIN_TOP_PERFORMER_RATE: 0.4,        // Reduced from 0.7 - more agents qualify
+  TOP_PERFORMER_PERCENTAGE: 0.15,     // Increased from 0.1 - bigger pool
+  CRYSTALLIZATION_THRESHOLD: 0.3,     // New: lowered from 0.6
+  
+  // API timing
+  API_CALL_DELAY_MS: 750,       // Increased from 500 to reduce rate limiting
+  VISUAL_API_DELAY_MS: 500,     // Increased from 300
+  BATCH_DELAY_MS: 100,          // New: delay between batch updates
+  
+  // Retry configuration - more aggressive
+  MAX_RETRIES: 5,               // Increased from 3
+  INITIAL_RETRY_DELAY_MS: 500,  // Reduced for faster recovery
+  MAX_RETRY_DELAY_MS: 8000,     // New: cap on retry delay
   
   COLLECTIVE_BOOST_BASE: 0.05,
   COLLECTIVE_BOOST_MAX: 0.3,
@@ -257,8 +269,32 @@ async function withRetry<T>(
       return await fn();
     } catch (error) {
       lastError = error instanceof Error ? error : new Error(String(error));
+      const errorMsg = lastError.message.toLowerCase();
+      
+      // Check for retryable errors (Cloudflare 500s, SSL, rate limits)
+      const isRetryable = 
+        errorMsg.includes('500') ||
+        errorMsg.includes('502') ||
+        errorMsg.includes('503') ||
+        errorMsg.includes('504') ||
+        errorMsg.includes('ssl') ||
+        errorMsg.includes('handshake') ||
+        errorMsg.includes('429') ||
+        errorMsg.includes('rate') ||
+        errorMsg.includes('timeout') ||
+        errorMsg.includes('econnreset') ||
+        errorMsg.includes('cloudflare');
+      
+      if (!isRetryable) {
+        throw lastError; // Don't retry non-transient errors
+      }
+      
       if (attempt < maxRetries) {
-        const delay = initialDelay * Math.pow(2, attempt);
+        // Exponential backoff with jitter, capped at max delay
+        const baseDelay = initialDelay * Math.pow(2, attempt);
+        const jitter = Math.random() * 500;
+        const delay = Math.min(baseDelay + jitter, CONFIG.MAX_RETRY_DELAY_MS);
+        console.log(`[withRetry] Attempt ${attempt + 1} failed, retrying in ${delay}ms...`);
         await sleep(delay);
       }
     }
@@ -292,33 +328,47 @@ async function batchUpdateAgents(
   supabase: SupabaseClient,
   updates: AgentUpdate[]
 ): Promise<void> {
-  const batchSize = CONFIG.DB_BATCH_SIZE;
+  const batchSize = CONFIG.AGENT_UPDATE_BATCH_SIZE; // Smaller batches
 
   for (let i = 0; i < updates.length; i += batchSize) {
     const batch = updates.slice(i, i + batchSize);
 
-    await Promise.all(batch.map(async (update) => {
-      const updateData: Partial<AgentUpdate> = {
-        last_performance_update: update.last_performance_update
-      };
+    // Sequential updates within batch to avoid overwhelming the DB
+    for (const update of batch) {
+      await withRetry(async () => {
+        const updateData: Partial<AgentUpdate> = {
+          last_performance_update: update.last_performance_update
+        };
 
-      if (update.task_specializations !== undefined) {
-        updateData.task_specializations = update.task_specializations;
-      }
-      if (update.learning_velocity !== undefined) {
-        updateData.learning_velocity = update.learning_velocity;
-      }
-      if (update.success_rate !== undefined) {
-        updateData.success_rate = update.success_rate;
-      }
+        if (update.task_specializations !== undefined) {
+          updateData.task_specializations = update.task_specializations;
+        }
+        if (update.learning_velocity !== undefined) {
+          updateData.learning_velocity = update.learning_velocity;
+        }
+        if (update.success_rate !== undefined) {
+          updateData.success_rate = update.success_rate;
+        }
 
-      const { error } = await supabase
-        .from('sonic_agents')
-        .update(updateData)
-        .eq('id', update.id);
+        const { error } = await supabase
+          .from('sonic_agents')
+          .update(updateData)
+          .eq('id', update.id);
 
-      if (error) console.error(`[batchUpdateAgents] Error updating agent ${update.id}:`, error);
-    }));
+        if (error) {
+          // Throw to trigger retry for transient errors
+          if (error.message?.includes('500') || error.message?.includes('timeout')) {
+            throw new Error(error.message);
+          }
+          console.error(`[batchUpdateAgents] Non-retryable error for agent ${update.id}:`, error);
+        }
+      }, 3, 200); // Fewer retries, faster initial delay for DB ops
+    }
+
+    // Small delay between batches to prevent overwhelming the DB
+    if (i + batchSize < updates.length) {
+      await sleep(CONFIG.BATCH_DELAY_MS);
+    }
   }
 }
 
@@ -681,27 +731,61 @@ async function executeMemoryCrystallization(
   let totalCrystallizations = 0;
   let totalKnowledge = 0;
 
+  // OPTIMIZED: Lowered threshold to find more top performers
   const topAgentIds = agents
-    .filter(a => (a.success_rate ?? 0) > 0.6)
-    .slice(0, 50)
+    .filter(a => (a.success_rate ?? 0) > CONFIG.CRYSTALLIZATION_THRESHOLD)
+    .sort((a, b) => (b.success_rate ?? 0) - (a.success_rate ?? 0))
+    .slice(0, 100) // Increased from 50
     .map(a => a.id);
 
+  // If still no top performers, use the best available agents regardless of threshold
   if (topAgentIds.length === 0) {
-    await logger.info('Memory Crystallization: No top performers found, skipping');
-    return { crystallizations: 0, knowledgeGained: 0 };
+    await logger.info('Memory Crystallization: No top performers above threshold, using best available');
+    const bestAgents = [...agents]
+      .sort((a, b) => (b.success_rate ?? 0) - (a.success_rate ?? 0))
+      .slice(0, 25)
+      .map(a => a.id);
+    
+    if (bestAgents.length === 0) {
+      await logger.info('Memory Crystallization: No agents available');
+      return { crystallizations: 0, knowledgeGained: 0 };
+    }
+    
+    topAgentIds.push(...bestAgents);
   }
 
   const { data: memories, error: memoriesError } = await supabase
     .from('agent_memory')
     .select('*')
     .in('agent_id', topAgentIds)
-    .gt('importance_score', 0.5)
+    .gt('importance_score', 0.3) // Lowered from 0.5
     .order('importance_score', { ascending: false })
-    .limit(100);
+    .limit(150); // Increased from 100
 
-  if (memoriesError || !memories?.length) {
-    await logger.info('Memory Crystallization: No high-value memories found');
+  if (memoriesError) {
+    await logger.error('Memory Crystallization: Error fetching memories', { error: String(memoriesError) });
     return { crystallizations: 0, knowledgeGained: 0 };
+  }
+  
+  if (!memories?.length) {
+    // Fallback: Get any memories if no high-importance ones exist
+    const { data: fallbackMemories } = await supabase
+      .from('agent_memory')
+      .select('*')
+      .in('agent_id', topAgentIds)
+      .order('created_at', { ascending: false })
+      .limit(50);
+    
+    if (!fallbackMemories?.length) {
+      await logger.info('Memory Crystallization: No memories found for crystallization');
+      return { crystallizations: 0, knowledgeGained: 0 };
+    }
+    
+    // Use fallback memories with adjusted importance
+    for (const mem of fallbackMemories) {
+      mem.importance_score = Math.max(mem.importance_score ?? 0.3, 0.4);
+    }
+    memories.push(...fallbackMemories);
   }
 
   const crystalMemories: AgentMemory[] = [];
