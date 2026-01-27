@@ -28,6 +28,8 @@ export interface EvolutionSummary {
   totalCrystallizations: number;
   totalTasksDiscovered: number;
   totalTasksSeeded: number;
+  benchmarksEnhanced: number;
+  syntheticTasksGenerated: number;
   averageEvolutionGain: number;
   durationMs: number;
   evolutionRate: string;

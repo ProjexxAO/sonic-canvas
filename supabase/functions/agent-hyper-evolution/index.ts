@@ -1061,6 +1061,10 @@ async function executeRealWorldTaskDiscovery(
   const learningEvents: LearningEvent[] = [];
   const updates: AgentUpdate[] = [];
   const timestamp = new Date().toISOString();
+  
+  // Collect all discovered tasks for benchmark enhancement
+  const allDiscoveredTasks: DiscoveredTask[] = [];
+  const discoveredSectors: string[] = [];
 
   // Query up to 4 sectors based on intensity
   const sectorsToQuery = Object.keys(sectorGroups).slice(0, Math.ceil(intensity * 2));
@@ -1131,6 +1135,12 @@ Return ONLY valid JSON array, no markdown or explanation.`
       if (taskDiscovery.tasks.length > 0) {
         totalTasksDiscovered += taskDiscovery.tasks.length;
         const sectorAgents = sectorGroups[sector];
+        
+        // Collect discovered tasks for benchmark enhancement
+        allDiscoveredTasks.push(...(taskDiscovery.tasks as DiscoveredTask[]));
+        if (!discoveredSectors.includes(sector)) {
+          discoveredSectors.push(sector);
+        }
 
         // Seed tasks into agent_task_queue for training execution
         for (const task of taskDiscovery.tasks as DiscoveredTask[]) {
@@ -1252,7 +1262,337 @@ Return ONLY valid JSON array, no markdown or explanation.`
 
   await logger.info(`Task Discovery complete: ${totalTasksDiscovered} discovered, ${totalTasksSeeded} seeded, ${totalKnowledge.toFixed(2)} knowledge gained`);
 
+  // NEW: Enhance synthetic benchmarks based on discovered real-world patterns
+  if (allDiscoveredTasks.length > 0) {
+    const combinedSectors = discoveredSectors.join(',');
+    const benchmarkEnhancements = await enhanceSyntheticBenchmarks(
+      supabase,
+      allDiscoveredTasks,
+      combinedSectors,
+      intensity,
+      logger
+    );
+    totalKnowledge += benchmarkEnhancements.knowledgeAdded;
+  }
+
   return { tasksDiscovered: totalTasksDiscovered, tasksSeeded: totalTasksSeeded, knowledgeGained: totalKnowledge };
+}
+
+// ============================================================================
+// BENCHMARK ENHANCEMENT - Make Synthetic Benchmarks More Realistic
+// ============================================================================
+
+interface BenchmarkTemplate {
+  task_type: string;
+  title_patterns: string[];
+  complexity_distribution: { min: number; max: number; avg: number };
+  priority_weights: Record<string, number>;
+  input_data_schemas: Record<string, unknown>[];
+  success_criteria: string[];
+  edge_cases: string[];
+  real_world_context: string;
+}
+
+async function enhanceSyntheticBenchmarks(
+  supabase: SupabaseClient,
+  discoveredTasks: DiscoveredTask[],
+  sector: string,
+  intensity: number,
+  logger: ServiceLogger
+): Promise<{ benchmarksEnhanced: number; knowledgeAdded: number }> {
+  if (discoveredTasks.length === 0) {
+    return { benchmarksEnhanced: 0, knowledgeAdded: 0 };
+  }
+
+  await logger.info(`Enhancing synthetic benchmarks with ${discoveredTasks.length} real-world task patterns`);
+
+  let benchmarksEnhanced = 0;
+  let knowledgeAdded = 0;
+  const timestamp = new Date().toISOString();
+
+  // Group discovered tasks by type to create benchmark templates
+  const taskTypePatterns: Record<string, BenchmarkTemplate> = {};
+
+  for (const task of discoveredTasks) {
+    const taskType = task.task_type || 'general';
+    
+    if (!taskTypePatterns[taskType]) {
+      taskTypePatterns[taskType] = {
+        task_type: taskType,
+        title_patterns: [],
+        complexity_distribution: { min: 10, max: 0, avg: 0 },
+        priority_weights: { low: 0, medium: 0, high: 0, critical: 0 },
+        input_data_schemas: [],
+        success_criteria: [],
+        edge_cases: [],
+        real_world_context: sector
+      };
+    }
+
+    const template = taskTypePatterns[taskType];
+
+    // Extract title pattern
+    const titlePattern = task.title
+      .replace(/\d+/g, '{N}')
+      .replace(/\b\d{4}\b/g, '{YEAR}')
+      .replace(/\b(January|February|March|April|May|June|July|August|September|October|November|December)\b/gi, '{MONTH}');
+    template.title_patterns.push(titlePattern);
+
+    // Update complexity distribution
+    const complexity = task.complexity || 5;
+    template.complexity_distribution.min = Math.min(template.complexity_distribution.min, complexity);
+    template.complexity_distribution.max = Math.max(template.complexity_distribution.max, complexity);
+    template.complexity_distribution.avg = 
+      (template.complexity_distribution.avg * (template.title_patterns.length - 1) + complexity) / template.title_patterns.length;
+
+    // Update priority weights
+    const priority = task.priority || 'medium';
+    template.priority_weights[priority] = (template.priority_weights[priority] || 0) + 1;
+
+    // Generate success criteria from task description
+    if (task.description) {
+      const criteria = extractSuccessCriteria(task.description);
+      template.success_criteria.push(...criteria);
+    }
+
+    // Generate edge cases based on complexity
+    const edgeCases = generateEdgeCases(task);
+    template.edge_cases.push(...edgeCases);
+  }
+
+  // Store benchmark templates as learning events for future synthetic task generation
+  for (const [taskType, template] of Object.entries(taskTypePatterns)) {
+    // Normalize priority weights
+    const totalPriority = Object.values(template.priority_weights).reduce((a, b) => a + b, 0);
+    if (totalPriority > 0) {
+      for (const key of Object.keys(template.priority_weights)) {
+        template.priority_weights[key] /= totalPriority;
+      }
+    }
+
+    // Deduplicate arrays
+    template.title_patterns = [...new Set(template.title_patterns)].slice(0, 10);
+    template.success_criteria = [...new Set(template.success_criteria)].slice(0, 8);
+    template.edge_cases = [...new Set(template.edge_cases)].slice(0, 6);
+
+    // Store as benchmark enhancement event
+    await supabase.from('agent_learning_events').insert({
+      agent_id: '00000000-0000-0000-0000-000000000000', // System-level event
+      event_type: 'benchmark_enhancement',
+      event_data: {
+        task_type: taskType,
+        sector,
+        template,
+        source: 'real_world_discovery',
+        pattern_count: template.title_patterns.length,
+        avg_complexity: template.complexity_distribution.avg,
+        timestamp
+      },
+      impact_score: clamp(0.5 + intensity * 0.2, 0, 1)
+    });
+
+    benchmarksEnhanced++;
+    knowledgeAdded += 0.15;
+  }
+
+  // Generate enhanced synthetic tasks based on real-world patterns
+  const syntheticTasks = await generateEnhancedSyntheticTasks(taskTypePatterns, sector, intensity);
+  
+  // Seed enhanced synthetic tasks into training queue
+  for (const syntheticTask of syntheticTasks) {
+    const { error } = await supabase.from('agent_task_queue').insert({
+      user_id: '00000000-0000-0000-0000-000000000000',
+      task_title: `[SYNTHETIC-ENHANCED] ${syntheticTask.title}`,
+      task_type: syntheticTask.task_type,
+      task_description: syntheticTask.description,
+      task_priority: syntheticTask.priority,
+      status: 'pending',
+      input_data: {
+        source: 'enhanced_synthetic',
+        sector,
+        based_on_real_patterns: true,
+        complexity: syntheticTask.complexity,
+        success_criteria: syntheticTask.success_criteria,
+        edge_cases: syntheticTask.edge_cases,
+        generated_at: timestamp
+      },
+      orchestration_mode: 'training'
+    });
+
+    if (!error) {
+      benchmarksEnhanced++;
+      knowledgeAdded += 0.05;
+    }
+  }
+
+  await logger.info(`Benchmark enhancement complete: ${benchmarksEnhanced} enhanced, ${knowledgeAdded.toFixed(2)} knowledge added`);
+
+  return { benchmarksEnhanced, knowledgeAdded };
+}
+
+function extractSuccessCriteria(description: string): string[] {
+  const criteria: string[] = [];
+  
+  // Extract action verbs as potential success criteria
+  const actionPatterns = [
+    /(?:must|should|needs? to)\s+([^.,]+)/gi,
+    /(?:complete|finish|process|analyze|review|validate|verify)\s+([^.,]+)/gi,
+    /(?:ensure|confirm|check)\s+([^.,]+)/gi
+  ];
+
+  for (const pattern of actionPatterns) {
+    const matches = description.matchAll(pattern);
+    for (const match of matches) {
+      if (match[1] && match[1].length > 10 && match[1].length < 100) {
+        criteria.push(match[1].trim());
+      }
+    }
+  }
+
+  // If no matches, create generic criteria from description
+  if (criteria.length === 0 && description.length > 20) {
+    criteria.push(`Successfully ${description.substring(0, 80).toLowerCase()}`);
+  }
+
+  return criteria;
+}
+
+function generateEdgeCases(task: DiscoveredTask): string[] {
+  const edgeCases: string[] = [];
+  const complexity = task.complexity || 5;
+  
+  // Generate edge cases based on task type
+  const edgeCaseTemplates: Record<string, string[]> = {
+    financial_analysis: [
+      'Negative balance scenarios',
+      'Currency conversion edge cases',
+      'Missing historical data',
+      'Large transaction volumes'
+    ],
+    data_processing: [
+      'Empty dataset input',
+      'Malformed data records',
+      'Extremely large files',
+      'Duplicate record handling'
+    ],
+    communication: [
+      'Multilingual content',
+      'Urgent escalation scenarios',
+      'Missing recipient information',
+      'Attachment size limits'
+    ],
+    operations: [
+      'System downtime handling',
+      'Concurrent request conflicts',
+      'Resource constraint scenarios',
+      'Rollback requirements'
+    ],
+    research: [
+      'Contradictory source data',
+      'Outdated information',
+      'Ambiguous query terms',
+      'Citation verification'
+    ],
+    security_audit: [
+      'False positive handling',
+      'Zero-day vulnerability detection',
+      'Privilege escalation scenarios',
+      'Audit log tampering'
+    ],
+    default: [
+      'Invalid input handling',
+      'Timeout scenarios',
+      'Partial completion handling',
+      'Error recovery'
+    ]
+  };
+
+  const templates = edgeCaseTemplates[task.task_type] || edgeCaseTemplates.default;
+  
+  // Add edge cases based on complexity
+  const casesToAdd = Math.min(Math.ceil(complexity / 2.5), templates.length);
+  for (let i = 0; i < casesToAdd; i++) {
+    edgeCases.push(`${task.title}: ${templates[i]}`);
+  }
+
+  return edgeCases;
+}
+
+function generateEnhancedSyntheticTasks(
+  patterns: Record<string, BenchmarkTemplate>,
+  sector: string,
+  intensity: number
+): Array<{
+  title: string;
+  task_type: string;
+  description: string;
+  priority: string;
+  complexity: number;
+  success_criteria: string[];
+  edge_cases: string[];
+}> {
+  const syntheticTasks: Array<{
+    title: string;
+    task_type: string;
+    description: string;
+    priority: string;
+    complexity: number;
+    success_criteria: string[];
+    edge_cases: string[];
+  }> = [];
+
+  const tasksToGenerate = Math.ceil(intensity * 3);
+
+  for (const [taskType, template] of Object.entries(patterns)) {
+    for (let i = 0; i < Math.min(tasksToGenerate, 3); i++) {
+      // Generate title from patterns
+      const patternIdx = Math.floor(Math.random() * template.title_patterns.length);
+      let title = template.title_patterns[patternIdx] || `Synthetic ${taskType} task`;
+      title = title
+        .replace('{N}', String(Math.floor(Math.random() * 100) + 1))
+        .replace('{YEAR}', '2025')
+        .replace('{MONTH}', ['January', 'February', 'March'][Math.floor(Math.random() * 3)]);
+
+      // Select priority based on real-world distribution
+      const priorityRoll = Math.random();
+      let priority = 'medium';
+      let cumulative = 0;
+      for (const [p, weight] of Object.entries(template.priority_weights)) {
+        cumulative += weight;
+        if (priorityRoll <= cumulative) {
+          priority = p;
+          break;
+        }
+      }
+
+      // Generate complexity within discovered range
+      const complexityRange = template.complexity_distribution.max - template.complexity_distribution.min;
+      const complexity = template.complexity_distribution.min + 
+        Math.random() * complexityRange * (0.8 + Math.random() * 0.4); // ±20% variance
+
+      // Combine success criteria
+      const criteria = template.success_criteria
+        .sort(() => Math.random() - 0.5)
+        .slice(0, 3);
+
+      // Select edge cases
+      const edges = template.edge_cases
+        .sort(() => Math.random() - 0.5)
+        .slice(0, 2);
+
+      syntheticTasks.push({
+        title: `[${sector}] ${title}`,
+        task_type: taskType,
+        description: `Enhanced synthetic ${taskType} task based on real-world ${sector} patterns. Complexity: ${complexity.toFixed(1)}/10`,
+        priority,
+        complexity: Math.round(complexity),
+        success_criteria: criteria,
+        edge_cases: edges
+      });
+    }
+  }
+
+  return syntheticTasks;
 }
 
 async function executeVisualIntelligence(
