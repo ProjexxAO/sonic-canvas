@@ -28,6 +28,7 @@ type EvolutionMode =
   | 'crystallization'
   | 'web_knowledge'
   | 'visual_intelligence'
+  | 'task_discovery'
   | 'full_acceleration';
 
 interface EvolutionRequest {
@@ -168,6 +169,22 @@ const ALL_TASK_TYPES = [
   'technical_support', 'project_management', 'legal_review', 'hr_operations'
 ] as const;
 
+// Real-world task discovery prompts by sector
+const SECTOR_TASK_DISCOVERY_PROMPTS: Record<string, string> = {
+  FINANCE: 'What are the most common real-world automation tasks in finance and accounting? Include tasks like invoice processing, reconciliation, financial reporting, tax calculations, expense management, and budgeting workflows.',
+  TECHNOLOGY: 'What are the most common real-world automation tasks in software development and IT? Include tasks like code review, deployment automation, monitoring alerts, incident response, documentation generation, and API integration.',
+  CREATIVE: 'What are the most common real-world automation tasks in creative and design workflows? Include tasks like asset management, design approvals, brand consistency checks, content scheduling, and creative brief processing.',
+  OPERATIONS: 'What are the most common real-world automation tasks in business operations? Include tasks like inventory management, supply chain coordination, vendor management, quality assurance, and process optimization.',
+  LEGAL: 'What are the most common real-world automation tasks in legal operations? Include tasks like contract review, compliance checking, document drafting, case management, and regulatory monitoring.',
+  MEDICAL: 'What are the most common real-world automation tasks in healthcare? Include tasks like patient scheduling, medical records processing, insurance verification, prescription management, and clinical documentation.',
+  RESEARCH: 'What are the most common real-world automation tasks in research and academia? Include tasks like literature review, data analysis, citation management, grant tracking, and experiment documentation.',
+  SECURITY: 'What are the most common real-world automation tasks in cybersecurity? Include tasks like threat monitoring, vulnerability scanning, incident response, access management, and compliance auditing.',
+  COMMUNICATIONS: 'What are the most common real-world automation tasks in communications and marketing? Include tasks like email campaigns, social media scheduling, analytics reporting, content personalization, and audience segmentation.',
+  STRATEGY: 'What are the most common real-world automation tasks in business strategy and planning? Include tasks like market analysis, competitor tracking, KPI monitoring, scenario planning, and strategic report generation.',
+  DATA: 'What are the most common real-world automation tasks in data management? Include tasks like data cleaning, ETL pipelines, quality validation, schema migrations, and data synchronization.',
+  GENERAL: 'What are the most common real-world business automation tasks across all industries? Include universal tasks like document processing, email management, scheduling, reporting, and workflow approvals.'
+};
+
 const SECTOR_KNOWLEDGE_TOPICS: Record<string, string[]> = {
   FINANCE: ['latest financial market trends', 'cryptocurrency regulations 2024', 'AI in fintech innovations', 'global economic forecasts', 'sustainable investing strategies'],
   TECHNOLOGY: ['emerging AI breakthroughs', 'quantum computing advances', 'cybersecurity threats 2024', 'cloud computing trends', 'edge computing developments'],
@@ -236,7 +253,7 @@ const SECTOR_VISUAL_CONTEXTS: Record<string, { imagePrompts: string[], videoScen
 function validateRequest(body: Partial<EvolutionRequest>): EvolutionRequest {
   const validModes: EvolutionMode[] = [
     'collective', 'hyper_parallel', 'adversarial', 'crystallization',
-    'web_knowledge', 'visual_intelligence', 'full_acceleration'
+    'web_knowledge', 'visual_intelligence', 'task_discovery', 'full_acceleration'
   ];
 
   const mode = (body.mode && validModes.includes(body.mode as EvolutionMode))
@@ -1007,6 +1024,237 @@ async function executeWebKnowledgeAbsorption(
   return { knowledgeGained: totalKnowledge, topicsAbsorbed };
 }
 
+// ============================================================================
+// TASK DISCOVERY - Query Perplexity for Real-World Tasks & Seed Task Queue
+// ============================================================================
+
+interface DiscoveredTask {
+  title: string;
+  description: string;
+  task_type: string;
+  priority: 'low' | 'medium' | 'high' | 'critical';
+  sector: string;
+  complexity: number;
+  automation_potential: number;
+}
+
+async function executeRealWorldTaskDiscovery(
+  agents: SonicAgent[],
+  supabase: SupabaseClient,
+  intensity: number,
+  logger: ServiceLogger
+): Promise<{ tasksDiscovered: number, tasksSeeded: number, knowledgeGained: number }> {
+  await logger.info(`Real-World Task Discovery starting for ${agents.length} agents`);
+
+  const perplexityApiKey = Deno.env.get('PERPLEXITY_API_KEY');
+  if (!perplexityApiKey) {
+    await logger.warn('Perplexity API key not configured, skipping task discovery');
+    return { tasksDiscovered: 0, tasksSeeded: 0, knowledgeGained: 0 };
+  }
+
+  let totalTasksDiscovered = 0;
+  let totalTasksSeeded = 0;
+  let totalKnowledge = 0;
+
+  const sectorGroups = groupBySector(agents);
+  const memories: AgentMemory[] = [];
+  const learningEvents: LearningEvent[] = [];
+  const updates: AgentUpdate[] = [];
+  const timestamp = new Date().toISOString();
+
+  // Query up to 4 sectors based on intensity
+  const sectorsToQuery = Object.keys(sectorGroups).slice(0, Math.ceil(intensity * 2));
+
+  for (const sector of sectorsToQuery) {
+    const discoveryPrompt = SECTOR_TASK_DISCOVERY_PROMPTS[sector] ?? SECTOR_TASK_DISCOVERY_PROMPTS.GENERAL;
+
+    try {
+      await logger.debug(`Discovering real-world tasks for sector ${sector}`);
+
+      const taskDiscovery = await withRetry(async () => {
+        const response = await fetch('https://api.perplexity.ai/chat/completions', {
+          method: 'POST',
+          headers: {
+            'Authorization': `Bearer ${perplexityApiKey}`,
+            'Content-Type': 'application/json',
+          },
+          body: JSON.stringify({
+            model: 'sonar',
+            messages: [
+              {
+                role: 'system',
+                content: `You are a task discovery agent. Analyze real-world automation tasks and return them as a JSON array. Each task should have:
+- title: Short task name (max 60 chars)
+- description: Clear description of what the task involves (max 200 chars)
+- task_type: Category (one of: financial_analysis, data_processing, communication, operations, research, security_audit, technical_support, project_management, legal_review, hr_operations, creative_design, strategy)
+- priority: Importance level (low, medium, high, critical)
+- complexity: Difficulty score 1-10
+- automation_potential: How automatable 0-1
+
+Return ONLY valid JSON array, no markdown or explanation.`
+              },
+              {
+                role: 'user',
+                content: `${discoveryPrompt} Return 5-8 specific, actionable tasks as JSON.`
+              }
+            ],
+            max_tokens: 1500,
+            temperature: 0.4,
+            search_recency_filter: 'month'
+          }),
+        });
+
+        if (!response.ok) throw new Error(`Perplexity API error: ${response.status}`);
+
+        const data = await response.json();
+        const content = data.choices?.[0]?.message?.content || '[]';
+        
+        // Extract JSON from response (handle potential markdown wrapping)
+        let jsonContent = content;
+        if (content.includes('```')) {
+          const match = content.match(/```(?:json)?\s*([\s\S]*?)\s*```/);
+          jsonContent = match ? match[1] : content;
+        }
+        
+        try {
+          const tasks = JSON.parse(jsonContent.trim());
+          return {
+            tasks: Array.isArray(tasks) ? tasks : [],
+            citations: data.citations ?? []
+          };
+        } catch {
+          await logger.warn(`Failed to parse task JSON for ${sector}`);
+          return { tasks: [], citations: [] };
+        }
+      });
+
+      if (taskDiscovery.tasks.length > 0) {
+        totalTasksDiscovered += taskDiscovery.tasks.length;
+        const sectorAgents = sectorGroups[sector];
+
+        // Seed tasks into agent_task_queue for training execution
+        for (const task of taskDiscovery.tasks as DiscoveredTask[]) {
+          // Select best agent for this task type based on specialization
+          const sortedAgents = [...sectorAgents].sort((a, b) => {
+            const aSpec = (a.task_specializations?.[task.task_type] as number) ?? 0;
+            const bSpec = (b.task_specializations?.[task.task_type] as number) ?? 0;
+            return bSpec - aSpec;
+          });
+          
+          const assignedAgent = sortedAgents[0];
+          if (!assignedAgent) continue;
+
+          // Insert discovered task into queue
+          const { error: insertError } = await supabase.from('agent_task_queue').insert({
+            user_id: assignedAgent.user_id || '00000000-0000-0000-0000-000000000000',
+            task_title: `[DISCOVERED] ${task.title}`,
+            task_type: task.task_type,
+            task_description: task.description,
+            task_priority: task.priority,
+            status: 'pending',
+            assigned_agents: [assignedAgent.id],
+            input_data: {
+              source: 'perplexity_discovery',
+              sector,
+              complexity: task.complexity,
+              automation_potential: task.automation_potential,
+              discovered_at: timestamp,
+              citations: taskDiscovery.citations.slice(0, 3)
+            },
+            orchestration_mode: 'training',
+            agent_suggestions: [{
+              agent_id: assignedAgent.id,
+              agent_name: assignedAgent.name,
+              reason: `Best ${task.task_type} specialist in ${sector} sector`,
+              confidence: (assignedAgent.task_specializations?.[task.task_type] as number) ?? 0.5
+            }]
+          });
+
+          if (!insertError) {
+            totalTasksSeeded++;
+          } else {
+            await logger.warn(`Failed to seed task: ${insertError.message}`);
+          }
+        }
+
+        // Enrich agent knowledge with discovered task patterns
+        const knowledgeValue = clamp(0.4 + intensity * 0.15, 0, 1);
+        const taskPatternSummary = taskDiscovery.tasks
+          .map((t: DiscoveredTask) => `• ${t.title} (${t.task_type}, complexity: ${t.complexity}/10)`)
+          .join('\n');
+
+        for (const agent of sectorAgents) {
+          memories.push({
+            agent_id: agent.id,
+            user_id: agent.user_id,
+            memory_type: 'task_pattern_discovery',
+            content: `[TASK PATTERNS - ${sector}]\n${taskPatternSummary}`,
+            importance_score: knowledgeValue,
+            context: {
+              source: 'perplexity_task_discovery',
+              sector,
+              tasksDiscovered: taskDiscovery.tasks.length,
+              taskTypes: [...new Set(taskDiscovery.tasks.map((t: DiscoveredTask) => t.task_type))],
+              avgComplexity: taskDiscovery.tasks.reduce((s: number, t: DiscoveredTask) => s + (t.complexity || 5), 0) / taskDiscovery.tasks.length,
+              timestamp
+            }
+          });
+
+          // Boost specialization in discovered task types
+          const currentSpecs = agent.task_specializations ?? {};
+          const newSpecs = { ...currentSpecs };
+          const discoveryBoost = intensity * 0.025;
+
+          for (const task of taskDiscovery.tasks as DiscoveredTask[]) {
+            const taskType = task.task_type;
+            if (taskType) {
+              newSpecs[taskType] = clamp((newSpecs[taskType] ?? 0) + discoveryBoost, 0, CONFIG.MAX_SKILL_SCORE);
+            }
+          }
+
+          updates.push({
+            id: agent.id,
+            task_specializations: newSpecs,
+            learning_velocity: clamp((agent.learning_velocity ?? 0.5) + intensity * 0.012, 0, CONFIG.MAX_LEARNING_VELOCITY),
+            last_performance_update: timestamp
+          });
+
+          totalKnowledge += knowledgeValue / sectorAgents.length;
+        }
+
+        learningEvents.push({
+          agent_id: sectorAgents[0]?.id ?? '00000000-0000-0000-0000-000000000000',
+          event_type: 'real_world_task_discovery',
+          event_data: {
+            sector,
+            tasksDiscovered: taskDiscovery.tasks.length,
+            tasksSeeded: totalTasksSeeded,
+            taskTypes: [...new Set(taskDiscovery.tasks.map((t: DiscoveredTask) => t.task_type))],
+            agentsEnriched: sectorAgents.length,
+            citationCount: taskDiscovery.citations.length
+          },
+          impact_score: knowledgeValue
+        });
+
+        await logger.debug(`Discovered ${taskDiscovery.tasks.length} tasks for ${sector}, seeded ${totalTasksSeeded}`);
+      }
+
+    } catch (error) {
+      await logger.error(`Error discovering tasks for ${sector}`, { error: String(error) });
+    }
+
+    await sleep(CONFIG.API_CALL_DELAY_MS);
+  }
+
+  if (memories.length > 0) await batchInsert(supabase, 'agent_memory', memories);
+  if (learningEvents.length > 0) await batchInsert(supabase, 'agent_learning_events', learningEvents);
+  await batchUpdateAgents(supabase, updates);
+
+  await logger.info(`Task Discovery complete: ${totalTasksDiscovered} discovered, ${totalTasksSeeded} seeded, ${totalKnowledge.toFixed(2)} knowledge gained`);
+
+  return { tasksDiscovered: totalTasksDiscovered, tasksSeeded: totalTasksSeeded, knowledgeGained: totalKnowledge };
+}
+
 async function executeVisualIntelligence(
   agents: SonicAgent[],
   supabase: SupabaseClient,
@@ -1204,6 +1452,8 @@ Deno.serve(async (req) => {
     let totalKnowledgeGained = 0;
     let totalCompetitions = 0;
     let totalCrystallizations = 0;
+    let totalTasksDiscovered = 0;
+    let totalTasksSeeded = 0;
 
     for (let cycle = 0; cycle < params.evolutionCycles; cycle++) {
       await logger.info(`Cycle ${cycle + 1}/${params.evolutionCycles}`);
@@ -1261,6 +1511,13 @@ Deno.serve(async (req) => {
         const visualResults = await executeVisualIntelligence(agents, supabase, intensityMultiplier, logger);
         totalKnowledgeGained += visualResults.knowledgeGained;
       }
+
+      if (mode === 'full_acceleration' || mode === 'task_discovery') {
+        const taskResults = await executeRealWorldTaskDiscovery(agents, supabase, intensityMultiplier, logger);
+        totalTasksDiscovered += taskResults.tasksDiscovered;
+        totalTasksSeeded += taskResults.tasksSeeded;
+        totalKnowledgeGained += taskResults.knowledgeGained;
+      }
     }
 
     const duration = Date.now() - startTime;
@@ -1277,6 +1534,8 @@ Deno.serve(async (req) => {
         totalKnowledgeGained,
         totalCompetitions,
         totalCrystallizations,
+        totalTasksDiscovered,
+        totalTasksSeeded,
         durationMs: duration,
         intensityMultiplier: params.intensityMultiplier,
         timestamp: new Date().toISOString()
@@ -1296,6 +1555,8 @@ Deno.serve(async (req) => {
       totalKnowledgeGained: Math.round(totalKnowledgeGained * 100) / 100,
       totalCompetitions,
       totalCrystallizations,
+      totalTasksDiscovered,
+      totalTasksSeeded,
       averageEvolutionGain: Math.round(averageGain * 100) / 100,
       durationMs: duration,
       evolutionRate: `${Math.round((allResults.length / (duration / 1000)) * 10) / 10} agents/sec`
