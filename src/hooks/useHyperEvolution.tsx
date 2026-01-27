@@ -13,6 +13,7 @@ export const EVOLUTION_MODES = {
   CRYSTALLIZATION: 'crystallization',
   WEB_KNOWLEDGE: 'web_knowledge',
   VISUAL_INTELLIGENCE: 'visual_intelligence',
+  TASK_DISCOVERY: 'task_discovery',
   FULL_ACCELERATION: 'full_acceleration',
 } as const;
 
@@ -25,6 +26,8 @@ export interface EvolutionSummary {
   totalKnowledgeGained: number;
   totalCompetitions: number;
   totalCrystallizations: number;
+  totalTasksDiscovered: number;
+  totalTasksSeeded: number;
   averageEvolutionGain: number;
   durationMs: number;
   evolutionRate: string;
