@@ -95,3 +95,6 @@ verify_jwt = false
 
 [functions.widget-update-checker]
 verify_jwt = false
+
+[functions.search-synthesis]
+verify_jwt = false
