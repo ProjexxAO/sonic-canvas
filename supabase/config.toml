@@ -80,3 +80,12 @@ verify_jwt = false
 
 [functions.agent-hyper-evolution]
 verify_jwt = false
+
+[functions.turnstile-config]
+verify_jwt = false
+
+[functions.verify-turnstile]
+verify_jwt = false
+
+[functions.widget-update-checker]
+verify_jwt = false
