@@ -59,11 +59,18 @@ export function useDashboardAgents(options?: { limit?: number }) {
 
     setLoading(true);
     try {
-      // NOTE: do NOT filter by user_id here.
-      // RLS enforces access (assigned agents for most users; all agents for superadmin).
+      // Select only necessary columns to avoid timeout on large tables
       const { data, error } = await supabase
         .from("sonic_agents")
-        .select("*")
+        .select(`
+          id, name, designation, sector, status, class,
+          waveform, frequency, color, modulation, density,
+          code_artifact, created_at, last_active,
+          cycles, efficiency, stability, linked_agents,
+          total_tasks_completed, success_rate, avg_confidence,
+          specialization_level, task_specializations, 
+          preferred_task_types, learning_velocity
+        `)
         .order("last_active", { ascending: false })
         .limit(limit);
 
@@ -71,7 +78,7 @@ export function useDashboardAgents(options?: { limit?: number }) {
       setAgents((data ?? []).map(mapDbToAgent));
     } catch (e) {
       console.error("[useDashboardAgents] Failed to load agents", e);
-      toast.error("Failed to load agents");
+      // Don't spam toasts on repeated failures
       setAgents([]);
     } finally {
       setLoading(false);
