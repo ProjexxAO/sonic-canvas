@@ -5,63 +5,48 @@
 import type { HandlerContext, HandlerResult, OrchestratorRequest } from "../types.ts";
 import { successResponse, errorResponse } from "../utils.ts";
 
-export async function sendNotification(
-  ctx: HandlerContext,
-  req: OrchestratorRequest
-): Promise<HandlerResult> {
-  const { notification } = req as any;
+export async function sendNotification(ctx: HandlerContext, req: OrchestratorRequest): Promise<HandlerResult> {
+  const { notification } = req as OrchestratorRequest & { notification: Record<string, unknown> };
+
+  if (!notification) return errorResponse('notification object is required');
 
   const { data, error } = await ctx.supabase
     .from('agent_notifications')
-    .insert({
-      user_id: req.userId,
-      ...notification,
-    })
+    .insert({ user_id: ctx.userId, ...notification })
     .select()
     .single();
 
-  if (error) {
-    return errorResponse(error.message, 500);
-  }
+  if (error) throw error;
 
-  return successResponse({
-    success: true,
-    notification: data
-  });
+  return successResponse({ success: true, notification: data });
 }
 
-export async function getNotifications(
-  ctx: HandlerContext,
-  req: OrchestratorRequest
-): Promise<HandlerResult> {
+export async function getNotifications(ctx: HandlerContext, _req: OrchestratorRequest): Promise<HandlerResult> {
   const { data, error } = await ctx.supabase
     .from('agent_notifications')
     .select('*')
-    .eq('user_id', req.userId)
+    .eq('user_id', ctx.userId)
     .eq('is_dismissed', false)
     .order('created_at', { ascending: false })
     .limit(50);
 
-  if (error) {
-    return errorResponse(error.message, 500);
-  }
+  if (error) throw error;
 
   return successResponse({ notifications: data || [] });
 }
 
-export async function dismissNotification(
-  ctx: HandlerContext,
-  req: OrchestratorRequest
-): Promise<HandlerResult> {
+export async function dismissNotification(ctx: HandlerContext, req: OrchestratorRequest): Promise<HandlerResult> {
+  const { notificationId } = req;
+
+  if (!notificationId) return errorResponse('notificationId is required');
+
   const { error } = await ctx.supabase
     .from('agent_notifications')
     .update({ is_dismissed: true })
-    .eq('id', req.notificationId)
-    .eq('user_id', req.userId);
+    .eq('id', notificationId)
+    .eq('user_id', ctx.userId);
 
-  if (error) {
-    return errorResponse(error.message, 500);
-  }
+  if (error) throw error;
 
   return successResponse({ success: true });
 }
