@@ -101,3 +101,6 @@ verify_jwt = false
 
 [functions.agent-orchestration]
 verify_jwt = false
+
+[functions.widget-agent]
+verify_jwt = false
