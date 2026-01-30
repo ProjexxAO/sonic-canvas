@@ -322,6 +322,56 @@ export type Database = {
           },
         ]
       }
+      agent_swarms: {
+        Row: {
+          completed_at: string | null
+          config: Json
+          coordinator_id: string | null
+          created_at: string | null
+          execution_plan: Json | null
+          id: string
+          member_ids: string[]
+          result: Json | null
+          status: string | null
+          task_id: string | null
+          user_id: string | null
+        }
+        Insert: {
+          completed_at?: string | null
+          config?: Json
+          coordinator_id?: string | null
+          created_at?: string | null
+          execution_plan?: Json | null
+          id?: string
+          member_ids: string[]
+          result?: Json | null
+          status?: string | null
+          task_id?: string | null
+          user_id?: string | null
+        }
+        Update: {
+          completed_at?: string | null
+          config?: Json
+          coordinator_id?: string | null
+          created_at?: string | null
+          execution_plan?: Json | null
+          id?: string
+          member_ids?: string[]
+          result?: Json | null
+          status?: string | null
+          task_id?: string | null
+          user_id?: string | null
+        }
+        Relationships: [
+          {
+            foreignKeyName: "agent_swarms_coordinator_id_fkey"
+            columns: ["coordinator_id"]
+            isOneToOne: false
+            referencedRelation: "sonic_agents"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
       agent_task_queue: {
         Row: {
           agent_suggestions: Json | null
@@ -3349,6 +3399,75 @@ export type Database = {
         }
         Relationships: []
       }
+      service_logs: {
+        Row: {
+          id: string
+          level: string
+          message: string
+          metadata: Json | null
+          org_id: string | null
+          request_id: string | null
+          service: string
+          timestamp: string | null
+          user_id: string | null
+        }
+        Insert: {
+          id?: string
+          level: string
+          message: string
+          metadata?: Json | null
+          org_id?: string | null
+          request_id?: string | null
+          service: string
+          timestamp?: string | null
+          user_id?: string | null
+        }
+        Update: {
+          id?: string
+          level?: string
+          message?: string
+          metadata?: Json | null
+          org_id?: string | null
+          request_id?: string | null
+          service?: string
+          timestamp?: string | null
+          user_id?: string | null
+        }
+        Relationships: []
+      }
+      service_metrics: {
+        Row: {
+          id: string
+          name: string
+          request_id: string | null
+          service: string
+          timestamp: string | null
+          unit: string | null
+          user_id: string | null
+          value: number
+        }
+        Insert: {
+          id?: string
+          name: string
+          request_id?: string | null
+          service: string
+          timestamp?: string | null
+          unit?: string | null
+          user_id?: string | null
+          value: number
+        }
+        Update: {
+          id?: string
+          name?: string
+          request_id?: string | null
+          service?: string
+          timestamp?: string | null
+          unit?: string | null
+          user_id?: string | null
+          value?: number
+        }
+        Relationships: []
+      }
       shared_dashboard_members: {
         Row: {
           can_comment: boolean | null
@@ -3710,6 +3829,53 @@ export type Database = {
         }
         Relationships: []
       }
+      task_assignments: {
+        Row: {
+          agent_id: string
+          assigned_at: string | null
+          backup_agents: string[] | null
+          completed_at: string | null
+          confidence: number | null
+          estimated_duration: number | null
+          id: string
+          status: string | null
+          task_id: string
+          user_id: string | null
+        }
+        Insert: {
+          agent_id: string
+          assigned_at?: string | null
+          backup_agents?: string[] | null
+          completed_at?: string | null
+          confidence?: number | null
+          estimated_duration?: number | null
+          id?: string
+          status?: string | null
+          task_id: string
+          user_id?: string | null
+        }
+        Update: {
+          agent_id?: string
+          assigned_at?: string | null
+          backup_agents?: string[] | null
+          completed_at?: string | null
+          confidence?: number | null
+          estimated_duration?: number | null
+          id?: string
+          status?: string | null
+          task_id?: string
+          user_id?: string | null
+        }
+        Relationships: [
+          {
+            foreignKeyName: "task_assignments_agent_id_fkey"
+            columns: ["agent_id"]
+            isOneToOne: false
+            referencedRelation: "sonic_agents"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
       tax_configurations: {
         Row: {
           country_code: string
@@ -3993,6 +4159,33 @@ export type Database = {
           reduced_motion?: boolean
           screen_reader_optimized?: boolean
           updated_at?: string
+          user_id?: string
+        }
+        Relationships: []
+      }
+      user_achievements: {
+        Row: {
+          description: string | null
+          earned_at: string | null
+          icon: string | null
+          id: string
+          name: string
+          user_id: string
+        }
+        Insert: {
+          description?: string | null
+          earned_at?: string | null
+          icon?: string | null
+          id?: string
+          name: string
+          user_id: string
+        }
+        Update: {
+          description?: string | null
+          earned_at?: string | null
+          icon?: string | null
+          id?: string
+          name?: string
           user_id?: string
         }
         Relationships: []
