@@ -1,4 +1,5 @@
 import { serve } from "https://deno.land/std@0.168.0/http/server.ts";
+import { createClient } from "https://esm.sh/@supabase/supabase-js@2";
 
 const corsHeaders = {
   'Access-Control-Allow-Origin': '*',
@@ -219,10 +220,64 @@ serve(async (req) => {
   }
 
   try {
+    // ============ AUTHENTICATION CHECK ============
+    const authHeader = req.headers.get('Authorization');
+    if (!authHeader) {
+      return new Response(JSON.stringify({ error: 'Unauthorized' }), {
+        status: 401,
+        headers: { ...corsHeaders, 'Content-Type': 'application/json' }
+      });
+    }
+
+    const supabaseUrl = Deno.env.get('SUPABASE_URL')!;
+    const supabaseAnonKey = Deno.env.get('SUPABASE_ANON_KEY')!;
+    const supabaseAuth = createClient(supabaseUrl, supabaseAnonKey, {
+      global: { headers: { Authorization: authHeader } }
+    });
+
+    const { data: { user }, error: authError } = await supabaseAuth.auth.getUser();
+    if (authError || !user) {
+      console.error('[code-evolution-engine] Auth error:', authError);
+      return new Response(JSON.stringify({ error: 'Unauthorized' }), {
+        status: 401,
+        headers: { ...corsHeaders, 'Content-Type': 'application/json' }
+      });
+    }
+
+    // Check for admin/code_reviewer role using service role key
+    const supabaseServiceKey = Deno.env.get('SUPABASE_SERVICE_ROLE_KEY')!;
+    const supabaseAdmin = createClient(supabaseUrl, supabaseServiceKey);
+    
+    const { data: roles } = await supabaseAdmin
+      .from('user_roles')
+      .select('role')
+      .eq('user_id', user.id);
+    
+    const allowedRoles = ['admin', 'superadmin', 'code_reviewer'];
+    const hasPermission = roles?.some(r => allowedRoles.includes(r.role));
+    
+    if (!hasPermission) {
+      console.error('[code-evolution-engine] Forbidden: user lacks required role', { userId: user.id, roles });
+      return new Response(JSON.stringify({ error: 'Forbidden: insufficient permissions for code evolution' }), {
+        status: 403,
+        headers: { ...corsHeaders, 'Content-Type': 'application/json' }
+      });
+    }
+    // ============ END AUTHENTICATION CHECK ============
+
     const request: EvolutionRequest = await req.json();
     const { action, entityType, entityId, entityName, sourceCode, evolutionType, userId } = request;
 
-    console.log(`Code Evolution Engine: ${action} for ${entityType} "${entityName}"`);
+    // Verify userId matches authenticated user
+    if (userId !== user.id) {
+      console.error('[code-evolution-engine] userId mismatch:', { providedUserId: userId, authUserId: user.id });
+      return new Response(JSON.stringify({ error: 'Forbidden: userId mismatch' }), {
+        status: 403,
+        headers: { ...corsHeaders, 'Content-Type': 'application/json' }
+      });
+    }
+
+    console.log(`[code-evolution-engine] ${action} for ${entityType} "${entityName}" by user ${user.id}`);
 
     let result: Record<string, any> = {};
 
