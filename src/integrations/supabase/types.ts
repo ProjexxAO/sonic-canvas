@@ -5032,6 +5032,7 @@ export type Database = {
         }
         Returns: boolean
       }
+      cleanup_expired_agent_memory: { Args: never; Returns: number }
       cleanup_expired_oauth_states: { Args: never; Returns: undefined }
       compute_agent_tool_permissions: {
         Args: { _agent_id: string; _user_id?: string; _workspace_id?: string }
