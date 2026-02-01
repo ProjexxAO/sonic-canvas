@@ -22,10 +22,28 @@ import {
   Shield,
   Loader2,
   Play,
-  Eye
+  Eye,
+  Lock
 } from 'lucide-react';
 
-const AUTHORIZED_EMAIL = 'projexxnz@gmail.com';
+// UI-level role check for display purposes only
+// Server-side authorization is enforced in code-evolution-engine Edge Function
+async function checkUserHasCodeEvolutionRole(): Promise<boolean> {
+  try {
+    const { data: { user } } = await supabase.auth.getUser();
+    if (!user) return false;
+    
+    const { data: roles } = await supabase
+      .from('user_roles')
+      .select('role')
+      .eq('user_id', user.id);
+    
+    const allowedRoles = ['admin', 'superadmin', 'code_reviewer'];
+    return roles?.some(r => allowedRoles.includes(r.role)) ?? false;
+  } catch {
+    return false;
+  }
+}
 
 export function CodeEvolutionPanel() {
   const [isAuthorized, setIsAuthorized] = useState(false);
@@ -47,16 +65,16 @@ export function CodeEvolutionPanel() {
     rollbackEvolution
   } = useCodeEvolution();
 
-  // Check if current user is authorized
+  // Check if current user has the required role (for UI display only)
+  // Actual authorization is enforced server-side
   useEffect(() => {
     const checkAuthorization = async () => {
       try {
-        const { data: { user } } = await supabase.auth.getUser();
-        if (user?.email === AUTHORIZED_EMAIL) {
-          setIsAuthorized(true);
-        }
+        const hasRole = await checkUserHasCodeEvolutionRole();
+        setIsAuthorized(hasRole);
       } catch (error) {
         console.error('Auth check failed:', error);
+        setIsAuthorized(false);
       } finally {
         setCheckingAuth(false);
       }
@@ -65,12 +83,9 @@ export function CodeEvolutionPanel() {
     checkAuthorization();
 
     // Listen for auth changes
-    const { data: { subscription } } = supabase.auth.onAuthStateChange(async (event, session) => {
-      if (session?.user?.email === AUTHORIZED_EMAIL) {
-        setIsAuthorized(true);
-      } else {
-        setIsAuthorized(false);
-      }
+    const { data: { subscription } } = supabase.auth.onAuthStateChange(async () => {
+      const hasRole = await checkUserHasCodeEvolutionRole();
+      setIsAuthorized(hasRole);
     });
 
     return () => subscription.unsubscribe();
@@ -85,7 +100,18 @@ export function CodeEvolutionPanel() {
   }
 
   if (!isAuthorized) {
-    return null; // Don't render anything if not authorized
+    return (
+      <Card className="border-destructive/30 bg-gradient-to-br from-background to-destructive/5">
+        <CardContent className="flex flex-col items-center justify-center py-12 text-center">
+          <Lock className="w-12 h-12 text-muted-foreground mb-4" />
+          <h3 className="text-lg font-semibold mb-2">Access Restricted</h3>
+          <p className="text-muted-foreground text-sm max-w-md">
+            Code Evolution features require elevated permissions. 
+            Contact an administrator if you need access to this functionality.
+          </p>
+        </CardContent>
+      </Card>
+    );
   }
 
   const handleAnalyze = async () => {

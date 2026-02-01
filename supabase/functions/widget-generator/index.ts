@@ -1,4 +1,5 @@
 import { serve } from "https://deno.land/std@0.168.0/http/server.ts";
+import { createClient } from "https://esm.sh/@supabase/supabase-js@2";
 
 const corsHeaders = {
   "Access-Control-Allow-Origin": "*",
@@ -103,7 +104,42 @@ serve(async (req) => {
   }
 
   try {
+    // ============ AUTHENTICATION CHECK ============
+    const authHeader = req.headers.get('Authorization');
+    if (!authHeader) {
+      return new Response(JSON.stringify({ error: 'Unauthorized' }), {
+        status: 401,
+        headers: { ...corsHeaders, 'Content-Type': 'application/json' }
+      });
+    }
+
+    const supabaseUrl = Deno.env.get('SUPABASE_URL')!;
+    const supabaseAnonKey = Deno.env.get('SUPABASE_ANON_KEY')!;
+    const supabaseAuth = createClient(supabaseUrl, supabaseAnonKey, {
+      global: { headers: { Authorization: authHeader } }
+    });
+
+    const { data: { user }, error: authError } = await supabaseAuth.auth.getUser();
+    if (authError || !user) {
+      console.error('[widget-generator] Auth error:', authError);
+      return new Response(JSON.stringify({ error: 'Unauthorized' }), {
+        status: 401,
+        headers: { ...corsHeaders, 'Content-Type': 'application/json' }
+      });
+    }
+    // ============ END AUTHENTICATION CHECK ============
+
     const { prompt, userId, availableDataSources, existingWidgets } = await req.json() as GenerateWidgetRequest;
+
+    // Verify userId matches authenticated user to prevent creating widgets for other users
+    if (userId !== user.id) {
+      console.error('[widget-generator] userId mismatch:', { providedUserId: userId, authUserId: user.id });
+      return new Response(JSON.stringify({ error: 'Forbidden: userId mismatch' }), {
+        status: 403,
+        headers: { ...corsHeaders, 'Content-Type': 'application/json' }
+      });
+    }
+
     const LOVABLE_API_KEY = Deno.env.get("LOVABLE_API_KEY");
     
     if (!LOVABLE_API_KEY) {
@@ -328,7 +364,7 @@ BE PROACTIVE - suggest additional capabilities that would make the widget more u
       agent_chain: agents,
     };
 
-    console.log(`Generated widget "${widget.name}" with ${agents.length} agents for domains: ${widgetConfig.data_sources?.join(', ')}`);
+    console.log(`[widget-generator] Generated widget "${widget.name}" with ${agents.length} agents for user ${user.id}`);
 
     return new Response(JSON.stringify({ widget, success: true }), {
       headers: { ...corsHeaders, "Content-Type": "application/json" },
