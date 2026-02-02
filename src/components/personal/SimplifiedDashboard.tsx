@@ -40,43 +40,32 @@ function getGreeting(): { text: string; icon: typeof Sun; period: 'morning' | 'a
   return { text: 'Good evening', icon: Moon, period: 'evening' };
 }
 
-// Simple Quick Action Button - large touch target, clear purpose
-function QuickAction({ 
+// Compact Shortcut Button - horizontal scrollable style matching reference
+function ShortcutButton({ 
   icon: Icon, 
   label, 
-  value, 
-  color, 
-  onClick,
-  highlight = false
+  badge,
+  onClick 
 }: { 
-  icon: typeof CheckSquare; 
+  icon: typeof Mail; 
   label: string; 
-  value?: string | number;
-  color: string;
+  badge?: number;
   onClick?: () => void;
-  highlight?: boolean;
 }) {
   return (
     <button
       onClick={onClick}
-      className={cn(
-        "flex flex-col items-center justify-center p-4 rounded-2xl border-2 transition-all duration-200",
-        "min-h-[100px] focus:outline-none focus:ring-4 focus:ring-primary/20 active:scale-95",
-        highlight 
-          ? "bg-primary/10 border-primary" 
-          : "bg-card border-border hover:border-primary/50"
-      )}
+      className="flex flex-col items-center justify-center min-w-[72px] p-3 rounded-xl border border-border bg-card hover:bg-muted/50 transition-all duration-200 focus:outline-none focus:ring-2 focus:ring-primary/30 active:scale-95 relative"
     >
-      <div 
-        className="w-12 h-12 rounded-full flex items-center justify-center mb-2"
-        style={{ backgroundColor: `${color}15` }}
-      >
-        <Icon size={24} style={{ color }} />
+      <div className="relative">
+        <Icon size={22} className="text-muted-foreground mb-1" />
+        {badge !== undefined && badge > 0 && (
+          <span className="absolute -top-1 -right-2 min-w-[16px] h-4 px-1 rounded-full bg-primary text-primary-foreground text-[10px] font-medium flex items-center justify-center">
+            {badge > 99 ? '99+' : badge}
+          </span>
+        )}
       </div>
-      {value !== undefined && (
-        <span className="text-2xl font-bold" style={{ color }}>{value}</span>
-      )}
-      <span className="text-xs text-muted-foreground font-medium">{label}</span>
+      <span className="text-[11px] text-muted-foreground font-medium truncate max-w-[60px]">{label}</span>
     </button>
   );
 }
@@ -264,32 +253,34 @@ export function SimplifiedDashboard({
             onComplete={handleCompleteTask}
           />
 
-          {/* Quick Actions Grid - Priority: Email, Finance, Photos, Calendar */}
-          <div className="grid grid-cols-2 gap-3">
-            <QuickAction
-              icon={Mail}
-              label="Email"
-              color="hsl(220 70% 50%)"
-              onClick={() => onNavigate?.('email')}
-            />
-            <QuickAction
-              icon={Wallet}
-              label="Finance"
-              color="hsl(150 70% 45%)"
-              onClick={() => onNavigate?.('finance')}
-            />
-            <QuickAction
-              icon={Image}
-              label="Photos"
-              color="hsl(340 70% 55%)"
-              onClick={() => onNavigate?.('photos')}
-            />
-            <QuickAction
-              icon={Calendar}
-              label="Calendar"
-              color="hsl(260 70% 55%)"
-              onClick={() => onNavigate?.('calendar')}
-            />
+          {/* My Shortcuts - Priority: Calendar, Email, Photos, Finance */}
+          <div>
+            <div className="flex items-center justify-between mb-3">
+              <span className="text-xs font-semibold text-muted-foreground uppercase tracking-wider">My Shortcuts</span>
+            </div>
+            <div className="flex gap-2 overflow-x-auto pb-2 -mx-1 px-1">
+              <ShortcutButton
+                icon={Calendar}
+                label="Calendar"
+                onClick={() => onNavigate?.('calendar')}
+              />
+              <ShortcutButton
+                icon={Mail}
+                label="Email"
+                badge={3}
+                onClick={() => onNavigate?.('email')}
+              />
+              <ShortcutButton
+                icon={Image}
+                label="Photos"
+                onClick={() => onNavigate?.('photos')}
+              />
+              <ShortcutButton
+                icon={Wallet}
+                label="Finance"
+                onClick={() => onNavigate?.('finance')}
+              />
+            </div>
           </div>
 
           {/* Add Widget */}
