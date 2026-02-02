@@ -2,6 +2,7 @@
 // Opens as overlay when user expands from SimplifiedDashboard
 
 import { useMemo } from 'react';
+import ReactDOM from 'react-dom';
 import { 
   X,
   CheckSquare, 
@@ -222,10 +223,11 @@ export function FullscreenDetailedDashboard({ userId, onClose }: FullscreenDetai
   // Total balance
   const totalBalance = accounts.reduce((sum, acc) => sum + (acc.current_balance || 0), 0);
 
-  return (
-    <div className="fixed inset-0 z-50 bg-background/95 backdrop-blur-sm overflow-hidden">
+  // Use ReactDOM.createPortal to render at document body level for true fullscreen
+  return ReactDOM.createPortal(
+    <div className="fixed inset-0 z-[9999] bg-background overflow-hidden">
       {/* Header */}
-      <div className="h-14 border-b border-border bg-background/80 backdrop-blur-sm flex items-center justify-between px-4 md:px-6">
+      <div className="h-14 border-b border-border bg-background flex items-center justify-between px-4 md:px-6">
         <div className="flex items-center gap-3">
           <LayoutGrid size={20} className="text-primary" />
           <h1 className="text-lg font-semibold">Detailed Dashboard</h1>
@@ -468,7 +470,8 @@ export function FullscreenDetailedDashboard({ userId, onClose }: FullscreenDetai
           )}
         </div>
       </ScrollArea>
-    </div>
+    </div>,
+    document.body
   );
 }
 
