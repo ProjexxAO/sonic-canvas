@@ -1,7 +1,9 @@
 // Atlas Task Assignment - Orchestrator assigns specialized tasks to agents
+// This is used INTERNALLY by Atlas - users interact via voice/chat, not directly
 import { useState, useCallback } from 'react';
 import { supabase } from '@/integrations/supabase/client';
 import { toast } from 'sonner';
+import type { Json } from '@/integrations/supabase/types';
 
 export interface TaskAssignment {
   taskId: string;
@@ -31,6 +33,7 @@ export interface AssignmentResult {
   success: boolean;
   assignments: TaskAssignment[];
   message: string;
+  feedbackRecorded?: boolean;
 }
 
 export function useAtlasTaskAssignment(userId: string | undefined) {
@@ -297,6 +300,96 @@ export function useAtlasTaskAssignment(userId: string | undefined) {
     }
   }, [userId]);
 
+  // Record task completion feedback (called by Atlas after task execution)
+  const recordTaskCompletion = useCallback(async (params: {
+    taskId: string;
+    agentId: string;
+    taskType: string;
+    success: boolean;
+    confidenceScore?: number;
+    executionTimeMs?: number;
+    userSatisfaction?: number;
+    errorType?: string;
+  }): Promise<boolean> => {
+    if (!userId) return false;
+
+    try {
+      // Record in agent_performance
+      const { error } = await supabase.from('agent_performance').insert([{
+        agent_id: params.agentId,
+        user_id: userId,
+        task_type: params.taskType,
+        task_description: `Task ${params.taskId}`,
+        success: params.success,
+        confidence_score: params.confidenceScore ?? 0.5,
+        execution_time_ms: params.executionTimeMs,
+        user_satisfaction: params.userSatisfaction,
+        error_type: params.errorType,
+        context: { task_id: params.taskId, auto_recorded: true } as Json,
+      }]);
+
+      if (error) throw error;
+
+      // Update task status
+      await supabase
+        .from('agent_task_queue')
+        .update({
+          status: params.success ? 'completed' : 'failed',
+          completed_at: new Date().toISOString(),
+          output_data: {
+            success: params.success,
+            confidence: params.confidenceScore,
+            execution_time_ms: params.executionTimeMs,
+          } as Json,
+        })
+        .eq('id', params.taskId);
+
+      // Update assignment status in local state
+      setAssignments(prev =>
+        prev.map(a =>
+          a.taskId === params.taskId && a.agentId === params.agentId
+            ? { ...a, status: params.success ? 'completed' : 'failed' }
+            : a
+        )
+      );
+
+      return true;
+    } catch (error) {
+      console.error('Error recording task completion:', error);
+      return false;
+    }
+  }, [userId]);
+
+  // Transfer knowledge from successful agents to struggling ones
+  const transferKnowledgeFromTask = useCallback(async (
+    taskId: string,
+    successfulAgentId: string,
+    targetAgentIds: string[]
+  ): Promise<number> => {
+    if (!userId || !targetAgentIds.length) return 0;
+
+    try {
+      const { data, error } = await supabase.rpc('crystallize_knowledge', {
+        p_source_agent_id: successfulAgentId,
+        p_target_agent_ids: targetAgentIds,
+        p_min_importance: 0.5,
+      });
+
+      if (error) throw error;
+
+      const crystalsShared = (data as { crystals_shared: number })?.crystals_shared ?? 0;
+      
+      if (crystalsShared > 0) {
+        toast.success(`Knowledge transferred: ${crystalsShared} insights shared`);
+      }
+
+      return crystalsShared;
+    } catch (error) {
+      console.error('Error transferring knowledge:', error);
+      return 0;
+    }
+  }, [userId]);
+
   return {
     assignments,
     specializedAgents,
@@ -307,5 +400,7 @@ export function useAtlasTaskAssignment(userId: string | undefined) {
     assignTaskToAgents,
     fetchRecentAssignments,
     routeTaskThroughHierarchy,
+    recordTaskCompletion,
+    transferKnowledgeFromTask,
   };
 }
