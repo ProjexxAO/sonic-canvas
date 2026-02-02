@@ -1,5 +1,6 @@
 /**
  * Atlas Orchestrator - Agent Memory & Performance Handlers
+ * Enhanced with consolidation, crystallization, and reflection capabilities
  */
 
 import type { HandlerContext, HandlerResult, OrchestratorRequest } from "../types.ts";
@@ -212,4 +213,121 @@ export async function updateAgentRelationship(
   }
 
   return successResponse({ relationship: created, created: true });
+}
+
+// ============================================================================
+// Memory Consolidation, Crystallization, and Reflection
+// ============================================================================
+
+export async function consolidateMemories(
+  ctx: HandlerContext,
+  req: OrchestratorRequest
+): Promise<HandlerResult> {
+  const { agentId, threshold = 0.3, minMemories = 5 } = req as any;
+
+  if (!agentId) {
+    return errorResponse('agentId is required');
+  }
+
+  const { data, error } = await ctx.supabase
+    .rpc('consolidate_agent_memories', {
+      p_agent_id: agentId,
+      p_threshold: threshold,
+      p_min_memories: minMemories
+    });
+
+  if (error) {
+    return errorResponse(error.message, 500);
+  }
+
+  return successResponse({
+    success: true,
+    result: data,
+    message: `Memory consolidation completed for agent ${agentId}`
+  });
+}
+
+export async function crystallizeKnowledge(
+  ctx: HandlerContext,
+  req: OrchestratorRequest
+): Promise<HandlerResult> {
+  const { sourceAgentId, targetAgentIds, minImportance = 0.7 } = req as any;
+
+  if (!sourceAgentId || !targetAgentIds || !Array.isArray(targetAgentIds)) {
+    return errorResponse('sourceAgentId and targetAgentIds array are required');
+  }
+
+  const { data, error } = await ctx.supabase
+    .rpc('crystallize_knowledge', {
+      p_source_agent_id: sourceAgentId,
+      p_target_agent_ids: targetAgentIds,
+      p_min_importance: minImportance
+    });
+
+  if (error) {
+    return errorResponse(error.message, 500);
+  }
+
+  return successResponse({
+    success: true,
+    result: data,
+    message: `Knowledge crystallized from ${sourceAgentId} to ${targetAgentIds.length} agents`
+  });
+}
+
+export async function runReflection(
+  ctx: HandlerContext,
+  req: OrchestratorRequest
+): Promise<HandlerResult> {
+  const { agentId } = req as any;
+
+  if (!agentId) {
+    return errorResponse('agentId is required');
+  }
+
+  const { data, error } = await ctx.supabase
+    .rpc('agent_reflection_cycle', {
+      p_agent_id: agentId
+    });
+
+  if (error) {
+    return errorResponse(error.message, 500);
+  }
+
+  return successResponse({
+    success: true,
+    reflection: data,
+    message: `Reflection cycle completed for agent ${agentId}`
+  });
+}
+
+export async function routeTask(
+  ctx: HandlerContext,
+  req: OrchestratorRequest
+): Promise<HandlerResult> {
+  const { taskType, query, limit = 5 } = req as any;
+
+  if (!taskType) {
+    return errorResponse('taskType is required');
+  }
+
+  const { data, error } = await ctx.supabase
+    .rpc('enhanced_task_routing', {
+      p_task_type: taskType,
+      p_query: query || null,
+      p_user_id: ctx.userId,
+      p_limit: limit
+    });
+
+  if (error) {
+    return errorResponse(error.message, 500);
+  }
+
+  return successResponse({
+    success: true,
+    agents: data || [],
+    taskType,
+    routingMethod: 'enhanced_weighted',
+    message: `Found ${data?.length || 0} agents for task type: ${taskType}`
+  });
 }

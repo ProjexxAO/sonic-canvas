@@ -5045,6 +5045,7 @@ export type Database = {
       }
     }
     Functions: {
+      agent_reflection_cycle: { Args: { p_agent_id: string }; Returns: Json }
       calculate_sonic_dna_traits: {
         Args: { p_sonic_signature: Json }
         Returns: Json
@@ -5069,6 +5070,14 @@ export type Database = {
           tool_name: string
         }[]
       }
+      consolidate_agent_memories: {
+        Args: {
+          p_agent_id: string
+          p_min_memories?: number
+          p_threshold?: number
+        }
+        Returns: Json
+      }
       create_document_version: {
         Args: {
           p_change_summary?: string
@@ -5082,6 +5091,14 @@ export type Database = {
         }
         Returns: string
       }
+      crystallize_knowledge: {
+        Args: {
+          p_min_importance?: number
+          p_source_agent_id: string
+          p_target_agent_ids: string[]
+        }
+        Returns: Json
+      }
       detect_document_references: {
         Args: {
           p_document_id: string
@@ -5089,6 +5106,26 @@ export type Database = {
           p_search_text?: string
         }
         Returns: number
+      }
+      enhanced_task_routing: {
+        Args: {
+          p_limit?: number
+          p_query?: string
+          p_task_type: string
+          p_user_id?: string
+        }
+        Returns: {
+          agent_id: string
+          agent_name: string
+          confidence: number
+          learning_velocity: number
+          memory_relevance: number
+          routing_reason: string
+          routing_score: number
+          sector: string
+          specialization_score: number
+          success_rate: number
+        }[]
       }
       find_best_agents_for_task: {
         Args: { p_limit?: number; p_sector?: string; p_task_type: string }

@@ -26,6 +26,10 @@ export {
   getAgentMemory,
   getSonicDNA,
   updateAgentRelationship,
+  consolidateMemories,
+  crystallizeKnowledge,
+  runReflection,
+  routeTask,
 } from "./agent-memory.ts";
 export { orchestrateAgents } from "./agent-orchestration.ts";
 export { widgetInitialize, widgetExecute } from "./widget-agent.ts";
