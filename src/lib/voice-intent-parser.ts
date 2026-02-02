@@ -109,7 +109,8 @@ export class VoiceIntentParser {
     const normalized = text.toLowerCase().trim();
 
     // Try each parser in order of specificity
-    return this.parseDataHubCommand(normalized, text)
+    return this.parseEmailCommand(normalized, text)
+        || this.parseDataHubCommand(normalized, text)
         || this.parseThemeCommand(normalized, text)
         || this.parseAgentCommand(normalized, text)
         || this.parseReportCommand(normalized, text)
@@ -118,6 +119,76 @@ export class VoiceIntentParser {
         || this.parseSearchCommand(normalized, text)
         || this.parseDialogCommand(normalized, text)
         || this.parseRefreshCommand(normalized, text);
+  }
+
+  // Email/Communication commands
+  private parseEmailCommand(normalized: string, original: string): ParsedIntent | null {
+    // Draft email: "draft an email to john@example.com about the project update"
+    const draftPattern = /(?:draft|write|compose)\s+(?:an?\s+)?email\s+(?:to\s+)?([^\s]+(?:@[^\s]+)?)\s+(?:about|regarding|for)\s+(.+)/i;
+    const draftMatch = normalized.match(draftPattern);
+    if (draftMatch) {
+      const to = draftMatch[1].includes('@') ? draftMatch[1] : undefined;
+      return {
+        command: { 
+          type: 'compose_email', 
+          to: to || draftMatch[1],
+          intent: draftMatch[2].trim(),
+          urgency: normalized.includes('urgent') ? 'high' : 'normal'
+        },
+        confidence: 0.95,
+        original
+      };
+    }
+
+    // Simple draft: "draft email about budget meeting"
+    const simpleDraftPattern = /(?:draft|write|compose)\s+(?:an?\s+)?email\s+(?:about|regarding|for)\s+(.+)/i;
+    const simpleDraftMatch = normalized.match(simpleDraftPattern);
+    if (simpleDraftMatch) {
+      return {
+        command: { 
+          type: 'draft_email', 
+          intent: simpleDraftMatch[1].trim()
+        },
+        confidence: 0.85,
+        original
+      };
+    }
+
+    // Send email: "send email to john@example.com"
+    const sendPattern = /(?:send)\s+(?:an?\s+)?email\s+to\s+([^\s]+@[^\s]+)(?:\s+(?:about|regarding|for)\s+(.+))?/i;
+    const sendMatch = normalized.match(sendPattern);
+    if (sendMatch) {
+      return {
+        command: { 
+          type: 'compose_email', 
+          to: sendMatch[1],
+          intent: sendMatch[2]?.trim() || 'general message',
+          urgency: normalized.includes('urgent') ? 'high' : 'normal'
+        },
+        confidence: 0.9,
+        original
+      };
+    }
+
+    // Reply to email: "reply to the last email", "respond to john's email"
+    if (/(?:reply|respond)\s+(?:to\s+)?(?:the\s+)?(?:last\s+)?email/i.test(normalized)) {
+      return {
+        command: { type: 'open_dialog', dialog: 'compose_email' },
+        confidence: 0.85,
+        original
+      };
+    }
+
+    // Open communications: "open email", "show my inbox", "check messages"
+    if (/(?:open|show|check|view)\s+(?:my\s+)?(?:email|inbox|messages|communications)/i.test(normalized)) {
+      return {
+        command: { type: 'open_communications' },
+        confidence: 0.9,
+        original
+      };
+    }
+
+    return null;
   }
 
   // Data Hub tab/domain/persona control

@@ -23,6 +23,7 @@ import {
   dashboardList, dashboardSelect, dashboardMessages, dashboardSendMessage,
   dashboardFiles, dashboardNotifications, dashboardMembers, dashboardSummary,
   search, webSearch, synthesize,
+  draftMessage, sendMessage, approveDraft, composeEmail,
 } from "./handlers/index.ts";
 
 type HandlerFn = (ctx: HandlerContext, req: OrchestratorRequest) => Promise<HandlerResult>;
@@ -72,6 +73,10 @@ const actionHandlers: Record<OrchestratorAction, HandlerFn> = {
   search: search,
   web_search: webSearch,
   synthesize: synthesize,
+  draft_message: draftMessage,
+  send_message: sendMessage,
+  approve_draft: approveDraft,
+  compose_email: composeEmail,
 };
 
 serve(async (req) => {

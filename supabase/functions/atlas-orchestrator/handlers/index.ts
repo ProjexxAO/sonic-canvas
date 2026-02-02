@@ -44,3 +44,4 @@ export {
   dashboardSummary,
 } from "./shared-dashboard.ts";
 export { search, webSearch, synthesize } from "./search-synthesis.ts";
+export { draftMessage, sendMessage, approveDraft, composeEmail } from "./communications.ts";

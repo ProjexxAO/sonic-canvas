@@ -63,7 +63,12 @@ export type OrchestratorAction =
   // Search & Synthesis
   | 'search'
   | 'web_search'
-  | 'synthesize';
+  | 'synthesize'
+  // Communications
+  | 'draft_message'
+  | 'send_message'
+  | 'approve_draft'
+  | 'compose_email';
 
 export interface OrchestratorRequest {
   query?: string;

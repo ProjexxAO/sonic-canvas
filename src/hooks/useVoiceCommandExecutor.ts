@@ -4,6 +4,7 @@ import { useVoiceCommandBus, VoiceCommand } from '@/lib/voice-command-bus';
 import { useDataHubController } from '@/hooks/useDataHubController';
 import { useToast } from '@/hooks/use-toast';
 import { useTheme } from 'next-themes';
+import { supabase } from '@/integrations/supabase/client';
 
 export function useVoiceCommandExecutor() {
   const navigate = useNavigate();
@@ -201,6 +202,129 @@ export function useVoiceCommandExecutor() {
           toast({
             title: '🎤 Workflow Triggered',
             description: `Starting workflow ${command.workflowId}`,
+          });
+          break;
+
+        // === EMAIL / COMMUNICATIONS ===
+        case 'draft_email':
+          toast({
+            title: '🎤 Drafting Email',
+            description: `Atlas is drafting an email...`,
+          });
+          try {
+            const { data, error } = await supabase.functions.invoke('atlas-orchestrator', {
+              body: {
+                action: 'draft_message',
+                context: command.intent,
+                platform: 'gmail',
+              },
+            });
+            if (error) throw error;
+            
+            window.dispatchEvent(new CustomEvent('atlas-email-drafted', {
+              detail: { draft: data.draft, suggestions: data.suggestions, messageId: data.messageId }
+            }));
+            
+            toast({
+              title: '✉️ Draft Ready',
+              description: 'Atlas has drafted your email. Review it in Communications.',
+            });
+            
+            // Navigate to communications
+            setExpandedDomain('communications');
+          } catch (err) {
+            console.error('Error drafting email:', err);
+            toast({
+              title: 'Draft Failed',
+              description: 'Could not generate email draft',
+              variant: 'destructive'
+            });
+          }
+          break;
+
+        case 'compose_email':
+          toast({
+            title: '🎤 Composing Email',
+            description: `Atlas is composing email to ${command.to}...`,
+          });
+          try {
+            const { data, error } = await supabase.functions.invoke('atlas-orchestrator', {
+              body: {
+                action: 'compose_email',
+                to: command.to,
+                subject: command.subject,
+                intent: command.intent,
+                urgency: command.urgency,
+              },
+            });
+            if (error) throw error;
+            
+            window.dispatchEvent(new CustomEvent('atlas-email-composed', {
+              detail: { 
+                messageId: data.messageId, 
+                subject: data.subject, 
+                body: data.body,
+                to: data.to,
+                requiresApproval: data.requiresApproval 
+              }
+            }));
+            
+            toast({
+              title: '✉️ Email Composed',
+              description: `Email to ${command.to} ready for your approval.`,
+            });
+            
+            // Navigate to communications
+            setExpandedDomain('communications');
+          } catch (err) {
+            console.error('Error composing email:', err);
+            toast({
+              title: 'Compose Failed',
+              description: 'Could not compose email',
+              variant: 'destructive'
+            });
+          }
+          break;
+
+        case 'send_email':
+          toast({
+            title: '🎤 Sending Email',
+            description: `Sending email to ${command.to}...`,
+          });
+          try {
+            const { data, error } = await supabase.functions.invoke('atlas-orchestrator', {
+              body: {
+                action: 'send_message',
+                content: command.content || '',
+                subject: command.subject,
+                toAddresses: [command.to],
+                platform: 'gmail',
+                isDraft: true, // Always require approval
+              },
+            });
+            if (error) throw error;
+            
+            toast({
+              title: '✉️ Email Queued',
+              description: 'Email saved. Please review and approve to send.',
+            });
+            
+            setExpandedDomain('communications');
+          } catch (err) {
+            console.error('Error sending email:', err);
+            toast({
+              title: 'Send Failed',
+              description: 'Could not queue email',
+              variant: 'destructive'
+            });
+          }
+          break;
+
+        case 'open_communications':
+          setExpandedDomain('communications');
+          toast({
+            title: '🎤 Opening Communications',
+            description: 'Showing your inbox and messages',
           });
           break;
 
