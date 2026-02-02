@@ -1,7 +1,7 @@
 // Fullscreen Detailed Dashboard - Shows all content from SimplifiedDashboard sections in detail
 // Displays actual data: priority tasks, calendar events, emails, photos, finance, widgets
 
-import { useMemo, useState, useCallback } from 'react';
+import { useMemo, useState, useCallback, useEffect } from 'react';
 import ReactDOM from 'react-dom';
 import { 
   X,
@@ -70,6 +70,17 @@ export function FullscreenDetailedDashboard({
   
   // Atlas voice context (safe - doesn't throw if not in provider)
   const atlas = useAtlasSafe();
+  
+  // Loading timeout to prevent indefinite loading state
+  const [loadingTimedOut, setLoadingTimedOut] = useState(false);
+  
+  // Set a 3-second timeout for initial loading
+  useEffect(() => {
+    const timer = setTimeout(() => {
+      setLoadingTimedOut(true);
+    }, 3000);
+    return () => clearTimeout(timer);
+  }, []);
 
   const greeting = useMemo(() => getGreeting(), []);
   const userName = user?.email?.split('@')[0] || 'there';
@@ -125,7 +136,8 @@ export function FullscreenDetailedDashboard({
     return { totalBalance, recentTransactions, income, expenses };
   }, [accounts, transactions]);
 
-  const isLoading = itemsLoading || calendarLoading || messagesLoading || bankingLoading;
+  // Only show loading if we're truly loading AND haven't timed out
+  const isLoading = (itemsLoading || calendarLoading || messagesLoading || bankingLoading) && !loadingTimedOut;
 
   if (isLoading) {
     return ReactDOM.createPortal(
