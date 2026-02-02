@@ -63,6 +63,7 @@ const CATEGORIES: Category[] = [
   { id: 'analytics', name: 'Analytics & BI', icon: <BarChart3 size={18} />, description: 'Business intelligence and analytics' },
   { id: 'calendar', name: 'Calendar & Scheduling', icon: <Calendar size={18} />, description: 'Calendar and scheduling tools' },
   { id: 'database', name: 'Data & Databases', icon: <Database size={18} />, description: 'Data sources and database connections' },
+  { id: 'automation', name: 'Automation', icon: <Zap size={18} />, description: 'Workflow automation and integration platforms' },
 ];
 
 // Integrations catalog
@@ -371,6 +372,55 @@ const INTEGRATIONS: Integration[] = [
     status: 'coming_soon',
     features: ['Data warehouse', 'Query execution', 'Data sharing', 'Real-time sync']
   },
+
+  // Automation & Workflows
+  {
+    id: 'zapier',
+    name: 'Zapier',
+    description: 'Connect Atlas with 7000+ apps. Create automated workflows (Zaps) to trigger actions across your entire tool stack.',
+    icon: <Zap className="text-orange-500" />,
+    category: 'automation',
+    status: 'available',
+    popular: true,
+    features: ['7000+ app connections', 'Multi-step Zaps', 'Conditional logic', 'Webhooks', 'Scheduled triggers']
+  },
+  {
+    id: 'make',
+    name: 'Make (Integromat)',
+    description: 'Visual automation platform with advanced branching, loops, and data transformation for complex workflows.',
+    icon: <Zap className="text-violet-500" />,
+    category: 'automation',
+    status: 'available',
+    popular: true,
+    features: ['Visual scenario builder', 'Advanced branching', 'Data transformation', 'Error handling', 'Real-time execution']
+  },
+  {
+    id: 'n8n',
+    name: 'n8n',
+    description: 'Self-hosted, open-source workflow automation. Full control over your data with 400+ integrations.',
+    icon: <Zap className="text-rose-500" />,
+    category: 'automation',
+    status: 'available',
+    features: ['Self-hosted option', 'Open-source', '400+ integrations', 'Custom code nodes', 'AI capabilities']
+  },
+  {
+    id: 'ifttt',
+    name: 'IFTTT',
+    description: 'Simple "If This Then That" automation for personal and smart home use cases.',
+    icon: <Zap className="text-sky-500" />,
+    category: 'automation',
+    status: 'available',
+    features: ['Simple applets', 'Smart home integration', 'Social media triggers', 'Location triggers']
+  },
+  {
+    id: 'power_automate',
+    name: 'Power Automate',
+    description: "Microsoft's enterprise automation platform with deep Office 365 and Azure integration.",
+    icon: <Zap className="text-blue-600" />,
+    category: 'automation',
+    status: 'available',
+    features: ['Office 365 integration', 'Desktop flows (RPA)', 'AI Builder', 'Approval workflows']
+  },
 ];
 
 // Integration setup info with OAuth configuration details
@@ -461,6 +511,71 @@ const INTEGRATION_SETUP: Record<string, { provider: string; steps: string[]; doc
     ],
     docsUrl: 'https://developer.intuit.com/app/developer/qbo/docs/develop/authentication-and-authorization',
     consoleUrl: 'https://developer.intuit.com/'
+  },
+  zapier: {
+    provider: 'Zapier',
+    steps: [
+      'Go to Zapier and create a new Zap',
+      'Add a "Webhooks by Zapier" trigger',
+      'Select "Catch Hook" as the trigger event',
+      'Copy the webhook URL provided by Zapier',
+      'Paste the webhook URL in Atlas to connect',
+      'Test the connection with a sample event'
+    ],
+    docsUrl: 'https://zapier.com/help/create/code-webhooks/trigger-zaps-from-webhooks',
+    consoleUrl: 'https://zapier.com/app/zaps'
+  },
+  make: {
+    provider: 'Make',
+    steps: [
+      'Go to Make and create a new scenario',
+      'Add a Webhook module as the trigger',
+      'Copy the webhook URL provided',
+      'Paste the webhook URL in Atlas to connect',
+      'Configure data structure if needed',
+      'Activate the scenario'
+    ],
+    docsUrl: 'https://www.make.com/en/help/tools/webhooks',
+    consoleUrl: 'https://www.make.com/en/login'
+  },
+  n8n: {
+    provider: 'n8n',
+    steps: [
+      'Go to your n8n instance (cloud or self-hosted)',
+      'Create a new workflow with a Webhook node',
+      'Configure the webhook as Production or Test',
+      'Copy the webhook URL',
+      'Paste the webhook URL in Atlas to connect',
+      'Activate the workflow'
+    ],
+    docsUrl: 'https://docs.n8n.io/integrations/builtin/core-nodes/n8n-nodes-base.webhook/',
+    consoleUrl: 'https://app.n8n.cloud/'
+  },
+  ifttt: {
+    provider: 'IFTTT',
+    steps: [
+      'Go to IFTTT and create a new applet',
+      'Choose "Webhooks" as the trigger service',
+      'Select "Receive a web request"',
+      'Set an event name',
+      'Get your webhook key from Webhooks settings',
+      'Configure the action for your applet'
+    ],
+    docsUrl: 'https://ifttt.com/maker_webhooks',
+    consoleUrl: 'https://ifttt.com/create'
+  },
+  power_automate: {
+    provider: 'Microsoft',
+    steps: [
+      'Go to Power Automate and create a new flow',
+      'Select "When an HTTP request is received" trigger',
+      'Define the JSON schema for your data',
+      'Save the flow to generate the webhook URL',
+      'Copy the HTTP POST URL',
+      'Paste the URL in Atlas to connect'
+    ],
+    docsUrl: 'https://learn.microsoft.com/en-us/power-automate/triggers-introduction',
+    consoleUrl: 'https://make.powerautomate.com/'
   },
 };
 
