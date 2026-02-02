@@ -1,4 +1,5 @@
 import { VoiceCommand, COMMAND_CATEGORIES } from './voice-command-bus';
+import { parseExtendedCommand } from './voice-commands/extended-parser';
 import { getDomainKeyFromName, getTabFromName, getPersonaFromName } from '@/hooks/useDataHubController';
 
 interface ParsedIntent {
@@ -152,7 +153,11 @@ export class VoiceIntentParser {
   parse(text: string): ParsedIntent | null {
     const normalized = text.toLowerCase().trim();
 
-    // Try each parser in order of specificity (most specific first)
+    // Try extended parsers FIRST (CRM, Projects, Analytics, IoT, Scheduling, Multi-step, Interaction modes)
+    const extendedResult = parseExtendedCommand(normalized, text);
+    if (extendedResult) return extendedResult;
+
+    // Then try existing parsers in order of specificity (most specific first)
     return this.parseHelpCommand(normalized, text)
         || this.parseTaskCommand(normalized, text)
         || this.parseCalendarCommand(normalized, text)
