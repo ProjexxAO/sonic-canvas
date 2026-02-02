@@ -900,6 +900,44 @@ export function PersonalDataHub({ userId }: PersonalDataHubProps) {
   const socialActions = ALL_QUICK_ACTIONS.filter(a => a.category === 'social');
   const moreActions = ALL_QUICK_ACTIONS.filter(a => a.category === 'more');
 
+  // Fullscreen Detailed Dashboard takes priority over all other views
+  // This ensures the expanded view is always shown when requested
+  if (showDetailedView) {
+    return (
+      <div className="h-full bg-card/90 border border-border rounded-lg shadow-sm overflow-hidden flex flex-col relative">
+        <SimplifiedDashboard 
+          userId={userId}
+          onExpandDashboard={() => setShowDetailedView(true)}
+          onNavigate={(view) => {
+            if (view === 'tasks') setActiveView('tasks');
+            else if (view === 'goals') setActiveView('goals');
+            else if (view === 'habits') setActiveView('habits');
+            else if (view === 'calendar') setActiveView('calendar');
+            else if (view === 'finance') setActiveView('finance');
+            else if (view === 'photos') setActiveView('photos');
+            else if (view === 'email') setActiveView('email');
+          }}
+          onCreateWidget={() => setShowWidgetCreator(true)}
+        />
+        
+        {/* Widget Creator Dialog */}
+        <WidgetCreatorDialog
+          open={showWidgetCreator}
+          onOpenChange={setShowWidgetCreator}
+        />
+        
+        {/* Fullscreen Detailed Dashboard Overlay */}
+        <FullscreenDetailedDashboard
+          userId={userId}
+          onClose={() => {
+            setShowDetailedView(false);
+            setActiveView('overview');
+          }}
+        />
+      </div>
+    );
+  }
+
   // Full Finance View
   if (activeView === 'finance') {
     return (
