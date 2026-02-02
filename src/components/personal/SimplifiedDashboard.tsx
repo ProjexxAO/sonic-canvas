@@ -193,14 +193,16 @@ export function SimplifiedDashboard({
             </div>
           </div>
           
-          {/* Expand to fullscreen button */}
-          <button
+          {/* Expand to fullscreen button - more visible */}
+          <Button
+            variant="outline"
+            size="sm"
             onClick={onExpandDashboard}
-            className="w-10 h-10 rounded-xl border border-border flex items-center justify-center hover:bg-muted/50 hover:border-primary/30 transition-all group"
-            title="Expand to detailed view"
+            className="h-9 px-3 rounded-xl gap-2 border-primary/30 bg-primary/5 hover:bg-primary/10 hover:border-primary/50"
           >
-            <Maximize2 size={18} className="text-muted-foreground group-hover:text-primary transition-colors" />
-          </button>
+            <Maximize2 size={16} className="text-primary" />
+            <span className="text-xs font-medium text-primary">Expand</span>
+          </Button>
         </div>
       </div>
 
