@@ -126,6 +126,13 @@ export function AtlasRightPanel({
                   Me
                 </TabsTrigger>
                 <TabsTrigger 
+                  value="agents" 
+                  className="flex items-center gap-1 text-[10px] font-mono data-[state=active]:bg-background data-[state=active]:shadow-sm px-2"
+                >
+                  <Bot size={12} />
+                  Agents
+                </TabsTrigger>
+                <TabsTrigger 
                   value="phone" 
                   className="flex items-center gap-1 text-[10px] font-mono data-[state=active]:bg-background data-[state=active]:shadow-sm px-2"
                 >
@@ -163,6 +170,16 @@ export function AtlasRightPanel({
             <TabsContent value="personal-data" className="flex-1 mt-0 min-h-0 h-full data-[state=active]:flex data-[state=active]:flex-col">
               <div className="flex-1 min-h-0 h-full overflow-hidden">
                 <PersonalDataHub userId={userId} />
+              </div>
+            </TabsContent>
+
+            <TabsContent value="agents" className="flex-1 mt-0 overflow-hidden flex flex-col min-h-0">
+              <div className="flex-1 min-h-0 bg-card/90 border border-border rounded-lg overflow-hidden">
+                <ScrollArea className="h-full">
+                  <div className="p-3">
+                    <AtlasTaskAssignmentPanel />
+                  </div>
+                </ScrollArea>
               </div>
             </TabsContent>
 
@@ -270,6 +287,13 @@ export function AtlasRightPanel({
                 {userDisplayName}
               </TabsTrigger>
               <TabsTrigger 
+                value="agents" 
+                className="flex items-center gap-1 text-[10px] font-mono data-[state=active]:bg-background data-[state=active]:shadow-sm px-3"
+              >
+                <Bot size={12} />
+                Agents
+              </TabsTrigger>
+              <TabsTrigger 
                 value="phone" 
                 className="flex items-center gap-1 text-[10px] font-mono data-[state=active]:bg-background data-[state=active]:shadow-sm px-3"
               >
@@ -313,6 +337,16 @@ export function AtlasRightPanel({
           <TabsContent value="personal-data" className="flex-1 mt-0 min-h-0 overflow-hidden data-[state=active]:flex data-[state=active]:flex-col h-full">
             <div className="flex-1 min-h-0 overflow-hidden h-full">
               <PersonalDataHub userId={userId} />
+            </div>
+          </TabsContent>
+
+          <TabsContent value="agents" className="flex-1 mt-0 overflow-hidden flex flex-col min-h-0">
+            <div className="flex-1 min-h-0 bg-card/90 border border-border rounded-lg overflow-hidden">
+              <ScrollArea className="h-full">
+                <div className="p-4">
+                  <AtlasTaskAssignmentPanel />
+                </div>
+              </ScrollArea>
             </div>
           </TabsContent>
 
