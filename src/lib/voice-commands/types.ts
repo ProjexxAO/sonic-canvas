@@ -310,7 +310,15 @@ export type AutomationCommand =
   | { type: 'connect_n8n'; webhookUrl: string; triggerType?: AutomationTrigger }
   | { type: 'create_workflow_automation'; name: string; steps: Array<{ action: string; config?: Record<string, any> }> }
   | { type: 'get_automation_history'; automationId?: string; automationName?: string }
-  | { type: 'set_automation_schedule'; automationId?: string; schedule: string; timezone?: string };
+  | { type: 'set_automation_schedule'; automationId?: string; schedule: string; timezone?: string }
+  // Native Atlas/Supabase automations
+  | { type: 'create_atlas_workflow'; name: string; triggerType: 'schedule' | 'event' | 'voice' | 'manual'; actionType: string; description?: string }
+  | { type: 'list_atlas_workflows'; filter?: 'all' | 'active' | 'inactive' }
+  | { type: 'run_atlas_workflow'; workflowName: string }
+  | { type: 'schedule_atlas_task'; taskName: string; schedule: string; action: string }
+  | { type: 'create_database_trigger'; tableName: string; event: 'insert' | 'update' | 'delete'; action: string }
+  | { type: 'list_scheduled_jobs' }
+  | { type: 'cancel_scheduled_job'; jobName: string };
 
 // ============================================================================
 // Combined Voice Command Type
@@ -356,7 +364,7 @@ export const EXTENDED_COMMAND_CATEGORIES = {
   workflows: ['chain_commands', 'batch_create', 'email_summary', 'create_from_template', 'bulk_update'],
   context: ['do_this_later', 'remind_about_this', 'share_this', 'convert_to_task', 'analyze_selected', 'explain_this'],
   interaction: ['set_interaction_mode', 'enable_confirmations', 'undo_last', 'cancel_current', 'pause_atlas', 'resume_atlas'],
-  automation: ['create_automation', 'list_automations', 'toggle_automation', 'delete_automation', 'test_automation', 'trigger_webhook', 'connect_zapier', 'connect_make', 'connect_n8n', 'create_workflow_automation', 'get_automation_history', 'set_automation_schedule'],
+  automation: ['create_automation', 'list_automations', 'toggle_automation', 'delete_automation', 'test_automation', 'trigger_webhook', 'connect_zapier', 'connect_make', 'connect_n8n', 'create_workflow_automation', 'get_automation_history', 'set_automation_schedule', 'create_atlas_workflow', 'list_atlas_workflows', 'run_atlas_workflow', 'schedule_atlas_task', 'create_database_trigger', 'list_scheduled_jobs', 'cancel_scheduled_job'],
 } as const;
 
 export type CommandCategory = keyof typeof EXTENDED_COMMAND_CATEGORIES;

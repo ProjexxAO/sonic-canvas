@@ -1057,6 +1057,191 @@ export function useVoiceCommandExecutor() {
           window.dispatchEvent(new CustomEvent('voice-create-workflow-automation', { detail: command }));
           break;
 
+        // ====================================================================
+        // NATIVE ATLAS/SUPABASE AUTOMATIONS
+        // ====================================================================
+        case 'create_atlas_workflow': {
+          toast({ title: '🎤 Creating Atlas Workflow', description: command.name });
+          const userId = await getUserId();
+          if (!userId) {
+            toast({ title: 'Authentication Required', variant: 'destructive' });
+            break;
+          }
+          try {
+            const { error } = await supabase.from('atlas_workflows').insert({
+              user_id: userId,
+              name: command.name,
+              description: command.description || null,
+              trigger_type: command.triggerType,
+              trigger_config: {},
+              action_type: command.actionType,
+              action_config: {},
+              is_active: true,
+            });
+            if (error) throw error;
+            toast({ title: '⚙️ Workflow Created', description: `${command.name} is now active` });
+            window.dispatchEvent(new CustomEvent('voice-workflow-created'));
+          } catch (err) {
+            console.error('Error creating workflow:', err);
+            toast({ title: 'Failed to Create Workflow', variant: 'destructive' });
+          }
+          break;
+        }
+
+        case 'list_atlas_workflows': {
+          toast({ title: '🎤 Listing Atlas Workflows' });
+          const userId = await getUserId();
+          if (!userId) {
+            toast({ title: 'Authentication Required', variant: 'destructive' });
+            break;
+          }
+          try {
+            let query = supabase.from('atlas_workflows').select('*').eq('user_id', userId);
+            if (command.filter === 'active') {
+              query = query.eq('is_active', true);
+            } else if (command.filter === 'inactive') {
+              query = query.eq('is_active', false);
+            }
+            const { data, error } = await query.order('created_at', { ascending: false });
+            if (error) throw error;
+            const count = data?.length || 0;
+            toast({ title: '⚙️ Your Workflows', description: `Found ${count} workflow${count !== 1 ? 's' : ''}` });
+            window.dispatchEvent(new CustomEvent('voice-workflows-listed', { detail: data }));
+          } catch (err) {
+            console.error('Error listing workflows:', err);
+            toast({ title: 'Failed to List Workflows', variant: 'destructive' });
+          }
+          break;
+        }
+
+        case 'run_atlas_workflow': {
+          toast({ title: '🎤 Running Workflow', description: command.workflowName });
+          const userId = await getUserId();
+          if (!userId) {
+            toast({ title: 'Authentication Required', variant: 'destructive' });
+            break;
+          }
+          try {
+            // Find the workflow
+            const { data: workflows, error: findError } = await supabase
+              .from('atlas_workflows')
+              .select('*')
+              .eq('user_id', userId)
+              .ilike('name', `%${command.workflowName}%`)
+              .limit(1);
+            if (findError) throw findError;
+            if (!workflows || workflows.length === 0) {
+              toast({ title: 'Workflow Not Found', variant: 'destructive' });
+              break;
+            }
+            const workflow = workflows[0];
+            // Create a workflow run
+            const { error: runError } = await supabase.from('atlas_workflow_runs').insert({
+              workflow_id: workflow.id,
+              user_id: userId,
+              status: 'running',
+              trigger_data: { source: 'voice_command' },
+            });
+            if (runError) throw runError;
+            // Update trigger count
+            await supabase.from('atlas_workflows').update({
+              trigger_count: (workflow.trigger_count || 0) + 1,
+              last_triggered_at: new Date().toISOString(),
+            }).eq('id', workflow.id);
+            toast({ title: '▶️ Workflow Started', description: workflow.name });
+            window.dispatchEvent(new CustomEvent('voice-workflow-run', { detail: workflow }));
+          } catch (err) {
+            console.error('Error running workflow:', err);
+            toast({ title: 'Failed to Run Workflow', variant: 'destructive' });
+          }
+          break;
+        }
+
+        case 'schedule_atlas_task': {
+          toast({ title: '🎤 Scheduling Task', description: `${command.taskName} - ${command.schedule}` });
+          const userId = await getUserId();
+          if (!userId) {
+            toast({ title: 'Authentication Required', variant: 'destructive' });
+            break;
+          }
+          try {
+            // Create a scheduled workflow
+            const { error } = await supabase.from('atlas_workflows').insert({
+              user_id: userId,
+              name: command.taskName,
+              description: `Scheduled: ${command.schedule}`,
+              trigger_type: 'schedule',
+              trigger_config: { schedule: command.schedule },
+              action_type: command.action,
+              action_config: {},
+              is_active: true,
+            });
+            if (error) throw error;
+            toast({ title: '📅 Task Scheduled', description: `${command.taskName} will run ${command.schedule}` });
+          } catch (err) {
+            console.error('Error scheduling task:', err);
+            toast({ title: 'Failed to Schedule Task', variant: 'destructive' });
+          }
+          break;
+        }
+
+        case 'create_database_trigger':
+          toast({ title: '🎤 Database Triggers', description: `Trigger on ${command.tableName} (${command.event})` });
+          toast({ 
+            title: '⚠️ Database triggers require migration', 
+            description: 'Please ask me to create a database trigger migration for this.',
+          });
+          window.dispatchEvent(new CustomEvent('voice-create-db-trigger', { detail: command }));
+          break;
+
+        case 'list_scheduled_jobs': {
+          toast({ title: '🎤 Listing Scheduled Jobs' });
+          const userId = await getUserId();
+          if (!userId) {
+            toast({ title: 'Authentication Required', variant: 'destructive' });
+            break;
+          }
+          try {
+            const { data, error } = await supabase
+              .from('atlas_workflows')
+              .select('*')
+              .eq('user_id', userId)
+              .eq('trigger_type', 'schedule')
+              .order('created_at', { ascending: false });
+            if (error) throw error;
+            const count = data?.length || 0;
+            toast({ title: '📅 Scheduled Jobs', description: `Found ${count} scheduled job${count !== 1 ? 's' : ''}` });
+            window.dispatchEvent(new CustomEvent('voice-scheduled-jobs-listed', { detail: data }));
+          } catch (err) {
+            console.error('Error listing scheduled jobs:', err);
+            toast({ title: 'Failed to List Jobs', variant: 'destructive' });
+          }
+          break;
+        }
+
+        case 'cancel_scheduled_job': {
+          toast({ title: '🎤 Cancelling Scheduled Job', description: command.jobName });
+          const userId = await getUserId();
+          if (!userId) {
+            toast({ title: 'Authentication Required', variant: 'destructive' });
+            break;
+          }
+          try {
+            const { error } = await supabase
+              .from('atlas_workflows')
+              .update({ is_active: false })
+              .eq('user_id', userId)
+              .eq('trigger_type', 'schedule')
+              .ilike('name', `%${command.jobName}%`);
+            if (error) throw error;
+            toast({ title: '⏹️ Job Cancelled', description: command.jobName });
+          } catch (err) {
+            console.error('Error cancelling job:', err);
+            toast({ title: 'Failed to Cancel Job', variant: 'destructive' });
+          }
+          break;
+        }
+
         default:
           console.warn('Unknown command type:', command);
           toast({ title: '🎤 Unknown Command', description: 'I didn\'t understand that command', variant: 'destructive' });
