@@ -38,7 +38,13 @@ export type VoiceCommand =
   
   // Workflow triggers
   | { type: 'trigger_workflow'; workflowId: string }
-  | { type: 'open_dialog'; dialog: 'create_agent' | 'import_agents' | 'connect_platform' | 'create_channel' };
+  | { type: 'open_dialog'; dialog: 'create_agent' | 'import_agents' | 'connect_platform' | 'create_channel' | 'compose_email' }
+  
+  // Communications / Email Commands
+  | { type: 'draft_email'; to?: string; subject?: string; intent: string }
+  | { type: 'send_email'; to: string; subject?: string; content?: string }
+  | { type: 'compose_email'; to: string; subject?: string; intent: string; urgency?: 'low' | 'normal' | 'high' }
+  | { type: 'open_communications' };
 
 interface VoiceCommandBusState {
   currentCommand: VoiceCommand | null;
