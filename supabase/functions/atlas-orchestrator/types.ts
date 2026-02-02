@@ -39,11 +39,15 @@ export type OrchestratorAction =
   | 'widget_execute'
   // Agent Orchestration
   | 'orchestrate_agents'
+  | 'route_task'
   // Agent Memory & Performance
   | 'record_agent_performance'
   | 'get_agent_memory'
   | 'get_sonic_dna'
   | 'update_agent_relationship'
+  | 'consolidate_memories'
+  | 'crystallize_knowledge'
+  | 'run_reflection'
   | 'send_notification'
   | 'get_notifications'
   | 'dismiss_notification'

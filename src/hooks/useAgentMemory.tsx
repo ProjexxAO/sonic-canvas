@@ -566,6 +566,131 @@ export function useAgentMemory() {
     }
   }, []);
 
+  // PHASE 3: Consolidate low-importance memories into summaries
+  const consolidateMemories = useCallback(async (
+    agentId: string,
+    threshold = 0.3,
+    minMemories = 5
+  ): Promise<{ consolidated: number; summariesCreated: number } | null> => {
+    try {
+      const { data, error } = await supabase.functions.invoke('atlas-orchestrator', {
+        body: {
+          action: 'consolidate_memories',
+          userId: user?.id,
+          agentId,
+          threshold,
+          minMemories
+        }
+      });
+
+      if (error) throw error;
+      return data?.result || null;
+    } catch (error) {
+      console.error('Failed to consolidate memories:', error);
+      return null;
+    }
+  }, [user?.id]);
+
+  // PHASE 3: Crystallize high-value knowledge from top agents
+  const crystallizeKnowledge = useCallback(async (
+    sourceAgentId: string,
+    targetAgentIds: string[],
+    minImportance = 0.7
+  ): Promise<{ crystalsShared: number; targetAgents: number } | null> => {
+    try {
+      const { data, error } = await supabase.functions.invoke('atlas-orchestrator', {
+        body: {
+          action: 'crystallize_knowledge',
+          userId: user?.id,
+          sourceAgentId,
+          targetAgentIds,
+          minImportance
+        }
+      });
+
+      if (error) throw error;
+      return data?.result || null;
+    } catch (error) {
+      console.error('Failed to crystallize knowledge:', error);
+      return null;
+    }
+  }, [user?.id]);
+
+  // PHASE 3: Run reflection cycle for an agent
+  const runReflection = useCallback(async (
+    agentId: string
+  ): Promise<{
+    successPatterns: any[];
+    failurePatterns: any[];
+    specializations: any[];
+    insight: string;
+  } | null> => {
+    try {
+      const { data, error } = await supabase.functions.invoke('atlas-orchestrator', {
+        body: {
+          action: 'run_reflection',
+          userId: user?.id,
+          agentId
+        }
+      });
+
+      if (error) throw error;
+      return data?.reflection || null;
+    } catch (error) {
+      console.error('Failed to run reflection:', error);
+      return null;
+    }
+  }, [user?.id]);
+
+  // PHASE 3: Enhanced task routing with memory context
+  const routeTask = useCallback(async (
+    taskType: string,
+    query?: string,
+    limit = 5
+  ): Promise<Array<{
+    agentId: string;
+    agentName: string;
+    sector: string;
+    routingScore: number;
+    specializationScore: number;
+    successRate: number;
+    memoryRelevance: number;
+    learningVelocity: number;
+    confidence: number;
+    routingReason: string;
+  }>> => {
+    try {
+      const { data, error } = await supabase.functions.invoke('atlas-orchestrator', {
+        body: {
+          action: 'route_task',
+          userId: user?.id,
+          taskType,
+          query,
+          limit
+        }
+      });
+
+      if (error) throw error;
+      
+      // Map snake_case to camelCase
+      return (data?.agents || []).map((a: any) => ({
+        agentId: a.agent_id,
+        agentName: a.agent_name,
+        sector: a.sector,
+        routingScore: a.routing_score,
+        specializationScore: a.specialization_score,
+        successRate: a.success_rate,
+        memoryRelevance: a.memory_relevance,
+        learningVelocity: a.learning_velocity,
+        confidence: a.confidence,
+        routingReason: a.routing_reason
+      }));
+    } catch (error) {
+      console.error('Failed to route task:', error);
+      return [];
+    }
+  }, [user?.id]);
+
   return {
     isLoading,
     // Phase 1
@@ -583,6 +708,11 @@ export function useAgentMemory() {
     getTaskScores,
     getLearningEvents,
     logLearningEvent,
-    getAgentSpecializations
+    getAgentSpecializations,
+    // Phase 3 - Enhanced Learning & Memory
+    consolidateMemories,
+    crystallizeKnowledge,
+    runReflection,
+    routeTask,
   };
 }
