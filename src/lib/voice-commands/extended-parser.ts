@@ -881,6 +881,107 @@ export function parseAutomationCommand(normalized: string, original: string): Pa
     };
   }
 
+  // ====== Native Atlas/Supabase Automations ======
+
+  // Create Atlas workflow: "create workflow called daily report that runs every morning"
+  const atlasWorkflowPattern = /(?:create|new)\s+(?:atlas\s+)?workflow\s+(?:called\s+|named\s+)?(.+?)(?:\s+that\s+|\s+to\s+)(.+)/i;
+  const atlasMatch = normalized.match(atlasWorkflowPattern);
+  if (atlasMatch) {
+    let triggerType: 'schedule' | 'event' | 'voice' | 'manual' = 'manual';
+    const desc = atlasMatch[2].toLowerCase();
+    if (/every|daily|weekly|hourly|monthly|cron/i.test(desc)) triggerType = 'schedule';
+    else if (/when|on|trigger/i.test(desc)) triggerType = 'event';
+    else if (/voice|say|command/i.test(desc)) triggerType = 'voice';
+    
+    return {
+      command: { 
+        type: 'create_atlas_workflow',
+        name: atlasMatch[1].trim(),
+        triggerType,
+        actionType: atlasMatch[2].trim(),
+        description: atlasMatch[2].trim()
+      } as AutomationCommand,
+      confidence: 0.85,
+      original
+    };
+  }
+
+  // List Atlas workflows
+  if (/(?:list|show|get)\s+(?:my\s+)?(?:atlas\s+)?workflows/i.test(normalized)) {
+    let filter: 'all' | 'active' | 'inactive' = 'all';
+    if (/active/i.test(normalized)) filter = 'active';
+    else if (/inactive|disabled/i.test(normalized)) filter = 'inactive';
+    
+    return {
+      command: { type: 'list_atlas_workflows', filter } as AutomationCommand,
+      confidence: 0.9,
+      original
+    };
+  }
+
+  // Run Atlas workflow
+  const runWorkflowPattern = /(?:run|execute|start)\s+(?:atlas\s+)?workflow\s+(?:called\s+|named\s+)?(.+)/i;
+  const runMatch = normalized.match(runWorkflowPattern);
+  if (runMatch) {
+    return {
+      command: { type: 'run_atlas_workflow', workflowName: runMatch[1].trim() } as AutomationCommand,
+      confidence: 0.9,
+      original
+    };
+  }
+
+  // Schedule Atlas task: "schedule task check emails every hour"
+  const scheduleTaskPattern = /schedule\s+(?:a\s+)?task\s+(?:to\s+)?(.+?)\s+(every\s+.+|daily|weekly|hourly)/i;
+  const scheduleTaskMatch = normalized.match(scheduleTaskPattern);
+  if (scheduleTaskMatch) {
+    return {
+      command: { 
+        type: 'schedule_atlas_task',
+        taskName: scheduleTaskMatch[1].trim(),
+        schedule: scheduleTaskMatch[2].trim(),
+        action: scheduleTaskMatch[1].trim()
+      } as AutomationCommand,
+      confidence: 0.85,
+      original
+    };
+  }
+
+  // Create database trigger: "create trigger on tasks table when insert"
+  const dbTriggerPattern = /(?:create|add)\s+(?:database\s+)?trigger\s+(?:on\s+)?(.+?)\s+(?:table\s+)?(?:when|on)\s+(insert|update|delete)/i;
+  const triggerMatch = normalized.match(dbTriggerPattern);
+  if (triggerMatch) {
+    return {
+      command: { 
+        type: 'create_database_trigger',
+        tableName: triggerMatch[1].trim(),
+        event: triggerMatch[2].toLowerCase() as 'insert' | 'update' | 'delete',
+        action: 'notify'
+      } as AutomationCommand,
+      confidence: 0.8,
+      original
+    };
+  }
+
+  // List scheduled jobs
+  if (/(?:list|show|get)\s+(?:my\s+)?scheduled\s+jobs/i.test(normalized)) {
+    return {
+      command: { type: 'list_scheduled_jobs' } as AutomationCommand,
+      confidence: 0.9,
+      original
+    };
+  }
+
+  // Cancel scheduled job
+  const cancelJobPattern = /(?:cancel|stop|remove)\s+(?:the\s+)?scheduled\s+job\s+(?:called\s+|named\s+)?(.+)/i;
+  const cancelMatch = normalized.match(cancelJobPattern);
+  if (cancelMatch) {
+    return {
+      command: { type: 'cancel_scheduled_job', jobName: cancelMatch[1].trim() } as AutomationCommand,
+      confidence: 0.9,
+      original
+    };
+  }
+
   return null;
 }
 
