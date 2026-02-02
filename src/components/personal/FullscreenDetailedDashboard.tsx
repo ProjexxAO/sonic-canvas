@@ -1,7 +1,7 @@
 // Fullscreen Detailed Dashboard - Shows all content from SimplifiedDashboard sections in detail
 // Displays actual data: priority tasks, calendar events, emails, photos, finance, widgets
 
-import { useMemo } from 'react';
+import { useMemo, useState, useCallback } from 'react';
 import ReactDOM from 'react-dom';
 import { 
   X,
@@ -23,17 +23,22 @@ import {
   ArrowDownRight,
   CreditCard,
   Building,
-  Star
+  Star,
+  Mic,
+  MicOff,
+  Sparkles
 } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Badge } from '@/components/ui/badge';
 import { ScrollArea } from '@/components/ui/scroll-area';
 import { Separator } from '@/components/ui/separator';
+import { Tooltip, TooltipContent, TooltipProvider, TooltipTrigger } from '@/components/ui/tooltip';
 import { usePersonalHub, PersonalItem } from '@/hooks/usePersonalHub';
 import { useSmartCalendar } from '@/hooks/useSmartCalendar';
 import { useCommunications } from '@/hooks/useCommunications';
 import { useBanking } from '@/hooks/useBanking';
+import { useAtlasSafe } from '@/contexts/AtlasContext';
 import { useCustomWidgets } from '@/hooks/useCustomWidgets';
 import { useAuth } from '@/hooks/useAuth';
 import { cn } from '@/lib/utils';
@@ -62,9 +67,24 @@ export function FullscreenDetailedDashboard({
   const { messages, isLoading: messagesLoading } = useCommunications(userId);
   const { accounts, transactions, isLoading: bankingLoading } = useBanking();
   const { widgets: customWidgets } = useCustomWidgets();
+  
+  // Atlas voice context (safe - doesn't throw if not in provider)
+  const atlas = useAtlasSafe();
+  const [atlasHovered, setAtlasHovered] = useState(false);
 
   const greeting = useMemo(() => getGreeting(), []);
   const userName = user?.email?.split('@')[0] || 'there';
+  
+  // Toggle Atlas voice activation
+  const handleAtlasActivate = useCallback(() => {
+    if (atlas) {
+      if (atlas.isConnected) {
+        atlas.stopConversation();
+      } else {
+        atlas.startConversation();
+      }
+    }
+  }, [atlas]);
 
   // Priority tasks (same as SimplifiedDashboard)
   const priorityTasks = useMemo(() => {
@@ -557,6 +577,52 @@ export function FullscreenDetailedDashboard({
           )}
         </div>
       </ScrollArea>
+      
+      {/* Floating Atlas Activation Button */}
+      {atlas && (
+        <TooltipProvider>
+          <Tooltip>
+            <TooltipTrigger asChild>
+              <button
+                onClick={handleAtlasActivate}
+                onMouseEnter={() => setAtlasHovered(true)}
+                onMouseLeave={() => setAtlasHovered(false)}
+                className={cn(
+                  "fixed bottom-6 right-6 w-14 h-14 rounded-full shadow-lg transition-all duration-300 flex items-center justify-center",
+                  "focus:outline-none focus:ring-2 focus:ring-primary/50 focus:ring-offset-2",
+                  atlas.isConnected
+                    ? "bg-primary text-primary-foreground animate-pulse"
+                    : atlas.isConnecting
+                      ? "bg-primary/80 text-primary-foreground"
+                      : "bg-gradient-to-br from-primary to-primary/80 text-primary-foreground hover:scale-110",
+                  atlasHovered && !atlas.isConnected && "shadow-xl shadow-primary/25"
+                )}
+              >
+                {atlas.isConnected ? (
+                  <div className="relative">
+                    <Mic size={24} className="animate-pulse" />
+                    {atlas.isSpeaking && (
+                      <span className="absolute -top-1 -right-1 w-3 h-3 bg-green-400 rounded-full animate-ping" />
+                    )}
+                  </div>
+                ) : atlas.isConnecting ? (
+                  <div className="w-6 h-6 border-2 border-primary-foreground border-t-transparent rounded-full animate-spin" />
+                ) : (
+                  <Sparkles size={24} />
+                )}
+              </button>
+            </TooltipTrigger>
+            <TooltipContent side="left" className="bg-background border shadow-lg">
+              <p className="font-medium">
+                {atlas.isConnected ? 'Atlas is listening - tap to stop' : 'Talk to Atlas'}
+              </p>
+              <p className="text-xs text-muted-foreground">
+                {atlas.isConnected ? 'Voice active' : 'Say "Computer" or tap to activate'}
+              </p>
+            </TooltipContent>
+          </Tooltip>
+        </TooltipProvider>
+      )}
     </div>,
     document.body
   );
