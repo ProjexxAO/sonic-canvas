@@ -3,7 +3,7 @@
  * Adds parsing for new command domains: CRM, Projects, Analytics, IoT, Scheduled, Multi-Step
  */
 
-import type { VoiceCommand, CRMCommand, ProjectCommand, AnalyticsCommand, IoTCommand, ScheduledCommand, MultiStepCommand, ContextAwareCommand, InteractionCommand } from './types';
+import type { VoiceCommand, CRMCommand, ProjectCommand, AnalyticsCommand, IoTCommand, ScheduledCommand, MultiStepCommand, ContextAwareCommand, InteractionCommand, AutomationCommand, AutomationTrigger, AutomationProvider } from './types';
 
 interface ParsedIntent {
   command: VoiceCommand;
@@ -689,12 +689,209 @@ export function parseInteractionCommand(normalized: string, original: string): P
 }
 
 // ============================================================================
+// Automation & Webhook Parser
+// ============================================================================
+
+export function parseAutomationCommand(normalized: string, original: string): ParsedIntent | null {
+  // Create automation: "create automation when email received send to zapier"
+  const createAutomationPattern = /(?:create|add|set up|new)\s+(?:an?\s+)?automation\s+(?:called\s+|named\s+)?(.+?)\s+(?:when|on|for)\s+(email[_ ]?received|email[_ ]?sent|contact[_ ]?added|task[_ ]?completed|event[_ ]?created|expense[_ ]?added|goal[_ ]?completed|habit[_ ]?completed|document[_ ]?uploaded)/i;
+  const createMatch = normalized.match(createAutomationPattern);
+  if (createMatch) {
+    const triggerMap: Record<string, AutomationTrigger> = {
+      'email received': 'email_received',
+      'email_received': 'email_received',
+      'emailreceived': 'email_received',
+      'email sent': 'email_sent',
+      'email_sent': 'email_sent',
+      'emailsent': 'email_sent',
+      'contact added': 'contact_added',
+      'contact_added': 'contact_added',
+      'contactadded': 'contact_added',
+      'task completed': 'task_completed',
+      'task_completed': 'task_completed',
+      'taskcompleted': 'task_completed',
+      'event created': 'event_created',
+      'event_created': 'event_created',
+      'eventcreated': 'event_created',
+      'expense added': 'expense_added',
+      'expense_added': 'expense_added',
+      'expenseadded': 'expense_added',
+      'goal completed': 'goal_completed',
+      'goal_completed': 'goal_completed',
+      'goalcompleted': 'goal_completed',
+      'habit completed': 'habit_completed',
+      'habit_completed': 'habit_completed',
+      'habitcompleted': 'habit_completed',
+      'document uploaded': 'document_uploaded',
+      'document_uploaded': 'document_uploaded',
+      'documentuploaded': 'document_uploaded',
+    };
+    const triggerKey = createMatch[2].toLowerCase().replace(/[_ ]/g, ' ');
+    return {
+      command: { 
+        type: 'create_automation',
+        name: createMatch[1].trim(),
+        trigger: triggerMap[triggerKey] || 'custom'
+      } as AutomationCommand,
+      confidence: 0.9,
+      original
+    };
+  }
+
+  // Simple create automation: "create automation called daily summary"
+  const simpleCreatePattern = /(?:create|add|set up)\s+(?:an?\s+)?automation\s+(?:called\s+|named\s+)?(.+)/i;
+  const simpleMatch = normalized.match(simpleCreatePattern);
+  if (simpleMatch && !/(when|on|for)\s+(email|contact|task|event|expense|goal|habit|document)/i.test(normalized)) {
+    return {
+      command: { 
+        type: 'create_automation',
+        name: simpleMatch[1].trim(),
+        trigger: 'custom'
+      } as AutomationCommand,
+      confidence: 0.8,
+      original
+    };
+  }
+
+  // List automations
+  if (/(?:show|list|get|what are)\s+(?:my\s+)?(?:all\s+)?automations?/i.test(normalized)) {
+    let filter: 'all' | 'active' | 'inactive' = 'all';
+    if (/active/i.test(normalized)) filter = 'active';
+    else if (/inactive|disabled/i.test(normalized)) filter = 'inactive';
+    
+    return {
+      command: { type: 'list_automations', filter } as AutomationCommand,
+      confidence: 0.95,
+      original
+    };
+  }
+
+  // Toggle automation
+  const togglePattern = /(?:toggle|enable|disable|turn\s+(?:on|off))\s+(?:the\s+)?automation\s+(?:called\s+|named\s+)?(.+)/i;
+  const toggleMatch = normalized.match(togglePattern);
+  if (toggleMatch) {
+    return {
+      command: { type: 'toggle_automation', automationName: toggleMatch[1].trim() } as AutomationCommand,
+      confidence: 0.9,
+      original
+    };
+  }
+
+  // Delete automation
+  const deletePattern = /(?:delete|remove)\s+(?:the\s+)?automation\s+(?:called\s+|named\s+)?(.+)/i;
+  const deleteMatch = normalized.match(deletePattern);
+  if (deleteMatch) {
+    return {
+      command: { type: 'delete_automation', automationName: deleteMatch[1].trim() } as AutomationCommand,
+      confidence: 0.9,
+      original
+    };
+  }
+
+  // Test automation
+  const testPattern = /(?:test|try|run)\s+(?:the\s+)?automation\s+(?:called\s+|named\s+)?(.+)/i;
+  const testMatch = normalized.match(testPattern);
+  if (testMatch) {
+    return {
+      command: { type: 'test_automation', automationName: testMatch[1].trim() } as AutomationCommand,
+      confidence: 0.9,
+      original
+    };
+  }
+
+  // Connect Zapier: "connect zapier webhook https://..."
+  const zapierPattern = /connect\s+(?:to\s+)?zapier\s+(?:webhook\s+)?(?:url\s+)?(https?:\/\/\S+)?/i;
+  const zapierMatch = normalized.match(zapierPattern);
+  if (zapierMatch || /connect\s+(?:to\s+)?zapier/i.test(normalized)) {
+    return {
+      command: { 
+        type: 'connect_zapier',
+        webhookUrl: zapierMatch?.[1] || ''
+      } as AutomationCommand,
+      confidence: 0.9,
+      original
+    };
+  }
+
+  // Connect Make (Integromat)
+  const makePattern = /connect\s+(?:to\s+)?(?:make|integromat)\s+(?:webhook\s+)?(?:url\s+)?(https?:\/\/\S+)?/i;
+  const makeMatch = normalized.match(makePattern);
+  if (makeMatch || /connect\s+(?:to\s+)?(?:make|integromat)/i.test(normalized)) {
+    return {
+      command: { 
+        type: 'connect_make',
+        webhookUrl: makeMatch?.[1] || ''
+      } as AutomationCommand,
+      confidence: 0.9,
+      original
+    };
+  }
+
+  // Connect n8n
+  const n8nPattern = /connect\s+(?:to\s+)?n8n\s+(?:webhook\s+)?(?:url\s+)?(https?:\/\/\S+)?/i;
+  const n8nMatch = normalized.match(n8nPattern);
+  if (n8nMatch || /connect\s+(?:to\s+)?n8n/i.test(normalized)) {
+    return {
+      command: { 
+        type: 'connect_n8n',
+        webhookUrl: n8nMatch?.[1] || ''
+      } as AutomationCommand,
+      confidence: 0.9,
+      original
+    };
+  }
+
+  // Trigger webhook
+  const triggerWebhookPattern = /(?:trigger|call|send to)\s+webhook\s+(https?:\/\/\S+)/i;
+  const webhookMatch = normalized.match(triggerWebhookPattern);
+  if (webhookMatch) {
+    return {
+      command: { 
+        type: 'trigger_webhook',
+        webhookUrl: webhookMatch[1]
+      } as AutomationCommand,
+      confidence: 0.9,
+      original
+    };
+  }
+
+  // Get automation history
+  const historyPattern = /(?:show|get)\s+(?:the\s+)?(?:history|logs?)\s+(?:for|of)\s+(?:the\s+)?automation\s+(?:called\s+|named\s+)?(.+)/i;
+  const historyMatch = normalized.match(historyPattern);
+  if (historyMatch) {
+    return {
+      command: { type: 'get_automation_history', automationName: historyMatch[1].trim() } as AutomationCommand,
+      confidence: 0.85,
+      original
+    };
+  }
+
+  // Set automation schedule
+  const schedulePattern = /(?:set|schedule)\s+automation\s+(?:called\s+|named\s+)?(.+?)\s+(?:to run|for)\s+(.+)/i;
+  const scheduleMatch = normalized.match(schedulePattern);
+  if (scheduleMatch) {
+    return {
+      command: { 
+        type: 'set_automation_schedule',
+        automationId: undefined,
+        schedule: scheduleMatch[2].trim()
+      } as AutomationCommand,
+      confidence: 0.8,
+      original
+    };
+  }
+
+  return null;
+}
+
+// ============================================================================
 // Combined Extended Parser
 // ============================================================================
 
 export function parseExtendedCommand(normalized: string, original: string): ParsedIntent | null {
   // Try each extended parser in order
   return parseInteractionCommand(normalized, original)
+      || parseAutomationCommand(normalized, original)
       || parseCRMCommand(normalized, original)
       || parseProjectCommand(normalized, original)
       || parseAnalyticsCommand(normalized, original)
