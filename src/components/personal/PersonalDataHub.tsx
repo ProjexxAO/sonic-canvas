@@ -518,6 +518,20 @@ export function PersonalDataHub({ userId }: PersonalDataHubProps) {
     updateWidgetOrder: saveDashboardWidgetOrder,
     updateSelectedShortcuts: saveDashboardShortcuts
   } = useDashboardPreferences();
+
+  // Guard against save→refresh→save loops if the preferences hook returns
+  // non-stable function identities or if realtime updates re-trigger effects.
+  const lastSavedWidgetOrderRef = useRef<string>('');
+
+  const safeSaveDashboardWidgetOrder = useCallback(
+    (order: string[]) => {
+      const key = JSON.stringify(order);
+      if (key === lastSavedWidgetOrderRef.current) return;
+      lastSavedWidgetOrderRef.current = key;
+      saveDashboardWidgetOrder(order);
+    },
+    [saveDashboardWidgetOrder]
+  );
   
   // Local state for widget order (synced from database)
   const [widgetOrder, setWidgetOrder] = useState<string[]>(DEFAULT_WIDGET_ORDER);
@@ -564,7 +578,7 @@ export function PersonalDataHub({ userId }: PersonalDataHubProps) {
         }
         
         if (needsSave) {
-          saveDashboardWidgetOrder(order);
+          safeSaveDashboardWidgetOrder(order);
         }
         
         setWidgetOrder(order);
@@ -575,7 +589,13 @@ export function PersonalDataHub({ userId }: PersonalDataHubProps) {
       
       setSelectedActions(dashboardPrefs.selected_shortcuts);
     }
-  }, [isPrefsLoading, dashboardPrefs.widget_order, dashboardPrefs.selected_shortcuts]);
+  }, [
+    isPrefsLoading,
+    dashboardPrefs.widget_order,
+    dashboardPrefs.selected_shortcuts,
+    getDefaultWidgetOrder,
+    safeSaveDashboardWidgetOrder,
+  ]);
   
   // Sync widget order when selectedActions changes (add new shortcuts, remove old ones)
   useEffect(() => {
@@ -665,12 +685,12 @@ export function PersonalDataHub({ userId }: PersonalDataHubProps) {
         }
         
         // Save updated order to database
-        saveDashboardWidgetOrder(newOrder);
+        safeSaveDashboardWidgetOrder(newOrder);
       }
       
       return newOrder;
     });
-  }, [customWidgets, isPrefsLoading, saveDashboardWidgetOrder]);
+  }, [customWidgets, isPrefsLoading, safeSaveDashboardWidgetOrder]);
   
   const inputRef = useRef<HTMLInputElement>(null);
   const fileInputRef = useRef<HTMLInputElement>(null);
@@ -684,8 +704,8 @@ export function PersonalDataHub({ userId }: PersonalDataHubProps) {
     items.splice(result.destination.index, 0, reorderedItem);
     
     setWidgetOrder(items);
-    saveDashboardWidgetOrder(items); // Save to database
-  }, [widgetOrder, saveDashboardWidgetOrder]);
+    safeSaveDashboardWidgetOrder(items); // Save to database
+  }, [widgetOrder, safeSaveDashboardWidgetOrder]);
 
   const handleQuickAddTask = useCallback(async () => {
     if (!newTaskTitle.trim()) return;
