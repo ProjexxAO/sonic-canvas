@@ -1,19 +1,19 @@
 // Simplified Dashboard - Mobile-first, minimal cognitive load
 // Best practices: Large touch targets, clear hierarchy, essential info only
 
-import { useMemo, useState } from 'react';
+import { useMemo } from 'react';
 import { 
-  CheckSquare, 
-  Target, 
+  Mail, 
+  Image, 
   Calendar, 
-  ChevronRight,
   Sun,
   Moon,
   Sunrise,
   Wallet,
   Flame,
   Settings,
-  Plus
+  Plus,
+  CheckSquare
 } from 'lucide-react';
 import { Card, CardContent } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
@@ -264,34 +264,31 @@ export function SimplifiedDashboard({
             onComplete={handleCompleteTask}
           />
 
-          {/* Quick Actions Grid */}
+          {/* Quick Actions Grid - Priority: Email, Finance, Photos, Calendar */}
           <div className="grid grid-cols-2 gap-3">
             <QuickAction
-              icon={CheckSquare}
-              label="Tasks"
-              value={stats.tasksToday > 0 ? stats.tasksToday : undefined}
-              color="hsl(var(--primary))"
-              onClick={() => onNavigate?.('tasks')}
-              highlight={stats.tasksToday > 3}
-            />
-            <QuickAction
-              icon={Target}
-              label="Goals"
-              value={stats.activeGoals > 0 ? stats.activeGoals : undefined}
-              color="hsl(200 70% 50%)"
-              onClick={() => onNavigate?.('goals')}
-            />
-            <QuickAction
-              icon={Calendar}
-              label="Calendar"
-              color="hsl(260 70% 55%)"
-              onClick={() => onNavigate?.('calendar')}
+              icon={Mail}
+              label="Email"
+              color="hsl(220 70% 50%)"
+              onClick={() => onNavigate?.('email')}
             />
             <QuickAction
               icon={Wallet}
               label="Finance"
               color="hsl(150 70% 45%)"
               onClick={() => onNavigate?.('finance')}
+            />
+            <QuickAction
+              icon={Image}
+              label="Photos"
+              color="hsl(340 70% 55%)"
+              onClick={() => onNavigate?.('photos')}
+            />
+            <QuickAction
+              icon={Calendar}
+              label="Calendar"
+              color="hsl(260 70% 55%)"
+              onClick={() => onNavigate?.('calendar')}
             />
           </div>
 
