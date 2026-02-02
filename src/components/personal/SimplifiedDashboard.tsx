@@ -13,17 +13,20 @@ import {
   Flame,
   Settings,
   Plus,
-  CheckSquare
+  CheckSquare,
+  LayoutGrid
 } from 'lucide-react';
 import { Card, CardContent } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
 import { Badge } from '@/components/ui/badge';
 import { ScrollArea } from '@/components/ui/scroll-area';
 import { usePersonalHub } from '@/hooks/usePersonalHub';
+import { useCustomWidgets } from '@/hooks/useCustomWidgets';
 import { useAuth } from '@/hooks/useAuth';
 import { useIsMobile } from '@/hooks/use-mobile';
 import { cn } from '@/lib/utils';
 import { format, isToday, parseISO } from 'date-fns';
+import { CustomWidgetRenderer } from './CustomWidgetRenderer';
 
 interface SimplifiedDashboardProps {
   userId: string | undefined;
@@ -150,6 +153,9 @@ export function SimplifiedDashboard({
     isLoading,
     completeItem
   } = usePersonalHub();
+  
+  // Fetch custom widgets created by the user
+  const { widgets, isLoading: widgetsLoading, deleteWidget } = useCustomWidgets();
 
   const greeting = useMemo(() => getGreeting(), []);
   const userName = user?.email?.split('@')[0] || 'there';
@@ -282,6 +288,31 @@ export function SimplifiedDashboard({
               />
             </div>
           </div>
+
+          {/* Custom Widgets Section */}
+          {widgets.length > 0 && (
+            <div>
+              <div className="flex items-center justify-between mb-3">
+                <span className="text-xs font-semibold text-muted-foreground uppercase tracking-wider flex items-center gap-1.5">
+                  <LayoutGrid size={12} />
+                  My Widgets
+                </span>
+                <Badge variant="secondary" className="text-[10px]">
+                  {widgets.length}
+                </Badge>
+              </div>
+              <div className="grid grid-cols-1 gap-3">
+                {widgets.map((widget) => (
+                  <CustomWidgetRenderer
+                    key={widget.id}
+                    widget={widget}
+                    compact
+                    onDelete={() => deleteWidget(widget.id)}
+                  />
+                ))}
+              </div>
+            </div>
+          )}
 
           {/* Add Widget */}
           {onCreateWidget && (
