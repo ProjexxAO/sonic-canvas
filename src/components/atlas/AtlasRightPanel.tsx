@@ -108,224 +108,60 @@ export function AtlasRightPanel({
     }
   }, []);
 
-  // Personal hub has simplified tabs: User's name (data), Phone, Camera, and hub quick access
+  // Personal hub - simplified 3-tab layout for ease of use
   if (hubType === 'personal') {
-    // Mobile layout - no horizontal resize
-    if (isMobile) {
-      return (
-        <div className="w-full flex flex-col h-full flex-1 min-h-0">
-          <Tabs defaultValue="personal-data" className="flex flex-col flex-1 h-full min-h-0 overflow-hidden">
-            {/* Tab Header Row - Simplified for mobile */}
-            <div className="flex items-center gap-2 mb-2 flex-shrink-0 overflow-x-auto">
-              <TabsList className="flex-1 flex justify-start gap-1 bg-muted/50 border border-border rounded-lg p-1">
-                <TabsTrigger 
-                  value="personal-data" 
-                  className="flex items-center gap-1 text-[10px] font-mono data-[state=active]:bg-background data-[state=active]:shadow-sm px-2"
-                >
-                  <User size={12} />
-                  Me
-                </TabsTrigger>
-                <TabsTrigger 
-                  value="phone" 
-                  className="flex items-center gap-1 text-[10px] font-mono data-[state=active]:bg-background data-[state=active]:shadow-sm px-2"
-                >
-                  <Phone size={12} />
-                  Phone
-                </TabsTrigger>
-                <TabsTrigger 
-                  value="camera" 
-                  className="flex items-center gap-1 text-[10px] font-mono data-[state=active]:bg-background data-[state=active]:shadow-sm px-2"
-                >
-                  <Camera size={12} />
-                  Camera
-                </TabsTrigger>
-                <TabsTrigger 
-                  value="integrations" 
-                  className="flex items-center gap-1 text-[10px] font-mono data-[state=active]:bg-background data-[state=active]:shadow-sm px-2"
-                >
-                  <Plug size={12} />
-                  Apps
-                </TabsTrigger>
-                <TabsTrigger 
-                  value="notifications" 
-                  className="flex items-center gap-1 text-[10px] font-mono data-[state=active]:bg-background data-[state=active]:shadow-sm px-2 relative"
-                >
-                  <Settings size={12} />
-                  {unreadCount > 0 && (
-                    <Badge variant="destructive" className="ml-1 text-[8px] px-1 py-0 h-3.5">
-                      {unreadCount}
-                    </Badge>
-                  )}
-                </TabsTrigger>
-              </TabsList>
-            </div>
-
-            <TabsContent value="personal-data" className="flex-1 mt-0 min-h-0 h-full data-[state=active]:flex data-[state=active]:flex-col">
-              <div className="flex-1 min-h-0 h-full overflow-hidden">
-                <PersonalDataHub userId={userId} />
-              </div>
-            </TabsContent>
-
-
-            <TabsContent value="phone" className="flex-1 mt-0 overflow-hidden flex flex-col min-h-0">
-              <div className="flex-1 min-h-0">
-                <PhonePanel />
-              </div>
-            </TabsContent>
-
-            <TabsContent value="camera" className="flex-1 mt-0 overflow-hidden flex flex-col min-h-0">
-              <div className="flex-1 min-h-0 bg-card/90 border border-border rounded-lg overflow-hidden">
-                <input
-                  ref={fileInputRef}
-                  type="file"
-                  accept="image/*"
-                  multiple
-                  onChange={(e) => handlePhotoUpload(e.target.files)}
-                  className="hidden"
-                />
-                <input
-                  ref={cameraInputRef}
-                  type="file"
-                  accept="image/*"
-                  capture="environment"
-                  onChange={(e) => handlePhotoUpload(e.target.files)}
-                  className="hidden"
-                />
-                <ScrollArea className="h-full">
-                  <div className="p-4">
-                    <div className="flex flex-col items-center gap-4 py-6">
-                      <div className="w-16 h-16 rounded-full bg-primary/10 flex items-center justify-center">
-                        <Camera size={24} className="text-primary" />
-                      </div>
-                      <div className="flex gap-2">
-                        <Button 
-                          onClick={handleCameraCapture}
-                          disabled={isUploading}
-                          size="sm"
-                          className="gap-2"
-                        >
-                          <Camera size={14} />
-                          Take Photo
-                        </Button>
-                        <Button 
-                          variant="outline"
-                          size="sm"
-                          onClick={() => fileInputRef.current?.click()}
-                          disabled={isUploading}
-                          className="gap-2"
-                        >
-                          <Upload size={14} />
-                          Upload
-                        </Button>
-                      </div>
-                    </div>
-                    {photos.length > 0 && (
-                      <div className="mt-4">
-                        <div className="grid grid-cols-3 gap-2">
-                          {photos.slice(0, 6).map((photo) => (
-                            <div 
-                              key={photo.id}
-                              className="aspect-square rounded-lg overflow-hidden bg-muted border border-border"
-                            >
-                              <img 
-                                src={getPhotoUrl(photo)} 
-                                alt={photo.file_name}
-                                className="w-full h-full object-cover"
-                              />
-                            </div>
-                          ))}
-                        </div>
-                      </div>
-                    )}
-                  </div>
-                </ScrollArea>
-              </div>
-            </TabsContent>
-
-            <TabsContent value="integrations" className="flex-1 mt-0 overflow-hidden flex flex-col min-h-0">
-              <IntegrationsTab hubContext="personal" />
-            </TabsContent>
-
-            <TabsContent value="notifications" className="flex-1 mt-0 overflow-hidden flex flex-col min-h-0">
-              <div className="flex-1 min-h-0 bg-card/90 border border-border rounded-lg overflow-hidden">
-                <NotificationSettingsPanel />
-              </div>
-            </TabsContent>
-          </Tabs>
-        </div>
-      );
-    }
-
-    // Desktop/Tablet layout - consistent fixed width like Enterprise/Group hubs
     return (
       <div className="w-full flex flex-col h-full flex-1 min-h-0">
-        <Tabs defaultValue="personal-data" className="flex flex-col flex-1 h-full min-h-0 overflow-hidden">
-          {/* Tab Header Row */}
+        <Tabs defaultValue="dashboard" className="flex flex-col flex-1 h-full min-h-0 overflow-hidden">
+          {/* Simplified Tab Header - 3 core tabs only */}
           <div className="flex items-center gap-2 mb-3 flex-shrink-0">
-            <TabsList className="flex-1 flex justify-start gap-1 bg-muted/50 border border-border rounded-lg p-1">
+            <TabsList className="flex-1 grid grid-cols-3 bg-muted/50 border border-border rounded-xl p-1 h-11">
               <TabsTrigger 
-                value="personal-data" 
-                className="flex items-center gap-1 text-[10px] font-mono data-[state=active]:bg-background data-[state=active]:shadow-sm px-3"
+                value="dashboard" 
+                className="flex items-center justify-center gap-2 text-xs font-medium data-[state=active]:bg-background data-[state=active]:shadow-sm rounded-lg"
               >
-                <User size={12} />
-                {userDisplayName}
+                <User size={16} />
+                {!isMobile && <span>Dashboard</span>}
               </TabsTrigger>
               <TabsTrigger 
-                value="phone" 
-                className="flex items-center gap-1 text-[10px] font-mono data-[state=active]:bg-background data-[state=active]:shadow-sm px-3"
+                value="tools" 
+                className="flex items-center justify-center gap-2 text-xs font-medium data-[state=active]:bg-background data-[state=active]:shadow-sm rounded-lg"
               >
-                <Phone size={12} />
-                Phone
+                <Phone size={16} />
+                {!isMobile && <span>Tools</span>}
               </TabsTrigger>
               <TabsTrigger 
-                value="camera" 
-                className="flex items-center gap-1 text-[10px] font-mono data-[state=active]:bg-background data-[state=active]:shadow-sm px-3"
+                value="settings" 
+                className="flex items-center justify-center gap-2 text-xs font-medium data-[state=active]:bg-background data-[state=active]:shadow-sm rounded-lg relative"
               >
-                <Camera size={12} />
-                Camera
-              </TabsTrigger>
-              <TabsTrigger 
-                value="integrations" 
-                className="flex items-center gap-1 text-[10px] font-mono data-[state=active]:bg-background data-[state=active]:shadow-sm px-3"
-              >
-                <Plug size={12} />
-                Apps
-              </TabsTrigger>
-              <TabsTrigger 
-                value="notifications" 
-                className="flex items-center gap-1 text-[10px] font-mono data-[state=active]:bg-background data-[state=active]:shadow-sm px-3 relative"
-              >
-                <Settings size={12} />
-                Settings
+                <Settings size={16} />
+                {!isMobile && <span>Settings</span>}
                 {unreadCount > 0 && (
-                  <Badge variant="destructive" className="ml-1 text-[8px] px-1 py-0 h-3.5">
-                    {unreadCount}
-                  </Badge>
+                  <span className="absolute -top-1 -right-1 w-4 h-4 rounded-full bg-destructive text-destructive-foreground text-[10px] flex items-center justify-center">
+                    {unreadCount > 9 ? '9+' : unreadCount}
+                  </span>
                 )}
               </TabsTrigger>
             </TabsList>
             
-            {/* Hub Quick Access Links */}
-            <div className="flex-shrink-0 border-l border-border pl-2">
-              <HubQuickAccess />
-            </div>
+            {/* Hub Quick Access - Desktop only */}
+            {!isMobile && (
+              <div className="flex-shrink-0 border-l border-border pl-2">
+                <HubQuickAccess />
+              </div>
+            )}
           </div>
 
-          <TabsContent value="personal-data" className="flex-1 mt-0 min-h-0 overflow-hidden data-[state=active]:flex data-[state=active]:flex-col h-full">
-            <div className="flex-1 min-h-0 overflow-hidden h-full">
+          {/* Dashboard Tab */}
+          <TabsContent value="dashboard" className="flex-1 mt-0 min-h-0 h-full data-[state=active]:flex data-[state=active]:flex-col overflow-hidden">
+            <div className="flex-1 min-h-0 h-full overflow-hidden">
               <PersonalDataHub userId={userId} />
             </div>
           </TabsContent>
 
-
-          <TabsContent value="phone" className="flex-1 mt-0 overflow-hidden flex flex-col min-h-0">
-            <div className="flex-1 min-h-0">
-              <PhonePanel />
-            </div>
-          </TabsContent>
-
-          <TabsContent value="camera" className="flex-1 mt-0 overflow-hidden flex flex-col min-h-0">
-            <div className="flex-1 min-h-0 bg-card/90 border border-border rounded-lg overflow-hidden">
+          {/* Tools Tab - Phone & Camera combined */}
+          <TabsContent value="tools" className="flex-1 mt-0 overflow-hidden flex flex-col min-h-0">
+            <div className="flex-1 min-h-0 bg-card/90 border border-border rounded-xl overflow-hidden">
               {/* Hidden file inputs */}
               <input
                 ref={fileInputRef}
@@ -345,48 +181,48 @@ export function AtlasRightPanel({
               />
               
               <ScrollArea className="h-full">
-                <div className="p-4">
-                  {/* Camera Actions */}
-                  <div className="flex flex-col items-center gap-4 py-6">
-                    <div className="w-20 h-20 rounded-full bg-primary/10 flex items-center justify-center">
-                      <Camera size={32} className="text-primary" />
-                    </div>
-                    <h3 className="text-sm font-medium">Capture & Upload</h3>
-                    <p className="text-xs text-muted-foreground text-center max-w-[200px]">
-                      Take photos or upload images to your personal hub
-                    </p>
-                    <div className="flex gap-2">
+                <div className="p-4 space-y-6">
+                  {/* Phone Section */}
+                  <div>
+                    <h3 className="text-sm font-medium mb-3 flex items-center gap-2">
+                      <Phone size={16} className="text-primary" />
+                      Phone & Contacts
+                    </h3>
+                    <PhonePanel />
+                  </div>
+                  
+                  {/* Camera Section */}
+                  <div>
+                    <h3 className="text-sm font-medium mb-3 flex items-center gap-2">
+                      <Camera size={16} className="text-primary" />
+                      Camera & Photos
+                    </h3>
+                    <div className="flex gap-2 mb-4">
                       <Button 
                         onClick={handleCameraCapture}
                         disabled={isUploading}
-                        className="gap-2"
+                        size="sm"
+                        className="flex-1 h-11 rounded-xl"
                       >
-                        <Camera size={14} />
+                        <Camera size={16} className="mr-2" />
                         Take Photo
                       </Button>
                       <Button 
                         variant="outline"
+                        size="sm"
                         onClick={() => fileInputRef.current?.click()}
                         disabled={isUploading}
-                        className="gap-2"
+                        className="flex-1 h-11 rounded-xl"
                       >
-                        <Upload size={14} />
+                        <Upload size={16} className="mr-2" />
                         Upload
                       </Button>
                     </div>
-                  </div>
-
-                  {/* Recent Photos */}
-                  {photos.length > 0 && (
-                    <div className="mt-6">
-                      <div className="flex items-center gap-2 mb-3">
-                        <Image size={14} className="text-muted-foreground" />
-                        <span className="text-xs font-mono text-muted-foreground uppercase">
-                          Recent Photos ({photos.length})
-                        </span>
-                      </div>
-                      <div className="grid grid-cols-3 gap-2">
-                        {photos.slice(0, 6).map((photo) => (
+                    
+                    {/* Photo Grid */}
+                    {photos.length > 0 && (
+                      <div className="grid grid-cols-4 gap-2">
+                        {photos.slice(0, 8).map((photo) => (
                           <div 
                             key={photo.id}
                             className="aspect-square rounded-lg overflow-hidden bg-muted border border-border"
@@ -399,24 +235,25 @@ export function AtlasRightPanel({
                           </div>
                         ))}
                       </div>
-                      {photos.length > 6 && (
-                        <p className="text-[10px] text-muted-foreground text-center mt-2">
-                          +{photos.length - 6} more photos
-                        </p>
-                      )}
-                    </div>
-                  )}
+                    )}
+                  </div>
+                  
+                  {/* Integrations Section */}
+                  <div>
+                    <h3 className="text-sm font-medium mb-3 flex items-center gap-2">
+                      <Plug size={16} className="text-primary" />
+                      Connected Apps
+                    </h3>
+                    <IntegrationsTab hubContext="personal" />
+                  </div>
                 </div>
               </ScrollArea>
             </div>
           </TabsContent>
 
-          <TabsContent value="integrations" className="flex-1 mt-0 overflow-hidden flex flex-col min-h-0">
-            <IntegrationsTab hubContext="personal" />
-          </TabsContent>
-
-          <TabsContent value="notifications" className="flex-1 mt-0 overflow-hidden flex flex-col min-h-0">
-            <div className="flex-1 min-h-0 bg-card/90 border border-border rounded-lg overflow-hidden">
+          {/* Settings Tab */}
+          <TabsContent value="settings" className="flex-1 mt-0 overflow-hidden flex flex-col min-h-0">
+            <div className="flex-1 min-h-0 bg-card/90 border border-border rounded-xl overflow-hidden">
               <NotificationSettingsPanel />
             </div>
           </TabsContent>
@@ -425,40 +262,46 @@ export function AtlasRightPanel({
     );
   }
 
-  // Enterprise/Group hubs keep full tabs: Ops, Data, Discover, Verify
+  // Enterprise/Group hubs - streamlined 3-tab layout
   return (
     <div className="w-full flex flex-col h-full flex-1 min-h-0">
-      <Tabs defaultValue="operations" className="flex flex-col flex-1 h-full min-h-0 overflow-hidden">
-        <TabsList className="w-full grid grid-cols-4 bg-muted/50 border border-border rounded-lg p-1 mb-3 flex-shrink-0">
+      <Tabs defaultValue="data" className="flex flex-col flex-1 h-full min-h-0 overflow-hidden">
+        <TabsList className="w-full grid grid-cols-3 bg-muted/50 border border-border rounded-xl p-1 h-11 mb-3 flex-shrink-0">
+          <TabsTrigger 
+            value="data" 
+            className="flex items-center justify-center gap-2 text-xs font-medium data-[state=active]:bg-background data-[state=active]:shadow-sm rounded-lg"
+          >
+            <Database size={16} />
+            {!isMobile && <span>Data</span>}
+          </TabsTrigger>
           <TabsTrigger 
             value="operations" 
-            className="flex items-center gap-1 text-[10px] font-mono data-[state=active]:bg-background data-[state=active]:shadow-sm px-2"
+            className="flex items-center justify-center gap-2 text-xs font-medium data-[state=active]:bg-background data-[state=active]:shadow-sm rounded-lg"
           >
-            <Activity size={12} />
-            Ops
+            <Activity size={16} />
+            {!isMobile && <span>Ops</span>}
           </TabsTrigger>
           <TabsTrigger 
-            value="datahub" 
-            className="flex items-center gap-1 text-[10px] font-mono data-[state=active]:bg-background data-[state=active]:shadow-sm px-2"
+            value="intelligence" 
+            className="flex items-center justify-center gap-2 text-xs font-medium data-[state=active]:bg-background data-[state=active]:shadow-sm rounded-lg"
           >
-            <Database size={12} />
-            Data
-          </TabsTrigger>
-          <TabsTrigger 
-            value="discovery" 
-            className="flex items-center gap-1 text-[10px] font-mono data-[state=active]:bg-background data-[state=active]:shadow-sm px-2"
-          >
-            <Brain size={12} />
-            Discover
-          </TabsTrigger>
-          <TabsTrigger 
-            value="verify" 
-            className="flex items-center gap-1 text-[10px] font-mono data-[state=active]:bg-background data-[state=active]:shadow-sm px-2"
-          >
-            <Shield size={12} />
-            Verify
+            <Brain size={16} />
+            {!isMobile && <span>Intel</span>}
           </TabsTrigger>
         </TabsList>
+
+        {/* Data Tab - Primary view */}
+        <TabsContent value="data" className="flex-1 mt-0 overflow-hidden min-h-0 h-full data-[state=active]:flex data-[state=active]:flex-col">
+          <div className="flex-1 min-h-0 h-full overflow-auto">
+            <CSuiteDataHub 
+              userId={userId} 
+              agents={agents} 
+              agentsLoading={agentsLoading} 
+              hubType={hubType}
+              groupId={groupId}
+            />
+          </div>
+        </TabsContent>
 
         <TabsContent value="operations" className="flex-1 mt-0 overflow-hidden min-h-0 data-[state=active]:flex data-[state=active]:flex-col">
           <ScrollArea className="flex-1 h-full pr-2">
@@ -526,28 +369,30 @@ export function AtlasRightPanel({
           </ScrollArea>
         </TabsContent>
 
-
-        <TabsContent value="datahub" className="flex-1 mt-0 overflow-hidden min-h-0 h-full data-[state=active]:flex data-[state=active]:flex-col">
-          <div className="flex-1 min-h-0 h-full overflow-auto">
-            <CSuiteDataHub 
-              userId={userId} 
-              agents={agents} 
-              agentsLoading={agentsLoading} 
-              hubType={hubType}
-              groupId={groupId}
-            />
-          </div>
-        </TabsContent>
-
-        <TabsContent value="discovery" className="flex-1 mt-0 overflow-hidden min-h-0 h-full data-[state=active]:flex data-[state=active]:flex-col">
-          <div className="flex-1 min-h-0 h-full bg-card/90 border border-border rounded-lg overflow-hidden">
-            <KnowledgeDiscoveryPanel />
-          </div>
-        </TabsContent>
-
-        <TabsContent value="verify" className="flex-1 mt-0 overflow-hidden min-h-0 h-full data-[state=active]:flex data-[state=active]:flex-col">
-          <div className="flex-1 min-h-0 h-full bg-card/90 border border-border rounded-lg overflow-hidden">
-            <VeracityEvaluationPanel />
+        {/* Intelligence Tab - Discovery & Verification combined */}
+        <TabsContent value="intelligence" className="flex-1 mt-0 overflow-hidden min-h-0 h-full data-[state=active]:flex data-[state=active]:flex-col">
+          <div className="flex-1 min-h-0 h-full bg-card/90 border border-border rounded-xl overflow-hidden">
+            <ScrollArea className="h-full">
+              <div className="p-4 space-y-4">
+                {/* Knowledge Discovery */}
+                <div>
+                  <h3 className="text-sm font-medium mb-3 flex items-center gap-2">
+                    <Brain size={16} className="text-primary" />
+                    Knowledge Discovery
+                  </h3>
+                  <KnowledgeDiscoveryPanel />
+                </div>
+                
+                {/* Verification */}
+                <div>
+                  <h3 className="text-sm font-medium mb-3 flex items-center gap-2">
+                    <Shield size={16} className="text-primary" />
+                    Fact Verification
+                  </h3>
+                  <VeracityEvaluationPanel />
+                </div>
+              </div>
+            </ScrollArea>
           </div>
         </TabsContent>
       </Tabs>

@@ -1,24 +1,19 @@
-// Simplified Dashboard - User-centric, Atlas-first design
-// Designed for universal accessibility: children to seniors
-// Large touch targets, minimal cognitive load, AI-driven personalization
-// Enhanced with Famous AI-inspired UI patterns
+// Simplified Dashboard - Mobile-first, minimal cognitive load
+// Best practices: Large touch targets, clear hierarchy, essential info only
 
-import { useMemo, useState, useCallback, useEffect } from 'react';
-import { DragDropContext, Droppable, Draggable, DropResult } from '@hello-pangea/dnd';
+import { useMemo, useState } from 'react';
 import { 
   CheckSquare, 
   Target, 
   Calendar, 
-  Sparkles,
   ChevronRight,
   Sun,
   Moon,
   Sunrise,
-  Plus,
-  Wand2,
+  Wallet,
   Flame,
-  GripVertical,
-  Wallet
+  Settings,
+  Plus
 } from 'lucide-react';
 import { Card, CardContent } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
@@ -27,14 +22,8 @@ import { ScrollArea } from '@/components/ui/scroll-area';
 import { usePersonalHub } from '@/hooks/usePersonalHub';
 import { useAuth } from '@/hooks/useAuth';
 import { useIsMobile } from '@/hooks/use-mobile';
-import { useDashboardPreferences } from '@/hooks/useDashboardPreferences';
 import { cn } from '@/lib/utils';
 import { format, isToday, parseISO } from 'date-fns';
-import { toast } from 'sonner';
-import { MetricHeaderRow } from './MetricHeaderRow';
-import { WeekHabitGrid } from './WeekHabitGrid';
-import { CompactFinanceCard } from './CompactFinanceCard';
-import { AtlasActivityWidget } from './AtlasActivityWidget';
 
 interface SimplifiedDashboardProps {
   userId: string | undefined;
@@ -51,77 +40,49 @@ function getGreeting(): { text: string; icon: typeof Sun; period: 'morning' | 'a
   return { text: 'Good evening', icon: Moon, period: 'evening' };
 }
 
-// Smart priority card - shows what matters most right now
-function PriorityCard({ 
+// Simple Quick Action Button - large touch target, clear purpose
+function QuickAction({ 
   icon: Icon, 
-  title, 
-  subtitle, 
+  label, 
   value, 
   color, 
   onClick,
-  highlight = false,
-  dragHandleProps,
-  isDragging = false
+  highlight = false
 }: { 
   icon: typeof CheckSquare; 
-  title: string; 
-  subtitle: string; 
+  label: string; 
   value?: string | number;
   color: string;
   onClick?: () => void;
   highlight?: boolean;
-  dragHandleProps?: any;
-  isDragging?: boolean;
 }) {
   return (
-    <div
+    <button
+      onClick={onClick}
       className={cn(
-        "w-full text-left p-6 rounded-2xl border-2 transition-all duration-200 bg-card group relative",
-        "focus:outline-none focus:ring-4 focus:ring-primary/20",
+        "flex flex-col items-center justify-center p-4 rounded-2xl border-2 transition-all duration-200",
+        "min-h-[100px] focus:outline-none focus:ring-4 focus:ring-primary/20 active:scale-95",
         highlight 
-          ? "bg-primary/10 border-primary shadow-lg shadow-primary/10" 
-          : "border-border hover:border-primary/50",
-        isDragging && "shadow-xl opacity-95 ring-2 ring-primary/30"
+          ? "bg-primary/10 border-primary" 
+          : "bg-card border-border hover:border-primary/50"
       )}
     >
-      {/* Drag handle */}
       <div 
-        {...dragHandleProps}
-        className={cn(
-          "absolute left-2 top-1/2 -translate-y-1/2 p-1.5 rounded cursor-grab active:cursor-grabbing",
-          "opacity-0 group-hover:opacity-100 transition-opacity bg-muted/80 hover:bg-muted"
-        )}
+        className="w-12 h-12 rounded-full flex items-center justify-center mb-2"
+        style={{ backgroundColor: `${color}15` }}
       >
-        <GripVertical size={16} className="text-muted-foreground" />
+        <Icon size={24} style={{ color }} />
       </div>
-      
-      <button
-        onClick={onClick}
-        className="w-full flex items-center gap-4 text-left"
-      >
-        <div 
-          className="w-16 h-16 rounded-2xl flex items-center justify-center flex-shrink-0"
-          style={{ backgroundColor: `${color}20` }}
-        >
-          <Icon size={32} style={{ color }} />
-        </div>
-        <div className="flex-1 min-w-0">
-          <h3 className="text-xl font-semibold text-foreground truncate">{title}</h3>
-          <p className="text-sm text-muted-foreground mt-1">{subtitle}</p>
-        </div>
-        {value !== undefined && (
-          <div className="text-right flex-shrink-0">
-            <span className="text-3xl font-bold" style={{ color }}>{value}</span>
-          </div>
-        )}
-        <ChevronRight size={24} className="text-muted-foreground flex-shrink-0" />
-      </button>
-    </div>
+      {value !== undefined && (
+        <span className="text-2xl font-bold" style={{ color }}>{value}</span>
+      )}
+      <span className="text-xs text-muted-foreground font-medium">{label}</span>
+    </button>
   );
 }
 
-// Today's Focus Card - the most important thing
-function TodaysFocusCard({ 
+// Today's Priority - single focus card
+function TodaysFocus({ 
   task, 
   onComplete 
 }: { 
@@ -131,40 +92,59 @@ function TodaysFocusCard({
   if (!task) {
     return (
       <Card className="bg-gradient-to-br from-primary/5 to-primary/10 border-primary/20">
-        <CardContent className="p-6 text-center">
-          <Sparkles size={48} className="text-primary mx-auto mb-4" />
-          <h3 className="text-2xl font-semibold text-foreground mb-2">All caught up!</h3>
-          <p className="text-muted-foreground">You have no urgent tasks. Enjoy your day!</p>
+        <CardContent className="p-5 text-center">
+          <CheckSquare size={32} className="text-primary mx-auto mb-3" />
+          <h3 className="text-lg font-semibold text-foreground">All clear!</h3>
+          <p className="text-sm text-muted-foreground">No urgent tasks right now</p>
         </CardContent>
       </Card>
     );
   }
 
   return (
-    <Card className="bg-gradient-to-br from-primary/5 to-primary/10 border-primary/20 overflow-hidden">
-      <CardContent className="p-6">
-        <div className="flex items-center gap-2 mb-4">
-          <Badge variant="secondary" className="text-xs px-3 py-1">
-            TOP PRIORITY
-          </Badge>
-        </div>
-        <h3 className="text-2xl font-semibold text-foreground mb-4 leading-tight">
+    <Card className="bg-gradient-to-br from-primary/5 to-primary/10 border-primary/20">
+      <CardContent className="p-5">
+        <Badge variant="secondary" className="text-[10px] mb-3">TOP PRIORITY</Badge>
+        <h3 className="text-lg font-semibold text-foreground mb-4 line-clamp-2">
           {task.title}
         </h3>
         <Button 
           onClick={onComplete}
           size="lg"
-          className="w-full h-14 text-lg font-semibold rounded-xl"
+          className="w-full h-12 text-base font-semibold rounded-xl"
         >
-          <CheckSquare size={24} className="mr-3" />
-          Mark Complete
+          <CheckSquare size={20} className="mr-2" />
+          Done
         </Button>
       </CardContent>
     </Card>
   );
 }
 
-// Note: QuickStatsRow replaced by MetricHeaderRow for Famous AI-inspired design
+// Stats Row - key metrics at a glance
+function StatsRow({ stats }: { 
+  stats: { tasksToday: number; activeGoals: number; habitStreak: number } 
+}) {
+  return (
+    <div className="grid grid-cols-3 gap-3">
+      <div className="bg-card border border-border rounded-xl p-3 text-center">
+        <span className="text-2xl font-bold text-foreground">{stats.tasksToday}</span>
+        <p className="text-[10px] text-muted-foreground uppercase tracking-wide">Tasks</p>
+      </div>
+      <div className="bg-card border border-border rounded-xl p-3 text-center">
+        <span className="text-2xl font-bold text-foreground">{stats.activeGoals}</span>
+        <p className="text-[10px] text-muted-foreground uppercase tracking-wide">Goals</p>
+      </div>
+      <div className="bg-card border border-border rounded-xl p-3 text-center">
+        <div className="flex items-center justify-center gap-1">
+          <Flame size={16} className="text-orange-500" />
+          <span className="text-2xl font-bold text-foreground">{stats.habitStreak}</span>
+        </div>
+        <p className="text-[10px] text-muted-foreground uppercase tracking-wide">Streak</p>
+      </div>
+    </div>
+  );
+}
 
 export function SimplifiedDashboard({ 
   userId, 
@@ -181,26 +161,11 @@ export function SimplifiedDashboard({
     isLoading,
     completeItem
   } = usePersonalHub();
-  
-  const { preferences, updateWidgetOrder } = useDashboardPreferences();
-  const [cardOrder, setCardOrder] = useState<string[]>(['tasks', 'goals', 'habits', 'calendar']);
-
-  // Sync card order from preferences
-  useEffect(() => {
-    if (preferences.widget_order && preferences.widget_order.length > 0) {
-      // Filter to only include valid simple dashboard cards
-      const validCards = ['tasks', 'goals', 'habits', 'calendar'];
-      const savedOrder = preferences.widget_order.filter(id => validCards.includes(id));
-      // Add any missing cards at the end
-      const missingCards = validCards.filter(id => !savedOrder.includes(id));
-      setCardOrder([...savedOrder, ...missingCards]);
-    }
-  }, [preferences.widget_order]);
 
   const greeting = useMemo(() => getGreeting(), []);
   const userName = user?.email?.split('@')[0] || 'there';
 
-  // Calculate smart stats
+  // Calculate stats
   const stats = useMemo(() => {
     const todayTasks = items.filter(i => 
       i.item_type === 'task' && 
@@ -210,10 +175,7 @@ export function SimplifiedDashboard({
     );
     
     const activeGoals = goals.filter(g => g.status === 'in_progress');
-    
-    const currentStreak = habits.reduce((max, h) => 
-      Math.max(max, h.current_streak || 0), 0
-    );
+    const currentStreak = habits.reduce((max, h) => Math.max(max, h.current_streak || 0), 0);
 
     return {
       tasksToday: todayTasks.length,
@@ -222,21 +184,19 @@ export function SimplifiedDashboard({
     };
   }, [items, goals, habits]);
 
-  // Get the top priority task
+  // Top priority task
   const topPriorityTask = useMemo(() => {
-    const urgentTasks = items
+    return items
       .filter(i => 
         i.item_type === 'task' && 
         i.status !== 'completed' &&
         (i.priority === 'urgent' || i.priority === 'high')
       )
       .sort((a, b) => {
-        if (a.priority === 'urgent' && b.priority !== 'urgent') return -1;
-        if (b.priority === 'urgent' && a.priority !== 'urgent') return 1;
+        if (a.priority === 'urgent') return -1;
+        if (b.priority === 'urgent') return 1;
         return 0;
-      });
-    
-    return urgentTasks[0] || null;
+      })[0] || null;
   }, [items]);
 
   const handleCompleteTask = async () => {
@@ -244,68 +204,6 @@ export function SimplifiedDashboard({
       await completeItem(topPriorityTask.id);
     }
   };
-
-  // Handle drag end for reordering cards
-  const handleDragEnd = useCallback((result: DropResult) => {
-    if (!result.destination) return;
-    
-    const items = Array.from(cardOrder);
-    const [reorderedItem] = items.splice(result.source.index, 1);
-    items.splice(result.destination.index, 0, reorderedItem);
-    
-    setCardOrder(items);
-    updateWidgetOrder(items);
-    toast.success('Dashboard order saved');
-  }, [cardOrder, updateWidgetOrder]);
-
-  // Priority cards configuration based on what user cares about
-  const priorityCardsConfig = useMemo(() => {
-    return {
-      tasks: {
-        id: 'tasks',
-        icon: CheckSquare,
-        title: 'Tasks',
-        subtitle: stats.tasksToday > 0 ? `${stats.tasksToday} due today` : 'All caught up!',
-        value: stats.tasksToday > 0 ? stats.tasksToday : undefined,
-        color: 'hsl(var(--primary))',
-        highlight: stats.tasksToday > 3
-      },
-      goals: {
-        id: 'goals',
-        icon: Target,
-        title: 'Goals',
-        subtitle: stats.activeGoals > 0 ? 'Track your progress' : 'Set a new goal',
-        value: stats.activeGoals > 0 ? stats.activeGoals : undefined,
-        color: 'hsl(200 70% 50%)',
-        highlight: false
-      },
-      habits: {
-        id: 'habits',
-        icon: Flame,
-        title: 'Habits',
-        subtitle: stats.habitStreak > 0 ? `${stats.habitStreak} day streak!` : 'Build your routine',
-        value: stats.habitStreak > 0 ? stats.habitStreak : undefined,
-        color: 'hsl(25 90% 55%)',
-        highlight: stats.habitStreak >= 7
-      },
-      calendar: {
-        id: 'calendar',
-        icon: Calendar,
-        title: 'Calendar',
-        subtitle: "What's coming up",
-        value: undefined as string | number | undefined,
-        color: 'hsl(260 70% 55%)',
-        highlight: false
-      }
-    };
-  }, [stats]);
-
-  // Sort cards based on user's saved order
-  const sortedCards = useMemo(() => {
-    return cardOrder
-      .map(id => priorityCardsConfig[id as keyof typeof priorityCardsConfig])
-      .filter(Boolean);
-  }, [cardOrder, priorityCardsConfig]);
 
   if (isLoading) {
     return (
@@ -317,134 +215,95 @@ export function SimplifiedDashboard({
 
   return (
     <div className="h-full flex flex-col bg-background">
-      {/* Header - Greeting with Create Widget button */}
-      <div className={cn(
-        "flex-shrink-0 px-6 pt-6 pb-4",
-        isMobile && "px-4 pt-4 pb-3"
-      )}>
+      {/* Header */}
+      <div className={cn("flex-shrink-0 px-5 pt-5 pb-3", isMobile && "px-4 pt-4")}>
         <div className="flex items-center justify-between">
           <div className="flex items-center gap-3">
             <div className={cn(
-              "w-12 h-12 rounded-full flex items-center justify-center",
+              "w-11 h-11 rounded-full flex items-center justify-center",
               greeting.period === 'morning' && "bg-orange-100 dark:bg-orange-900/30",
               greeting.period === 'afternoon' && "bg-yellow-100 dark:bg-yellow-900/30",
               greeting.period === 'evening' && "bg-indigo-100 dark:bg-indigo-900/30"
             )}>
-              <greeting.icon size={24} className={cn(
+              <greeting.icon size={22} className={cn(
                 greeting.period === 'morning' && "text-orange-500",
                 greeting.period === 'afternoon' && "text-yellow-500",
                 greeting.period === 'evening' && "text-indigo-400"
               )} />
             </div>
             <div>
-              <h1 className={cn(
-                "font-bold text-foreground",
-                isMobile ? "text-xl" : "text-2xl"
-              )}>
-                {greeting.text}, {userName}!
+              <h1 className="text-lg font-bold text-foreground">
+                {greeting.text}, {userName}
               </h1>
-              <p className="text-sm text-muted-foreground">
-                {format(new Date(), 'EEEE, MMMM d')}
+              <p className="text-xs text-muted-foreground">
+                {format(new Date(), 'EEE, MMM d')}
               </p>
             </div>
           </div>
           
-          {/* Create Widget button in header */}
+          {/* Settings shortcut */}
           <button
-            onClick={onCreateWidget}
-            className={cn(
-              "w-10 h-10 rounded-xl border transition-all duration-200 flex items-center justify-center",
-              "hover:scale-105 active:scale-95",
-              "focus:outline-none focus:ring-2 focus:ring-primary/20",
-              "bg-card border-border hover:border-primary/50 hover:bg-primary/5"
-            )}
-            title="Create Widget with AI"
+            onClick={onOpenFullDashboard}
+            className="w-10 h-10 rounded-xl border border-border flex items-center justify-center hover:bg-muted/50 transition-colors"
           >
-            <Wand2 size={18} className="text-purple-500" />
+            <Settings size={18} className="text-muted-foreground" />
           </button>
         </div>
       </div>
 
       {/* Main Content */}
       <ScrollArea className="flex-1">
-        <div className={cn(
-          "px-6 pb-32 space-y-5",
-          isMobile && "px-4 space-y-4"
-        )}>
-          {/* Metric Header Row - Famous AI inspired KPIs */}
-          <MetricHeaderRow />
-
-          {/* Atlas Activity - Transparency layer */}
-          <AtlasActivityWidget />
+        <div className={cn("px-5 pb-28 space-y-5", isMobile && "px-4 space-y-4")}>
+          
+          {/* Stats Row */}
+          <StatsRow stats={stats} />
 
           {/* Today's Focus */}
-          <TodaysFocusCard 
+          <TodaysFocus 
             task={topPriorityTask}
             onComplete={handleCompleteTask}
           />
 
-          {/* Compact Finance Card with circular progress */}
-          <CompactFinanceCard 
-            onClick={() => onNavigate?.('finance')}
-            savingsGoal={10000}
-          />
-
-          {/* Week Habit Grid - Visual 7-day checkmarks */}
-          <WeekHabitGrid 
-            onHabitClick={(habitId) => onNavigate?.('habits')}
-          />
-
-          {/* Smart Priority Cards with Drag & Drop */}
-          <div className="space-y-3">
-            <h2 className="text-sm font-medium text-muted-foreground uppercase tracking-wide">
-              Quick Access
-            </h2>
-            <DragDropContext onDragEnd={handleDragEnd}>
-              <Droppable droppableId="simple-dashboard-cards" direction="vertical">
-                {(provided) => (
-                  <div
-                    ref={provided.innerRef}
-                    {...provided.droppableProps}
-                    className="space-y-3"
-                  >
-                    {sortedCards.map((card, index) => (
-                      <Draggable key={card.id} draggableId={card.id} index={index}>
-                        {(provided, snapshot) => (
-                          <div
-                            ref={provided.innerRef}
-                            {...provided.draggableProps}
-                          >
-                            <PriorityCard
-                              icon={card.icon}
-                              title={card.title}
-                              subtitle={card.subtitle}
-                              value={card.value}
-                              color={card.color}
-                              highlight={card.highlight}
-                              onClick={() => onNavigate?.(card.id)}
-                              dragHandleProps={provided.dragHandleProps}
-                              isDragging={snapshot.isDragging}
-                            />
-                          </div>
-                        )}
-                      </Draggable>
-                    ))}
-                    {provided.placeholder}
-                  </div>
-                )}
-              </Droppable>
-            </DragDropContext>
+          {/* Quick Actions Grid */}
+          <div className="grid grid-cols-2 gap-3">
+            <QuickAction
+              icon={CheckSquare}
+              label="Tasks"
+              value={stats.tasksToday > 0 ? stats.tasksToday : undefined}
+              color="hsl(var(--primary))"
+              onClick={() => onNavigate?.('tasks')}
+              highlight={stats.tasksToday > 3}
+            />
+            <QuickAction
+              icon={Target}
+              label="Goals"
+              value={stats.activeGoals > 0 ? stats.activeGoals : undefined}
+              color="hsl(200 70% 50%)"
+              onClick={() => onNavigate?.('goals')}
+            />
+            <QuickAction
+              icon={Calendar}
+              label="Calendar"
+              color="hsl(260 70% 55%)"
+              onClick={() => onNavigate?.('calendar')}
+            />
+            <QuickAction
+              icon={Wallet}
+              label="Finance"
+              color="hsl(150 70% 45%)"
+              onClick={() => onNavigate?.('finance')}
+            />
           </div>
 
-          {/* More Options Link */}
-          {onOpenFullDashboard && (
+          {/* Add Widget */}
+          {onCreateWidget && (
             <Button
               variant="outline"
-              onClick={onOpenFullDashboard}
-              className="w-full h-14 text-base rounded-xl"
+              onClick={onCreateWidget}
+              className="w-full h-12 rounded-xl border-dashed"
             >
-              <Plus size={20} className="mr-2" />
-              More Options
+              <Plus size={18} className="mr-2" />
+              Add Widget
             </Button>
           )}
         </div>
