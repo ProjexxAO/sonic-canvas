@@ -1,5 +1,5 @@
 // Atlas Right Panel - Context-aware layout for Personal vs Enterprise hubs
-import React, { useRef, useCallback } from 'react';
+import React, { useRef, useCallback, useState } from 'react';
 import { Activity, Database, Search, Sparkles, Brain, Shield, User, Camera, Phone, Bell, Upload, Image, Settings, Plug } from 'lucide-react';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
 import { ScrollArea } from '@/components/ui/scroll-area';
@@ -8,6 +8,9 @@ import { Button } from '@/components/ui/button';
 import { AtlasTaskProgress } from './AtlasTaskProgress';
 import { AtlasSearchPanel, WebSearchEntry } from './AtlasSearchPanel';
 import { CSuiteDataHub } from '@/components/csuite/CSuiteDataHub';
+import { SimplifiedEnterpriseDashboard } from '@/components/csuite/SimplifiedEnterpriseDashboard';
+import { FullscreenEnterpriseDetailedDashboard } from '@/components/csuite/FullscreenEnterpriseDetailedDashboard';
+import { SimplifiedGroupDashboard, FullscreenGroupDetailedDashboard } from '@/components/group';
 import { PersonalDataHub } from '@/components/personal/PersonalDataHub';
 import { PhonePanel } from '@/components/personal/PhonePanel';
 import { HubQuickAccess } from '@/components/personal/HubQuickAccess';
@@ -88,6 +91,10 @@ export function AtlasRightPanel({
   const { uploadMultiplePhotos, photos, isUploading, getPhotoUrl } = useUserPhotos();
   const fileInputRef = useRef<HTMLInputElement>(null);
   const cameraInputRef = useRef<HTMLInputElement>(null);
+  
+  // State for fullscreen detailed view (enterprise/group hubs)
+  const [showEnterpriseDetailedView, setShowEnterpriseDetailedView] = useState(false);
+  const [showGroupDetailedView, setShowGroupDetailedView] = useState(false);
   
   // Get user display name or email for personal hub
   const userDisplayName = user?.user_metadata?.display_name || user?.email?.split('@')[0] || 'Personal';
@@ -290,16 +297,40 @@ export function AtlasRightPanel({
           </TabsTrigger>
         </TabsList>
 
-        {/* Data Tab - Primary view */}
+        {/* Data Tab - Simplified dashboard with expand option */}
         <TabsContent value="data" className="flex-1 mt-0 overflow-hidden min-h-0 h-full data-[state=active]:flex data-[state=active]:flex-col">
-          <div className="flex-1 min-h-0 h-full overflow-auto">
-            <CSuiteDataHub 
-              userId={userId} 
-              agents={agents} 
-              agentsLoading={agentsLoading} 
-              hubType={hubType}
-              groupId={groupId}
-            />
+          <div className="flex-1 min-h-0 h-full overflow-hidden bg-card/90 border border-border rounded-xl">
+            {hubType === 'group' ? (
+              <>
+                <SimplifiedGroupDashboard
+                  userId={userId}
+                  groupId={groupId}
+                  onExpandDashboard={() => setShowGroupDetailedView(true)}
+                  onNavigate={() => setShowGroupDetailedView(true)}
+                />
+                {showGroupDetailedView && (
+                  <FullscreenGroupDetailedDashboard
+                    userId={userId}
+                    groupId={groupId}
+                    onClose={() => setShowGroupDetailedView(false)}
+                  />
+                )}
+              </>
+            ) : (
+              <>
+                <SimplifiedEnterpriseDashboard
+                  userId={userId}
+                  onExpandDashboard={() => setShowEnterpriseDetailedView(true)}
+                  onNavigate={() => setShowEnterpriseDetailedView(true)}
+                />
+                {showEnterpriseDetailedView && (
+                  <FullscreenEnterpriseDetailedDashboard
+                    userId={userId}
+                    onClose={() => setShowEnterpriseDetailedView(false)}
+                  />
+                )}
+              </>
+            )}
           </div>
         </TabsContent>
 
