@@ -344,7 +344,7 @@ Focus on being actionable and specific. Provide real insights based on the data.
       const { data, error: funcError } = await supabase.functions.invoke('atlas-orchestrator', {
         body: {
           action: 'chat',
-          message: `Analyze this data for my "${widget.name}" widget:\n\n${JSON.stringify(aggregatedData, null, 2)}`,
+          query: `Analyze this data for my "${widget.name}" widget:\n\n${JSON.stringify(aggregatedData, null, 2)}`,
           context: {
             systemPrompt,
             widgetName: widget.name,
