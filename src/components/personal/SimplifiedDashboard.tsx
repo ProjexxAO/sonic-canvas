@@ -10,10 +10,10 @@ import {
   Moon,
   Sunrise,
   Wallet,
-  Settings,
   Plus,
   CheckSquare,
-  LayoutGrid
+  LayoutGrid,
+  Maximize2
 } from 'lucide-react';
 import { Card, CardContent } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
@@ -29,7 +29,7 @@ import { CustomWidgetRenderer } from './CustomWidgetRenderer';
 
 interface SimplifiedDashboardProps {
   userId: string | undefined;
-  onOpenFullDashboard?: () => void;
+  onExpandDashboard?: () => void;
   onNavigate?: (view: string) => void;
   onCreateWidget?: () => void;
 }
@@ -115,7 +115,7 @@ function TodaysFocus({
 
 export function SimplifiedDashboard({ 
   userId, 
-  onOpenFullDashboard,
+  onExpandDashboard,
   onNavigate,
   onCreateWidget
 }: SimplifiedDashboardProps) {
@@ -193,12 +193,13 @@ export function SimplifiedDashboard({
             </div>
           </div>
           
-          {/* Settings shortcut */}
+          {/* Expand to fullscreen button */}
           <button
-            onClick={onOpenFullDashboard}
-            className="w-10 h-10 rounded-xl border border-border flex items-center justify-center hover:bg-muted/50 transition-colors"
+            onClick={onExpandDashboard}
+            className="w-10 h-10 rounded-xl border border-border flex items-center justify-center hover:bg-muted/50 hover:border-primary/30 transition-all group"
+            title="Expand to detailed view"
           >
-            <Settings size={18} className="text-muted-foreground" />
+            <Maximize2 size={18} className="text-muted-foreground group-hover:text-primary transition-colors" />
           </button>
         </div>
       </div>
