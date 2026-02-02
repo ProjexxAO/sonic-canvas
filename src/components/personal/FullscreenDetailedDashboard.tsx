@@ -230,8 +230,14 @@ export function FullscreenDetailedDashboard({ userId, onClose }: FullscreenDetai
           <LayoutGrid size={20} className="text-primary" />
           <h1 className="text-lg font-semibold">Detailed Dashboard</h1>
         </div>
-        <Button variant="ghost" size="icon" onClick={onClose} className="h-9 w-9">
-          <X size={20} />
+        <Button 
+          variant="outline" 
+          size="sm" 
+          onClick={onClose} 
+          className="h-9 px-3 rounded-xl gap-2 border-primary/30 bg-primary/5 hover:bg-primary/10"
+        >
+          <X size={16} className="text-primary" />
+          <span className="text-xs font-medium text-primary">Close</span>
         </Button>
       </div>
 
