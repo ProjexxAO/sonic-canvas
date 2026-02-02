@@ -15,5 +15,6 @@ export {
   parseIoTCommand, 
   parseScheduledCommand, 
   parseMultiStepCommand,
-  parseInteractionCommand 
+  parseInteractionCommand,
+  parseAutomationCommand
 } from './extended-parser';

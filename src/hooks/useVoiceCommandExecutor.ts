@@ -787,6 +787,276 @@ export function useVoiceCommandExecutor() {
           }
           break;
 
+        // ====================================================================
+        // AUTOMATION & WEBHOOKS
+        // ====================================================================
+        case 'create_automation': {
+          toast({ title: '🎤 Creating Automation', description: command.name });
+          const userId = await getUserId();
+          if (!userId) {
+            toast({ title: 'Authentication Required', variant: 'destructive' });
+            break;
+          }
+          try {
+            const client = supabase as any;
+            const { error } = await client.from('automation_webhooks').insert({
+              user_id: userId,
+              name: command.name,
+              description: command.description || null,
+              webhook_url: command.webhookUrl || '',
+              provider: command.provider || 'zapier',
+              trigger_type: command.trigger || 'custom',
+              trigger_conditions: {},
+              is_active: true,
+              headers: {},
+            });
+            if (error) throw error;
+            toast({ title: '⚡ Automation Created', description: command.name });
+            window.dispatchEvent(new CustomEvent('voice-automation-created'));
+          } catch (err) {
+            console.error('Error creating automation:', err);
+            toast({ title: 'Failed to Create Automation', variant: 'destructive' });
+          }
+          break;
+        }
+
+        case 'list_automations': {
+          toast({ title: '🎤 Listing Automations' });
+          const userId = await getUserId();
+          if (!userId) {
+            toast({ title: 'Authentication Required', variant: 'destructive' });
+            break;
+          }
+          try {
+            const client = supabase as any;
+            let query = client.from('automation_webhooks').select('*').eq('user_id', userId);
+            if (command.filter === 'active') {
+              query = query.eq('is_active', true);
+            } else if (command.filter === 'inactive') {
+              query = query.eq('is_active', false);
+            }
+            const { data, error } = await query.order('created_at', { ascending: false });
+            if (error) throw error;
+            const count = data?.length || 0;
+            toast({ title: '⚡ Your Automations', description: `Found ${count} automation${count !== 1 ? 's' : ''}` });
+            window.dispatchEvent(new CustomEvent('voice-automations-listed', { detail: data }));
+          } catch (err) {
+            console.error('Error listing automations:', err);
+            toast({ title: 'Failed to List Automations', variant: 'destructive' });
+          }
+          break;
+        }
+
+        case 'toggle_automation': {
+          toast({ title: '🎤 Toggling Automation', description: command.automationName || 'Automation' });
+          const userId = await getUserId();
+          if (!userId) {
+            toast({ title: 'Authentication Required', variant: 'destructive' });
+            break;
+          }
+          try {
+            const client = supabase as any;
+            // Find the automation
+            let matchQuery = client.from('automation_webhooks').select('*').eq('user_id', userId);
+            if (command.automationId) {
+              matchQuery = matchQuery.eq('id', command.automationId);
+            } else if (command.automationName) {
+              matchQuery = matchQuery.ilike('name', `%${command.automationName}%`);
+            }
+            const { data: automations, error: findError } = await matchQuery.limit(1);
+            if (findError) throw findError;
+            if (!automations || automations.length === 0) {
+              toast({ title: 'Automation Not Found', variant: 'destructive' });
+              break;
+            }
+            const automation = automations[0];
+            const { error } = await client.from('automation_webhooks')
+              .update({ is_active: !automation.is_active })
+              .eq('id', automation.id);
+            if (error) throw error;
+            toast({ title: automation.is_active ? '⏸️ Automation Disabled' : '▶️ Automation Enabled', description: automation.name });
+          } catch (err) {
+            console.error('Error toggling automation:', err);
+            toast({ title: 'Failed to Toggle Automation', variant: 'destructive' });
+          }
+          break;
+        }
+
+        case 'delete_automation': {
+          toast({ title: '🎤 Deleting Automation', description: command.automationName || 'Automation' });
+          const userId = await getUserId();
+          if (!userId) {
+            toast({ title: 'Authentication Required', variant: 'destructive' });
+            break;
+          }
+          try {
+            const client = supabase as any;
+            let deleteQuery = client.from('automation_webhooks').delete().eq('user_id', userId);
+            if (command.automationId) {
+              deleteQuery = deleteQuery.eq('id', command.automationId);
+            } else if (command.automationName) {
+              deleteQuery = deleteQuery.ilike('name', `%${command.automationName}%`);
+            }
+            const { error } = await deleteQuery;
+            if (error) throw error;
+            toast({ title: '🗑️ Automation Deleted', description: command.automationName || 'Automation removed' });
+            window.dispatchEvent(new CustomEvent('voice-automation-deleted'));
+          } catch (err) {
+            console.error('Error deleting automation:', err);
+            toast({ title: 'Failed to Delete Automation', variant: 'destructive' });
+          }
+          break;
+        }
+
+        case 'test_automation': {
+          toast({ title: '🎤 Testing Automation', description: command.automationName || 'Testing...' });
+          const userId = await getUserId();
+          if (!userId) {
+            toast({ title: 'Authentication Required', variant: 'destructive' });
+            break;
+          }
+          try {
+            const client = supabase as any;
+            let matchQuery = client.from('automation_webhooks').select('*').eq('user_id', userId);
+            if (command.automationId) {
+              matchQuery = matchQuery.eq('id', command.automationId);
+            } else if (command.automationName) {
+              matchQuery = matchQuery.ilike('name', `%${command.automationName}%`);
+            }
+            const { data: automations, error: findError } = await matchQuery.limit(1);
+            if (findError) throw findError;
+            if (!automations || automations.length === 0) {
+              toast({ title: 'Automation Not Found', variant: 'destructive' });
+              break;
+            }
+            const automation = automations[0];
+            if (automation.webhook_url) {
+              await fetch(automation.webhook_url, {
+                method: 'POST',
+                headers: { 'Content-Type': 'application/json', ...automation.headers },
+                mode: 'no-cors',
+                body: JSON.stringify({
+                  test: true,
+                  timestamp: new Date().toISOString(),
+                  triggered_from: 'atlas_voice_test',
+                  automation_name: automation.name,
+                }),
+              });
+              // Update trigger count
+              await client.from('automation_webhooks').update({
+                last_triggered_at: new Date().toISOString(),
+                trigger_count: (automation.trigger_count || 0) + 1,
+              }).eq('id', automation.id);
+            }
+            toast({ title: '✅ Automation Tested', description: `Test payload sent to ${automation.name}` });
+          } catch (err) {
+            console.error('Error testing automation:', err);
+            toast({ title: 'Test Failed', description: 'Could not send test payload', variant: 'destructive' });
+          }
+          break;
+        }
+
+        case 'trigger_webhook':
+          toast({ title: '🎤 Triggering Webhook' });
+          try {
+            await fetch(command.webhookUrl, {
+              method: 'POST',
+              headers: { 'Content-Type': 'application/json' },
+              mode: 'no-cors',
+              body: JSON.stringify({
+                ...(command.payload || {}),
+                timestamp: new Date().toISOString(),
+                triggered_from: 'atlas_voice',
+              }),
+            });
+            toast({ title: '⚡ Webhook Triggered', description: 'Payload sent successfully' });
+          } catch (err) {
+            console.error('Error triggering webhook:', err);
+            toast({ title: 'Webhook Failed', variant: 'destructive' });
+          }
+          break;
+
+        case 'connect_zapier':
+        case 'connect_make':
+        case 'connect_n8n': {
+          const providerName = command.type === 'connect_zapier' ? 'Zapier' : command.type === 'connect_make' ? 'Make' : 'n8n';
+          const provider = command.type === 'connect_zapier' ? 'zapier' : command.type === 'connect_make' ? 'make' : 'n8n';
+          toast({ title: `🎤 Connecting to ${providerName}`, description: command.webhookUrl ? 'Setting up webhook...' : 'Please provide a webhook URL' });
+          if (command.webhookUrl) {
+            const userId = await getUserId();
+            if (!userId) {
+              toast({ title: 'Authentication Required', variant: 'destructive' });
+              break;
+            }
+            try {
+              const client = supabase as any;
+              const { error } = await client.from('automation_webhooks').insert({
+                user_id: userId,
+                name: `${providerName} Automation`,
+                webhook_url: command.webhookUrl,
+                provider: provider,
+                trigger_type: command.triggerType || 'custom',
+                is_active: true,
+                trigger_conditions: {},
+                headers: {},
+              });
+              if (error) throw error;
+              toast({ title: `⚡ ${providerName} Connected`, description: 'Webhook automation created' });
+              window.dispatchEvent(new CustomEvent('voice-automation-created'));
+            } catch (err) {
+              console.error(`Error connecting ${providerName}:`, err);
+              toast({ title: `Failed to Connect ${providerName}`, variant: 'destructive' });
+            }
+          } else {
+            // Open dialog or prompt for webhook URL
+            window.dispatchEvent(new CustomEvent('voice-open-dialog', { detail: { dialog: 'connect_automation', provider } }));
+          }
+          break;
+        }
+
+        case 'get_automation_history': {
+          toast({ title: '🎤 Getting Automation History' });
+          const userId = await getUserId();
+          if (!userId) {
+            toast({ title: 'Authentication Required', variant: 'destructive' });
+            break;
+          }
+          try {
+            const client = supabase as any;
+            let matchQuery = client.from('automation_webhooks').select('*').eq('user_id', userId);
+            if (command.automationId) {
+              matchQuery = matchQuery.eq('id', command.automationId);
+            } else if (command.automationName) {
+              matchQuery = matchQuery.ilike('name', `%${command.automationName}%`);
+            }
+            const { data, error } = await matchQuery.limit(1);
+            if (error) throw error;
+            if (data && data.length > 0) {
+              const automation = data[0];
+              toast({ 
+                title: `📊 ${automation.name}`, 
+                description: `Triggered ${automation.trigger_count || 0} times. Last: ${automation.last_triggered_at ? new Date(automation.last_triggered_at).toLocaleString() : 'Never'}`
+              });
+            } else {
+              toast({ title: 'Automation Not Found', variant: 'destructive' });
+            }
+          } catch (err) {
+            console.error('Error getting automation history:', err);
+            toast({ title: 'Failed to Get History', variant: 'destructive' });
+          }
+          break;
+        }
+
+        case 'set_automation_schedule':
+          toast({ title: '🎤 Setting Automation Schedule', description: command.schedule });
+          window.dispatchEvent(new CustomEvent('voice-set-automation-schedule', { detail: command }));
+          break;
+
+        case 'create_workflow_automation':
+          toast({ title: '🎤 Creating Workflow Automation', description: command.name });
+          window.dispatchEvent(new CustomEvent('voice-create-workflow-automation', { detail: command }));
+          break;
+
         default:
           console.warn('Unknown command type:', command);
           toast({ title: '🎤 Unknown Command', description: 'I didn\'t understand that command', variant: 'destructive' });

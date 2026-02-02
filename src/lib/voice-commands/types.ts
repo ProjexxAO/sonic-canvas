@@ -281,6 +281,38 @@ export type InteractionCommand =
   | { type: 'request_clarification'; question: string; options?: string[] };
 
 // ============================================================================
+// NEW: Automation & Webhook Commands
+// ============================================================================
+
+export type AutomationTrigger = 
+  | 'email_received' 
+  | 'email_sent' 
+  | 'contact_added' 
+  | 'task_completed' 
+  | 'event_created' 
+  | 'expense_added'
+  | 'goal_completed'
+  | 'habit_completed'
+  | 'document_uploaded'
+  | 'custom';
+
+export type AutomationProvider = 'zapier' | 'make' | 'n8n' | 'custom';
+
+export type AutomationCommand =
+  | { type: 'create_automation'; name: string; trigger: AutomationTrigger; webhookUrl?: string; provider?: AutomationProvider; description?: string }
+  | { type: 'list_automations'; filter?: 'all' | 'active' | 'inactive' }
+  | { type: 'toggle_automation'; automationId?: string; automationName?: string }
+  | { type: 'delete_automation'; automationId?: string; automationName?: string }
+  | { type: 'test_automation'; automationId?: string; automationName?: string }
+  | { type: 'trigger_webhook'; webhookUrl: string; payload?: Record<string, any> }
+  | { type: 'connect_zapier'; webhookUrl: string; triggerType?: AutomationTrigger }
+  | { type: 'connect_make'; webhookUrl: string; triggerType?: AutomationTrigger }
+  | { type: 'connect_n8n'; webhookUrl: string; triggerType?: AutomationTrigger }
+  | { type: 'create_workflow_automation'; name: string; steps: Array<{ action: string; config?: Record<string, any> }> }
+  | { type: 'get_automation_history'; automationId?: string; automationName?: string }
+  | { type: 'set_automation_schedule'; automationId?: string; schedule: string; timezone?: string };
+
+// ============================================================================
 // Combined Voice Command Type
 // ============================================================================
 
@@ -293,7 +325,8 @@ export type VoiceCommand =
   | ScheduledCommand
   | MultiStepCommand
   | ContextAwareCommand
-  | InteractionCommand;
+  | InteractionCommand
+  | AutomationCommand;
 
 // ============================================================================
 // Command Categories
@@ -323,6 +356,7 @@ export const EXTENDED_COMMAND_CATEGORIES = {
   workflows: ['chain_commands', 'batch_create', 'email_summary', 'create_from_template', 'bulk_update'],
   context: ['do_this_later', 'remind_about_this', 'share_this', 'convert_to_task', 'analyze_selected', 'explain_this'],
   interaction: ['set_interaction_mode', 'enable_confirmations', 'undo_last', 'cancel_current', 'pause_atlas', 'resume_atlas'],
+  automation: ['create_automation', 'list_automations', 'toggle_automation', 'delete_automation', 'test_automation', 'trigger_webhook', 'connect_zapier', 'connect_make', 'connect_n8n', 'create_workflow_automation', 'get_automation_history', 'set_automation_schedule'],
 } as const;
 
 export type CommandCategory = keyof typeof EXTENDED_COMMAND_CATEGORIES;
