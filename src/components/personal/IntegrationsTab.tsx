@@ -38,6 +38,7 @@ const PERSONAL_CATEGORIES: IntegrationCategory[] = [
 
 // Categories relevant to business/enterprise
 const BUSINESS_CATEGORIES: IntegrationCategory[] = [
+  'automation', // Prioritize automation tools
   'finance',
   'crm',
   'marketing',
@@ -50,7 +51,6 @@ const BUSINESS_CATEGORIES: IntegrationCategory[] = [
   'ai',
   'security',
   'support',
-  'automation'
 ];
 
 export function IntegrationsTab({ hubContext = 'personal' }: IntegrationsTabProps) {
