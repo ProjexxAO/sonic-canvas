@@ -24,16 +24,16 @@ import {
   CreditCard,
   Building,
   Star,
-  Mic,
-  MicOff,
-  Sparkles
+  Sparkles,
+  Hexagon,
+  Radio
 } from 'lucide-react';
+import { useTheme } from 'next-themes';
 import { Button } from '@/components/ui/button';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Badge } from '@/components/ui/badge';
 import { ScrollArea } from '@/components/ui/scroll-area';
 import { Separator } from '@/components/ui/separator';
-import { Tooltip, TooltipContent, TooltipProvider, TooltipTrigger } from '@/components/ui/tooltip';
 import { usePersonalHub, PersonalItem } from '@/hooks/usePersonalHub';
 import { useSmartCalendar } from '@/hooks/useSmartCalendar';
 import { useCommunications } from '@/hooks/useCommunications';
@@ -70,7 +70,6 @@ export function FullscreenDetailedDashboard({
   
   // Atlas voice context (safe - doesn't throw if not in provider)
   const atlas = useAtlasSafe();
-  const [atlasHovered, setAtlasHovered] = useState(false);
 
   const greeting = useMemo(() => getGreeting(), []);
   const userName = user?.email?.split('@')[0] || 'there';
@@ -578,50 +577,112 @@ export function FullscreenDetailedDashboard({
         </div>
       </ScrollArea>
       
-      {/* Floating Atlas Activation Button */}
+      {/* Floating Atlas Orb - Matches GlobalAtlasOrb style */}
       {atlas && (
-        <TooltipProvider>
-          <Tooltip>
-            <TooltipTrigger asChild>
-              <button
-                onClick={handleAtlasActivate}
-                onMouseEnter={() => setAtlasHovered(true)}
-                onMouseLeave={() => setAtlasHovered(false)}
-                className={cn(
-                  "fixed bottom-6 right-6 w-14 h-14 rounded-full shadow-lg transition-all duration-300 flex items-center justify-center",
-                  "focus:outline-none focus:ring-2 focus:ring-primary/50 focus:ring-offset-2",
-                  atlas.isConnected
-                    ? "bg-primary text-primary-foreground animate-pulse"
-                    : atlas.isConnecting
-                      ? "bg-primary/80 text-primary-foreground"
-                      : "bg-gradient-to-br from-primary to-primary/80 text-primary-foreground hover:scale-110",
-                  atlasHovered && !atlas.isConnected && "shadow-xl shadow-primary/25"
-                )}
-              >
-                {atlas.isConnected ? (
-                  <div className="relative">
-                    <Mic size={24} className="animate-pulse" />
-                    {atlas.isSpeaking && (
-                      <span className="absolute -top-1 -right-1 w-3 h-3 bg-green-400 rounded-full animate-ping" />
-                    )}
-                  </div>
-                ) : atlas.isConnecting ? (
-                  <div className="w-6 h-6 border-2 border-primary-foreground border-t-transparent rounded-full animate-spin" />
-                ) : (
-                  <Sparkles size={24} />
-                )}
-              </button>
-            </TooltipTrigger>
-            <TooltipContent side="left" className="bg-background border shadow-lg">
-              <p className="font-medium">
-                {atlas.isConnected ? 'Atlas is listening - tap to stop' : 'Talk to Atlas'}
-              </p>
-              <p className="text-xs text-muted-foreground">
-                {atlas.isConnected ? 'Voice active' : 'Say "Computer" or tap to activate'}
-              </p>
-            </TooltipContent>
-          </Tooltip>
-        </TooltipProvider>
+        <div className="fixed bottom-6 right-6 z-50">
+          <button
+            onClick={handleAtlasActivate}
+            className="relative w-14 h-14 rounded-full overflow-hidden transition-all duration-300 hover:scale-105 active:scale-95"
+            style={{
+              boxShadow: atlas.isConnected 
+                ? `0 0 ${15 + (atlas.isSpeaking ? atlas.outputVolume : atlas.inputVolume) * 25}px hsl(${atlas.isSpeaking ? '45' : '270'} 100% 50% / ${0.4 + (atlas.isSpeaking ? atlas.outputVolume : atlas.inputVolume) * 0.3}), 0 0 ${30 + (atlas.isSpeaking ? atlas.outputVolume : atlas.inputVolume) * 20}px hsl(200 100% 50% / ${0.2 + (atlas.isSpeaking ? atlas.outputVolume : atlas.inputVolume) * 0.2})`
+                : `0 0 10px hsl(var(--primary) / 0.3)`
+            }}
+          >
+            {/* Base nebula */}
+            <div 
+              className="absolute inset-0 rounded-full"
+              style={{
+                background: `radial-gradient(ellipse at ${30 + (atlas.frequencyBands?.bass || 0) * 20}% ${40 + (atlas.frequencyBands?.mid || 0) * 20}%,
+                    hsl(270 100% ${atlas.isConnected ? 50 + (atlas.isSpeaking ? atlas.outputVolume : atlas.inputVolume) * 30 : 40}%) 0%,
+                    hsl(220 100% ${atlas.isConnected ? 40 + (atlas.isSpeaking ? atlas.outputVolume : atlas.inputVolume) * 20 : 30}%) 40%,
+                    hsl(280 100% ${atlas.isConnected ? 25 + (atlas.isSpeaking ? atlas.outputVolume : atlas.inputVolume) * 15 : 20}%) 100%)`,
+                transform: `scale(${1 + (atlas.isSpeaking ? atlas.outputVolume : atlas.inputVolume) * 0.08})`,
+                transition: 'transform 0.1s ease-out',
+              }}
+            />
+            
+            {/* Swirl effect */}
+            <div 
+              className="absolute inset-0 rounded-full mix-blend-screen"
+              style={{
+                background: `conic-gradient(from 0deg at 50% 50%,
+                    transparent 0deg,
+                    hsl(280 100% ${60 + (atlas.frequencyBands?.bass || 0) * 30}% / ${0.5 + (atlas.isSpeaking ? atlas.outputVolume : atlas.inputVolume) * 0.4}) 60deg,
+                    transparent 120deg,
+                    hsl(200 100% ${70 + (atlas.frequencyBands?.mid || 0) * 25}% / ${0.45 + (atlas.isSpeaking ? atlas.outputVolume : atlas.inputVolume) * 0.4}) 180deg,
+                    transparent 240deg,
+                    hsl(320 100% ${65 + (atlas.frequencyBands?.treble || 0) * 30}% / ${0.4 + (atlas.isSpeaking ? atlas.outputVolume : atlas.inputVolume) * 0.4}) 300deg,
+                    transparent 360deg)`,
+                animation: atlas.isConnected && atlas.isSpeaking 
+                  ? `spin ${2 - (atlas.outputVolume || 0)}s linear infinite` 
+                  : atlas.isConnected 
+                    ? 'spin 5s linear infinite' 
+                    : 'spin 8s linear infinite',
+                filter: `blur(${4 - (atlas.isSpeaking ? atlas.outputVolume : atlas.inputVolume) * 2}px)`,
+              }}
+            />
+            
+            {/* Energy core */}
+            <div 
+              className="absolute inset-0 m-auto rounded-full transition-all duration-100"
+              style={{
+                width: `${28 + (atlas.frequencyBands?.bass || 0) * 35}%`,
+                height: `${28 + (atlas.frequencyBands?.bass || 0) * 35}%`,
+                background: `radial-gradient(circle,
+                    hsl(${atlas.isSpeaking ? '45 100%' : '190 100%'} ${80 + (atlas.isSpeaking ? atlas.outputVolume : atlas.inputVolume) * 20}% / ${0.7 + (atlas.isSpeaking ? atlas.outputVolume : atlas.inputVolume) * 0.3}) 0%,
+                    hsl(${atlas.isSpeaking ? '320 100%' : '210 100%'} 70% / ${0.4 + (atlas.isSpeaking ? atlas.outputVolume : atlas.inputVolume) * 0.4}) 50%,
+                    transparent 70%)`,
+                filter: `blur(${2 - (atlas.isSpeaking ? atlas.outputVolume : atlas.inputVolume)}px)`,
+              }}
+            />
+            
+            {/* Stars/sparkles */}
+            <div 
+              className="absolute inset-0 rounded-full"
+              style={{
+                backgroundImage: `radial-gradient(1px 1px at 20% 30%, white ${0.6 + (atlas.isSpeaking ? atlas.outputVolume : atlas.inputVolume) * 0.4}, transparent),
+                   radial-gradient(1px 1px at 60% 20%, white ${0.55 + (atlas.isSpeaking ? atlas.outputVolume : atlas.inputVolume) * 0.4}, transparent),
+                   radial-gradient(1.5px 1.5px at 80% 50%, hsl(180 100% 80% / ${0.6 + (atlas.isSpeaking ? atlas.outputVolume : atlas.inputVolume) * 0.4}) 0%, transparent 100%),
+                   radial-gradient(1.5px 1.5px at 30% 70%, hsl(280 100% 80% / ${0.55 + (atlas.isSpeaking ? atlas.outputVolume : atlas.inputVolume) * 0.4}) 0%, transparent 100%)`,
+              }}
+            />
+            
+            {/* Center icon - only when not connected */}
+            {!atlas.isConnected && !atlas.isConnecting && (
+              <div className="absolute inset-0 flex items-center justify-center">
+                <div className="relative">
+                  <Hexagon className="w-5 h-5 text-white/70" />
+                  <Radio className="absolute inset-0 m-auto w-2.5 h-2.5 text-white/90" />
+                </div>
+              </div>
+            )}
+            
+            {/* Speaking indicator */}
+            {atlas.isSpeaking && (
+              <div className="absolute inset-0 flex items-center justify-center">
+                <Sparkles className="w-4 h-4 text-white/90 animate-pulse" />
+              </div>
+            )}
+            
+            {/* Connecting state */}
+            {atlas.isConnecting && (
+              <div className="absolute inset-0 flex items-center justify-center">
+                <div className="w-3 h-3 rounded-full bg-white/60 animate-ping" />
+              </div>
+            )}
+          </button>
+          
+          {/* Connection indicator dot */}
+          {atlas.isConnected && (
+            <span 
+              className={cn(
+                "absolute -top-1 right-0 w-2.5 h-2.5 rounded-full border-2 border-background",
+                atlas.isSpeaking ? "bg-secondary animate-pulse" : "bg-green-500"
+              )} 
+            />
+          )}
+        </div>
       )}
     </div>,
     document.body
