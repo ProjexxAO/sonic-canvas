@@ -10,7 +10,6 @@ import {
   Moon,
   Sunrise,
   Wallet,
-  Flame,
   Settings,
   Plus,
   CheckSquare,
@@ -113,30 +112,6 @@ function TodaysFocus({
   );
 }
 
-// Stats Row - key metrics at a glance
-function StatsRow({ stats }: { 
-  stats: { tasksToday: number; activeGoals: number; habitStreak: number } 
-}) {
-  return (
-    <div className="grid grid-cols-3 gap-3">
-      <div className="bg-card border border-border rounded-xl p-3 text-center">
-        <span className="text-2xl font-bold text-foreground">{stats.tasksToday}</span>
-        <p className="text-[10px] text-muted-foreground uppercase tracking-wide">Tasks</p>
-      </div>
-      <div className="bg-card border border-border rounded-xl p-3 text-center">
-        <span className="text-2xl font-bold text-foreground">{stats.activeGoals}</span>
-        <p className="text-[10px] text-muted-foreground uppercase tracking-wide">Goals</p>
-      </div>
-      <div className="bg-card border border-border rounded-xl p-3 text-center">
-        <div className="flex items-center justify-center gap-1">
-          <Flame size={16} className="text-orange-500" />
-          <span className="text-2xl font-bold text-foreground">{stats.habitStreak}</span>
-        </div>
-        <p className="text-[10px] text-muted-foreground uppercase tracking-wide">Streak</p>
-      </div>
-    </div>
-  );
-}
 
 export function SimplifiedDashboard({ 
   userId, 
@@ -160,24 +135,6 @@ export function SimplifiedDashboard({
   const greeting = useMemo(() => getGreeting(), []);
   const userName = user?.email?.split('@')[0] || 'there';
 
-  // Calculate stats
-  const stats = useMemo(() => {
-    const todayTasks = items.filter(i => 
-      i.item_type === 'task' && 
-      i.status !== 'completed' &&
-      i.due_date && 
-      isToday(parseISO(i.due_date))
-    );
-    
-    const activeGoals = goals.filter(g => g.status === 'in_progress');
-    const currentStreak = habits.reduce((max, h) => Math.max(max, h.current_streak || 0), 0);
-
-    return {
-      tasksToday: todayTasks.length,
-      activeGoals: activeGoals.length,
-      habitStreak: currentStreak,
-    };
-  }, [items, goals, habits]);
 
   // Top priority task
   const topPriorityTask = useMemo(() => {
@@ -249,9 +206,6 @@ export function SimplifiedDashboard({
       {/* Main Content */}
       <ScrollArea className="flex-1">
         <div className={cn("px-5 pb-28 space-y-5", isMobile && "px-4 space-y-4")}>
-          
-          {/* Stats Row */}
-          <StatsRow stats={stats} />
 
           {/* Today's Focus */}
           <TodaysFocus 
