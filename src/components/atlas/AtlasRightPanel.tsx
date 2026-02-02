@@ -1,6 +1,6 @@
 // Atlas Right Panel - Context-aware layout for Personal vs Enterprise hubs
 import React, { useRef, useCallback } from 'react';
-import { Activity, Database, Search, Sparkles, Brain, Shield, User, Camera, Phone, Bell, Upload, Image, Settings, Plug } from 'lucide-react';
+import { Activity, Database, Search, Sparkles, Brain, Shield, User, Camera, Phone, Bell, Upload, Image, Settings, Plug, Bot } from 'lucide-react';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
 import { ScrollArea } from '@/components/ui/scroll-area';
 import { Button } from '@/components/ui/button';
@@ -15,6 +15,7 @@ import { NotificationSettingsPanel } from '@/components/personal/NotificationSet
 import { IntegrationsTab } from '@/components/personal/IntegrationsTab';
 import { KnowledgeDiscoveryPanel } from './KnowledgeDiscoveryPanel';
 import { VeracityEvaluationPanel } from './VeracityEvaluationPanel';
+import { AtlasTaskAssignmentPanel } from './AtlasTaskAssignmentPanel';
 import { AgentTask } from '@/hooks/useAgentOrchestration';
 import { cn } from '@/lib/utils';
 import { useAuth } from '@/hooks/useAuth';
@@ -426,13 +427,20 @@ export function AtlasRightPanel({
   return (
     <div className="w-full flex flex-col h-full flex-1 min-h-0">
       <Tabs defaultValue="operations" className="flex flex-col flex-1 h-full min-h-0 overflow-hidden">
-        <TabsList className="w-full grid grid-cols-4 bg-muted/50 border border-border rounded-lg p-1 mb-3 flex-shrink-0">
+        <TabsList className="w-full grid grid-cols-5 bg-muted/50 border border-border rounded-lg p-1 mb-3 flex-shrink-0">
           <TabsTrigger 
             value="operations" 
             className="flex items-center gap-1 text-[10px] font-mono data-[state=active]:bg-background data-[state=active]:shadow-sm px-2"
           >
             <Activity size={12} />
             Ops
+          </TabsTrigger>
+          <TabsTrigger 
+            value="agents" 
+            className="flex items-center gap-1 text-[10px] font-mono data-[state=active]:bg-background data-[state=active]:shadow-sm px-2"
+          >
+            <Bot size={12} />
+            Agents
           </TabsTrigger>
           <TabsTrigger 
             value="datahub" 
@@ -521,6 +529,16 @@ export function AtlasRightPanel({
               )}
             </div>
           </ScrollArea>
+        </TabsContent>
+
+        <TabsContent value="agents" className="flex-1 mt-0 overflow-hidden min-h-0 h-full data-[state=active]:flex data-[state=active]:flex-col">
+          <div className="flex-1 min-h-0 h-full bg-card/90 border border-border rounded-lg overflow-hidden">
+            <ScrollArea className="h-full">
+              <div className="p-4">
+                <AtlasTaskAssignmentPanel />
+              </div>
+            </ScrollArea>
+          </div>
         </TabsContent>
 
         <TabsContent value="datahub" className="flex-1 mt-0 overflow-hidden min-h-0 h-full data-[state=active]:flex data-[state=active]:flex-col">
