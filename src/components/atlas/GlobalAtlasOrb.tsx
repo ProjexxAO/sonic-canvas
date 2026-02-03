@@ -96,7 +96,9 @@ export function GlobalAtlasOrb() {
     }
   }, [transcript, isSpeaking]);
 
-  // Now render on ALL pages including hub routes for unified Atlas access
+  // Don't render on hub pages - they have the full embedded Atlas interface
+  const hubRoutes = ['/atlas', '/personal', '/group'];
+  if (hubRoutes.some(route => location.pathname.startsWith(route))) return null;
   
   // Don't render if context is not available
   if (!atlas) return null;
