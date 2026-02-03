@@ -1,7 +1,7 @@
 // Fullscreen Group Detailed Dashboard - Shows all group data in detail
 // Displays: Members, Tasks, Events, Files, Chat
 
-import { useMemo, useState, useCallback, useEffect } from 'react';
+import { useMemo, useState, useCallback, useEffect, useRef } from 'react';
 import ReactDOM from 'react-dom';
 import { 
   X,
@@ -31,11 +31,14 @@ import { useAuth } from '@/hooks/useAuth';
 import { cn } from '@/lib/utils';
 import { format } from 'date-fns';
 
+export type GroupSection = 'members' | 'tasks' | 'events' | 'files' | 'chat' | 'activity';
+
 interface FullscreenGroupDetailedDashboardProps {
   userId: string | undefined;
   groupId?: string;
   groupName?: string;
   memberCount?: number;
+  initialSection?: GroupSection;
   onClose: () => void;
 }
 
@@ -52,6 +55,7 @@ export function FullscreenGroupDetailedDashboard({
   groupId,
   groupName = 'Group',
   memberCount = 0,
+  initialSection,
   onClose 
 }: FullscreenGroupDetailedDashboardProps) {
   const { user } = useAuth();
@@ -60,12 +64,35 @@ export function FullscreenGroupDetailedDashboard({
   
   const [loadingTimedOut, setLoadingTimedOut] = useState(false);
   
+  // Refs for scrolling to sections
+  const sectionRefs = {
+    members: useRef<HTMLDivElement>(null),
+    tasks: useRef<HTMLDivElement>(null),
+    events: useRef<HTMLDivElement>(null),
+    files: useRef<HTMLDivElement>(null),
+    chat: useRef<HTMLDivElement>(null),
+    activity: useRef<HTMLDivElement>(null),
+  };
+  
   useEffect(() => {
     const timer = setTimeout(() => {
       setLoadingTimedOut(true);
     }, 3000);
     return () => clearTimeout(timer);
   }, []);
+  
+  // Scroll to initial section when component mounts
+  useEffect(() => {
+    if (initialSection && sectionRefs[initialSection]?.current) {
+      // Small delay to ensure DOM is ready
+      setTimeout(() => {
+        sectionRefs[initialSection]?.current?.scrollIntoView({ 
+          behavior: 'smooth', 
+          block: 'start' 
+        });
+      }, 100);
+    }
+  }, [initialSection]);
 
   const greeting = useMemo(() => getGreeting(), []);
   const userName = user?.email?.split('@')[0] || 'there';
@@ -159,7 +186,7 @@ export function FullscreenGroupDetailedDashboard({
           <Separator />
 
           {/* Members Section */}
-          <section>
+          <section ref={sectionRefs.members}>
             <div className="flex items-center gap-3 mb-4">
               <div className="w-10 h-10 rounded-xl bg-blue-500/10 flex items-center justify-center">
                 <Users size={20} className="text-blue-500" />
@@ -183,7 +210,7 @@ export function FullscreenGroupDetailedDashboard({
           <Separator />
 
           {/* Tasks Section */}
-          <section>
+          <section ref={sectionRefs.tasks}>
             <div className="flex items-center gap-3 mb-4">
               <div className="w-10 h-10 rounded-xl bg-green-500/10 flex items-center justify-center">
                 <CheckSquare size={20} className="text-green-500" />
@@ -206,7 +233,7 @@ export function FullscreenGroupDetailedDashboard({
           <Separator />
 
           {/* Events Section */}
-          <section>
+          <section ref={sectionRefs.events}>
             <div className="flex items-center gap-3 mb-4">
               <div className="w-10 h-10 rounded-xl bg-purple-500/10 flex items-center justify-center">
                 <Calendar size={20} className="text-purple-500" />
@@ -229,7 +256,7 @@ export function FullscreenGroupDetailedDashboard({
           <Separator />
 
           {/* Recent Activity */}
-          <section>
+          <section ref={sectionRefs.activity}>
             <div className="flex items-center gap-3 mb-4">
               <div className="w-10 h-10 rounded-xl bg-primary/10 flex items-center justify-center">
                 <Activity size={20} className="text-primary" />

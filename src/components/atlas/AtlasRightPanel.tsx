@@ -10,7 +10,7 @@ import { AtlasSearchPanel, WebSearchEntry } from './AtlasSearchPanel';
 import { CSuiteDataHub } from '@/components/csuite/CSuiteDataHub';
 import { SimplifiedEnterpriseDashboard } from '@/components/csuite/SimplifiedEnterpriseDashboard';
 import { FullscreenEnterpriseDetailedDashboard } from '@/components/csuite/FullscreenEnterpriseDetailedDashboard';
-import { SimplifiedGroupDashboard, FullscreenGroupDetailedDashboard } from '@/components/group';
+import { SimplifiedGroupDashboard, FullscreenGroupDetailedDashboard, GroupSection } from '@/components/group';
 import { PersonalDataHub } from '@/components/personal/PersonalDataHub';
 import { PhonePanel } from '@/components/personal/PhonePanel';
 import { HubQuickAccess } from '@/components/personal/HubQuickAccess';
@@ -95,6 +95,7 @@ export function AtlasRightPanel({
   // State for fullscreen detailed view (enterprise/group hubs)
   const [showEnterpriseDetailedView, setShowEnterpriseDetailedView] = useState(false);
   const [showGroupDetailedView, setShowGroupDetailedView] = useState(false);
+  const [groupInitialSection, setGroupInitialSection] = useState<GroupSection | undefined>(undefined);
   
   // Get user display name or email for personal hub
   const userDisplayName = user?.user_metadata?.display_name || user?.email?.split('@')[0] || 'Personal';
@@ -305,13 +306,20 @@ export function AtlasRightPanel({
                 <SimplifiedGroupDashboard
                   userId={userId}
                   groupId={groupId}
-                  onExpandDashboard={() => setShowGroupDetailedView(true)}
-                  onNavigate={() => setShowGroupDetailedView(true)}
+                  onExpandDashboard={() => {
+                    setGroupInitialSection(undefined);
+                    setShowGroupDetailedView(true);
+                  }}
+                  onNavigate={(section) => {
+                    setGroupInitialSection(section);
+                    setShowGroupDetailedView(true);
+                  }}
                 />
                 {showGroupDetailedView && (
                   <FullscreenGroupDetailedDashboard
                     userId={userId}
                     groupId={groupId}
+                    initialSection={groupInitialSection}
                     onClose={() => setShowGroupDetailedView(false)}
                   />
                 )}
