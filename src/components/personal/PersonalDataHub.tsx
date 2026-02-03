@@ -1,6 +1,6 @@
-// Personal Data Hub - Dynamic personal interface with user-selected overview items
-// Life, Social, More consolidated into dropdown menu
-// Supports drag-and-drop reordering, Atlas auto-arrange by usage, and resizable panels
+// Personal Data Hub - Renders SimplifiedDashboard as the default view
+// Full views (tasks, goals, habits, etc.) open when specific shortcuts are clicked
+// FullscreenDetailedDashboard is available via the "Expand" button
 
 import { useState, useCallback, useRef, useEffect, useMemo } from 'react';
 import { DragDropContext, Droppable, Draggable, DropResult } from '@hello-pangea/dnd';
