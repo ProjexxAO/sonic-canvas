@@ -182,11 +182,11 @@ export function SimplifiedGroupDashboard({
           </div>
 
           {/* Quick Shortcuts */}
-          <div>
+          <div className="overflow-hidden">
             <div className="flex items-center justify-between mb-3">
               <span className="text-xs font-semibold text-muted-foreground uppercase tracking-wider">Quick Access</span>
             </div>
-            <div className="flex gap-2 overflow-x-auto pb-2 -mx-1 px-1">
+            <div className="flex gap-2 overflow-x-auto pb-2 scrollbar-hide" style={{ scrollPaddingRight: '16px' }}>
               <ShortcutButton
                 icon={MessageSquare}
                 label="Chat"
@@ -217,6 +217,8 @@ export function SimplifiedGroupDashboard({
                 color="hsl(220 70% 55%)"
                 onClick={() => onNavigate?.('members')}
               />
+              {/* Spacer to ensure last item is fully visible */}
+              <div className="flex-shrink-0 w-1" aria-hidden="true" />
             </div>
           </div>
 
