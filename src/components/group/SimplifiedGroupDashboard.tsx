@@ -58,14 +58,14 @@ function ShortcutButton({
   return (
     <button
       onClick={onClick}
-      className="flex flex-col items-center justify-center min-w-[72px] p-3 rounded-xl border border-border bg-card hover:bg-muted/50 transition-all duration-200 focus:outline-none focus:ring-2 focus:ring-primary/30 active:scale-95 relative"
+      className="flex flex-col items-center justify-center min-w-[60px] p-2 rounded-xl border border-border bg-card hover:bg-muted/50 transition-all duration-200 focus:outline-none focus:ring-2 focus:ring-primary/30 active:scale-95 relative"
     >
       <div className="relative">
         <div 
-          className="w-9 h-9 rounded-full flex items-center justify-center mb-1"
+          className="w-8 h-8 rounded-full flex items-center justify-center mb-1"
           style={{ backgroundColor: color ? `${color}20` : 'hsl(var(--primary) / 0.1)' }}
         >
-          <Icon size={18} style={{ color: color || 'hsl(var(--primary))' }} />
+          <Icon size={16} style={{ color: color || 'hsl(var(--primary))' }} />
         </div>
         {badge !== undefined && badge > 0 && (
           <span className="absolute -top-1 -right-2 min-w-[16px] h-4 px-1 rounded-full bg-primary text-primary-foreground text-[10px] font-medium flex items-center justify-center">
@@ -73,7 +73,7 @@ function ShortcutButton({
           </span>
         )}
       </div>
-      <span className="text-[11px] text-muted-foreground font-medium truncate max-w-[60px]">{label}</span>
+      <span className="text-[10px] text-muted-foreground font-medium truncate max-w-[54px]">{label}</span>
     </button>
   );
 }
@@ -186,7 +186,7 @@ export function SimplifiedGroupDashboard({
             <div className="flex items-center justify-between mb-3">
               <span className="text-xs font-semibold text-muted-foreground uppercase tracking-wider">Quick Access</span>
             </div>
-            <div className="flex gap-2 overflow-x-auto pb-2 scrollbar-hide" style={{ scrollPaddingRight: '16px' }}>
+            <div className="flex gap-2 overflow-x-auto pb-2 scrollbar-hide" style={{ scrollPaddingRight: '12px' }}>
               <ShortcutButton
                 icon={MessageSquare}
                 label="Chat"
