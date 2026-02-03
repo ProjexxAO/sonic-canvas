@@ -1,4 +1,4 @@
-// Group Hub - Uses unified Atlas interface for consistent UX
+// Group Hub - Simplified dashboard-first design for collaboration
 // Collaborative workspace for teams, families, and projects
 
 import React, { useState } from 'react';
@@ -6,8 +6,8 @@ import { useNavigate } from 'react-router-dom';
 import { useAuth } from '@/hooks/useAuth';
 import { useSubscription } from '@/hooks/useSubscription';
 import { useGroupHub, GroupRole, GroupHubType } from '@/hooks/useGroupHub';
-import { AtlasHubLayout } from '@/components/atlas/AtlasHubLayout';
 import { AtlasErrorBoundary } from '@/pages/Atlas';
+import { SimplifiedGroupDashboard, FullscreenGroupDetailedDashboard, GroupSection } from '@/components/group';
 import { Button } from '@/components/ui/button';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
 import { Dialog, DialogContent, DialogDescription, DialogFooter, DialogHeader, DialogTitle, DialogTrigger } from '@/components/ui/dialog';
@@ -53,6 +53,10 @@ function GroupHubPage() {
   const [newGroupName, setNewGroupName] = useState('');
   const [newGroupType, setNewGroupType] = useState<GroupHubType>('team');
   const [newGroupDesc, setNewGroupDesc] = useState('');
+  
+  // State for fullscreen detailed view
+  const [showDetailedView, setShowDetailedView] = useState(false);
+  const [initialSection, setInitialSection] = useState<GroupSection | undefined>(undefined);
 
   // Redirect if not authenticated
   if (!authLoading && !user) {
@@ -279,14 +283,68 @@ function GroupHubPage() {
     );
   }
 
-  // Group selected - show Atlas interface with group data
+  // Group selected - show the simplified dashboard as the main view
   return (
-    <AtlasHubLayout
-      hubType="group"
-      hubTitle={currentGroup.name}
-      hubSubtitle={`${HUB_TYPE_CONFIG[currentGroup.hub_type as GroupHubType]?.label || 'Group'} • ${currentGroup.member_count} members`}
-      groupId={currentGroup.id}
-    />
+    <div className={cn(
+      "min-h-screen flex flex-col",
+      theme === 'dark' 
+        ? "bg-[hsl(240_10%_4%)]" 
+        : "bg-gradient-to-br from-[hsl(220_25%_97%)] via-[hsl(220_20%_95%)] to-[hsl(220_30%_92%)]"
+    )}>
+      {/* Header */}
+      <header className={cn(
+        "border-b backdrop-blur-xl sticky top-0 z-10 flex-shrink-0",
+        theme === 'dark' 
+          ? "bg-[hsl(240_10%_6%/0.8)] border-border/50" 
+          : "bg-white/70 border-border/30 shadow-sm"
+      )}>
+        <div className="container mx-auto px-6 py-3 flex items-center justify-between">
+          <div className="flex items-center gap-4">
+            <Button variant="ghost" size="icon" onClick={() => selectGroup(null as any)}>
+              <ArrowLeft className="w-4 h-4" />
+            </Button>
+            <div>
+              <h1 className="text-lg font-semibold flex items-center gap-2">
+                <Users className="w-5 h-5 text-blue-500" />
+                {currentGroup.name}
+              </h1>
+              <p className="text-xs text-muted-foreground">
+                {HUB_TYPE_CONFIG[currentGroup.hub_type as GroupHubType]?.label || 'Group'} • {currentGroup.member_count} members
+              </p>
+            </div>
+          </div>
+          <Badge variant="secondary" className="capitalize text-xs font-mono">{tier} Plan</Badge>
+        </div>
+      </header>
+
+      {/* Main Dashboard Area - Full Width */}
+      <main className="flex-1 overflow-hidden">
+        <SimplifiedGroupDashboard
+          userId={user?.id}
+          groupId={currentGroup.id}
+          groupName={currentGroup.name}
+          memberCount={currentGroup.member_count}
+          onExpandDashboard={() => {
+            setInitialSection(undefined);
+            setShowDetailedView(true);
+          }}
+          onNavigate={(section) => {
+            setInitialSection(section);
+            setShowDetailedView(true);
+          }}
+        />
+      </main>
+
+      {/* Fullscreen Detailed View */}
+      {showDetailedView && (
+        <FullscreenGroupDetailedDashboard
+          userId={user?.id}
+          groupId={currentGroup.id}
+          initialSection={initialSection}
+          onClose={() => setShowDetailedView(false)}
+        />
+      )}
+    </div>
   );
 }
 
