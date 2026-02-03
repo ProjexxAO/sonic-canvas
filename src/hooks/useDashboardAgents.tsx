@@ -47,8 +47,9 @@ export function useDashboardAgents(options?: { limit?: number }) {
   const { user } = useAuth();
   const [agents, setAgents] = useState<SonicAgent[]>([]);
   const [loading, setLoading] = useState(true);
+  const [error, setError] = useState<string | null>(null);
 
-  const limit = Math.min(Math.max(options?.limit ?? 200, 1), 500);
+  const limit = Math.min(Math.max(options?.limit ?? 100, 1), 500);
 
   const fetchAgents = useCallback(async () => {
     if (!user) {
@@ -58,9 +59,12 @@ export function useDashboardAgents(options?: { limit?: number }) {
     }
 
     setLoading(true);
+    setError(null);
+    
     try {
       // Select only necessary columns to avoid timeout on large tables
-      const { data, error } = await supabase
+      // Uses optimized indexes: idx_sonic_agents_last_active, idx_sonic_agents_status
+      const { data, error: queryError } = await supabase
         .from("sonic_agents")
         .select(`
           id, name, designation, sector, status, class,
@@ -71,13 +75,24 @@ export function useDashboardAgents(options?: { limit?: number }) {
           specialization_level, task_specializations, 
           preferred_task_types, learning_velocity
         `)
+        .neq('status', 'DORMANT') // Skip dormant agents for faster queries
         .order("last_active", { ascending: false })
         .limit(limit);
 
-      if (error) throw error;
+      if (queryError) {
+        // Don't throw on timeout - just log and use empty array
+        if (queryError.code === '57014') {
+          console.warn("[useDashboardAgents] Query timeout - using cached/empty result");
+          setError("Agent query timed out - showing limited results");
+        } else {
+          throw queryError;
+        }
+      }
+      
       setAgents((data ?? []).map(mapDbToAgent));
     } catch (e) {
       console.error("[useDashboardAgents] Failed to load agents", e);
+      setError(e instanceof Error ? e.message : 'Failed to load agents');
       // Don't spam toasts on repeated failures
       setAgents([]);
     } finally {
@@ -111,5 +126,5 @@ export function useDashboardAgents(options?: { limit?: number }) {
     };
   }, [user, fetchAgents]);
 
-  return { agents, loading, refetch: fetchAgents };
+  return { agents, loading, error, refetch: fetchAgents };
 }

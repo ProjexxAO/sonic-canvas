@@ -2045,6 +2045,200 @@ Domain Distribution:
 • Group Hub - Team collaboration, shared items
 • C-Suite Hub - Enterprise data, reports, insights`;
       },
+
+      // ============= EMAIL & COMMUNICATION TOOLS =============
+
+      // Compose and draft an email
+      composeEmail: async (params: { to: string; subject?: string; intent?: string; urgency?: 'low' | 'medium' | 'high' }) => {
+        const logId = addLogRef.current('composeEmail', params, 'Composing email...', 'pending');
+        try {
+          const response = await supabase.functions.invoke('atlas-orchestrator', {
+            body: { 
+              action: 'compose_email', 
+              userId: userRef.current?.id,
+              to: params.to,
+              intent: params.intent || 'general correspondence',
+              urgency: params.urgency || 'medium',
+              subject: params.subject,
+            }
+          });
+          
+          if (response.error) throw response.error;
+          
+          const draft = response.data;
+          setActionLogs(prev => prev.map(l => 
+            l.id === logId ? { ...l, result: `Draft created for ${params.to}`, status: 'success' } : l
+          ));
+          
+          toast.success(`Email draft created for ${params.to}`);
+          
+          // Trigger refresh so UI can show the draft
+          useDataRefreshStore.getState().triggerRefresh('all', 'atlas-composeEmail');
+          
+          return `I've drafted an email to ${params.to}.
+
+Subject: ${draft?.subject || 'No subject'}
+
+${draft?.body || 'Draft created - please review in the Email section.'}
+
+The draft is saved and waiting for your review in the Email Inbox.`;
+        } catch (error) {
+          const msg = error instanceof Error ? error.message : 'Email composition failed';
+          setActionLogs(prev => prev.map(l => 
+            l.id === logId ? { ...l, result: msg, status: 'error' } : l
+          ));
+          toast.error('Failed to compose email');
+          return `Error: ${msg}`;
+        }
+      },
+
+      // Draft a message (general platform communication)
+      draftMessage: async (params: { recipient: string; content: string; platform?: string }) => {
+        const logId = addLogRef.current('draftMessage', params, 'Drafting message...', 'pending');
+        try {
+          const response = await supabase.functions.invoke('atlas-orchestrator', {
+            body: { 
+              action: 'draft_message', 
+              userId: userRef.current?.id,
+              recipient: params.recipient,
+              content: params.content,
+              platform: params.platform || 'email',
+            }
+          });
+          
+          if (response.error) throw response.error;
+          
+          setActionLogs(prev => prev.map(l => 
+            l.id === logId ? { ...l, result: 'Draft saved', status: 'success' } : l
+          ));
+          
+          toast.success('Message draft saved');
+          useDataRefreshStore.getState().triggerRefresh('all', 'atlas-draftMessage');
+          
+          return `I've drafted a message to ${params.recipient}. It's saved and ready for your review.`;
+        } catch (error) {
+          const msg = error instanceof Error ? error.message : 'Message drafting failed';
+          setActionLogs(prev => prev.map(l => 
+            l.id === logId ? { ...l, result: msg, status: 'error' } : l
+          ));
+          return `Error: ${msg}`;
+        }
+      },
+
+      // Send a message (requires existing draft or direct content)
+      sendMessage: async (params: { recipient: string; content: string; platform?: string; subject?: string }) => {
+        const logId = addLogRef.current('sendMessage', params, 'Sending message...', 'pending');
+        try {
+          const response = await supabase.functions.invoke('atlas-orchestrator', {
+            body: { 
+              action: 'send_message', 
+              userId: userRef.current?.id,
+              recipient: params.recipient,
+              content: params.content,
+              platform: params.platform || 'internal',
+              subject: params.subject,
+            }
+          });
+          
+          if (response.error) throw response.error;
+          
+          setActionLogs(prev => prev.map(l => 
+            l.id === logId ? { ...l, result: 'Message sent', status: 'success' } : l
+          ));
+          
+          toast.success(`Message sent to ${params.recipient}`);
+          useDataRefreshStore.getState().triggerRefresh('all', 'atlas-sendMessage');
+          
+          return `Message sent to ${params.recipient} successfully.`;
+        } catch (error) {
+          const msg = error instanceof Error ? error.message : 'Message sending failed';
+          setActionLogs(prev => prev.map(l => 
+            l.id === logId ? { ...l, result: msg, status: 'error' } : l
+          ));
+          toast.error('Failed to send message');
+          return `Error: ${msg}`;
+        }
+      },
+
+      // Get inbox summary
+      getInboxSummary: async () => {
+        const logId = addLogRef.current('getInboxSummary', {}, 'Fetching inbox...', 'pending');
+        try {
+          const { data: messages, error } = await supabase
+            .from('communication_messages')
+            .select('id, subject, from_address, status, is_starred, created_at, platform')
+            .eq('user_id', userRef.current?.id)
+            .eq('is_incoming', true)
+            .order('created_at', { ascending: false })
+            .limit(10);
+          
+          if (error) throw error;
+          
+          const unreadCount = messages?.filter(m => m.status === 'pending_approval').length || 0;
+          const starredCount = messages?.filter(m => m.is_starred).length || 0;
+          
+          setActionLogs(prev => prev.map(l => 
+            l.id === logId ? { ...l, result: `${messages?.length || 0} messages`, status: 'success' } : l
+          ));
+          
+          if (!messages || messages.length === 0) {
+            return 'Your inbox is empty.';
+          }
+          
+          const messageList = messages.slice(0, 5).map(m => 
+            `• ${m.from_address || 'Unknown'}: ${m.subject || '(No subject)'}${m.is_starred ? ' ⭐' : ''}`
+          ).join('\n');
+          
+          return `Inbox Summary:
+• Total recent: ${messages.length}
+• Starred: ${starredCount}
+
+Recent messages:
+${messageList}`;
+        } catch (error) {
+          const msg = error instanceof Error ? error.message : 'Failed to fetch inbox';
+          setActionLogs(prev => prev.map(l => 
+            l.id === logId ? { ...l, result: msg, status: 'error' } : l
+          ));
+          return `Error: ${msg}`;
+        }
+      },
+
+      // Get drafts
+      getDrafts: async () => {
+        const logId = addLogRef.current('getDrafts', {}, 'Fetching drafts...', 'pending');
+        try {
+          const { data: drafts, error } = await supabase
+            .from('communication_messages')
+            .select('id, subject, to_addresses, content, created_at')
+            .eq('user_id', userRef.current?.id)
+            .eq('status', 'draft')
+            .order('created_at', { ascending: false })
+            .limit(10);
+          
+          if (error) throw error;
+          
+          setActionLogs(prev => prev.map(l => 
+            l.id === logId ? { ...l, result: `${drafts?.length || 0} drafts`, status: 'success' } : l
+          ));
+          
+          if (!drafts || drafts.length === 0) {
+            return 'You have no draft messages.';
+          }
+          
+          const draftList = drafts.map(d => 
+            `• To: ${d.to_addresses?.[0] || 'Unknown'} - ${d.subject || '(No subject)'}`
+          ).join('\n');
+          
+          return `Your drafts (${drafts.length}):\n${draftList}`;
+        } catch (error) {
+          const msg = error instanceof Error ? error.message : 'Failed to fetch drafts';
+          setActionLogs(prev => prev.map(l => 
+            l.id === logId ? { ...l, result: msg, status: 'error' } : l
+          ));
+          return `Error: ${msg}`;
+        }
+      },
     },
     onConnect: () => {
       console.log("[Atlas Global] Connected to voice agent");

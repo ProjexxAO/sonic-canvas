@@ -38,7 +38,7 @@ export function useAgents() {
   const [agents, setAgents] = useState<SonicAgent[]>([]);
   const [loading, setLoading] = useState(true);
 
-  // Fetch agents from database with pagination for large datasets
+  // Fetch agents from database with optimized query for large datasets (149k+ agents)
   const fetchAgents = useCallback(async () => {
     if (!user) {
       setAgents([]);
@@ -47,46 +47,35 @@ export function useAgents() {
     }
 
     try {
-      const batchSize = 1000;
-      const maxAgents = 5000; // safety cap to avoid timeouts on very large datasets
-      const allAgents: SonicAgent[] = [];
-      let hasMore = true;
-      let offset = 0;
+      // Use a smaller limit to avoid timeouts with 149k+ agents
+      // Query only non-dormant, recently active agents with specific columns
+      const { data, error } = await supabase
+        .from('sonic_agents')
+        .select(`
+          id, name, designation, sector, status, class,
+          waveform, frequency, color, modulation, density,
+          code_artifact, created_at, last_active,
+          cycles, efficiency, stability, linked_agents
+        `)
+        .neq('status', 'DORMANT')
+        .order('last_active', { ascending: false })
+        .limit(200);
 
-      // RLS automatically filters: superadmin sees all, users see assigned agents
-      while (hasMore && offset < maxAgents) {
-        const { data, error } = await supabase
-          .from('sonic_agents')
-          .select('*')
-          .order('created_at', { ascending: false })
-          .limit(batchSize)
-          .range(offset, offset + batchSize - 1);
-
-        if (error) {
-          console.error('Batch fetch error at offset', offset, error);
-          // Stop fetching more pages; keep what we already have
-          toast.error('Agent list is too large to load all at once');
-          break;
+      if (error) {
+        // Log but don't crash - show empty state
+        console.error('Agent fetch error:', error);
+        if (error.code === '57014') {
+          toast.warning('Agent list too large - showing recent agents only');
         }
-
-        if (data && data.length > 0) {
-          allAgents.push(...data.map(mapDbToAgent));
-          offset += data.length;
-          hasMore = data.length === batchSize;
-        } else {
-          hasMore = false;
-        }
+        setAgents([]);
+        return;
       }
 
-      if (offset >= maxAgents && hasMore) {
-        toast.warning(`Loaded first ${maxAgents.toLocaleString()} agents (limit reached)`);
-      }
-
-      console.log(`Loaded ${allAgents.length} total agents`);
-      setAgents(allAgents);
+      console.log(`Loaded ${data?.length || 0} agents (optimized query)`);
+      setAgents((data || []).map(mapDbToAgent));
     } catch (error) {
       console.error('Error fetching agents:', error);
-      toast.error('Failed to load agents');
+      setAgents([]);
     } finally {
       setLoading(false);
     }
