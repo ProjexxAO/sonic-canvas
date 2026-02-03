@@ -23,7 +23,8 @@ import {
   UserPlus,
   MoreVertical,
   Edit,
-  Trash2
+  Trash2,
+  Loader2
 } from 'lucide-react';
 import { useTheme } from 'next-themes';
 import { Button } from '@/components/ui/button';
@@ -125,10 +126,18 @@ export function FullscreenGroupDetailedDashboard({
     activity: useRef<HTMLDivElement>(null),
   };
 
+  // Track loading state for group data
+  const [isGroupLoading, setIsGroupLoading] = useState(true);
+
   // Load group data when component mounts
   useEffect(() => {
     if (groupId) {
-      selectGroup(groupId);
+      setIsGroupLoading(true);
+      selectGroup(groupId).finally(() => {
+        setIsGroupLoading(false);
+      });
+    } else {
+      setIsGroupLoading(false);
     }
   }, [groupId, selectGroup]);
   
@@ -191,6 +200,12 @@ export function FullscreenGroupDetailedDashboard({
     dueDate?: Date;
     tags?: string[];
   }): Promise<boolean> => {
+    // Ensure group is loaded before attempting to save
+    if (!currentGroup) {
+      toast.error('Group data not loaded. Please try again.');
+      return false;
+    }
+
     try {
       if (editingItem) {
         // Update existing item
@@ -204,6 +219,8 @@ export function FullscreenGroupDetailedDashboard({
         if (success) {
           toast.success('Item updated successfully');
           return true;
+        } else {
+          toast.error('Failed to update item');
         }
       } else {
         // Create new item
@@ -220,10 +237,13 @@ export function FullscreenGroupDetailedDashboard({
         if (result) {
           toast.success(`${data.itemType.charAt(0).toUpperCase() + data.itemType.slice(1)} created`);
           return true;
+        } else {
+          toast.error('Failed to create item. Please try again.');
         }
       }
       return false;
     } catch (error) {
+      console.error('Error saving item:', error);
       toast.error('Failed to save item');
       return false;
     }
@@ -266,14 +286,23 @@ export function FullscreenGroupDetailedDashboard({
   };
 
   const handleInvite = async (email: string, role: string): Promise<boolean> => {
+    // Ensure group is loaded
+    if (!currentGroup) {
+      toast.error('Group data not loaded. Please try again.');
+      return false;
+    }
+
     try {
       const success = await inviteMember(email, role as any);
       if (success) {
         toast.success('Invitation sent!');
         return true;
+      } else {
+        toast.error('Failed to send invitation. Please check the email and try again.');
       }
       return false;
     } catch (error) {
+      console.error('Error sending invitation:', error);
       toast.error('Failed to send invitation');
       return false;
     }
@@ -340,6 +369,12 @@ export function FullscreenGroupDetailedDashboard({
 
       {/* Content */}
       <ScrollArea className="h-[calc(100vh-4rem)]">
+        {isGroupLoading ? (
+          <div className="flex flex-col items-center justify-center py-20">
+            <Loader2 size={40} className="text-primary animate-spin mb-4" />
+            <p className="text-muted-foreground">Loading group data...</p>
+          </div>
+        ) : (
         <div className="p-4 md:p-6 lg:p-8 max-w-7xl mx-auto space-y-8">
           
           {/* Group Overview */}
@@ -648,6 +683,7 @@ export function FullscreenGroupDetailedDashboard({
           </section>
 
         </div>
+        )}
       </ScrollArea>
 
       {/* Floating Atlas Orb */}
