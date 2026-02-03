@@ -299,7 +299,7 @@ export function GroupItemDialog({
                   }
                 }}
               />
-              <Button type="button" variant="outline" onClick={handleAddTag}>
+              <Button type="button" variant="outline" size="sm" onClick={handleAddTag}>
                 Add
               </Button>
             </div>
@@ -352,10 +352,14 @@ export function GroupItemDialog({
             </>
           )}
           
-          <Button variant="outline" onClick={() => onOpenChange(false)}>
+          <Button type="button" variant="outline" onClick={() => onOpenChange(false)}>
             Cancel
           </Button>
-          <Button onClick={handleSave} disabled={!title.trim() || isSaving}>
+          <Button 
+            type="button" 
+            onClick={handleSave} 
+            disabled={!title.trim() || isSaving}
+          >
             {isSaving ? (
               <>
                 <Loader2 size={14} className="animate-spin mr-2" />

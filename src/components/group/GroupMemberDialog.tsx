@@ -319,12 +319,13 @@ export function GroupMemberDialog({
             </>
           )}
           
-          <Button variant="outline" onClick={() => onOpenChange(false)}>
+          <Button type="button" variant="outline" onClick={() => onOpenChange(false)}>
             Cancel
           </Button>
           
           {mode === 'invite' ? (
             <Button 
+              type="button"
               onClick={handleInvite} 
               disabled={!email.trim() || isLoading || inviteSuccess}
             >
@@ -339,6 +340,7 @@ export function GroupMemberDialog({
             </Button>
           ) : (
             <Button 
+              type="button"
               onClick={handleUpdateRole} 
               disabled={selectedRole === member?.role || isLoading}
             >
