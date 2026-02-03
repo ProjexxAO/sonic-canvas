@@ -498,14 +498,8 @@ export function FullscreenGroupDetailedDashboard({
               <Card className="bg-muted/30">
                 <CardContent className="p-8 text-center">
                   <Users size={40} className="mx-auto mb-3 text-muted-foreground" />
-                  <h3 className="text-lg font-semibold">Manage your team</h3>
-                  <p className="text-muted-foreground mb-4">Invite members and assign roles</p>
-                  {isAdmin && (
-                    <Button onClick={handleInviteMember} className="gap-2">
-                      <UserPlus size={16} />
-                      Invite First Member
-                    </Button>
-                  )}
+                  <h3 className="text-lg font-semibold">No members yet</h3>
+                  <p className="text-muted-foreground">Use the Invite button above to add team members</p>
                 </CardContent>
               </Card>
             )}
@@ -549,13 +543,7 @@ export function FullscreenGroupDetailedDashboard({
                 <CardContent className="p-8 text-center">
                   <CheckSquare size={40} className="mx-auto mb-3 text-green-500" />
                   <h3 className="text-lg font-semibold">No tasks yet</h3>
-                  <p className="text-muted-foreground mb-4">Create tasks to track team progress</p>
-                  {canManageItems && (
-                    <Button onClick={() => handleCreateItem('task')} className="gap-2">
-                      <Plus size={16} />
-                      Create First Task
-                    </Button>
-                  )}
+                  <p className="text-muted-foreground">Use the Add Task button above to create one</p>
                 </CardContent>
               </Card>
             )}
@@ -598,13 +586,7 @@ export function FullscreenGroupDetailedDashboard({
                 <CardContent className="p-8 text-center">
                   <Calendar size={40} className="mx-auto mb-3 text-purple-500" />
                   <h3 className="text-lg font-semibold">No events scheduled</h3>
-                  <p className="text-muted-foreground mb-4">Schedule team meetings and events</p>
-                  {canManageItems && (
-                    <Button onClick={() => handleCreateItem('event')} className="gap-2">
-                      <Plus size={16} />
-                      Schedule First Event
-                    </Button>
-                  )}
+                  <p className="text-muted-foreground">Use the Add Event button above to schedule one</p>
                 </CardContent>
               </Card>
             )}
@@ -647,13 +629,7 @@ export function FullscreenGroupDetailedDashboard({
                 <CardContent className="p-8 text-center">
                   <FileText size={40} className="mx-auto mb-3 text-yellow-500" />
                   <h3 className="text-lg font-semibold">No notes yet</h3>
-                  <p className="text-muted-foreground mb-4">Share notes and resources with your team</p>
-                  {canManageItems && (
-                    <Button onClick={() => handleCreateItem('note')} className="gap-2">
-                      <Plus size={16} />
-                      Create First Note
-                    </Button>
-                  )}
+                  <p className="text-muted-foreground">Use the Add Note button above to create one</p>
                 </CardContent>
               </Card>
             )}
