@@ -26,3 +26,4 @@ export { WeekHabitGrid } from './WeekHabitGrid';
 export { CompactFinanceCard } from './CompactFinanceCard';
 export { SimplifiedDashboard } from './SimplifiedDashboard';
 export { FullscreenDetailedDashboard } from './FullscreenDetailedDashboard';
+export type { PersonalSection } from './FullscreenDetailedDashboard';
