@@ -48,6 +48,7 @@ import { format, isPast, isToday, isTomorrow, parseISO } from 'date-fns';
 import { EventFormDialog } from '@/components/csuite/domain-views/EventFormDialog';
 import { TaskFormDialog } from '@/components/csuite/domain-views/TaskFormDialog';
 import { EmailComposerDialog } from '@/components/communications/EmailComposerDialog';
+import { PhotoGalleryView } from './PhotoGalleryView';
 
 export type PersonalSection = 'tasks' | 'calendar' | 'email' | 'photos' | 'finance' | 'widgets';
 
@@ -470,7 +471,7 @@ export function FullscreenDetailedDashboard({
 
           <Separator />
 
-          {/* Section 4: Photos placeholder */}
+          {/* Section 4: Photos - Full Gallery with Upload */}
           <section ref={photosRef}>
             <div className="flex items-center gap-3 mb-4">
               <div className="w-10 h-10 rounded-xl bg-pink-500/10 flex items-center justify-center">
@@ -482,13 +483,7 @@ export function FullscreenDetailedDashboard({
               </div>
             </div>
             
-            <Card className="bg-pink-500/5 border-pink-500/20">
-              <CardContent className="p-8 text-center">
-                <Image size={40} className="text-pink-500 mx-auto mb-3" />
-                <h3 className="text-lg font-semibold">Photo library</h3>
-                <p className="text-muted-foreground">Connect your photos to see them here</p>
-              </CardContent>
-            </Card>
+            <PhotoGalleryView />
           </section>
 
           <Separator />
