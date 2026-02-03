@@ -27,7 +27,8 @@ import {
   Star,
   Sparkles,
   Hexagon,
-  Radio
+  Radio,
+  Plus
 } from 'lucide-react';
 import { useTheme } from 'next-themes';
 import { Button } from '@/components/ui/button';
@@ -44,6 +45,8 @@ import { useCustomWidgets } from '@/hooks/useCustomWidgets';
 import { useAuth } from '@/hooks/useAuth';
 import { cn } from '@/lib/utils';
 import { format, isPast, isToday, isTomorrow, parseISO } from 'date-fns';
+import { EventFormDialog } from '@/components/csuite/domain-views/EventFormDialog';
+import { TaskFormDialog } from '@/components/csuite/domain-views/TaskFormDialog';
 
 export type PersonalSection = 'tasks' | 'calendar' | 'email' | 'photos' | 'finance' | 'widgets';
 
@@ -67,7 +70,7 @@ export function FullscreenDetailedDashboard({
   onClose 
 }: FullscreenDetailedDashboardProps) {
   const { user } = useAuth();
-  const { items, isLoading: itemsLoading, completeItem } = usePersonalHub();
+  const { items, isLoading: itemsLoading, completeItem, refetch: refetchItems } = usePersonalHub();
   const { events, isLoading: calendarLoading } = useSmartCalendar();
   const { messages, isLoading: messagesLoading } = useCommunications(userId);
   const { accounts, transactions, isLoading: bankingLoading } = useBanking();
@@ -87,6 +90,10 @@ export function FullscreenDetailedDashboard({
   // Loading timeout to prevent indefinite loading state
   const [loadingTimedOut, setLoadingTimedOut] = useState(false);
   const [hasScrolled, setHasScrolled] = useState(false);
+  
+  // Form dialog states
+  const [showTaskDialog, setShowTaskDialog] = useState(false);
+  const [showEventDialog, setShowEventDialog] = useState(false);
   
   // Set a 3-second timeout for initial loading
   useEffect(() => {
@@ -234,11 +241,19 @@ export function FullscreenDetailedDashboard({
               <div className="w-10 h-10 rounded-xl bg-primary/10 flex items-center justify-center">
                 <CheckSquare size={20} className="text-primary" />
               </div>
-              <div>
+              <div className="flex-1">
                 <h2 className="text-lg font-semibold">Today's Focus</h2>
                 <p className="text-sm text-muted-foreground">Your priority tasks</p>
               </div>
-              <Badge variant="secondary" className="ml-auto">{priorityTasks.length} items</Badge>
+              <Button
+                size="sm"
+                onClick={() => setShowTaskDialog(true)}
+                className="h-9 gap-2 rounded-xl"
+              >
+                <Plus size={16} />
+                Add Task
+              </Button>
+              <Badge variant="secondary">{priorityTasks.length} items</Badge>
             </div>
             
             {priorityTasks.length > 0 ? (
@@ -312,11 +327,20 @@ export function FullscreenDetailedDashboard({
               <div className="w-10 h-10 rounded-xl bg-blue-500/10 flex items-center justify-center">
                 <Calendar size={20} className="text-blue-500" />
               </div>
-              <div>
+              <div className="flex-1">
                 <h2 className="text-lg font-semibold">Calendar</h2>
                 <p className="text-sm text-muted-foreground">Upcoming events</p>
               </div>
-              <Badge variant="secondary" className="ml-auto">{upcomingEvents.length} events</Badge>
+              <Button
+                size="sm"
+                variant="outline"
+                onClick={() => setShowEventDialog(true)}
+                className="h-9 gap-2 rounded-xl border-blue-500/30 text-blue-500 hover:bg-blue-500/10"
+              >
+                <Plus size={16} />
+                Add Event
+              </Button>
+              <Badge variant="secondary">{upcomingEvents.length} events</Badge>
             </div>
             
             {upcomingEvents.length > 0 ? (
@@ -735,6 +759,25 @@ export function FullscreenDetailedDashboard({
           )}
         </div>
       )}
+
+      {/* Form Dialogs */}
+      <TaskFormDialog
+        open={showTaskDialog}
+        onOpenChange={setShowTaskDialog}
+        userId={user?.id || ''}
+        onTaskSaved={() => {
+          refetchItems();
+        }}
+      />
+      
+      <EventFormDialog
+        open={showEventDialog}
+        onOpenChange={setShowEventDialog}
+        userId={user?.id || ''}
+        onEventSaved={() => {
+          // Events will refresh automatically
+        }}
+      />
     </div>,
     document.body
   );
