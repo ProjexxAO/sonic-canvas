@@ -1,13 +1,15 @@
-// Group Hub - Simplified dashboard-first design for collaboration
-// Collaborative workspace for teams, families, and projects
+// Group Hub - Unified dashboard-first design
+// Matches Personal and Enterprise hub patterns with group collaboration features
 
 import React, { useState } from 'react';
 import { useNavigate } from 'react-router-dom';
+import { useTheme } from 'next-themes';
 import { useAuth } from '@/hooks/useAuth';
 import { useSubscription } from '@/hooks/useSubscription';
 import { useGroupHub, GroupRole, GroupHubType } from '@/hooks/useGroupHub';
 import { AtlasErrorBoundary } from '@/pages/Atlas';
 import { SimplifiedGroupDashboard, FullscreenGroupDetailedDashboard, GroupSection } from '@/components/group';
+import { TierBadge } from '@/components/subscription/TierBadge';
 import { Button } from '@/components/ui/button';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
 import { Dialog, DialogContent, DialogDescription, DialogFooter, DialogHeader, DialogTitle, DialogTrigger } from '@/components/ui/dialog';
@@ -17,7 +19,6 @@ import { Input } from '@/components/ui/input';
 import { Badge } from '@/components/ui/badge';
 import { Users, Plus, ArrowLeft, Crown, Shield, Eye } from 'lucide-react';
 import { cn } from '@/lib/utils';
-import { useTheme } from 'next-themes';
 import { toast } from 'sonner';
 
 const ROLE_CONFIG: Record<GroupRole, { icon: typeof Crown; label: string; color: string }> = {
@@ -152,7 +153,7 @@ function GroupHubPage() {
               </div>
             </div>
             <div className="flex items-center gap-2">
-              <Badge variant="secondary" className="capitalize text-xs font-mono">{tier} Plan</Badge>
+              <TierBadge tier={tier} />
               <Dialog open={showCreateDialog} onOpenChange={setShowCreateDialog}>
                 <DialogTrigger asChild>
                   <Button size="sm">
@@ -313,7 +314,7 @@ function GroupHubPage() {
               </p>
             </div>
           </div>
-          <Badge variant="secondary" className="capitalize text-xs font-mono">{tier} Plan</Badge>
+          <TierBadge tier={tier} />
         </div>
       </header>
 
