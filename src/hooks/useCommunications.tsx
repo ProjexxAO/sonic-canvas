@@ -461,6 +461,63 @@ export function useCommunications(userId: string | undefined) {
     }
   }, [userId, messages]);
 
+  // Delete message(s)
+  const deleteMessages = useCallback(async (messageIds: string[]): Promise<boolean> => {
+    if (!userId || messageIds.length === 0) return false;
+
+    try {
+      const client = supabase as any;
+      const { error } = await client
+        .from('communication_messages')
+        .delete()
+        .in('id', messageIds);
+
+      if (error) throw error;
+
+      // Update local state
+      setMessages(prev => prev.filter(m => !messageIds.includes(m.id)));
+
+      toast.success(`Deleted ${messageIds.length} message(s)`);
+      return true;
+    } catch (error) {
+      console.error('Error deleting messages:', error);
+      toast.error('Failed to delete messages');
+      return false;
+    }
+  }, [userId]);
+
+  // Update a draft
+  const updateDraft = useCallback(async (
+    messageId: string,
+    updates: Partial<Pick<Message, 'content' | 'subject' | 'to_addresses' | 'cc_addresses' | 'bcc_addresses'>>
+  ): Promise<boolean> => {
+    if (!userId) return false;
+
+    try {
+      const client = supabase as any;
+      const { error } = await client
+        .from('communication_messages')
+        .update({
+          ...updates,
+          updated_at: new Date().toISOString(),
+        })
+        .eq('id', messageId);
+
+      if (error) throw error;
+
+      // Update local state
+      setMessages(prev => prev.map(m => 
+        m.id === messageId ? { ...m, ...updates } : m
+      ));
+
+      return true;
+    } catch (error) {
+      console.error('Error updating draft:', error);
+      toast.error('Failed to update draft');
+      return false;
+    }
+  }, [userId]);
+
   // Mark as read
   const markAsRead = useCallback(async (messageId: string): Promise<boolean> => {
     if (!userId) return false;
@@ -624,5 +681,7 @@ export function useCommunications(userId: string | undefined) {
     toggleStar,
     markAsRead,
     requestAtlasDraft,
+    deleteMessages,
+    updateDraft,
   };
 }

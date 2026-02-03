@@ -3,27 +3,25 @@ import { useState, useMemo } from 'react';
 import { 
   Mail, 
   MessageCircle, 
-  Phone,
   Search,
   Filter,
   Sparkles,
-  ExternalLink,
   Clock,
   Star,
   AlertTriangle,
-  Users,
   Briefcase,
   Heart,
   Tag,
   ChevronDown,
-  MoreHorizontal
+  MoreHorizontal,
+  Pencil,
+  Maximize2,
 } from 'lucide-react';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
 import { Badge } from '@/components/ui/badge';
 import { Input } from '@/components/ui/input';
 import { ScrollArea } from '@/components/ui/scroll-area';
-import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
 import {
   DropdownMenu,
   DropdownMenuContent,
@@ -32,9 +30,17 @@ import {
   DropdownMenuSeparator,
   DropdownMenuLabel,
 } from '@/components/ui/dropdown-menu';
+import {
+  Dialog,
+  DialogContent,
+} from '@/components/ui/dialog';
 import { cn } from '@/lib/utils';
 import { useAtlasIntelligence, type UnifiedMessage, type MessageCategory } from '@/hooks/useAtlasIntelligence';
+import { useCommunications } from '@/hooks/useCommunications';
+import { useAuth } from '@/hooks/useAuth';
 import { formatDistanceToNow } from 'date-fns';
+import { EmailComposerDialog } from '@/components/communications/EmailComposerDialog';
+import { EmailInboxView } from '@/components/communications/EmailInboxView';
 
 interface UnifiedInboxProps {
   className?: string;
@@ -155,16 +161,20 @@ function MessageRow({ message, onDraft }: { message: UnifiedMessage; onDraft: ()
 }
 
 export function UnifiedInbox({ className, hubFilter = 'all' }: UnifiedInboxProps) {
+  const { user } = useAuth();
   const { 
     unifiedInbox, 
     getInboxSummary, 
     getVisibleMessages,
     generateContextAwareDraft
   } = useAtlasIntelligence();
+  const { messages: dbMessages, isLoading: dbLoading, fetchMessages } = useCommunications(user?.id);
 
   const [searchQuery, setSearchQuery] = useState('');
   const [selectedCategory, setSelectedCategory] = useState<MessageCategory | 'all'>('all');
   const [selectedPlatform, setSelectedPlatform] = useState<string | 'all'>('all');
+  const [showComposer, setShowComposer] = useState(false);
+  const [showFullInbox, setShowFullInbox] = useState(false);
 
   const summary = getInboxSummary();
 
@@ -202,129 +212,170 @@ export function UnifiedInbox({ className, hubFilter = 'all' }: UnifiedInboxProps
   const unreadCount = filteredMessages.filter(m => !m.isRead).length;
 
   return (
-    <Card className={cn("border h-full flex flex-col", className)}>
-      <CardHeader className="pb-2 flex-shrink-0">
-        <div className="flex items-center justify-between">
-          <CardTitle className="text-sm flex items-center gap-2">
-            <div className="p-1.5 rounded-lg bg-gradient-to-br from-primary/20 to-secondary/20">
-              <Mail size={14} className="text-primary" />
-            </div>
-            Unified Inbox
-            {unreadCount > 0 && (
-              <Badge variant="destructive" className="text-[9px] px-1.5">
-                {unreadCount}
-              </Badge>
-            )}
-          </CardTitle>
-          
-          <div className="flex items-center gap-1">
-            <DropdownMenu>
-              <DropdownMenuTrigger asChild>
-                <Button variant="ghost" size="sm" className="h-7 px-2 text-[10px]">
-                  <Filter size={10} className="mr-1" />
-                  Filter
-                  <ChevronDown size={10} className="ml-1" />
-                </Button>
-              </DropdownMenuTrigger>
-              <DropdownMenuContent align="end" className="w-40">
-                <DropdownMenuLabel className="text-xs">Category</DropdownMenuLabel>
-                <DropdownMenuItem 
-                  className="text-xs"
-                  onClick={() => setSelectedCategory('all')}
-                >
-                  All Categories
-                </DropdownMenuItem>
-                {Object.entries(categoryConfig).map(([key, config]) => (
-                  <DropdownMenuItem 
-                    key={key}
-                    className="text-xs"
-                    onClick={() => setSelectedCategory(key as MessageCategory)}
-                  >
-                    <config.icon size={10} className={cn("mr-2", config.color)} />
-                    {config.label}
-                  </DropdownMenuItem>
-                ))}
-                <DropdownMenuSeparator />
-                <DropdownMenuLabel className="text-xs">Platform</DropdownMenuLabel>
-                <DropdownMenuItem 
-                  className="text-xs"
-                  onClick={() => setSelectedPlatform('all')}
-                >
-                  All Platforms
-                </DropdownMenuItem>
-                {['email', 'sms', 'whatsapp', 'slack', 'teams'].map(platform => (
-                  <DropdownMenuItem 
-                    key={platform}
-                    className="text-xs"
-                    onClick={() => setSelectedPlatform(platform)}
-                  >
-                    {platform.charAt(0).toUpperCase() + platform.slice(1)}
-                  </DropdownMenuItem>
-                ))}
-              </DropdownMenuContent>
-            </DropdownMenu>
-          </div>
-        </div>
-
-        {/* Search */}
-        <div className="relative mt-2">
-          <Search size={12} className="absolute left-2.5 top-1/2 -translate-y-1/2 text-muted-foreground" />
-          <Input
-            placeholder="Search messages..."
-            value={searchQuery}
-            onChange={(e) => setSearchQuery(e.target.value)}
-            className="h-8 pl-8 text-xs"
-          />
-        </div>
-
-        {/* Quick Stats */}
-        <div className="flex gap-2 mt-2 overflow-x-auto pb-1">
-          {Object.entries(summary.byCategory).map(([category, count]) => {
-            if (count === 0) return null;
-            const config = categoryConfig[category as MessageCategory];
-            return (
-              <Button
-                key={category}
-                variant={selectedCategory === category ? "secondary" : "outline"}
-                size="sm"
-                className="h-6 text-[9px] px-2 flex-shrink-0"
-                onClick={() => setSelectedCategory(
-                  selectedCategory === category ? 'all' : category as MessageCategory
-                )}
-              >
-                <config.icon size={10} className={cn("mr-1", config.color)} />
-                {count}
-              </Button>
-            );
-          })}
-        </div>
-      </CardHeader>
-
-      <CardContent className="flex-1 pt-0 overflow-hidden">
-        <ScrollArea className="h-full">
-          <div className="space-y-2 pr-2">
-            {filteredMessages.length === 0 ? (
-              <div className="flex flex-col items-center justify-center py-12 text-center">
-                <Mail size={32} className="text-muted-foreground/30 mb-3" />
-                <p className="text-sm text-muted-foreground">No messages</p>
-                <p className="text-xs text-muted-foreground/70">
-                  {searchQuery || selectedCategory !== 'all' 
-                    ? 'Try adjusting your filters' 
-                    : 'Your inbox is clear'}
-                </p>
+    <>
+      <Card className={cn("border h-full flex flex-col", className)}>
+        <CardHeader className="pb-2 flex-shrink-0">
+          <div className="flex items-center justify-between">
+            <CardTitle className="text-sm flex items-center gap-2">
+              <div className="p-1.5 rounded-lg bg-gradient-to-br from-primary/20 to-secondary/20">
+                <Mail size={14} className="text-primary" />
               </div>
-            ) : (
-              filteredMessages.map(message => (
-                <MessageRow 
-                  key={message.id} 
-                  message={message} 
-                  onDraft={() => generateContextAwareDraft(message, hubFilter === 'all' ? 'personal' : hubFilter)}
-                />
-              ))
-            )}
+              Unified Inbox
+              {unreadCount > 0 && (
+                <Badge variant="destructive" className="text-[9px] px-1.5">
+                  {unreadCount}
+                </Badge>
+              )}
+            </CardTitle>
+            
+            <div className="flex items-center gap-1">
+              <Button
+                variant="default"
+                size="sm"
+                className="h-7 px-2 text-[10px] gap-1"
+                onClick={() => setShowComposer(true)}
+              >
+                <Pencil size={10} />
+                Compose
+              </Button>
+              <Button
+                variant="ghost"
+                size="sm"
+                className="h-7 w-7 p-0"
+                onClick={() => setShowFullInbox(true)}
+              >
+                <Maximize2 size={12} />
+              </Button>
+              <DropdownMenu>
+                <DropdownMenuTrigger asChild>
+                  <Button variant="ghost" size="sm" className="h-7 px-2 text-[10px]">
+                    <Filter size={10} className="mr-1" />
+                    Filter
+                    <ChevronDown size={10} className="ml-1" />
+                  </Button>
+                </DropdownMenuTrigger>
+                <DropdownMenuContent align="end" className="w-40">
+                  <DropdownMenuLabel className="text-xs">Category</DropdownMenuLabel>
+                  <DropdownMenuItem 
+                    className="text-xs"
+                    onClick={() => setSelectedCategory('all')}
+                  >
+                    All Categories
+                  </DropdownMenuItem>
+                  {Object.entries(categoryConfig).map(([key, config]) => (
+                    <DropdownMenuItem 
+                      key={key}
+                      className="text-xs"
+                      onClick={() => setSelectedCategory(key as MessageCategory)}
+                    >
+                      <config.icon size={10} className={cn("mr-2", config.color)} />
+                      {config.label}
+                    </DropdownMenuItem>
+                  ))}
+                  <DropdownMenuSeparator />
+                  <DropdownMenuLabel className="text-xs">Platform</DropdownMenuLabel>
+                  <DropdownMenuItem 
+                    className="text-xs"
+                    onClick={() => setSelectedPlatform('all')}
+                  >
+                    All Platforms
+                  </DropdownMenuItem>
+                  {['email', 'sms', 'whatsapp', 'slack', 'teams'].map(platform => (
+                    <DropdownMenuItem 
+                      key={platform}
+                      className="text-xs"
+                      onClick={() => setSelectedPlatform(platform)}
+                    >
+                      {platform.charAt(0).toUpperCase() + platform.slice(1)}
+                    </DropdownMenuItem>
+                  ))}
+                </DropdownMenuContent>
+              </DropdownMenu>
+            </div>
           </div>
-        </ScrollArea>
-      </CardContent>
-    </Card>
+
+          {/* Search */}
+          <div className="relative mt-2">
+            <Search size={12} className="absolute left-2.5 top-1/2 -translate-y-1/2 text-muted-foreground" />
+            <Input
+              placeholder="Search messages..."
+              value={searchQuery}
+              onChange={(e) => setSearchQuery(e.target.value)}
+              className="h-8 pl-8 text-xs"
+            />
+          </div>
+
+          {/* Quick Stats */}
+          <div className="flex gap-2 mt-2 overflow-x-auto pb-1">
+            {Object.entries(summary.byCategory).map(([category, count]) => {
+              if (count === 0) return null;
+              const config = categoryConfig[category as MessageCategory];
+              return (
+                <Button
+                  key={category}
+                  variant={selectedCategory === category ? "secondary" : "outline"}
+                  size="sm"
+                  className="h-6 text-[9px] px-2 flex-shrink-0"
+                  onClick={() => setSelectedCategory(
+                    selectedCategory === category ? 'all' : category as MessageCategory
+                  )}
+                >
+                  <config.icon size={10} className={cn("mr-1", config.color)} />
+                  {count}
+                </Button>
+              );
+            })}
+          </div>
+        </CardHeader>
+
+        <CardContent className="flex-1 pt-0 overflow-hidden">
+          <ScrollArea className="h-full">
+            <div className="space-y-2 pr-2">
+              {filteredMessages.length === 0 ? (
+                <div className="flex flex-col items-center justify-center py-12 text-center">
+                  <Mail size={32} className="text-muted-foreground/30 mb-3" />
+                  <p className="text-sm text-muted-foreground">No messages</p>
+                  <p className="text-xs text-muted-foreground/70">
+                    {searchQuery || selectedCategory !== 'all' 
+                      ? 'Try adjusting your filters' 
+                      : 'Your inbox is clear'}
+                  </p>
+                </div>
+              ) : (
+                filteredMessages.map(message => (
+                  <MessageRow 
+                    key={message.id} 
+                    message={message} 
+                    onDraft={() => generateContextAwareDraft(message, hubFilter === 'all' ? 'personal' : hubFilter)}
+                  />
+                ))
+              )}
+            </div>
+          </ScrollArea>
+        </CardContent>
+      </Card>
+
+      {/* Email Composer Dialog */}
+      <EmailComposerDialog
+        open={showComposer}
+        onOpenChange={setShowComposer}
+        userId={user?.id}
+        mode="new"
+        onSent={() => fetchMessages()}
+        onDraftSaved={() => fetchMessages()}
+      />
+
+      {/* Full Email Inbox Dialog */}
+      <Dialog open={showFullInbox} onOpenChange={setShowFullInbox}>
+        <DialogContent className="max-w-6xl h-[85vh] p-0">
+          <EmailInboxView
+            userId={user?.id}
+            messages={dbMessages}
+            isLoading={dbLoading}
+            onRefresh={() => fetchMessages()}
+          />
+        </DialogContent>
+      </Dialog>
+    </>
   );
 }

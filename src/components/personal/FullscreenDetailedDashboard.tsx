@@ -47,6 +47,7 @@ import { cn } from '@/lib/utils';
 import { format, isPast, isToday, isTomorrow, parseISO } from 'date-fns';
 import { EventFormDialog } from '@/components/csuite/domain-views/EventFormDialog';
 import { TaskFormDialog } from '@/components/csuite/domain-views/TaskFormDialog';
+import { EmailComposerDialog } from '@/components/communications/EmailComposerDialog';
 
 export type PersonalSection = 'tasks' | 'calendar' | 'email' | 'photos' | 'finance' | 'widgets';
 
@@ -94,6 +95,7 @@ export function FullscreenDetailedDashboard({
   // Form dialog states
   const [showTaskDialog, setShowTaskDialog] = useState(false);
   const [showEventDialog, setShowEventDialog] = useState(false);
+  const [showEmailComposer, setShowEmailComposer] = useState(false);
   
   // Set a 3-second timeout for initial loading
   useEffect(() => {
@@ -408,11 +410,20 @@ export function FullscreenDetailedDashboard({
               <div className="w-10 h-10 rounded-xl bg-purple-500/10 flex items-center justify-center">
                 <Mail size={20} className="text-purple-500" />
               </div>
-              <div>
+              <div className="flex-1">
                 <h2 className="text-lg font-semibold">Email</h2>
                 <p className="text-sm text-muted-foreground">Recent messages</p>
               </div>
-              <Badge variant="secondary" className="ml-auto">{recentEmails.length} messages</Badge>
+              <Button
+                size="sm"
+                variant="outline"
+                onClick={() => setShowEmailComposer(true)}
+                className="h-9 gap-2 rounded-xl border-purple-500/30 text-purple-500 hover:bg-purple-500/10"
+              >
+                <Plus size={16} />
+                Compose
+              </Button>
+              <Badge variant="secondary">{recentEmails.length} messages</Badge>
             </div>
             
             {recentEmails.length > 0 ? (
@@ -776,6 +787,16 @@ export function FullscreenDetailedDashboard({
         userId={user?.id || ''}
         onEventSaved={() => {
           // Events will refresh automatically
+        }}
+      />
+
+      <EmailComposerDialog
+        open={showEmailComposer}
+        onOpenChange={setShowEmailComposer}
+        userId={user?.id}
+        mode="new"
+        onSent={() => {
+          // Refresh email list if needed
         }}
       />
     </div>,
