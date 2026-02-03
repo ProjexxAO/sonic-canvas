@@ -96,10 +96,7 @@ export function GlobalAtlasOrb() {
     }
   }, [transcript, isSpeaking]);
 
-  // Don't render on the Atlas page itself - it has its own full interface
-  // Hide on pages that have their own Atlas orb (AtlasHubLayout)
-  const hubRoutes = ['/atlas', '/personal', '/group'];
-  if (hubRoutes.some(route => location.pathname.startsWith(route))) return null;
+  // Now render on ALL pages including hub routes for unified Atlas access
   
   // Don't render if context is not available
   if (!atlas) return null;
