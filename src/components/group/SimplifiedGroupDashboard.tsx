@@ -1,7 +1,7 @@
 // Simplified Group Dashboard - Mobile-first, minimal cognitive load
 // Best practices: Large touch targets, clear hierarchy, essential info only
 
-import { useMemo } from 'react';
+import { useMemo, useEffect } from 'react';
 import { 
   Users,
   MessageSquare,
@@ -20,6 +20,7 @@ import { Button } from '@/components/ui/button';
 import { Badge } from '@/components/ui/badge';
 import { ScrollArea } from '@/components/ui/scroll-area';
 import { useAuth } from '@/hooks/useAuth';
+import { useGroupHub } from '@/hooks/useGroupHub';
 import { useIsMobile } from '@/hooks/use-mobile';
 import { cn } from '@/lib/utils';
 import { format } from 'date-fns';
@@ -116,9 +117,38 @@ export function SimplifiedGroupDashboard({
 }: SimplifiedGroupDashboardProps) {
   const { user } = useAuth();
   const isMobile = useIsMobile();
+  
+  // Use group hub data
+  const { 
+    currentGroup, 
+    selectGroup, 
+    stats,
+    getItemsByType,
+    activity
+  } = useGroupHub();
+
+  // Load group data when groupId changes
+  useEffect(() => {
+    if (groupId) {
+      selectGroup(groupId);
+    }
+  }, [groupId, selectGroup]);
 
   const greeting = useMemo(() => getGreeting(), []);
   const userName = user?.email?.split('@')[0] || 'there';
+
+  // Get counts from real data
+  const tasks = useMemo(() => getItemsByType('task'), [getItemsByType]);
+  const events = useMemo(() => getItemsByType('event'), [getItemsByType]);
+  const actualMemberCount = currentGroup?.member_count || currentGroup?.members?.length || memberCount;
+  const activeTasks = tasks.filter(t => t.status === 'active').length;
+  const upcomingEvents = events.length;
+
+  // Get recent activity for display
+  const recentActivity = useMemo(() => {
+    if (activity.length === 0) return null;
+    return activity.slice(0, 3);
+  }, [activity]);
 
   return (
     <div className="h-full flex flex-col bg-background">
@@ -133,10 +163,10 @@ export function SimplifiedGroupDashboard({
             </div>
             <div>
               <h1 className="text-lg font-bold text-foreground">
-                {groupName}
+                {currentGroup?.name || groupName}
               </h1>
               <p className="text-xs text-muted-foreground">
-                {memberCount} members • {format(new Date(), 'EEE, MMM d')}
+                {actualMemberCount} members • {format(new Date(), 'EEE, MMM d')}
               </p>
             </div>
           </div>
@@ -163,21 +193,21 @@ export function SimplifiedGroupDashboard({
             <Card className="bg-card/50">
               <CardContent className="p-3 text-center">
                 <Users size={18} className="mx-auto mb-1 text-blue-500" />
-                <p className="text-lg font-bold">{memberCount}</p>
+                <p className="text-lg font-bold">{actualMemberCount}</p>
                 <p className="text-[10px] text-muted-foreground">Members</p>
               </CardContent>
             </Card>
             <Card className="bg-card/50">
               <CardContent className="p-3 text-center">
                 <CheckSquare size={18} className="mx-auto mb-1 text-green-500" />
-                <p className="text-lg font-bold">0</p>
+                <p className="text-lg font-bold">{activeTasks}</p>
                 <p className="text-[10px] text-muted-foreground">Tasks</p>
               </CardContent>
             </Card>
             <Card className="bg-card/50">
               <CardContent className="p-3 text-center">
                 <Calendar size={18} className="mx-auto mb-1 text-purple-500" />
-                <p className="text-lg font-bold">0</p>
+                <p className="text-lg font-bold">{upcomingEvents}</p>
                 <p className="text-[10px] text-muted-foreground">Events</p>
               </CardContent>
             </Card>
@@ -198,12 +228,14 @@ export function SimplifiedGroupDashboard({
               <ShortcutButton
                 icon={CheckSquare}
                 label="Tasks"
+                badge={activeTasks > 0 ? activeTasks : undefined}
                 color="hsl(150 70% 45%)"
                 onClick={() => onNavigate?.('tasks')}
               />
               <ShortcutButton
                 icon={Calendar}
                 label="Events"
+                badge={upcomingEvents > 0 ? upcomingEvents : undefined}
                 color="hsl(280 60% 55%)"
                 onClick={() => onNavigate?.('events')}
               />
@@ -216,6 +248,7 @@ export function SimplifiedGroupDashboard({
               <ShortcutButton
                 icon={Users}
                 label="Members"
+                badge={actualMemberCount > 0 ? actualMemberCount : undefined}
                 color="hsl(220 70% 55%)"
                 onClick={() => onNavigate?.('members')}
               />
@@ -233,15 +266,29 @@ export function SimplifiedGroupDashboard({
               </span>
             </div>
             
-            <Card className="bg-gradient-to-br from-blue-500/5 to-blue-500/10 border-blue-500/20">
-              <CardContent className="p-5 text-center">
-                <Activity size={32} className="text-blue-500 mx-auto mb-3" />
-                <h3 className="text-lg font-semibold">Welcome to {groupName}!</h3>
-                <p className="text-sm text-muted-foreground">
-                  Start collaborating with your team
-                </p>
-              </CardContent>
-            </Card>
+            {recentActivity && recentActivity.length > 0 ? (
+              <div className="space-y-2">
+                {recentActivity.map((act) => (
+                  <ActivityCard
+                    key={act.id}
+                    title={act.action.replace(/_/g, ' ')}
+                    description={(act.details as any)?.title || 'Activity'}
+                    time={format(new Date(act.created_at), 'h:mm a')}
+                    icon={Activity}
+                  />
+                ))}
+              </div>
+            ) : (
+              <Card className="bg-gradient-to-br from-blue-500/5 to-blue-500/10 border-blue-500/20">
+                <CardContent className="p-5 text-center">
+                  <Activity size={32} className="text-blue-500 mx-auto mb-3" />
+                  <h3 className="text-lg font-semibold">Welcome to {currentGroup?.name || groupName}!</h3>
+                  <p className="text-sm text-muted-foreground">
+                    Start collaborating with your team
+                  </p>
+                </CardContent>
+              </Card>
+            )}
           </div>
 
         </div>
