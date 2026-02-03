@@ -287,9 +287,21 @@ export function useGroupHub() {
       metadata?: Record<string, unknown>;
     }
   ): Promise<GroupItem | null> => {
-    if (!user || !currentGroup) return null;
+    if (!user) {
+      console.error('[useGroupHub] createItem: No user authenticated');
+      setError('You must be logged in to create items');
+      return null;
+    }
+    
+    if (!currentGroup) {
+      console.error('[useGroupHub] createItem: No group selected');
+      setError('Please select a group first');
+      return null;
+    }
 
     try {
+      console.log('[useGroupHub] Creating item:', { itemType, title, groupId: currentGroup.id });
+      
       const { data, error } = await supabase
         .from('group_items')
         .insert({
@@ -307,10 +319,15 @@ export function useGroupHub() {
         .select()
         .single();
 
-      if (error) throw error;
+      if (error) {
+        console.error('[useGroupHub] createItem error:', error);
+        throw error;
+      }
+      
+      console.log('[useGroupHub] Item created successfully:', data.id);
       return data;
     } catch (err) {
-      console.error('Error creating item:', err);
+      console.error('[useGroupHub] Error creating item:', err);
       setError(err instanceof Error ? err.message : 'Failed to create item');
       return null;
     }
@@ -381,10 +398,22 @@ export function useGroupHub() {
     email: string,
     role: GroupRole = 'member'
   ): Promise<boolean> => {
-    if (!user || !currentGroup) return false;
+    if (!user) {
+      console.error('[useGroupHub] inviteMember: No user authenticated');
+      setError('You must be logged in to invite members');
+      return false;
+    }
+    
+    if (!currentGroup) {
+      console.error('[useGroupHub] inviteMember: No group selected');
+      setError('Please select a group first');
+      return false;
+    }
 
     try {
-      // Check if user exists
+      console.log('[useGroupHub] Inviting member:', { email, role, groupId: currentGroup.id });
+      
+      // Check if user exists by email (search in profiles for matching email)
       const { data: profileData } = await supabase
         .from('profiles')
         .select('user_id')
@@ -401,10 +430,15 @@ export function useGroupHub() {
           role
         } as TablesInsert<'group_invitations'>);
 
-      if (error) throw error;
+      if (error) {
+        console.error('[useGroupHub] inviteMember error:', error);
+        throw error;
+      }
+      
+      console.log('[useGroupHub] Invitation sent successfully');
       return true;
     } catch (err) {
-      console.error('Error inviting member:', err);
+      console.error('[useGroupHub] Error inviting member:', err);
       setError(err instanceof Error ? err.message : 'Failed to invite member');
       return false;
     }
