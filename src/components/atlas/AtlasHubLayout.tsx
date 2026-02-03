@@ -4,7 +4,7 @@
 import React, { useState, useMemo, useCallback, useRef, useEffect } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { useTheme } from 'next-themes';
-import { useAtlas } from '@/contexts/AtlasContext';
+import { useAtlasSafe } from '@/contexts/AtlasContext';
 import { useAuth } from '@/hooks/useAuth';
 import { useOnboarding } from '@/hooks/useOnboarding';
 import { useCSuiteData } from '@/hooks/useCSuiteData';
@@ -70,35 +70,35 @@ export function AtlasHubLayout({
   const { agents, loading: agentsLoading } = useDashboardAgents({ limit: 200 });
   const { messages: conversationHistory, saveMessage, startNewSession } = useAtlasConversations({ userId: user?.id });
   
-  // Atlas context
-  const atlas = useAtlas();
-  const {
-    isConnected,
-    isConnecting,
-    isMuted,
-    isSpeaking,
-    audioLevels,
-    inputVolume,
-    outputVolume,
-    frequencyBands,
-    transcript,
-    isTranscribing,
-    startConversation,
-    stopConversation,
-    toggleMute,
-    sendTextMessage,
-    sendContextualUpdate,
-    actionLogs,
-    searchResults,
-    synthesizedAgent,
-    webSearches,
-    manualWebSearch,
-    isWebSearching,
-    conversation,
-    wakeWordEnabled,
-    setWakeWordEnabled,
-    wakeWordStatus,
-  } = atlas;
+  // Atlas context - use safe hook to handle cases where provider is still initializing
+  const atlas = useAtlasSafe();
+  
+  // Default values when atlas is not yet available
+  const isConnected = atlas?.isConnected ?? false;
+  const isConnecting = atlas?.isConnecting ?? false;
+  const isMuted = atlas?.isMuted ?? false;
+  const isSpeaking = atlas?.isSpeaking ?? false;
+  const audioLevels = atlas?.audioLevels ?? [];
+  const inputVolume = atlas?.inputVolume ?? 0;
+  const outputVolume = atlas?.outputVolume ?? 0;
+  const frequencyBands = atlas?.frequencyBands ?? { bass: 0, mid: 0, treble: 0 };
+  const transcript = atlas?.transcript ?? '';
+  const isTranscribing = atlas?.isTranscribing ?? false;
+  const startConversation = atlas?.startConversation ?? (async () => {});
+  const stopConversation = atlas?.stopConversation ?? (async () => {});
+  const toggleMute = atlas?.toggleMute ?? (async () => {});
+  const sendTextMessage = atlas?.sendTextMessage ?? (() => {});
+  const sendContextualUpdate = atlas?.sendContextualUpdate ?? (() => {});
+  const actionLogs = atlas?.actionLogs ?? [];
+  const searchResults = atlas?.searchResults ?? [];
+  const synthesizedAgent = atlas?.synthesizedAgent ?? null;
+  const webSearches = atlas?.webSearches ?? [];
+  const manualWebSearch = atlas?.manualWebSearch ?? (async () => {});
+  const isWebSearching = atlas?.isWebSearching ?? false;
+  const conversation = atlas?.conversation ?? null;
+  const wakeWordEnabled = atlas?.wakeWordEnabled ?? false;
+  const setWakeWordEnabled = atlas?.setWakeWordEnabled ?? (() => {});
+  const wakeWordStatus = atlas?.wakeWordStatus ?? 'inactive';
 
   const [textInput, setTextInput] = useState('');
   const [hubCreatedAt, setHubCreatedAt] = useState<string | null>(null);
