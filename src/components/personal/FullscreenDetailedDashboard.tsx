@@ -1,7 +1,8 @@
 // Fullscreen Detailed Dashboard - Shows all content from SimplifiedDashboard sections in detail
 // Displays actual data: priority tasks, calendar events, emails, photos, finance, widgets
+// Supports initialSection prop for scroll-to-section navigation
 
-import { useMemo, useState, useCallback, useEffect } from 'react';
+import { useMemo, useState, useCallback, useEffect, useRef } from 'react';
 import ReactDOM from 'react-dom';
 import { 
   X,
@@ -44,8 +45,11 @@ import { useAuth } from '@/hooks/useAuth';
 import { cn } from '@/lib/utils';
 import { format, isPast, isToday, isTomorrow, parseISO } from 'date-fns';
 
+export type PersonalSection = 'tasks' | 'calendar' | 'email' | 'photos' | 'finance' | 'widgets';
+
 interface FullscreenDetailedDashboardProps {
   userId: string | undefined;
+  initialSection?: PersonalSection;
   onClose: () => void;
 }
 
@@ -58,7 +62,8 @@ function getGreeting(): { text: string; icon: typeof Sun; period: 'morning' | 'a
 }
 
 export function FullscreenDetailedDashboard({ 
-  userId, 
+  userId,
+  initialSection,
   onClose 
 }: FullscreenDetailedDashboardProps) {
   const { user } = useAuth();
@@ -68,11 +73,20 @@ export function FullscreenDetailedDashboard({
   const { accounts, transactions, isLoading: bankingLoading } = useBanking();
   const { widgets: customWidgets } = useCustomWidgets();
   
+  // Section refs for scroll-to navigation
+  const tasksRef = useRef<HTMLElement>(null);
+  const calendarRef = useRef<HTMLElement>(null);
+  const emailRef = useRef<HTMLElement>(null);
+  const photosRef = useRef<HTMLElement>(null);
+  const financeRef = useRef<HTMLElement>(null);
+  const widgetsRef = useRef<HTMLElement>(null);
+  
   // Atlas voice context (safe - doesn't throw if not in provider)
   const atlas = useAtlasSafe();
   
   // Loading timeout to prevent indefinite loading state
   const [loadingTimedOut, setLoadingTimedOut] = useState(false);
+  const [hasScrolled, setHasScrolled] = useState(false);
   
   // Set a 3-second timeout for initial loading
   useEffect(() => {
@@ -81,6 +95,31 @@ export function FullscreenDetailedDashboard({
     }, 3000);
     return () => clearTimeout(timer);
   }, []);
+  
+  // Scroll to initial section when content loads
+  useEffect(() => {
+    if (hasScrolled || !initialSection) return;
+    
+    // Wait for content to render
+    const timer = setTimeout(() => {
+      const sectionMap: Record<PersonalSection, React.RefObject<HTMLElement>> = {
+        tasks: tasksRef,
+        calendar: calendarRef,
+        email: emailRef,
+        photos: photosRef,
+        finance: financeRef,
+        widgets: widgetsRef,
+      };
+      
+      const ref = sectionMap[initialSection];
+      if (ref?.current) {
+        ref.current.scrollIntoView({ behavior: 'smooth', block: 'start' });
+        setHasScrolled(true);
+      }
+    }, 100);
+    
+    return () => clearTimeout(timer);
+  }, [initialSection, hasScrolled, loadingTimedOut]);
 
   const greeting = useMemo(() => getGreeting(), []);
   const userName = user?.email?.split('@')[0] || 'there';
@@ -190,7 +229,7 @@ export function FullscreenDetailedDashboard({
         <div className="p-4 md:p-6 lg:p-8 max-w-7xl mx-auto space-y-8">
           
           {/* Section 1: Today's Focus - Priority Tasks */}
-          <section>
+          <section ref={tasksRef}>
             <div className="flex items-center gap-3 mb-4">
               <div className="w-10 h-10 rounded-xl bg-primary/10 flex items-center justify-center">
                 <CheckSquare size={20} className="text-primary" />
@@ -268,7 +307,7 @@ export function FullscreenDetailedDashboard({
           <Separator />
 
           {/* Section 2: Calendar - Upcoming Events */}
-          <section>
+          <section ref={calendarRef}>
             <div className="flex items-center gap-3 mb-4">
               <div className="w-10 h-10 rounded-xl bg-blue-500/10 flex items-center justify-center">
                 <Calendar size={20} className="text-blue-500" />
@@ -340,7 +379,7 @@ export function FullscreenDetailedDashboard({
           <Separator />
 
           {/* Section 3: Email - Recent Messages */}
-          <section>
+          <section ref={emailRef}>
             <div className="flex items-center gap-3 mb-4">
               <div className="w-10 h-10 rounded-xl bg-purple-500/10 flex items-center justify-center">
                 <Mail size={20} className="text-purple-500" />
@@ -397,7 +436,7 @@ export function FullscreenDetailedDashboard({
           <Separator />
 
           {/* Section 4: Photos placeholder */}
-          <section>
+          <section ref={photosRef}>
             <div className="flex items-center gap-3 mb-4">
               <div className="w-10 h-10 rounded-xl bg-pink-500/10 flex items-center justify-center">
                 <Image size={20} className="text-pink-500" />
@@ -420,7 +459,7 @@ export function FullscreenDetailedDashboard({
           <Separator />
 
           {/* Section 5: Finance - Accounts & Transactions */}
-          <section>
+          <section ref={financeRef}>
             <div className="flex items-center gap-3 mb-4">
               <div className="w-10 h-10 rounded-xl bg-emerald-500/10 flex items-center justify-center">
                 <Wallet size={20} className="text-emerald-500" />
@@ -554,7 +593,7 @@ export function FullscreenDetailedDashboard({
           {customWidgets.length > 0 && (
             <>
               <Separator />
-              <section>
+              <section ref={widgetsRef}>
                 <div className="flex items-center gap-3 mb-4">
                   <div className="w-10 h-10 rounded-xl bg-primary/10 flex items-center justify-center">
                     <LayoutGrid size={20} className="text-primary" />
