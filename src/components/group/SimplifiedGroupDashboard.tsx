@@ -24,13 +24,15 @@ import { useIsMobile } from '@/hooks/use-mobile';
 import { cn } from '@/lib/utils';
 import { format } from 'date-fns';
 
+export type GroupSection = 'members' | 'tasks' | 'events' | 'files' | 'chat' | 'activity';
+
 interface SimplifiedGroupDashboardProps {
   userId: string | undefined;
   groupId?: string;
   groupName?: string;
   memberCount?: number;
   onExpandDashboard?: () => void;
-  onNavigate?: (view: string) => void;
+  onNavigate?: (section: GroupSection) => void;
 }
 
 // Get time-based greeting
